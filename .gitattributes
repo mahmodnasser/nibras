@@ -1,0 +1,30 @@
+# Normalize line endings so a Windows commit and a Linux checkout agree.
+* text=auto eol=lf
+
+# Windows-native scripts keep CRLF; everything else is LF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.sh  text eol=lf
+
+# Generated artefacts must be byte-identical on every runner.
+*.sql        text eol=lf
+*.csproj     text eol=lf
+*.props      text eol=lf
+*.json       text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+
+# Binary. Never normalized, never diffed as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.keystore binary

@@ -1,0 +1,47 @@
+{
+  "note": "Standalone AGPL and GPL tools, per master brief Section 6.4. Each entry needs all four fields or the scan fails. Nothing linked into product code may appear here.",
+  "standalone": [
+    {
+      "name": "redis",
+      "license": "AGPL-3.0",
+      "justification": "Cache, real-time backplane, rate limits and locks. Run as an unmodified server image; only the MIT StackExchange.Redis client is linked. Valkey is a drop-in fallback.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "grafana",
+      "license": "AGPL-3.0",
+      "justification": "Dashboards. Separate container, no product code links to it, dashboards are JSON in this repository.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "loki",
+      "license": "AGPL-3.0",
+      "justification": "Log storage. Separate container, reached over HTTP only.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "tempo",
+      "license": "AGPL-3.0",
+      "justification": "Trace storage. Separate container, reached over OTLP only.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "clamav",
+      "license": "GPL-2.0",
+      "justification": "Upload scanning. Separate container, reached over its socket protocol.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "ansible",
+      "license": "GPL-3.0",
+      "justification": "On-premises provisioning. A build tool, never shipped inside a product image.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "renovate",
+      "license": "AGPL-3.0",
+      "justification": "Dependency update pull requests. A continuous integration tool, never shipped.",
+      "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    }
+  ]
+}

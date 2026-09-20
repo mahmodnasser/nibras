@@ -1,0 +1,10 @@
+CLAUDE.local.md
+.claude/settings.local.json
+.env
+**/secrets/
+bin/
+obj/
+node_modules/
+dist/
+.dart_tool/
+build/
