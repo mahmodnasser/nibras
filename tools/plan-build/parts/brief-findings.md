@@ -73,3 +73,6 @@
 - Documents 10 and 21 name the index table embeddings; document 25 names it embedding_chunk. Plan-level fix: align 10 and 21 to 25.
 - Document 25 wants gRPC to Ai; RA 8.0 gives Ai no synchronous dependency and Bff.Web has no internal Ai routes. Sheet uses REST, proposes three Bff.Web routes.
 - Document 25 has Reporting, Assessment, Hr publish ai.* events, breaking document 11's own-exchange rule. Plan-level fix: they publish <service>.usage.recorded.v1 with an ai meter instead.
+- Document 17 has no Integrations capability in phase 4 (LTI 1.3) or phase 5 (QTI 3, Open Badges 3.0, CASE), although the Platform sheet and REQ-INT-016 time them there. Document 34 places SL-INT-411 under CAP-ACA-03; phase 5 places the standards slices under the nearest capability. Fix: add CAP-INT-02 (phase 4) and CAP-INT-03 (phase 5) to document 17.
+- OneRoster: document 23 and the Platform sheet say phase 4; document 34 builds it in phase 3 under CAP-INT-01. Align with the product owner's Tier 1 decision on the public API.
+- Admissions open point 4: no command or event asks Finance to raise an application fee, and finance.payment.received.v1 carries no sourceRefs. Document 34 SL-ADM-406 uses Finance's invoice endpoints. Fix: add the command and the field to Appendix E and document 11.

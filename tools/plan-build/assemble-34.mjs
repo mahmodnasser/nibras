@@ -21,6 +21,9 @@ const onlyPhase = args.includes('--phase') ? args[args.indexOf('--phase') + 1] :
 
 const RANGES = { A: [1, 199], B: [200, 399], C: [400, 599], D: [600, 799] };
 const PHASES = { A: ['1'], B: ['2'], C: ['3', '4'], D: ['5', '6'] };
+// Which phase of a two-phase part owns its cross-cutting requirements: part C's are
+// integrations (phase 3), part D's are infrastructure hardening (phase 6).
+const CROSS_CUTTING_PHASE = { A: '1', B: '2', C: '3', D: '6' };
 
 // ---- catalogs ----------------------------------------------------------------
 const c03 = readFileSync(K + 'docs/plan/03-requirements-catalog.md', 'utf8');
@@ -43,7 +46,7 @@ for (const line of c17.split('\n')) {
   }
 }
 // With --phase, a two-phase part is checked against the requirements of that phase's
-// services only; cross-cutting requirements belong to the part's first phase.
+// services only; cross-cutting requirements go to CROSS_CUTTING_PHASE.
 const scope = (w) => {
   const f = S + 'wb-scope-' + w + '.md';
   if (!existsSync(f)) return new Set();
@@ -52,7 +55,7 @@ const scope = (w) => {
     const m = /^\| (REQ-[A-Z0-9]+-\d{3}) \|/.exec(line);
     if (!m) continue;
     const svc = line.split('|')[4].trim();
-    if (onlyPhase && PHASES[w].includes(onlyPhase) && !(PHASE_SERVICES[onlyPhase].has(svc) || (svc === 'cross-cutting' && PHASES[w][0] === onlyPhase))) continue;
+    if (onlyPhase && PHASES[w].includes(onlyPhase) && !(PHASE_SERVICES[onlyPhase].has(svc) || (svc === 'cross-cutting' && CROSS_CUTTING_PHASE[w] === onlyPhase))) continue;
     out.add(m[1]);
   }
   return out;
