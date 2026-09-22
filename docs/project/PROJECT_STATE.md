@@ -1,6 +1,6 @@
 # Nibras: Project State
 
-**Phase:** Planning, in its final stretch. 32 of 35 plan documents are complete and lint-clean; document 34 is half built (phases 1 and 2).
+**Phase:** Planning, in its final stretch. 32 of 35 plan documents are complete and lint-clean; document 34 has phases 1 to 4 of 6.
 **Kit version:** v9, on `github.com/mahmodnasser/nibras`, branch `main`. The plan documents are committed.
 **Last updated:** 2026-09-22, by the plan build
 
@@ -22,8 +22,9 @@
 | Part A | 1 Foundation | 001 to 199 | **Done** |
 | Part B | 2 The school year loop | 200 to 399 | **Done**. Parts A and B together: 38 capabilities, 353 slices, 825 slice-days, 618 requirements built |
 | Part C, phase 3 | 3 Money and paperwork | 400 to 599 | **Done**: 14 capabilities, 135 slices, 321 slice-days, 106 requirements (REQ-INT-016's LTI part handed to phase 4). Validate with `--part C --phase 3` |
-| Part C, phase 4 | 4 Growth | 400 to 599, continuing | Next. 8 capabilities, 60 requirements (Admissions, Behavior, Reporting), appended to `wb-part-C.md` |
-| Part D | 5 Extended; 6 Hardening and launch | 600 to 799 | After C. 17 capabilities; also builds INF-027..033 and INF-036, handed over by part A |
+| Part C, phase 4 | 4 Growth | 400 to 599, continuing | **Done**: 8 capabilities, 84 slices, 210 slice-days; LTI 1.3 (SL-INT-411) placed under CAP-ACA-03 because document 17 has no phase 4 Integrations capability (fix in the roadmap with the v9.1 corrections) |
+| Part D, phase 5 | 5 Extended | 600 to 799 | Next. 11 capabilities: Wellbeing, HR, Operations, AI |
+| Part D, phase 6 | 6 Hardening and launch | 600 to 799, continuing | After phase 5. 6 capabilities, plus INF-027..033 and INF-036 handed over by part A |
 
 **How to resume.** Writer prompt: `tools/plan-build/wb-prompt.md` with `{{W}}`, `{{SCOPE}}` and `{{RANGE}}` filled. The writer appends to `tools/plan-build/parts/wb-part-<W>.md`, one capability at a time, so a partial part survives an interruption. Validate with `node tools/plan-build/assemble-34.mjs --part <W>`. Rewrite document 34 with `--write --partial` after each part, and `--write` once all four exist. See `tools/plan-build/README.md`.
 
@@ -57,7 +58,7 @@
 | C | All done | No |
 | D | All done | No |
 | E | All done except 20 | No |
-| F | All done except 30; 34 phases 1 and 2 done | No |
+| F | All done except 30; 34 phases 1 to 4 done | No |
 
 ## Session protocol
 
