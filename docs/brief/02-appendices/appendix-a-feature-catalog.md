@@ -6,7 +6,7 @@ Every module also includes, without repeating it below: list with search, filter
 
 ### A1. Platform and Tenancy
 
-- Tenant signup, trial, provisioning saga with live progress, activation, suspension (read-only), reactivation, export, deletion with a cooling-off period
+- Tenant signup, trial, provisioning saga with live progress, activation, suspension (read-only), reactivation, export, deletion with a 30-day cooling-off period during which the export stays available
 - Plans, add-on modules, limits, usage metering, overage warnings, coupons, tenant invoices, payment records, dunning
 - Feature flags per tenant, per plan, and by percentage rollout
 - White-label: logo, colors, login page, email sender name, custom domain with automatic TLS, mobile flavor configuration
@@ -14,6 +14,7 @@ Every module also includes, without repeating it below: list with search, filter
 - Support desk: tickets from tenants, SLA, canned replies, consent-based impersonation with banner and audit
 - Tenant health score, adoption analytics, churn-risk flags
 - Global template library (request types, report cards, certificates, notification templates, grading schemes) that tenants can copy
+- **Calendar-aware scaling** (engineering capability, formerly signature feature 39, moved under ADR-0019): caches warm and workers scale up before first period on each tenant's own school calendar and time zone, and scale down after dismissal (master brief Section 34); measured by Appendix N scenarios N-01 and N-11
 - **Rules:** a tenant can always export its data; deletion is a saga across all services with a final certificate of deletion; the platform operator cannot read tenant data without an audited, consented impersonation session.
 
 ### A2. School Setup and Configuration
@@ -137,7 +138,7 @@ As specified in Section 11, plus: request numbering per type; draft autosave; du
 - Channels: in-app, email, push, SMS adapter, WhatsApp adapter *(T3)*
 - Templates per event, language, and channel, with variables and preview; tenant branding in emails
 - Preferences per user, per child, per category, and per channel; quiet hours; urgent override
-- **Digests** daily or weekly; batching of similar events; deduplication
+- **Digests** daily or weekly; batching of similar events; deduplication of the same template, recipient and subject within a 5-minute window (BR-NOT-004)
 - Delivery log, bounce and failure handling, channel fallback order, SMS credit accounting
 - See Appendix C for the matrix.
 

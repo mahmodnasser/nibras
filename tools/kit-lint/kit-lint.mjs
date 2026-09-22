@@ -199,7 +199,8 @@ rule('R03-brief-versions', 'The brief documents carry the same version', (ctx) =
     const f = briefFile(ctx, n);
     if (!f) continue;
     const h1 = headings(f).find((h) => h.level === 1);
-    const m = h1 && /\bv(\d+)\b/.exec(h1.text);
+    // Major and minor: v9 and v9.1 are different versions of the brief.
+    const m = h1 && /\bv(\d+(?:\.\d+)?)\b/.exec(h1.text);
     seen.push({ rel: f.rel, version: m ? m[1] : null, line: h1 ? h1.line : 1 });
   }
   const versions = new Set(seen.filter((s) => s.version).map((s) => s.version));

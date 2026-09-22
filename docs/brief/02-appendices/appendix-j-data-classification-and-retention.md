@@ -110,7 +110,7 @@ Retention cites master brief Section 32. "In Student 360" means the field may ap
 | Credential | Password hash, salt, algorithm parameters | Sensitive | hash only, never reversible | no | never | Until replaced; history of the last 5 kept for reuse checks | On change |
 | Credential | Two-factor secret, recovery codes, passkey public key | Sensitive | yes | no | never | Until removed | On change |
 | Token | Refresh token handle, device binding, permission version | Sensitive | hashed handle | no | Redis only, with the token lifetime as the expiry | Access token 15 minutes, refresh token 30 days or until rotated | On new-device use |
-| Token | Invitation link, gate-pass QR, signed download URL | Confidential | hashed | no | never | Invitation 7 days, gate pass its validity window, signed URL 5 minutes | On use |
+| Token | Invitation link, gate-pass QR, signed download URL | Confidential | hashed | no | never | Invitation 14 days, gate pass its validity window, signed URL 5 minutes | On use |
 | API key | Key hash, scopes, owner | Sensitive | hash only | no | never | Until revoked plus 1 year of usage history | On use |
 | Tenant | Plan, limits, health score, usage counters | Internal | no | no | yes, tenant key | Life of the tenant; deleted tenant purged after the 30-day cooling-off | no |
 

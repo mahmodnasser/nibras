@@ -1,5 +1,17 @@
 # Changelog
 
+## v9.1 brief, 2026-09-22
+
+The brief was corrected from the defects the plan found while it was written, under ADR-0019. All three brief files are v9.1. Every change and its source is listed in `KIT_V9_1_CHANGES.md` (317 entries).
+
+**Catalogs completed.** Appendix E gained the events, command, fields, bindings and scheduled jobs the service sheets need; Appendix B the missing permissions, granted in Appendix I through two new groups; Appendix K nine error codes; Appendix C thirteen notification rows. Appendix R now cites only catalogued names.
+
+**Values settled by the product owner.** Tenant-deletion cooling-off 30 days; invitations 14 days with a reminder at day 7; notification deduplication 5 minutes; calendar-aware scaling moved from the signature list to engineering capabilities.
+
+**Honesty fixes.** Section 28's phase ranges are derived from the work breakdown (phase 1 14 to 22 weeks, launch 61 to 93); k6 has its Section 6.4 row; rate limits and plan quotas return different statuses; Appendix W has its autonomy column; colliding test identifiers are renumbered; Appendix P's competitor facts are corrected.
+
+**Lint.** Rule R03 now compares minor versions.
+
 ## v9 kit, 2026-09-19
 
 The kit was reconciled, extended, and made self-checking. Every finding behind these changes is listed in `KIT_V9_CHANGES.md`.

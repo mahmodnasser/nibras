@@ -1,4 +1,4 @@
-# Nibras (نبراس): Master Brief v9
+# Nibras (نبراس): Master Brief v9.1
 
 **The premium open-source school management platform**
 
@@ -245,6 +245,9 @@ Section 6.1 allows GPL and AGPL software **only as standalone infrastructure, ru
 | ClamAV | GPLv2 | Upload scanning | Separate container, reached over its socket protocol |
 | Ansible | GPLv3 | On-premises provisioning | A build tool, never shipped inside a product image |
 | Renovate | AGPLv3 | Dependency update pull requests | A CI tool, never shipped |
+| k6 | AGPLv3 | Load, soak and performance-budget tests (Sections 21 and 24) | A standalone load-test binary run in CI and in test environments only; scenarios are scripts it executes, it is never linked into product code and never shipped inside a product image |
+
+Forgejo (GPLv3 since version 9.0) and Matomo (GPLv3) appear in Section 6.2 as options. Each needs a row here, and an allow-list entry, only if it is chosen.
 
 **Scanner exception process.** A licence scanner reads package metadata and will flag Redis and these tools regardless of how they are used. The allow-list lives in `tools/license-scan/allow.json`, each entry naming the tool, the licence, the row of this table that justifies it, and the ADR. An entry without those four fields fails the scan. Adding an entry is a reviewed change like any other, and the licence auditor re-verifies the whole list at every release.
 
@@ -426,7 +429,7 @@ List with search, filters, and saved views; create, invite, bulk import, activat
 
 | Method | Flow |
 |---|---|
-| **Invitation** | Admin invites by email or SMS with a pre-assigned role and scope. Single-use, expiring link. Resend and revoke. |
+| **Invitation** | Admin invites by email or SMS with a pre-assigned role and scope. Single-use link that expires after 14 days, with a reminder to the invitee at day 7. Resend and revoke. |
 | **Join code or QR** | The school publishes a code per audience (staff, parents, students). The person registers, and lands in an approval queue. |
 | **Parent self-registration** | The parent enters the student code plus a verification detail. Auto-match when it is certain, otherwise manual review. One parent account links to several children, including children in different schools on the platform. |
 | **Bulk import** | Accounts are created from Excel with activation links, a dry run, and an error report. |
@@ -525,7 +528,7 @@ These are the differentiators. They must be excellent, not just present.
 
 ### 12.1 Twenty more that decide whether a school switches
 
-Items 1 to 24 above are the product's substance. These twenty are the moments that make someone choose it over a system that already works well enough. Each one names the person it serves, the **assist rung** it runs at (Section 25), and its tier. Appendix W is the register, Appendix P compares each against the market, and Appendix O is the demo script that has to show them.
+Items 1 to 24 above are the product's substance. These twenty numbers, nineteen of them signature features since item 39 moved to engineering capabilities, are the moments that make someone choose it over a system that already works well enough. Each one names the person it serves, the **assist rung** it runs at (Section 25), and its tier. Appendix W is the register, Appendix P compares each against the market, and Appendix O is the demo script that has to show them.
 
 | # | Feature | The moment | Rung | Tier |
 |---|---|---|---|---|
@@ -543,7 +546,7 @@ Items 1 to 24 above are the product's substance. These twenty are the moments th
 | 36 | **School memory**: the year's portfolio and yearbook assembled from consented media, achievements and comments, exportable per student when they leave | A keepsake that costs no staff time | 1 | 2 |
 | 37 | **Template exchange**: schools opt in to share request types, report-card templates and rubrics between tenants, with attribution and a review step | Every school starts further along | 1 | 2 |
 | 38 | **Plug-in kit**: contracts, a sample implementation and a certification checklist for regional integrations (e-invoicing, ministry export, payment, SMS) | Partners extend it without us | 1 | 2 |
-| 39 | **Calendar-aware scaling**: caches warm and workers scale up before each school's first period in its own time zone, and scale down after dismissal | Fast at the peak, cheap at night | 1 | 1 |
+| 39 | Moved to engineering capabilities (ADR-0019). **Calendar-aware scaling** (caches warm and workers scale up before each school's first period in its own time zone, and scale down after dismissal) cannot be demonstrated on the demo data, so it fails the rule below. It is still built and measured as an engineering capability; the number is kept so that items 40 to 44 keep theirs | none | 1 | 1 |
 | 40 | **Self-healing operations**: dead letters replay automatically once their transient cause clears, the tenant health score raises a ticket before the school calls, and each release publishes a plain-language "what changed" per tenant | Fewer incidents, fewer calls | 1 | 1 |
 | 41 | **Configuration as code**: a tenant's settings, roles, request types and templates export as versioned JSON, which can be reviewed, backed up, cloned to a sandbox and restored | Governance without a consultant | 1 | 1 |
 | 42 | **Mastery and next step**: a standards heatmap per student and class, with a suggested next step drawn from the curriculum mapping | Teaching insight, not another report | 1 to 2 | 2 |
@@ -738,7 +741,7 @@ Motion must explain, never decorate. Define it as tokens and reuse it everywhere
 - **SOLID** and patterns only where they earn their place: CQRS through the mediator, domain events, Specification, Strategy (grading schemes, fee rules, notification channels), State (workflows), Outbox/Inbox, Unit of Work through EF Core, Result pattern for expected failures.
 - Rich domain model for rule-heavy areas (grading, fees, promotion, timetable). Plain CRUD for reference data. Do not force DDD ceremony onto simple tables.
 - REST API with OpenAPI, URL versioning, Problem Details, cursor or page pagination, filtering and sorting conventions, ETags and optimistic concurrency, idempotency keys for payments and submissions.
-- **Rate limiting has three layers and each owns a different question.** The Gateway limits per source address and per tenant, and protects the platform from traffic. Each service limits per user and per endpoint through `Nibras.BuildingBlocks.Web`, and protects a handler from one noisy caller. The Platform service enforces plan quotas (jobs, SMS credits, storage, AI usage), and protects the commercial model. All three read counters from `redis-state`. A limit breach returns Problem Details with `Retry-After`.
+- **Rate limiting has three layers and each owns a different question.** The Gateway limits per source address and per tenant, and protects the platform from traffic. Each service limits per user and per endpoint through `Nibras.BuildingBlocks.Web`, and protects a handler from one noisy caller. The Platform service enforces plan quotas (jobs, SMS credits, storage, AI usage), and protects the commercial model. All three read counters from `redis-state`. A rate-limit breach at the Gateway or a service returns Problem Details with status 429, the `<SERVICE>_RATE_LIMITED` code and `Retry-After`. A plan quota breach is not a rate limit: it returns status 402 with `PLATFORM_PLAN_LIMIT_REACHED` (Appendix K), no `Retry-After`, and the limit, the current usage and the upgrade action.
 - **Multi-tenancy:** as defined in Section 7.4, implemented once in the shared tenancy building block and applied identically in every service.
 - **Where the building-block boundary runs.** A building block may evaluate *policy data* that the platform owns: which tenant a request belongs to, which permissions a token carries, which cache key a tenant gets. It may never evaluate *domain rules*: what a grade is worth, when a fee is late, who may collect a child. An architecture test forbids any reference from `Nibras.BuildingBlocks.*` to any `*.Domain` project, which is what keeps this line honest.
 - Cross-cutting pipeline: validation, authorization, tenant resolution, transaction, audit, logging, performance timing.
@@ -1189,19 +1192,21 @@ Maintain these files in `/docs/project/` and treat them as the source of truth. 
 
 ## 28. Delivery Plan
 
-Durations are ranges for a small, experienced team working continuously. They are estimates, not commitments, and the roadmap in `docs/plan/17-roadmap.md` refines them with the requirement identifiers each phase closes.
+Durations are ranges for a small, experienced team working continuously. They are estimates, not commitments. The ranges for phases 1 to 6 are derived from the slice-days in `docs/plan/34-work-breakdown.md` by `tools/plan-build/schedule-34.mjs` for the team in Section 29 (five to eight builders, with a 1.3 overhead factor), not estimated separately; phase 6 also has a calendar floor set by the penetration test, its retest window and the restore drill. The roadmap in `docs/plan/17-roadmap.md` shows the derivation and the requirement identifiers each phase closes. A team outside Section 29's shape changes the builders input, and the ranges are recomputed, never adjusted by hand.
 
 | Phase | Goal | Services touched | Range | Exit criteria |
 |---|---|---|---|---|
 | **0 Plan** | The documents in `docs/plan/`, approved group by group | none | 3 to 5 weeks | Every group scores 4 or better on the rubric; `kit-lint` clean; Section 27 decisions signed off |
-| **1 Foundation** | Building blocks, service template, pipeline, Gateway, Identity, Platform, Notification, Audit, design system, demo tenant | 6 | 8 to 10 weeks | A person can sign in, a tenant can be provisioned by the saga, a notification arrives, an audit entry is written, all proven by tests that ran |
-| **2 The school year loop** | School, Scheduling, Attendance, Academics, Assessment, and the web and mobile screens for them | 5 | 16 to 20 weeks | A class is taught, attended, graded and reported end to end, in both languages, on web and phone. **This is the MVP cut line** |
-| **3 Money and paperwork** | Finance, Requests, Communication, Documents | 4 | 10 to 12 weeks | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate is issued and verifies by QR |
-| **4 Growth** | Admissions, Behavior, Reporting, mobile parity, nursery and kindergarten | 4 | 8 to 10 weeks | An applicant becomes an enrolled student without retyping; dashboards answer the questions in Appendix D |
-| **5 Extended** | Wellbeing, Hr, Operations, and the Tier 2 features the first customers asked for | 3 | 10 to 14 weeks | Each module meets the definition of done in Section 26 |
+| **1 Foundation** | Building blocks, service template, pipeline, Gateway, Identity, Platform, Notification, Audit, design system, demo tenant | 6 | 14 to 22 weeks | A person can sign in, a tenant can be provisioned by the saga, a notification arrives, an audit entry is written, all proven by tests that ran |
+| **2 The school year loop** | School, Scheduling, Attendance, Academics, Assessment, and the web and mobile screens for them | 5 | 14 to 21 weeks | A class is taught, attended, graded and reported end to end, in both languages, on web and phone. **This is the MVP cut line** |
+| **3 Money and paperwork** | Finance, Requests, Communication, Documents | 4 | 11 to 17 weeks | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate is issued and verifies by QR |
+| **4 Growth** | Admissions, Behavior, Reporting, mobile parity, nursery and kindergarten | 4 | 7 to 11 weeks | An applicant becomes an enrolled student without retyping; dashboards answer the questions in Appendix D |
+| **5 Extended** | Wellbeing, Hr, Operations, and the Tier 2 features the first customers asked for | 3 | 9 to 14 weeks | Each module meets the definition of done in Section 26 |
 | **6 Hardening and launch** | Load, soak, chaos, restore and disaster-recovery drills, penetration test, accessibility pass, documentation, on-premises bundle | all | 6 to 8 weeks | Every quality gate in Section 24 green with evidence; penetration-test findings closed or accepted with an owner |
 
-**The MVP cut line.** The first paying school needs phases 0 to 2 plus the parts of phase 3 it uses in term one. Concretely: sign-in and roles, school setup, students and guardians, timetable, attendance, coursework, marks and report cards, announcements and messaging, notifications, the Request Center with the attendance and document request types, and the audit log. Admissions, Behavior, Wellbeing, Hr, Operations and Ai are explicitly not in it. A school that needs one of them is a phase 4 or 5 customer, and saying so early is cheaper than saying it late.
+**Total from the start of phase 1 to launch: 61 to 93 weeks** for the team in Section 29, derived the same way. The low end assumes eight builders from the first week, the high end five.
+
+**The MVP cut line.** The first paying school needs phases 0 to 2 plus the parts of phase 3 it uses in term one. Concretely: sign-in and roles, school setup, students and guardians, timetable, attendance, coursework, marks and report cards, announcements and messaging, notifications, the Request Center with the attendance and document request types, and the audit log. That is **42 capabilities and 33 to 50 weeks from the start of phase 1**, derived from document 34 by the same script (`docs/plan/17-roadmap.md` Section 5 lists the capabilities). Admissions, Behavior, Wellbeing, Hr, Operations and Ai are explicitly not in it. A school that needs one of them is a phase 4 or 5 customer, and saying so early is cheaper than saying it late.
 
 **Demo milestones.** End of phase 1: provisioning and sign-in. End of phase 2: the fifteen-minute demo in Appendix O, acts one and two. End of phase 3: act three. End of phase 4: the full script on the demo tenant with one-click reset.
 
@@ -1428,7 +1433,7 @@ Escalation runs support, then service owner, then architect, then product owner,
 
 ## 40. Risk Register
 
-The full register with review dates lives in `docs/project/RISKS.md`. These twelve are the ones that shape the plan.
+The full register with review dates lives in `docs/project/RISKS.md`. These thirteen are the ones that shape the plan.
 
 | # | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
@@ -1444,3 +1449,4 @@ The full register with review dates lives in `docs/project/RISKS.md`. These twel
 | 10 | The penetration test finds a tenancy defect late | Low | Severe | Tenant isolation suite on every build from phase 1, so a late finding would be a gap in the suite and is treated as such |
 | 11 | No Apple build capacity when iOS is due | Medium | High | Named as an open question and a budget line before phase 2; Android and mobile web ship independently of it |
 | 12 | Translation quality in Arabic undermines credibility | Medium | High | A fluent reviewer owns the Arabic string set, a terminology glossary is versioned, and the missing-translation report fails the build |
+| 13 | PowerSchool's Middle East and Africa edition, fully available in Arabic with right-to-left orientation and Saudi and Emirati references, is chosen on brand and narrows the Arabic-first difference to parity | Medium | High | Owned by the product owner. The claim is sold as bilingual data, not a translated interface: bilingual records, Arabic-aware search, Hijri display and amounts in words shown in the demo, with the sixty-second proofs for features 26, 27, 29, 31 and 32 that PowerSchool does not document; the unverified PowerSchool cells in `docs/plan/02-competitive-gap-analysis.md` are resolved by trial or sales conversation before general availability |

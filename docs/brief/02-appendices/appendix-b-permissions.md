@@ -24,17 +24,19 @@
 
 | Resource | Standard actions | Special actions | Highest risk |
 |---|---|---|---|
-| `platform.tenants` | view, create, edit | `provision`, `suspend`, `reactivate`, `delete` (high) | high |
+| `platform.tenants` | view, create, edit | `provision`, `suspend`, `reactivate`, `delete` (high), `export` (high, reason required, never plan-gated, BR-PLT-006) | high |
 | `platform.plans` | view, create, edit | `assign` | normal |
 | `platform.subscriptions` | view, edit | `change-plan`, `waive-charge` (elevated) | elevated |
 | `platform.feature-flags` | view, edit | `rollout` | normal |
+| `platform.modules` | view, edit | `enable`, `disable` (elevated) | elevated |
 | `platform.branding` | view, edit | `publish` | normal |
 | `platform.settings` | view, edit | `reset-to-default` (elevated) | elevated |
 | `platform.terminology` | view, edit | none | normal |
 | `platform.custom-fields` | view, create, edit, delete | none | normal |
+| `platform.template-library` | view, create, edit | `publish`, `import` | normal |
 | `platform.integrations` | view, create, edit, delete | `rotate-secret`, `replay-webhook` (elevated) | elevated |
 | `platform.api-keys` | view, create, delete | `reveal-once` (high) | high |
-| `platform.jobs` | view | `cancel`, `retry` (elevated) | elevated |
+| `platform.jobs` | view | `cancel`, `retry` (elevated), `replay` (elevated) | elevated |
 | `platform.failed-messages` | view | `replay`, `discard` (elevated) | elevated |
 | `platform.recycle-bin` | view | `restore` (elevated), `purge` (high) | high |
 | `platform.retention` | view, edit | `run-now` (high), `place-legal-hold` (high) | high |
@@ -50,6 +52,7 @@
 | `identity.permissions` | view | `explain-effective` | normal |
 | `identity.invitations` | view, create, delete | `resend`, `revoke` | normal |
 | `identity.join-requests` | view | `approve`, `reject` | normal |
+| `identity.join-codes` | view, create, delete | `rotate`, `revoke` | normal |
 | `identity.sessions` | view | `revoke` (elevated) | elevated |
 | `identity.api-keys` | view, create, delete | none | elevated |
 | `identity.access-reviews` | view, create | `certify`, `revoke-access` | elevated |
@@ -63,6 +66,8 @@
 |---|---|---|---|
 | `school.profile` | view, edit | none | normal |
 | `school.campuses` | view, create, edit, delete | none | normal |
+| `school.departments` | view, create, edit, delete | none | normal |
+| `school.houses` | view, create, edit, delete | none | normal |
 | `school.rooms` | view, create, edit, delete | none | normal |
 | `school.academic-years` | view, create, edit | `close-year` (high), `reopen-year` (high) | high |
 | `school.terms` | view, create, edit | none | normal |
@@ -80,8 +85,9 @@
 
 | Resource | Standard actions | Special actions |
 |---|---|---|
+| `admissions.campaigns` | view, create, edit, delete | `open`, `close` |
 | `admissions.inquiries` | view, create, edit, delete, export | `convert` |
-| `admissions.applications` | view, create, edit, export | `decide`, `score` |
+| `admissions.applications` | view, create, edit, export | `decide`, `score`, `override-age` (elevated, reason required, BR-ADM-001) |
 | `admissions.assessments` | view, create, edit | `schedule`, `evaluate` |
 | `admissions.offers` | view, create, export | `make`, `withdraw`, `extend-expiry` (elevated) |
 | `admissions.waiting-list` | view, edit | `promote`, `reorder` (elevated) |
@@ -95,8 +101,10 @@
 |---|---|---|
 | `academics.curriculum` | view, create, edit, delete | `map-standards` |
 | `academics.teaching-assignments` | view, create, edit, delete | none |
+| `academics.student-groups` | view, create, edit, delete | none |
 | `academics.lesson-plans` | view, create, edit, delete | `review`, `approve` |
 | `academics.assignments` | view, create, edit, delete | `publish`, `extend-due-date` |
+| `academics.rubrics` | view, create, edit, delete | none |
 | `academics.submissions` | view, edit | `grade`, `return`, `accept-late` |
 | `academics.question-bank` | view, create, edit, delete, export | `import-qti`, `export-qti` |
 | `academics.quizzes` | view, create, edit, delete | `publish`, `release-results` |
@@ -112,7 +120,7 @@
 | `assessment.report-cards` | view, export | `design-template`, `generate`, `publish`, `reissue` (elevated) | elevated |
 | `assessment.transcripts` | view, export | `issue` | elevated |
 | `assessment.grade-changes` | view, create | `approve`, `reject` | elevated |
-| `assessment.exams` | view, create, edit, delete | `seat`, `assign-invigilators`, `approve-paper` (elevated) | elevated |
+| `assessment.exams` | view, create, edit, delete | `seat`, `assign-invigilators`, `approve-paper` (elevated), `print-paper` (elevated) | elevated |
 
 ## Scheduling
 
@@ -120,6 +128,7 @@
 |---|---|---|
 | `scheduling.periods` | view, create, edit, delete | none |
 | `scheduling.bell-schedules` | view, create, edit, delete | `activate` |
+| `scheduling.constraints` | view, create, edit, delete | none |
 | `scheduling.timetable` | view, edit, export | `generate`, `publish`, `override-conflict` (elevated), `lock-slot` |
 | `scheduling.substitutions` | view, create, edit | `assign`, `accept-cover` |
 | `scheduling.calendar` | view, create, edit, delete | `publish` |
@@ -130,9 +139,9 @@
 
 | Resource | Standard actions | Special actions | Highest risk |
 |---|---|---|---|
-| `attendance.student-attendance` | view, export | `mark`, `edit-after-lock` (elevated), `bulk-mark` | elevated |
+| `attendance.student-attendance` | view, export | `mark`, `edit-after-lock` (elevated), `bulk-mark`, `nudge` | elevated |
 | `attendance.staff-attendance` | view, export | `mark`, `edit-after-lock` (elevated) | elevated |
-| `attendance.excuses` | view, create | `approve`, `reject` | normal |
+| `attendance.excuses` | view, create | `approve`, `reject`, `view-medical-detail` (high). Sensitive: every read logged | high |
 | `attendance.thresholds` | view, create, edit, delete | none | normal |
 | `attendance.safety.pickup-persons` | view, create, edit, delete | `verify` | elevated |
 | `attendance.safety.gate-passes` | view | `issue`, `verify`, `revoke` | elevated |
@@ -146,6 +155,7 @@
 | `finance.fee-items` | view, create, edit, delete | none | normal |
 | `finance.structures` | view, create, edit, delete | none | normal |
 | `finance.plans` | view, create, edit | `assign`, `change-mid-year` (elevated) | elevated |
+| `finance.payers` | view, create, edit | `view-bank-details` (high) | high |
 | `finance.invoices` | view, create, export | `run-batch`, `post` (elevated), `reverse` (high) | high |
 | `finance.payments` | view, create, export | `record`, `allocate`, `mark-bounced` | elevated |
 | `finance.refunds` | view, create | `approve` (high) | high |
@@ -164,6 +174,7 @@
 | `communication.announcements` | view, create, edit, delete | `publish`, `require-acknowledgment` | normal |
 | `communication.news` | view, create, edit, delete | `publish` | normal |
 | `communication.messages` | view, create | `moderate`, `oversee-messages` (high, every read logged), `export-for-safeguarding` (high) | high |
+| `communication.concerns` | view, create | none. `create` never records the reporter; `view` is high, reason required, every read logged | high |
 | `communication.meetings` | view, create, edit, delete | `open-slots`, `book-on-behalf` | normal |
 | `communication.surveys` | view, create, edit, delete, export | `publish`, `close` | normal |
 | `communication.policies` | view, create, edit | `publish`, `chase-acknowledgment` | normal |
@@ -186,6 +197,7 @@
 | `requests.chains` | view, create, edit, delete | none | elevated |
 | `requests.requests` | view, create, export | `submit-on-behalf`, `approve`, `reject`, `reassign`, `override` (elevated), `withdraw` | elevated |
 | `requests.tasks` | view, create, edit | `assign`, `complete` | normal |
+| `requests.duty-rosters` | view, create, edit, delete | `publish`, `assign` | normal |
 | `requests.sla` | view, edit | none | normal |
 
 ## Documents
@@ -225,6 +237,7 @@
 | `audit.login-history` | view, export | none | elevated |
 | `audit.access-log` | view | none. Reads of sensitive records | high |
 | `audit.integrity` | view | `verify` | elevated |
+| `audit.access-transparency` | view | none. Roles and times of reads of the holder's own or own children's records, never reader names; granted in the own-children or self scope only | normal |
 
 ## Wellbeing
 
@@ -279,5 +292,5 @@ Every resource here is sensitive. Every read is logged, and none appears in gene
 2. **Four-eyes.** Granting any `high` permission needs a second approver who is not the requester. The grant is time-limited unless someone explicitly makes it permanent, and that choice is audited.
 3. **Live application.** A role change publishes `identity.permissions.changed.v1`, which invalidates the permission cache everywhere within seconds and tells open clients to refresh. Nobody signs out.
 4. **Server-side only.** The interface reflects permissions; it never enforces them. Every endpoint declares its permission, and the generated suite proves each role can do exactly what this catalog says and nothing more.
-5. **Sensitive resources log reads.** `school.custody`, `school.medical-summary`, every `wellbeing.*`, `audit.access-log` and `communication.messages` under oversight write an access-log entry on read, not only on change.
+5. **Sensitive resources log reads.** `school.custody`, `school.medical-summary`, `attendance.excuses.view-medical-detail`, `finance.payers.view-bank-details`, `communication.concerns.view`, every `wellbeing.*`, `audit.access-log` and `communication.messages` under oversight write an access-log entry on read, not only on change.
 6. **No wildcard grants.** There is no "all permissions" permission. The platform super administrator holds an explicit set, which is why it can be reviewed.

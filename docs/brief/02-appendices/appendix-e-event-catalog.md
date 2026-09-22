@@ -33,6 +33,8 @@ This is the complete catalog, not a seed. Every event a service publishes appear
 | `<service>.usage.recorded.v1` | every service | Platform | `tenantId` | `meter`, `quantity`, `unit`, `periodStart`, `periodEnd` |
 | `<service>.audit.recorded.v1` | every service | Audit | `tenantId` | `actorId`, `action`, `resourceType`, `resourceId`, `before`, `after`, `reason`, `ipHash` |
 
+There is no shared audit routing key. Where a workflow in Appendix R lists an audit entry as a side effect, the entry is the publishing service's own `<service>.audit.recorded.v1` (for example `finance.audit.recorded.v1`), because a service publishes only on its own exchange.
+
 ---
 
 ## Platform
@@ -42,7 +44,7 @@ Tenant lifecycle events are platform-scoped and carry `tenantId` as the subject 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
 | `platform.tenant.provisioning-requested.v1` | every service | `tenantId` | `tenantId`, `planCode`, `region`, `locale`, `countryCode`, `schoolType` |
-| `platform.tenant.provisioned.v1` | Identity, School, Notification, Reporting | `tenantId` | `tenantId`, `adminInvitationId`, `completedAt` |
+| `platform.tenant.provisioned.v1` | Identity, School, Notification, Documents, Reporting | `tenantId` | `tenantId`, `adminInvitationId`, `completedAt` |
 | `platform.tenant.suspended.v1` | every service | `tenantId` | `tenantId`, `reason`, `readOnlyFrom` |
 | `platform.tenant.reactivated.v1` | every service | `tenantId` | `tenantId`, `reactivatedAt` |
 | `platform.tenant.deletion-requested.v1` | every service | `tenantId` | `tenantId`, `coolingOffEndsAt`, `requestedBy` |
@@ -56,44 +58,59 @@ Tenant lifecycle events are platform-scoped and carry `tenantId` as the subject 
 | `platform.trial.ending.v1` | Notification | `tenantId` | `trialEndsAt`, `daysRemaining` |
 | `platform.invoice.due.v1` | Notification | `tenantId` | `tenantInvoiceId`, `amount`, `currency`, `dueDate` |
 | `platform.webhook.delivery-failed.v1` | Notification | `tenantId` | `endpointId`, `attempts`, `lastStatus` |
+| `platform.upgrade.started.v1` | Notification, Reporting | `tenantId` | `upgradeRunId`, `fromVersion`, `toVersion`, `readOnlyFrom`, `windowEndsAt` |
 
 ## Identity
 
+The contact-point events carry the verified email address or phone number, because Notification delivers to it and has no synchronous dependency on Identity. The address is Confidential, not Sensitive: Notification stores it encrypted and never logs it, the same treatment as the contact on `identity.user.invited.v1`.
+
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `identity.user.invited.v1` | Notification, Audit | `userId` | `invitationId`, `email` or `phone`, `roleCode`, `scope`, `expiresAt` |
+| `identity.user.invited.v1` | Notification, Audit, Platform, Admissions | `userId` | `invitationId`, `email` or `phone`, `roleCode`, `scope`, `expiresAt` |
 | `identity.user.registered.v1` | School, Notification, Reporting | `userId` | `userId`, `joinMethod`, `pendingApproval` |
 | `identity.join-request.submitted.v1` | Notification, Requests | `userId` | `joinRequestId`, `audience`, `submittedBy` |
 | `identity.join-request.approved.v1` | School, Notification | `userId` | `joinRequestId`, `userId`, `roleCode`, `scope` |
 | `identity.user.activated.v1` | every service holding a user copy, Notification | `userId` | `userId`, `roles`, `scope`, `preferredLanguage` |
-| `identity.user.deactivated.v1` | every service holding a user copy, Requests | `userId` | `userId`, `reason`, `reassignTo` |
+| `identity.user.deactivated.v1` | every service holding a user copy, Requests, School, Admissions | `userId` | `userId`, `reason`, `reassignTo` |
 | `identity.role.changed.v1` | every service, Communication | `tenantId` | `roleCode`, `permissionVersion`, `changedBy` |
 | `identity.permissions.changed.v1` | every service, Communication | `tenantId` | `permissionVersion`, `affectedUserIds` or `all` |
 | `identity.delegation.started.v1` | Requests, Notification | `userId` | `fromUserId`, `toUserId`, `scope`, `until` |
 | `identity.delegation.ended.v1` | Requests, Notification | `userId` | `delegationId`, `endedAt` |
 | `identity.login.new-device.v1` | Notification, Audit | `userId` | `userId`, `deviceLabel`, `ipHash`, `at` |
-| `identity.guardian-link.created.v1` | School, Communication, Finance, Notification | `studentId` | `guardianUserId`, `studentId`, `relationship`, `rights` |
+| `identity.guardian-link.created.v1` | School, Communication, Finance, Notification, Wellbeing, Admissions | `studentId` | `guardianUserId`, `studentId`, `relationship`, `rights` |
 | `identity.access-review.due.v1` | Notification, Requests | `tenantId` | `campaignId`, `reviewerId`, `dueDate` |
+| `identity.break-glass.granted.v1` | Notification, Audit, Wellbeing | `userId` | `grantId`, `userId`, `resourceType`, `resourceId`, `reason`, `approvedBy`, `expiresAt` |
 | `identity.break-glass.used.v1` | Notification, Audit, Wellbeing | `userId` | `userId`, `resourceType`, `resourceId`, `reason` |
+| `identity.impersonation.started.v1` | Notification, Audit, Communication | `userId` | `impersonationId`, `operatorId`, `targetUserId`, `reason`, `until` |
+| `identity.contact-point.verified.v1` | Notification | `userId` | `userId`, `channel`, `address`, `verifiedAt` |
+| `identity.contact-point.removed.v1` | Notification | `userId` | `userId`, `channel`, `removedAt` |
 
 ## School
 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `school.academic-year.opened.v1` | every academic service | `tenantId` | `academicYearId`, `campusId`, `startsOn`, `endsOn` |
+| `school.academic-year.opened.v1` | every academic service, Platform | `tenantId` | `academicYearId`, `campusId`, `startsOn`, `endsOn` |
 | `school.academic-year.closed.v1` | every academic service, Reporting | `tenantId` | `academicYearId`, `closedBy`, `closedAt` |
 | `school.term.started.v1` | Academics, Assessment, Scheduling, Attendance, Finance | `tenantId` | `termId`, `academicYearId`, `startsOn`, `endsOn` |
-| `school.section.created.v1` | Academics, Assessment, Scheduling, Attendance, Admissions | `sectionId` | `sectionId`, `gradeLevelId`, `campusId`, `capacity` |
+| `school.section.created.v1` | Academics, Assessment, Scheduling, Attendance, Admissions, Communication, Behavior, Operations, Wellbeing | `sectionId` | `sectionId`, `gradeLevelId`, `campusId`, `capacity`, `nameEn`, `nameAr` |
 | `school.section.changed.v1` | the same set | `sectionId` | `sectionId`, changed fields |
-| `school.student.enrolled.v1` | Academics, Assessment, Attendance, Finance, Communication, Behavior, Operations, Reporting | `studentId` | `studentId`, `studentNumber`, `sectionId`, `campusId`, `enrolledOn`, `namesEnAr` |
-| `school.student.section-changed.v1` | Academics, Assessment, Attendance, Behavior, Operations | `studentId` | `studentId`, `fromSectionId`, `toSectionId`, `effectiveOn` |
-| `school.student.status-changed.v1` | every service holding a student copy, Ai | `studentId` | `studentId`, `fromStatus`, `toStatus`, `effectiveOn`, `reasonCode` |
-| `school.student.promoted.v1` | Academics, Assessment, Finance, Reporting | `studentId` | `studentId`, `fromGradeLevelId`, `toGradeLevelId`, `outcome` |
-| `school.student.profile-updated.v1` | services holding a copy | `studentId` | `studentId`, changed field names only |
+| `school.student.enrolled.v1` | Academics, Assessment, Attendance, Finance, Communication, Behavior, Operations, Reporting, Requests, Admissions, Notification | `studentId` | `studentId`, `studentNumber`, `sectionId`, `campusId`, `enrolledOn`, `namesEnAr` |
+| `school.student.section-changed.v1` | Academics, Assessment, Attendance, Behavior, Operations, Requests, Notification, Ai | `studentId` | `studentId`, `fromSectionId`, `toSectionId`, `effectiveOn` |
+| `school.student.status-changed.v1` | every service holding a student copy, Ai, Admissions | `studentId` | `studentId`, `fromStatus`, `toStatus`, `effectiveOn`, `reasonCode` |
+| `school.student.promoted.v1` | Academics, Assessment, Finance, Reporting, Admissions | `studentId` | `studentId`, `fromGradeLevelId`, `toGradeLevelId`, `outcome` |
+| `school.student.profile-updated.v1` | services holding a copy, Requests | `studentId` | `studentId`, changed field names only |
 | `school.student-document.expiring.v1` | Notification, Requests | `studentId` | `studentId`, `documentType`, `expiresOn` |
-| `school.guardian.updated.v1` | Communication, Finance, Notification | `studentId` | `guardianId`, `studentIds`, changed field names |
-| `school.staff.created.v1` | Identity, Academics, Scheduling, Hr | `staffId` | `staffId`, `employeeNumber`, `departmentId`, `campusIds` |
-| `school.staff.left.v1` | Identity, Academics, Scheduling, Requests, Hr | `staffId` | `staffId`, `lastWorkingDay`, `reassignTo` |
+| `school.sibling.linked.v1` | Finance, Admissions | `studentId` | `studentId`, `siblingStudentId`, `source` |
+| `school.sibling.unlinked.v1` | Finance, Admissions | `studentId` | `studentId`, `siblingStudentId`, `unlinkedAt` |
+| `school.guardian.updated.v1` | Communication, Finance, Notification, Wellbeing, Requests, Reporting | `studentId` | `guardianId`, `studentIds`, changed field names |
+| `school.staff.created.v1` | Identity, Academics, Scheduling, Hr, Communication, Requests, Notification | `staffId` | `staffId`, `employeeNumber`, `departmentId`, `campusIds`, `namesEnAr` |
+| `school.staff.changed.v1` | the `school.staff.created.v1` set | `staffId` | `staffId`, `namesEnAr`, `departmentId`, `campusIds`, changed field names |
+| `school.staff.left.v1` | Identity, Academics, Scheduling, Requests, Hr, Communication, Notification | `staffId` | `staffId`, `lastWorkingDay`, `reassignTo` |
+| `school.room.changed.v1` | Scheduling | `roomId` | `roomId`, `buildingId`, `campusId`, `kind`, `capacity`, `nameEn`, `nameAr`, `changeType` |
+| `school.grade-level.changed.v1` | Admissions | `gradeLevelId` | `gradeLevelId`, `stageId`, `nameEn`, `nameAr`, `changeType` |
+| `school.department.changed.v1` | Hr | `departmentId` | `departmentId`, `nameEn`, `nameAr`, `changeType` |
+| `school.grading-period.changed.v1` | Assessment | `gradingPeriodId` | `gradingPeriodId`, `termId`, `nameEn`, `nameAr`, `startsOn`, `endsOn`, `lockAt`, `changeType` |
+| `school.calendar-day.changed.v1` | Scheduling, Attendance, Requests | `campusId` | `calendarDayId`, `campusId`, `date`, `kind`, `labelEn`, `labelAr`, `changeType` |
 
 ## Admissions
 
@@ -102,11 +119,11 @@ Tenant lifecycle events are platform-scoped and carry `tenantId` as the subject 
 | `admissions.inquiry.created.v1` | Reporting, Notification | `inquiryId` | `inquiryId`, `source`, `gradeLevelId`, `campusId` |
 | `admissions.application.submitted.v1` | Documents, Notification, Reporting | `applicationId` | `applicationId`, `gradeLevelId`, `requiredDocuments` |
 | `admissions.application.stage-changed.v1` | Reporting, Notification | `applicationId` | `applicationId`, `fromStage`, `toStage`, `by` |
-| `admissions.offer.made.v1` | Finance, Documents, Notification | `applicationId` | `applicationId`, `offerId`, `expiresAt`, `depositAmount`, `currency` |
+| `admissions.offer.made.v1` | Finance, Documents, Notification, Reporting | `applicationId` | `applicationId`, `offerId`, `expiresAt`, `depositAmount`, `currency` |
 | `admissions.offer.accepted.v1` | School, Identity, Finance, Documents | `applicationId` | `offerId`, `applicantId`, `sectionId`, `feePlanCode` |
 | `admissions.offer.expired.v1` | Notification, Reporting | `applicationId` | `offerId`, `expiredAt`, `waitingListPromotedId` |
-| `admissions.re-enrollment.confirmed.v1` | School, Finance, Reporting | `studentId` | `studentId`, `academicYearId`, `confirmedBy` |
-| `admissions.re-enrollment.declined.v1` | School, Finance, Reporting, Notification | `studentId` | `studentId`, `academicYearId`, `reasonCode` |
+| `admissions.re-enrollment.confirmed.v1` | School, Finance, Reporting, Requests | `studentId` | `studentId`, `academicYearId`, `confirmedBy` |
+| `admissions.re-enrollment.declined.v1` | School, Finance, Reporting, Notification, Requests | `studentId` | `studentId`, `academicYearId`, `reasonCode` |
 
 ## Academics
 
@@ -116,7 +133,8 @@ Tenant lifecycle events are platform-scoped and carry `tenantId` as the subject 
 | `academics.assignment.published.v1` | Notification, Reporting | `sectionId` | `assignmentId`, `sectionId`, `subjectId`, `dueAt`, `maxMark` |
 | `academics.submission.received.v1` | Reporting | `assignmentId` | `submissionId`, `assignmentId`, `studentId`, `receivedAt`, `late` |
 | `academics.submission.graded.v1` | Assessment, Notification, Reporting | `assignmentId` | `submissionId`, `mark`, `maxMark`, `gradedBy` |
-| `academics.lesson-plan.submitted.v1` | Notification, Reporting | `staffId` | `lessonPlanId`, `staffId`, `weekOf`, `status` |
+| `academics.submission.missing.v1` | Reporting | `assignmentId` | `submissionId`, `assignmentId`, `studentId`, `dueAt`, `markedMissingAt` |
+| `academics.lesson-plan.submitted.v1` | Notification, Reporting, Ai | `staffId` | `lessonPlanId`, `staffId`, `weekOf`, `status` |
 | `academics.homework-load.exceeded.v1` | Notification, Reporting | `sectionId` | `sectionId`, `date`, `assignedMinutes`, `ceilingMinutes` |
 | `academics.syllabus-coverage.behind.v1` | Notification, Reporting | `sectionId` | `sectionId`, `subjectId`, `plannedPercent`, `actualPercent` |
 
@@ -126,37 +144,44 @@ Tenant lifecycle events are platform-scoped and carry `tenantId` as the subject 
 |---|---|---|---|
 | `assessment.marks.entered.v1` | Reporting | `componentId` | `componentId`, `sectionId`, `enteredCount`, `by` |
 | `assessment.marks.approved.v1` | Reporting, Notification | `componentId` | `componentId`, `approvedBy`, `at` |
-| `assessment.marks.overdue.v1` | Notification | `sectionId` | `sectionId`, `subjectId`, `staffId`, `dueAt`, `escalateTo` |
+| `assessment.marks.overdue.v1` | Notification, Reporting | `sectionId` | `sectionId`, `subjectId`, `staffId`, `dueAt`, `escalateTo` |
 | `assessment.marks.awaiting-approval.v1` | Notification | `sectionId` | `componentId`, `approverId`, `waitingSince` |
 | `assessment.grades.locked.v1` | Academics, Documents, Reporting | `gradingPeriodId` | `gradingPeriodId`, `sectionIds`, `lockedBy` |
 | `assessment.report-cards.generation-requested.v1` | Documents | `studentId` | `batchId`, `studentId`, `templateId`, `languages` |
-| `assessment.report-cards.published.v1` | Communication, Notification, Reporting | `gradingPeriodId` | `batchId`, `gradingPeriodId`, `publishedTo`, `versionNumber` |
-| `assessment.grade-change.approved.v1` | Documents, Notification, Audit | `studentId` | `studentId`, `componentId`, `fromMark`, `toMark`, `reason`, `approvedBy` |
+| `assessment.report-card.generated.v1` | Reporting | `studentId` | `reportCardId`, `batchId`, `studentId`, `gradingPeriodId`, `documentId`, `versionNumber` |
+| `assessment.report-cards.published.v1` | Communication, Notification, Reporting, Ai | `gradingPeriodId` | `batchId`, `gradingPeriodId`, `publishedTo`, `versionNumber` |
+| `assessment.exam-paper.approved.v1` | Notification, Reporting | `examId` | `examPaperId`, `examId`, `approvedBy`, `approvedAt` |
+| `assessment.exam-paper.released.v1` | Notification, Reporting | `examId` | `examPaperId`, `examId`, `releasedTo`, `releasedAt` |
+| `assessment.grade-change.approved.v1` | Documents, Notification, Audit, Requests | `studentId` | `studentId`, `componentId`, `fromMark`, `toMark`, `reason`, `approvedBy` |
 
 ## Scheduling
 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
 | `scheduling.timetable.published.v1` | Academics, Attendance, Operations, Notification | `timetableVersionId` | `timetableVersionId`, `academicYearId`, `campusId`, `effectiveFrom` |
-| `scheduling.timetable.changed.v1` | Academics, Attendance, Notification | `timetableVersionId` | `timetableVersionId`, `changedEntryIds`, `effectiveFrom` |
-| `scheduling.substitution.assigned.v1` | Attendance, Notification, Hr | `staffId` | `substitutionId`, `absentStaffId`, `coverStaffId`, `date`, `periodIds` |
+| `scheduling.timetable.changed.v1` | Academics, Attendance, Notification, Requests | `timetableVersionId` | `timetableVersionId`, `changedEntryIds`, `effectiveFrom` |
+| `scheduling.substitution.assigned.v1` | Attendance, Notification, Hr, Requests, Reporting | `staffId` | `substitutionId`, `absentStaffId`, `coverStaffId`, `date`, `periodIds` |
 | `scheduling.event.published.v1` | Communication, Notification | `tenantId` | `eventId`, `audience`, `startsAt`, `campusId` |
-| `scheduling.room-booking.approved.v1` | Operations, Notification | `roomId` | `bookingId`, `roomId`, `from`, `to`, `bookedBy` |
+| `scheduling.room-booking.approved.v1` | Operations, Notification, Requests | `roomId` | `bookingId`, `roomId`, `from`, `to`, `bookedBy` |
 | `scheduling.exam-timetable.published.v1` | Assessment, Notification | `tenantId` | `examSessionId`, `gradeLevelIds`, `startsOn` |
 
 ## Attendance
 
 Safety lives inside Attendance, so gate passes, visitors and emergencies carry the `attendance.` prefix. Earlier versions showed a `safety.` prefix that no service owned.
 
+A mark review is a change to a locked register, or an offline conflict, that waits for the holder of the edit-after-lock permission (Appendix M.3). `kind` is `edit-after-lock` or `offline-conflict`; Requests turns the request into a task in the reviewer's inbox and closes it on the resolution.
+
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `attendance.attendance.marked.v1` | Reporting | `sectionId` | `sessionId`, `sectionId`, `date`, `periodId`, `presentCount`, `absentCount` |
+| `attendance.attendance.marked.v1` | Reporting, Requests, Ai | `sectionId` | `sessionId`, `sectionId`, `date`, `periodId`, `presentCount`, `absentCount` |
 | `attendance.student.absent.v1` | Notification, Wellbeing, Reporting | `studentId` | `studentId`, `date`, `periodId`, `code`, `sectionId` |
-| `attendance.excuse.approved.v1` | Reporting, Notification | `studentId` | `excuseId`, `studentId`, `dates`, `code`, `approvedBy` |
+| `attendance.excuse.approved.v1` | Reporting, Notification, Requests | `studentId` | `excuseId`, `studentId`, `dates`, `code`, `approvedBy` |
 | `attendance.threshold.reached.v1` | Wellbeing, Notification, Reporting | `studentId` | `studentId`, `ruleId`, `kind`, `count`, `escalateTo` |
-| `attendance.attendance.not-marked.v1` | Notification | `sectionId` | `sectionId`, `periodId`, `staffId`, `cutOffAt`, `escalateTo` |
-| `attendance.dismissal.processed.v1` | Notification, Reporting | `studentId` | `studentId`, `kind`, `at`, `releasedTo` |
-| `attendance.gate-pass.issued.v1` | Notification | `studentId` | `gatePassId`, `studentId`, `validFrom`, `validUntil`, `issuedBy` |
+| `attendance.attendance.not-marked.v1` | Notification, Reporting | `sectionId` | `sectionId`, `periodId`, `staffId`, `cutOffAt`, `escalateTo` |
+| `attendance.mark-review.requested.v1` | Requests | `sectionId` | `reviewId`, `sessionId`, `sectionId`, `kind`, `studentCount`, `submittedBy`, `approverScope` |
+| `attendance.mark-review.resolved.v1` | Requests | `sectionId` | `reviewId`, `sessionId`, `decision`, `resolvedBy`, `resolvedAt` |
+| `attendance.dismissal.processed.v1` | Notification, Reporting, Wellbeing | `studentId` | `studentId`, `kind`, `at`, `releasedTo` |
+| `attendance.gate-pass.issued.v1` | Notification, Requests | `studentId` | `gatePassId`, `studentId`, `validFrom`, `validUntil`, `issuedBy` |
 | `attendance.gate-pass.used.v1` | Notification, Audit | `studentId` | `gatePassId`, `usedAt`, `verifiedBy` |
 | `attendance.visitor.checked-in.v1` | Notification, Reporting | `campusId` | `visitorId`, `campusId`, `host`, `at`, `watchlistHit` |
 | `attendance.emergency.broadcast-started.v1` | Notification, Communication, Reporting | `campusId` | `broadcastId`, `campusId`, `kind`, `startedBy` |
@@ -167,30 +192,42 @@ Safety lives inside Attendance, so gate passes, visitors and emergencies carry t
 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `finance.fee-plan.assigned.v1` | Reporting | `studentId` | `studentId`, `feePlanCode`, `academicYearId`, `total`, `currency` |
+| `finance.fee-plan.assigned.v1` | Reporting, Admissions, School, Requests | `studentId` | `studentId`, `feePlanCode`, `academicYearId`, `total`, `currency` |
 | `finance.invoice-run.requested.v1` | Documents, Reporting | `tenantId` | `runId`, `scope`, `requestedBy`, `expectedCount` |
-| `finance.invoice.issued.v1` | Documents, Notification, Reporting | `invoiceId` | `invoiceId`, `series`, `number`, `studentId`, `payerId`, `amount`, `currency`, `dueDate` |
-| `finance.payment.received.v1` | Admissions, Operations, Notification, Reporting | `invoiceId` | `paymentId`, `invoiceIds`, `amount`, `currency`, `method`, `gatewayRef` |
+| `finance.invoice.issued.v1` | Documents, Notification, Reporting, Requests | `invoiceId` | `invoiceId`, `series`, `number`, `studentId`, `payerId`, `amount`, `currency`, `dueDate` |
+| `finance.payment.received.v1` | Admissions, Operations, Notification, Reporting | `invoiceId` | `paymentId`, `invoiceIds`, `amount`, `currency`, `method`, `gatewayRef`, `sourceRefs` |
 | `finance.payment.failed.v1` | Notification | `invoiceId` | `attemptId`, `invoiceId`, `reasonCode` |
 | `finance.cheque.bounced.v1` | Notification, Reporting | `invoiceId` | `paymentId`, `chequeNumber`, `bouncedOn`, `feeApplied` |
-| `finance.refund.processed.v1` | Notification, Documents, Reporting | `invoiceId` | `refundId`, `amount`, `currency`, `approvedBy` |
-| `finance.credit-note.issued.v1` | Documents, Reporting | `invoiceId` | `creditNoteId`, `invoiceId`, `amount`, `reason` |
-| `finance.invoice.overdue.v1` | Admissions, Notification, Reporting | `invoiceId` | `invoiceId`, `daysOverdue`, `amountOutstanding`, `ladderStep` |
-| `finance.account.restricted.v1` | Assessment, Documents, Notification | `studentId` | `studentId`, `restrictions`, `policyId`, `appliedBy` |
-| `finance.account.cleared.v1` | Assessment, Documents, Notification | `studentId` | `studentId`, `clearedAt` |
+| `finance.refund.processed.v1` | Notification, Documents, Reporting, Requests | `invoiceId` | `refundId`, `amount`, `currency`, `approvedBy` |
+| `finance.credit-note.issued.v1` | Documents, Reporting, Admissions, Requests | `invoiceId` | `creditNoteId`, `invoiceId`, `amount`, `reason` |
+| `finance.invoice.overdue.v1` | Admissions, Notification, Reporting | `invoiceId` | `invoiceId`, `studentId`, `daysOverdue`, `amountOutstanding`, `ladderStep` |
+| `finance.account.restricted.v1` | Assessment, Documents, Notification, Admissions, Reporting | `studentId` | `studentId`, `restrictions`, `policyId`, `appliedBy` |
+| `finance.account.cleared.v1` | Assessment, Documents, Notification, Admissions, School, Reporting | `studentId` | `studentId`, `clearedAt` |
 | `finance.day.closed.v1` | Reporting, Audit | `campusId` | `shiftId`, `campusId`, `date`, `declaredTotal`, `countedTotal`, `difference` |
+| `finance.scholarship.awarded.v1` | Notification, Reporting | `studentId` | `awardId`, `studentId`, `schemeCode`, `academicYearId`, `amount`, `currency`, `approvedBy` |
+| `finance.payer.changed.v1` | Notification, Reporting | `studentId` | `studentId`, `fromPayerId`, `toPayerId`, `sharePercent`, `effectiveFrom` |
+| `finance.cash-session.closed.v1` | Reporting, Audit | `campusId` | `cashSessionId`, `campusId`, `cashierId`, `declaredTotal`, `countedTotal`, `difference`, `closedAt` |
+| `finance.deposit.recorded.v1` | Reporting, Audit | `campusId` | `depositId`, `campusId`, `cashSessionIds`, `amount`, `currency`, `depositSlipNumber`, `depositedOn` |
+
+`sourceRefs` on `finance.payment.received.v1` is optional and lists the business records a paid invoice was raised for, as `kind` and `id` pairs, where `kind` is `offer` or `application` and `id` is the `offerId` or `applicationId`. It lets Admissions match a deposit or an application fee without reading Finance. `studentId` on `finance.invoice.overdue.v1` is null for an invoice raised before the applicant became a student. Both are optional additions and not breaking.
+
+**Command Finance accepts from Admissions.** Commands are catalogued in `docs/plan/11-messaging-architecture.md`; this one is named here because its outcome depends on the `sourceRefs` field above.
+
+| Command | Routing key | Sent on | Payload | Outcome |
+|---|---|---|---|---|
+| `RaiseApplicationFee` | `finance.commands.raise-application-fee.v1` | `nibras.admissions` | `applicationId`, `applicantId`, `campaignId`, `amount`, `currency`, `dueDate` | `finance.invoice.issued.v1`; when paid, `finance.payment.received.v1` with `sourceRefs` naming the application |
 
 ## Communication
 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `communication.announcement.published.v1` | Notification, Reporting | `tenantId` | `announcementId`, `audience`, `requiresAcknowledgment`, `expiresAt` |
+| `communication.announcement.published.v1` | Notification, Reporting, Ai | `tenantId` | `announcementId`, `audience`, `requiresAcknowledgment`, `expiresAt` |
 | `communication.acknowledgment.recorded.v1` | Reporting | `announcementId` | `announcementId`, `userId`, `at` |
 | `communication.acknowledgment.overdue.v1` | Notification | `announcementId` | `announcementId`, `userId`, `dueAt`, `escalateTo` |
 | `communication.message.sent.v1` | Reporting | `threadId` | `messageId`, `threadId`, `fromRole`, `toRole`, `hasAttachment` |
 | `communication.message.reported.v1` | Wellbeing, Notification, Audit | `threadId` | `messageId`, `reportedBy`, `reasonCode` |
-| `communication.meeting.booked.v1` | Notification, Scheduling | `staffId` | `meetingId`, `staffId`, `guardianId`, `studentId`, `startsAt` |
-| `communication.meeting.changed.v1` | Notification | `staffId` | `meetingId`, `previousStartsAt`, `startsAt`, `reason` |
+| `communication.meeting.booked.v1` | Notification, Scheduling, Requests | `staffId` | `meetingId`, `staffId`, `guardianId`, `studentId`, `startsAt` |
+| `communication.meeting.changed.v1` | Notification, Requests | `staffId` | `meetingId`, `previousStartsAt`, `startsAt`, `reason` |
 | `communication.concern.reported-anonymously.v1` | Wellbeing, Notification | `campusId` | `concernId`, `campusId`, `category`, `submittedAt` |
 
 ## Notification
@@ -212,6 +249,9 @@ Safety lives inside Attendance, so gate passes, visitors and emergencies carry t
 | `requests.request.rejected.v1` | Notification, Reporting | `requestId` | `requestId`, `reason`, `rejectedBy` |
 | `requests.request.completed.v1` | Notification, Reporting | `requestId` | `requestId`, `outcome`, `completedAt` |
 | `requests.request.sla-breached.v1` | Notification, Reporting | `requestId` | `requestId`, `assigneeId`, `breachedAt`, `escalateTo` |
+| `requests.request.reassigned.v1` | Notification, Reporting | `requestId` | `requestId`, `fromAssigneeId`, `toAssigneeId`, `reason`, `reassignedBy` |
+| `requests.request.withdrawn.v1` | Notification, Reporting | `requestId` | `requestId`, `typeCode`, `withdrawnBy`, `withdrawnAt` |
+| `requests.request.expired.v1` | Notification, Reporting | `requestId` | `requestId`, `typeCode`, `stepKey`, `expiredAt` |
 | `requests.task.assigned.v1` | Notification, Reporting | `userId` | `taskId`, `assigneeId`, `sourceRequestId`, `dueAt` |
 | `requests.task.completed.v1` | Reporting | `userId` | `taskId`, `completedBy`, `at` |
 
@@ -221,9 +261,9 @@ Safety lives inside Attendance, so gate passes, visitors and emergencies carry t
 |---|---|---|---|
 | `documents.document.generation-requested.v1` | Documents workers | `subjectId` | `jobId`, `templateId`, `subjectId`, `language`, `requestedBy` |
 | `documents.document.generated.v1` | the requesting service, Notification | `subjectId` | `jobId`, `documentId`, `subjectId`, `sizeBytes`, `verificationCode` |
-| `documents.certificate.revoked.v1` | Notification, Reporting | `subjectId` | `certificateId`, `reason`, `revokedBy` |
+| `documents.certificate.revoked.v1` | Notification, Reporting, Admissions, School, Requests | `subjectId` | `certificateId`, `reason`, `revokedBy` |
 | `documents.import.completed.v1` | the target service, Notification, Reporting | `jobId` | `jobId`, `entityType`, `succeeded`, `failed`, `errorReportId` |
-| `documents.export.completed.v1` | Notification, Audit | `jobId` | `jobId`, `entityType`, `rowCount`, `requestedBy`, `reason` |
+| `documents.export.completed.v1` | Notification, Audit, Platform, Requests, Reporting | `jobId` | `jobId`, `entityType`, `rowCount`, `requestedBy`, `reason` |
 | `documents.sensitive-export.performed.v1` | Notification, Audit | `jobId` | `jobId`, `entityType`, `rowCount`, `requestedBy`, `reason`, `watermark` |
 | `documents.file.scan-failed.v1` | Notification, Audit | `fileId` | `fileId`, `uploadedBy`, `verdict` |
 
@@ -231,7 +271,7 @@ Safety lives inside Attendance, so gate passes, visitors and emergencies carry t
 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `behavior.incident.recorded.v1` | Wellbeing, Notification, Reporting | `studentId` | `incidentId`, `studentIds`, `categoryCode`, `severity`, `recordedBy`, `restricted` |
+| `behavior.incident.recorded.v1` | Wellbeing, Notification, Reporting, Ai | `studentId` | `incidentId`, `studentIds`, `categoryCode`, `severity`, `recordedBy`, `restricted` |
 | `behavior.points.awarded.v1` | Notification, Reporting | `studentId` | `studentId`, `points`, `categoryCode`, `houseId` |
 | `behavior.badge.awarded.v1` | Notification, Documents, Reporting | `studentId` | `studentId`, `badgeCode`, `awardedBy` |
 | `behavior.consequence.assigned.v1` | Notification, Reporting | `studentId` | `incidentId`, `studentId`, `consequenceCode`, `scheduledFor` |
@@ -249,19 +289,22 @@ Safety lives inside Attendance, so gate passes, visitors and emergencies carry t
 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
-| `audit.integrity-check.failed.v1` | Platform, Notification | `tenantId` | `fromEntryId`, `toEntryId`, `detectedAt` |
+| `audit.integrity-check.failed.v1` | Platform, Notification, Reporting | `tenantId` | `fromEntryId`, `toEntryId`, `detectedAt` |
 | `audit.retention.partition-detached.v1` | Platform | `tenantId` | `partition`, `rowCount`, `movedTo` |
 
 ## Wellbeing
 
 Wellbeing events carry identifiers, a category code and a timestamp. They never carry clinical detail, a note, a diagnosis or a medication name. A consumer that legitimately needs more asks Wellbeing with a permission that is checked and logged.
 
+Attendance consumes three Wellbeing events to drive WF-ATT-01 and WF-WEL-02: the intervention events move a student's attendance case to `InterventionOpened` and `InterventionClosed`, and `wellbeing.clinic-visit.collection-arranged.v1` prepares the gate pass for the sent-home student. None of the three carries a category, a symptom or a reason; `sourceRuleId` is the Attendance threshold rule that led to the intervention, or null; Attendance discards an intervention event whose `sourceRuleId` is null and keeps nothing of it.
+
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
 | `wellbeing.referral.created.v1` | Notification, Reporting | `studentId` | `referralId`, `studentId`, `categoryCode`, `urgency`, `createdAt` |
-| `wellbeing.intervention.opened.v1` | Reporting, Notification | `studentId` | `interventionId`, `studentId`, `ownerId`, `reviewDate` |
-| `wellbeing.intervention.closed.v1` | Reporting | `studentId` | `interventionId`, `outcomeCode`, `closedAt` |
+| `wellbeing.intervention.opened.v1` | Reporting, Notification, Attendance | `studentId` | `interventionId`, `studentId`, `ownerId`, `reviewDate`, `sourceRuleId` |
+| `wellbeing.intervention.closed.v1` | Reporting, Attendance | `studentId` | `interventionId`, `studentId`, `outcomeCode`, `closedAt` |
 | `wellbeing.clinic-visit.recorded.v1` | Notification | `studentId` | `visitId`, `studentId`, `categoryCode`, `guardianNotified`, `at` |
+| `wellbeing.clinic-visit.collection-arranged.v1` | Attendance | `studentId` | `visitId`, `studentId`, `pickupPersonId`, `arrangedAt` |
 | `wellbeing.medication.administered.v1` | Notification | `studentId` | `logId`, `studentId`, `authorizationId`, `at`, `administeredBy` |
 | `wellbeing.safeguarding.concern-raised.v1` | Notification (safeguarding officer only) | `studentId` | `concernId`, `urgency`, `raisedAt` |
 
@@ -270,8 +313,8 @@ Wellbeing events carry identifiers, a category code and a timestamp. They never 
 | Event | Consumers | Partition key | Payload |
 |---|---|---|---|
 | `hr.staff.hired.v1` | Identity, School, Notification | `staffId` | `staffId`, `startsOn`, `roleCode`, `departmentId`, `campusIds` |
-| `hr.leave.approved.v1` | Scheduling, Attendance, Notification | `staffId` | `leaveId`, `staffId`, `fromDate`, `toDate`, `leaveTypeCode` |
-| `hr.leave.cancelled.v1` | Scheduling, Attendance, Notification | `staffId` | `leaveId`, `cancelledAt`, `reason` |
+| `hr.leave.approved.v1` | Scheduling, Attendance, Notification, Requests | `staffId` | `leaveId`, `staffId`, `fromDate`, `toDate`, `leaveTypeCode` |
+| `hr.leave.cancelled.v1` | Scheduling, Attendance, Notification, Requests | `staffId` | `leaveId`, `cancelledAt`, `reason` |
 | `hr.leave-balance.low.v1` | Notification | `staffId` | `staffId`, `leaveTypeCode`, `remainingDays` |
 | `hr.staff-document.expiring.v1` | Notification, Requests | `staffId` | `staffId`, `documentType`, `expiresOn` |
 | `hr.payroll.inputs-ready.v1` | Finance, Notification | `tenantId` | `periodId`, `staffCount`, `preparedBy` |
@@ -285,7 +328,7 @@ Operations publishes under one prefix with the sub-domain as the entity, which i
 |---|---|---|---|
 | `operations.transport.boarding-recorded.v1` | Attendance, Notification, Reporting | `studentId` | `studentId`, `routeId`, `stopId`, `direction`, `at` |
 | `operations.transport.vehicle-delayed.v1` | Notification | `routeId` | `routeId`, `delayMinutes`, `reasonCode`, `estimatedArrival` |
-| `operations.transport.subscription-changed.v1` | Finance, Notification | `studentId` | `studentId`, `routeId`, `stopId`, `effectiveFrom` |
+| `operations.transport.subscription-changed.v1` | Finance, Notification, Requests | `studentId` | `studentId`, `routeId`, `stopId`, `effectiveFrom` |
 | `operations.library.loan-recorded.v1` | Reporting | `studentId` | `loanId`, `studentId`, `copyId`, `dueOn` |
 | `operations.library.loan-overdue.v1` | Finance, Notification | `studentId` | `loanId`, `studentId`, `daysOverdue`, `fineAmount`, `currency` |
 | `operations.facility.ticket-raised.v1` | Notification, Reporting | `campusId` | `ticketId`, `roomId`, `priority`, `raisedBy` |
@@ -312,6 +355,8 @@ Some notifications in Appendix C are not caused by a state change but by a clock
 |---|---|---|---|
 | Unmarked class reminder | Attendance | per period cut-off, per campus time zone | `attendance.attendance.not-marked.v1` |
 | Assignment due reminder | Academics | daily, evening before | `notification.notification.requested.v1` |
+| Missing work at closing | Academics | every 5 minutes, for assignments past their closing time | `academics.submission.missing.v1` |
+| Request expiry | Requests | hourly | `requests.request.expired.v1` |
 | Marks overdue check | Assessment | daily | `assessment.marks.overdue.v1` |
 | Acknowledgment chase | Communication | daily | `communication.acknowledgment.overdue.v1` |
 | Reminder ladder | Finance | daily | `finance.invoice.overdue.v1` |
@@ -322,3 +367,13 @@ Some notifications in Appendix C are not caused by a state change but by a clock
 | Audit integrity verification | Audit | nightly | `audit.integrity-check.failed.v1` on failure |
 | Reference-copy reconciliation | every service holding a copy | nightly | `reporting.data-quality.issue-detected.v1` on a mismatch |
 | Pre-peak cache warm-up | Platform | before first period, per tenant time zone | none; it warms caches |
+| Uncovered-period escalation (`UncoveredPeriodEscalationJob`) | Scheduling | every 5 minutes from 06:00 to the last period on school days | `notification.notification.requested.v1` |
+| Joining timeouts (`JoiningTimeoutsJob`) | Identity | every 15 minutes | `notification.notification.requested.v1` for the day-7 invitation reminder |
+| Deletion cooling-off reminder (`DeletionCoolingOffReminderJob`) | Platform | daily 09:00 per tenant time zone, through the 30-day cooling-off | `notification.notification.requested.v1` |
+| API key expiry reminder (`ApiKeyExpiryReminderJob`) | Platform | daily 08:00 per tenant time zone | `notification.notification.requested.v1` at 14 and 3 days before expiry |
+| Sandbox lifecycle (`SandboxLifecycleJob`) | Platform | daily 04:00 UTC | `notification.notification.requested.v1` at 60 and 83 days without a call |
+| Support SLA (`SupportSlaJob`) | Platform | every 5 minutes | `notification.notification.requested.v1` to the next support level |
+| Subject request deadline (`SubjectRequestDeadlineJob`) | Platform | daily 08:00 per tenant time zone | `notification.notification.requested.v1` |
+| Daily digest of blocked attempts | Ai | daily, per tenant | `notification.notification.requested.v1`, never with the planted text |
+| Re-enrollment window (`ReEnrollmentWindowJob`) | Admissions | daily 08:00 campus time | `notification.notification.requested.v1` at days 7 and 14 of the window |
+| Digest builder (`DigestSchedulerJob`) | Notification | every 15 minutes, for users whose digest is due in their time zone | none; it builds each due digest inside Notification |

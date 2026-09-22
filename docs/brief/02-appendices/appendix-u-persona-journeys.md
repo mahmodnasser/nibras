@@ -34,7 +34,7 @@ Master brief Section 5 names eleven personas and the moment success feels like f
 |---|---|---|---|---|---|
 | Day | Reads the morning brief on the way in at 07:30 | mobile | — | Morning brief digest | Yes, last synced brief with an "as of" time |
 | Day | Sees three teachers absent and confirms the suggested cover | mobile | `WF-HR-01` | Substitution assigned | no |
-| Day | Clears eleven approvals during assembly | mobile | `WF-RQS-01` | Request submitted, SLA at risk | Queues, applies on reconnect |
+| Day | Clears eleven approvals during assembly | mobile | `WF-RQS-01` | Request submitted, SLA at risk | no, an approval needs the current state and permissions (Appendix M) |
 | Day | Reads the unmarked-attendance card at the cut-off and nudges two teachers | mobile | `WF-ATT-01` | Class attendance not marked by cut-off | no |
 | Day | Handles one behavior incident and one early dismissal | mobile | `WF-BEH-01`, `WF-ATT-02` | Behavior incident, gate pass issued | no |
 | Week | Reviews attendance, punctuality, request SLA and syllabus coverage | web | — | Early-warning flag raised | no |
@@ -178,9 +178,9 @@ Master brief Section 5 names eleven personas and the moment success feels like f
 
 | Rhythm | Moment, in order | Surface | Workflow | Notifications | Offline |
 |---|---|---|---|---|---|
-| Day | Opens the care home: visits today, medication schedule, follow-ups due | mobile | `WF-WEL-02` | Intervention review due | Yes, the day's schedule |
-| Day | Records a clinic visit and notifies the guardian in the same action | mobile | `WF-WEL-02` | Clinic visit recorded | Queues, with the record held encrypted on device |
-| Day | Administers an authorized medication inside its window | mobile | `WF-WEL-03` | Medication given | Queues |
+| Day | Opens the care home: visits today, medication schedule, follow-ups due | mobile | `WF-WEL-02` | Intervention review due | no, care data never reaches the device (Appendix M) |
+| Day | Records a clinic visit and notifies the guardian in the same action | mobile | `WF-WEL-02` | Clinic visit recorded | no, a clinic visit is never recorded offline (Appendix M) |
+| Day | Administers an authorized medication inside its window | mobile | `WF-WEL-03` | Medication given | no, signed at the moment it happens while connected (Appendix M) |
 | Day | Checks an allergy alert before a trip, read live and never from a cache | mobile | — | Allergy or medical alert updated | no, this one always needs the network |
 | Day | Triages one referral from a homeroom teacher into a case | web | `WF-WEL-04` | Referral created | no |
 | Week | Runs counseling sessions and records notes in the isolated store | web | `WF-WEL-04` | — | no |

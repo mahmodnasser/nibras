@@ -15,6 +15,7 @@
 - **Notification:** Template, Preference, NotificationRequest, Delivery, Digest
 - **Requests:** RequestType and Version, FormDefinition, ApprovalChain and Step, Request, ApprovalDecision, SlaPolicy, EffectDefinition
 - **Documents:** StoredFile, DocumentTemplate, GeneratedDocument, Certificate, VerificationToken, ImportJob, ExportJob
+- **Ai:** IndexedChunk (table `ai_index.embedding_chunk`), SourceCheckpoint, PurgedSubject, IndexRebuild, AssistJob and Payload, FeatureConfiguration, ProviderConfiguration, ProviderConsent, CallLogEntry, UsagePeriodTotal, ModelRelease (deployment-scoped, no tenant)
 - **Behavior, Wellbeing, HR, Operations:** as implied by Appendix A, designed in Phase 0
 - **Reporting:** projections only; no entity here is a source of truth
 - **Audit:** AuditEntry (hash-chained), LoginEvent, AccessLogEntry for sensitive records

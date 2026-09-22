@@ -1,4 +1,4 @@
-# Nibras Reference Architecture (v9)
+# Nibras Reference Architecture (v9.1)
 
 **Status: normative baseline.** This file fixes the shape of the solution so that the plan and the code are consistent from the first day. You may improve on it, but every deviation needs an Architecture Decision Record that states what changed and why. Read it together with Sections 7, 8, and 19 of the master brief.
 
@@ -286,15 +286,15 @@ These four columns used to be missing from most sheets, which meant the replicat
 | Service | Sync deps (gRPC, max one hop) | Local copies kept from events | Service level class (master brief Section 31) | Highest data class it holds (Appendix J) |
 |---|---|---|---|---|
 | Gateway | none | none | Gateway class | none |
-| Bff.Web, Bff.Mobile | none; reads services over HTTP and Reporting read models | none | Gateway class | passes through, stores nothing |
-| Identity | none | tenant status from Platform | Gateway class | sensitive (credentials, tokens) |
-| Platform | none | usage counters from every service | Gateway class | confidential |
+| Bff.Web, Bff.Mobile | none as gRPC; reads services over HTTP and Reporting read models. Bff.Web also submits assist jobs to Ai over REST and serves Ai's three internal routes (below) | none | Gateway class | passes through, stores nothing |
+| Identity | Platform (`Settings`, `Retention.ListActiveHolds`, `Tenants.Checksum`); School (staff checksum, and the guardian eligibility check before a guardian link is approved) | tenant status from Platform | Gateway class | sensitive (credentials, tokens) |
+| Platform | Identity (`ApiKeyAdministration`, `PermissionLookup.GetRoleRisk`); School (student and staff directory, for OneRoster copies); job only: every data-owning service's `Usage.Recount` | usage counters from every service | Gateway class | confidential |
 | School | none | none. School is the source | Read-heavy | confidential; custody and medical summary are sensitive |
 | Admissions | School (student and staff directory) | sections, grade levels, fee plan names | Read-heavy | confidential |
-| Academics | School (student and staff directory) | students, sections, staff, timetable | Read-heavy | internal; submissions are confidential |
+| Academics | School (student and staff directory); Scheduling (`Timetables`: entries of a published version, and the nightly checksum) | students, sections, staff, timetable | Read-heavy | internal; submissions are confidential |
 | Assessment | School (student directory) | students, sections, staff, grading periods | Write-heavy | confidential |
-| Scheduling | School (staff directory) | staff, sections, rooms, terms | Read-heavy | internal |
-| Attendance | School (student directory) | students, sections, timetable of the day, staff | Write-heavy | confidential |
+| Scheduling | School (staff, structure and student directory: rooms, calendar days, sections, exam-seating candidates); job only: Academics `TeachingAssignments.Checksum`, Hr `Leave.Checksum` | staff, sections, rooms, terms | Read-heavy | internal |
+| Attendance | School (student directory); Scheduling (`Timetables`: the campus day and a published version); job only: Hr `Leave.Checksum` | students, sections, timetable of the day, staff | Write-heavy | confidential |
 | Finance | School (student directory) | students, guardians, payers, sections | Write-heavy | confidential; payment references are sensitive |
 | Communication | Identity (permission check for a message policy) | students, staff, guardians, sections | Read-heavy | confidential; flagged content is sensitive |
 | Notification | none | user channel preferences, quiet hours, language | Notification class | confidential |
@@ -305,8 +305,16 @@ These four columns used to be missing from most sheets, which meant the replicat
 | Audit | none | none | Read-heavy | sensitive (it records who saw what) |
 | Wellbeing | School (student directory) | students, guardians, sections | Read-heavy | **isolation level S** |
 | Hr | School (staff directory) | staff, campuses, departments | Read-heavy | sensitive (salary, contracts) |
-| Operations | School (student and staff directory) | students, staff, sections, routes | Read-heavy | confidential |
-| Ai | none; reads through the backends-for-frontends only | embeddings with tenant and scope tags | Read-heavy | inherits the class of each indexed source |
+| Operations | School (student and staff directory); job only: Scheduling `Timetables.Checksum` | students, staff, sections, routes | Read-heavy | confidential |
+| Ai | none as gRPC; reads through Bff.Web's three internal routes over REST, from its jobs only (below) | embeddings with tenant and scope tags | Read-heavy | inherits the class of each indexed source |
+
+**Calls every service makes, not repeated per row.** Through the building blocks, every service calls Platform `Tenants.GetTenantContext`, `Settings.GetSettings` and `Retention.ListActiveHolds`, and Identity `PermissionLookup.GetEffectivePermissions`, each on a cache miss with a 2-second deadline and the cached value as the fallback, and every service holding a copy calls the owner's `Checksum` and `ListSnapshotPage` for the nightly reconciliation. Communication additionally calls Identity `PermissionLookup.CheckPermission` for a message policy.
+
+**Job only.** A call marked *job only* runs in a scheduled or queued job, never inside a request, so it adds no hop to any request chain.
+
+**The one-hop rule, stated once.** No service makes a synchronous call from inside a handler that is itself serving a synchronous call; a call either answers from the callee's own data or fails to the caller's fallback. The gRPC architecture test (`GrpcHopRules`) enforces it for every row above.
+
+**Ai over REST, through Bff.Web.** Bff.Web reaches Ai's API over REST, and every model call answers 202 with an assist job, so no user request waits on a model. Ai's jobs call three Bff.Web internal routes: `GET /bff/web/v1/internal/ai/sources/{sourceEntity}?cursor=` (the source feed, under the Ai service credential limited per source entity), `POST /bff/web/v1/internal/ai/sources/authorize` (the source re-check) and `POST /bff/web/v1/internal/ai/tools/{toolName}` (read-only tools), the last two under the caller's token. Each is one hop from Ai's job, Bff.Web answers it by reading the owning service's API, which answers from its own data, and none of them is made inside a request Ai is serving.
 
 **The rule behind the middle column.** A local copy is slim, read-only, rebuilt from events, and never the source of a decision the owning service should make. Every one of them is reconciled nightly against its source, as master brief Section 19 requires under *Data integrity and reconciliation*. A service that needs a field not in its copy asks over gRPC or subscribes to a new event; it never reaches into another database.
 
@@ -676,7 +684,7 @@ Exact versions live in `Directory.Packages.props`, `package.json` and `pubspec.y
 | EF Core | 10 | As above |
 | PostgreSQL | 16 or later | Row-level security behaviour, partitioning, `pgvector` |
 | RabbitMQ | 4 | Quorum queues, consistent-hash exchange plug-in |
-| Redis | 8 (AGPLv3 option) or Valkey 8 | Licence position in Section 6.4 of the master brief |
+| Redis | 8 (AGPLv3 option) or Valkey 9.1 (current 9.1.2) | Licence position in Section 6.4 of the master brief. Redis is never pinned below 8.0, because 7.4 and earlier have no AGPLv3 option and their licence is not allowed |
 | Angular | latest stable at project start | `animate.enter` and `animate.leave`, View Transitions, zoneless |
 | Flutter | latest stable at project start | Desktop targets for kiosk modes, impeller rendering |
 | Node (tooling only) | 22 LTS or later | The kit's own scripts and the web build |

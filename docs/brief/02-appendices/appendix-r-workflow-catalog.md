@@ -93,7 +93,7 @@ stateDiagram-v2
     Expired --> [*]
 ```
 
-**Side effects:** `identity.user.invited.v1`, `identity.join-request.submitted.v1`, `identity.join-request.approved.v1`, `identity.user.registered.v1`, `identity.user.activated.v1`, `audit.action.recorded.v1`. Welcome notification with the guided tour link; audit entry naming the approver and the granted scope.
+**Side effects:** `identity.user.invited.v1`, `identity.join-request.submitted.v1`, `identity.join-request.approved.v1`, `identity.user.registered.v1`, `identity.user.activated.v1`, `identity.audit.recorded.v1`. Welcome notification with the guided tour link; audit entry naming the approver and the granted scope.
 
 **Timeouts and escalation:** Invitation expires after 14 days with one reminder at day 7. A join request untouched for 48 hours escalates to the school administrator group; at 7 days it moves to Expired.
 
@@ -104,7 +104,7 @@ stateDiagram-v2
 | Invited to Registered | Token unused, unexpired, bound to this tenant | Account created, no permissions yet | TC-IDN-001 |
 | CodeEntered to Registered | Code active and seat quota not exhausted | Join request queued for approval | TC-IDN-002 |
 | Verified to PendingApproval | Contact channel proven in the same session | Request visible only to approvers of that campus | TC-IDN-003 |
-| PendingApproval to Approved | Approver holds `identity.join-request.approve` in the same tenant | Role and scope granted, activation event published | TC-IDN-004 |
+| PendingApproval to Approved | Approver holds `identity.join-requests.approve` in the same tenant | Role and scope granted, activation event published | TC-IDN-004 |
 | PendingApproval to Approved | Approver belongs to another tenant | Refused before the permission check, attempt audited | TC-IDN-005 |
 | Invited to Expired | Clock past validity | Token rejected, no account created | TC-IDN-006 |
 
@@ -129,7 +129,7 @@ stateDiagram-v2
     LinkRejected --> [*]
 ```
 
-**Side effects:** `identity.user.registered.v1`, `identity.guardian-link.created.v1`, `school.guardian.updated.v1`, `audit.action.recorded.v1`. Registrar task created in the Requests inbox; the parent is notified on every decision.
+**Side effects:** `identity.user.registered.v1`, `identity.guardian-link.created.v1`, `school.guardian.updated.v1`, `identity.audit.recorded.v1`. Registrar task created in the Requests inbox; the parent is notified on every decision.
 
 **Timeouts and escalation:** A claim in MatchProposed for 3 working days reminds the registrar; at 10 days it escalates to the school administrator. An unmatched claim is cleared after 30 days.
 
@@ -140,7 +140,7 @@ stateDiagram-v2
 | Registered to Verified | Both channels proven and no account exists for the same identity | Account usable with zero children visible | TC-IDN-011 |
 | Verified to ClaimSubmitted | At most five open claims per account | Claim queued with evidence attached | TC-IDN-012 |
 | ClaimSubmitted to MatchProposed | Candidate sits in the registrar tenant and campus scope | Candidate shown with masked identifiers | TC-IDN-013 |
-| MatchProposed to LinkApproved | Registrar holds `school.students.link-guardian` and custody allows access | Guardian scope granted and event published | TC-IDN-014 |
+| MatchProposed to LinkApproved | Registrar holds `school.guardians.link` and custody allows access | Guardian scope granted and event published | TC-IDN-014 |
 | MatchProposed to LinkApproved | A court order restricts this guardian | Transition refused and the safeguarding note surfaced | TC-IDN-015 |
 | Linked to Linked | Second claim for a sibling | Second child added without a second account | TC-IDN-016 |
 
@@ -166,7 +166,7 @@ stateDiagram-v2
     Dismissed --> [*]
 ```
 
-**Side effects:** `identity.user.deactivated.v1`, `identity.permissions.changed.v1`, `identity.guardian-link.created.v1` for each link moved to the survivor, `audit.action.recorded.v1` with before and after values for every moved link. Both addresses are notified on the surviving account.
+**Side effects:** `identity.user.deactivated.v1`, `identity.permissions.changed.v1`, `identity.guardian-link.created.v1` for each link moved to the survivor, `identity.audit.recorded.v1` with before and after values for every moved link. Both addresses are notified on the surviving account.
 
 **Timeouts and escalation:** The reversal window is 14 days. A candidate left in Detected for 30 days is dismissed automatically and re-raised only on new evidence.
 
@@ -200,7 +200,7 @@ stateDiagram-v2
     Declined --> [*]
 ```
 
-**Side effects:** `identity.delegation.activated.v1`, `identity.delegation.ended.v1`, `requests.request.reassigned.v1` for items already waiting, and `audit.action.recorded.v1` on every decision taken under delegation, recording both the delegate and the delegator.
+**Side effects:** `identity.delegation.started.v1`, `identity.delegation.ended.v1`, `requests.request.reassigned.v1` for items already waiting, and `identity.audit.recorded.v1` on every decision taken under delegation, recording both the delegate and the delegator.
 
 **Timeouts and escalation:** A delegation not accepted before its start date lapses and the approvals escalate to the line manager instead. Maximum delegation length is 90 days.
 
@@ -237,7 +237,7 @@ stateDiagram-v2
     Withdrawn --> [*]
 ```
 
-**Side effects:** `identity.role.changed.v1`, `identity.permissions.changed.v1`, `audit.action.recorded.v1` carrying the old and new permission sets and both approver identities. The affected user is notified and open sessions receive a permission refresh.
+**Side effects:** `identity.role.changed.v1`, `identity.permissions.changed.v1`, `identity.audit.recorded.v1` carrying the old and new permission sets and both approver identities. The affected user is notified and open sessions receive a permission refresh.
 
 **Timeouts and escalation:** AwaitingSecondApproval reminds at 24 hours and escalates to the security administrator at 72 hours. A request untouched for 14 days expires.
 
@@ -270,7 +270,7 @@ stateDiagram-v2
     Archived --> [*]
 ```
 
-**Side effects:** `identity.user.deactivated.v1`, `school.staff.left.v1`, `academics.teaching-assignment.changed.v1`, `requests.request.reassigned.v1`, `scheduling.substitution.assigned.v1`, `audit.action.recorded.v1`. Receiving staff are notified per item.
+**Side effects:** `identity.user.deactivated.v1`, `school.staff.left.v1`, `academics.teaching-assignment.changed.v1`, `requests.request.reassigned.v1`, `scheduling.substitution.assigned.v1`, `identity.audit.recorded.v1`. Receiving staff are notified per item.
 
 **Timeouts and escalation:** Reassignment must complete within 5 working days. Unclaimed items escalate daily to the principal until assigned.
 
@@ -305,7 +305,7 @@ stateDiagram-v2
     Cancelled --> [*]
 ```
 
-**Side effects:** `identity.access-review.opened.v1`, `identity.permissions.changed.v1` per revocation, `identity.access-review.certified.v1`, `documents.document.generated.v1` for the certification report, `audit.action.recorded.v1` per decision.
+**Side effects:** `identity.access-review.due.v1` to each reviewer when the campaign opens, `identity.permissions.changed.v1` per revocation, `documents.document.generated.v1` for the certification report, `identity.audit.recorded.v1` per decision and for the opening and the certification of the campaign.
 
 **Timeouts and escalation:** Reviewers are reminded at the halfway point and 48 hours before the deadline. Overdue packets escalate to the security administrator, who may extend once by 7 days.
 
@@ -314,7 +314,7 @@ stateDiagram-v2
 | Transition | Guard | Expected result | Test |
 |---|---|---|---|
 | Scheduled to Opened | Every in-scope user has a named reviewer | Packets delivered with none orphaned | TC-SEC-001 |
-| Opened to InProgress | Reviewer holds `identity.access-review.decide` for that scope | Decision recorded with reviewer identity | TC-SEC-002 |
+| Opened to InProgress | Reviewer holds `identity.access-reviews.certify` for that scope | Decision recorded with reviewer identity | TC-SEC-002 |
 | InProgress to Overdue | Deadline passed with undecided items | Escalation raised, items marked for revocation | TC-SEC-003 |
 | Overdue to Completed | Automatic revocation policy enabled | Undecided access removed and users notified | TC-SEC-004 |
 | Completed to Certified | Report generated and its hash stored | Immutable evidence available for inspection | TC-SEC-005 |
@@ -341,7 +341,7 @@ stateDiagram-v2
     Denied --> [*]
 ```
 
-**Side effects:** `identity.break-glass.granted.v1`, `identity.break-glass.expired.v1`, `audit.action.recorded.v1` for every action inside the elevated session, `notification.notification.requested.v1` to the security administrator group and the tenant owner at the moment of grant.
+**Side effects:** `identity.break-glass.granted.v1`, `identity.break-glass.used.v1` for each record opened under the grant, `identity.audit.recorded.v1` for the expiry and the revocation, each acting service's `<service>.audit.recorded.v1` for every action inside the elevated session, `notification.notification.requested.v1` to the security administrator group and the tenant owner at the moment of grant.
 
 **Timeouts and escalation:** The time box is 60 minutes and cannot be extended; a second grant needs a new request. The post-use review must be signed within 2 working days or the normal access of that operator is suspended.
 
@@ -377,7 +377,7 @@ stateDiagram-v2
     Refused --> [*]
 ```
 
-**Side effects:** `identity.impersonation.started.v1`, `identity.impersonation.ended.v1`, `audit.action.recorded.v1` naming both the agent and the impersonated user on every action. The impersonated user receives a summary notification when the session ends.
+**Side effects:** `identity.impersonation.started.v1`, `identity.audit.recorded.v1` for the end of the session, each acting service's `<service>.audit.recorded.v1` naming both the agent and the impersonated user on every action. The impersonated user receives a summary notification when the session ends.
 
 **Timeouts and escalation:** Consent requests lapse after 15 minutes. Sessions are capped at 30 minutes. Three refusals from the same agent in one day raise an alert to the security administrator.
 
@@ -416,7 +416,7 @@ stateDiagram-v2
     Compensated --> [*]
 ```
 
-**Side effects:** `platform.tenant.provisioning-requested.v1`, `platform.tenant.provisioned.v1`, `identity.user.invited.v1` for the owner, `school.academic-year.opened.v1`, `notification.notification.requested.v1` for the welcome pack, `audit.action.recorded.v1`.
+**Side effects:** `platform.tenant.provisioning-requested.v1`, `platform.tenant.provisioned.v1`, `identity.user.invited.v1` for the owner, `school.academic-year.opened.v1`, `notification.notification.requested.v1` for the welcome pack, `platform.audit.recorded.v1`.
 
 **Timeouts and escalation:** Each saga step has a 60-second timeout with three retries. A saga in Provisioning beyond 10 minutes alerts the platform operator. Onboarding untouched for 14 days sends the owner a nudge.
 
@@ -453,7 +453,7 @@ stateDiagram-v2
     Expired --> [*]
 ```
 
-**Side effects:** `platform.plan.changed.v1`, `platform.feature-flag.changed.v1`, `platform.usage.recorded.v1`, `finance.invoice.issued.v1` for the first paid period, `notification.notification.requested.v1` to the owner, `audit.action.recorded.v1`.
+**Side effects:** `platform.plan.changed.v1`, `platform.feature-flag.changed.v1`, `platform.usage.recorded.v1`, `finance.invoice.issued.v1` for the first paid period, `notification.notification.requested.v1` to the owner, `platform.audit.recorded.v1`.
 
 **Timeouts and escalation:** Conversion is offered 14, 7, and 1 day before trial end. An expired trial becomes read-only for 30 days and then follows WF-PLT-03. A plan change left in Blocked for 30 days is cancelled.
 
@@ -462,7 +462,7 @@ stateDiagram-v2
 | Transition | Guard | Expected result | Test |
 |---|---|---|---|
 | Trialing to Expired | Trial end reached with no plan chosen | Tenant read-only, data retained and exportable | TC-PLT-011 |
-| Requested to LimitChecked | Owner holds `platform.plan.change` | Usage snapshot taken against the target plan | TC-PLT-012 |
+| Requested to LimitChecked | Owner holds `platform.subscriptions.change-plan` | Usage snapshot taken against the target plan | TC-PLT-012 |
 | LimitChecked to Blocked | Student count above the target plan limit | Change refused with the exact overage shown | TC-PLT-013 |
 | LimitChecked to Approved | All counters within the target plan | Change scheduled for the next billing boundary | TC-PLT-014 |
 | Approved to Applied | Billing confirmed | Modules toggled, feature flags published, caches invalidated | TC-PLT-015 |
@@ -490,9 +490,9 @@ stateDiagram-v2
     Certified --> [*]
 ```
 
-**Side effects:** `platform.tenant.suspended.v1`, `platform.tenant.reactivated.v1`, `platform.tenant.deletion-requested.v1`, `platform.tenant.deleted.v1`, `documents.export.completed.v1`, `documents.document.generated.v1` for the deletion certificate, `audit.action.recorded.v1` at every rung.
+**Side effects:** `platform.tenant.suspended.v1`, `platform.tenant.reactivated.v1`, `platform.tenant.deletion-requested.v1`, `platform.tenant.deleted.v1`, `documents.export.completed.v1`, `documents.document.generated.v1` for the deletion certificate, `platform.audit.recorded.v1` at every rung.
 
-**Timeouts and escalation:** Suspension gives 14 days before read-only. Read-only lasts 60 days. The export archive is downloadable for 30 days. The deletion cooling-off period is 7 days with a daily reminder to the owner.
+**Timeouts and escalation:** Suspension gives 14 days before read-only. Read-only lasts 60 days. The export archive is downloadable for 30 days. The deletion cooling-off period is 30 days with a daily reminder to the owner.
 
 **Compensation:** Every step above DeletionExecuted is reversible by reactivation. DeletionExecuted is not reversible, which is why it is gated by a verified export, a signed confirmation, and a cooling-off period; the certificate records scope, time, and the operator who executed it.
 
@@ -530,7 +530,7 @@ stateDiagram-v2
     Cancelled --> [*]
 ```
 
-**Side effects:** `school.student.status-changed.v1`, `finance.account.cleared.v1`, `operations.loan.returned.v1`, `documents.document.generation-requested.v1`, `documents.document.generated.v1`, `identity.user.deactivated.v1` for the student account, `audit.action.recorded.v1`.
+**Side effects:** `school.student.status-changed.v1`, `finance.account.cleared.v1`, `operations.audit.recorded.v1` for each library loan returned or charged, `documents.document.generation-requested.v1`, `documents.document.generated.v1`, `identity.user.deactivated.v1` for the student account, `school.audit.recorded.v1`.
 
 **Timeouts and escalation:** Each clearance item has a 3 working day target. An item open for 10 days escalates to the principal. A request left in ClearanceBlocked for 60 days is cancelled and must be raised again.
 
@@ -566,7 +566,7 @@ stateDiagram-v2
     Aborted --> [*]
 ```
 
-**Side effects:** `assessment.grades.locked.v1`, `school.student.promoted.v1` per student, `school.student.status-changed.v1` for graduates and leavers, `school.academic-year.closed.v1`, `school.academic-year.opened.v1` for the next year, `finance.fee-plan.assigned.v1`, `scheduling.timetable.published.v1` for the skeleton, `audit.action.recorded.v1`.
+**Side effects:** `assessment.grades.locked.v1`, `school.student.promoted.v1` per student, `school.student.status-changed.v1` for graduates and leavers, `school.academic-year.closed.v1`, `school.academic-year.opened.v1` for the next year, `finance.fee-plan.assigned.v1`, `scheduling.timetable.published.v1` for the skeleton, `school.audit.recorded.v1`.
 
 **Timeouts and escalation:** The batch checkpoints every 200 students. A batch stalled for 15 minutes alerts the registrar. Decisions left undrafted 14 days after results are finalised escalate to the principal.
 
@@ -602,7 +602,7 @@ stateDiagram-v2
     Refused --> [*]
 ```
 
-**Side effects:** `school.academic-year.archived.v1`, `school.academic-year.reopened.v1`, `reporting.snapshot.sealed.v1`, `audit.action.recorded.v1` naming the scope and the window for every reopen.
+**Side effects:** `school.audit.recorded.v1` for the archival and for every reopen, naming the scope and the window; `reporting.audit.recorded.v1` for the sealed year snapshot, which Reporting takes on `school.academic-year.closed.v1`.
 
 **Timeouts and escalation:** A reopen window is at most 5 working days and closes automatically. A failed archive retries three times and then alerts the platform operator.
 
@@ -638,7 +638,7 @@ stateDiagram-v2
     Cancelled --> [*]
 ```
 
-**Side effects:** `school.student.section-changed.v1`, `school.student.status-changed.v1`, `finance.invoice.issued.v1` or `finance.credit-note.issued.v1` for the pro-rata difference, `scheduling.timetable.changed.v1`, `operations.transport-subscription.changed.v1`, `attendance.attendance.marked.v1` unaffected for past dates, `audit.action.recorded.v1`.
+**Side effects:** `school.student.section-changed.v1`, `school.student.status-changed.v1`, `finance.invoice.issued.v1` or `finance.credit-note.issued.v1` for the pro-rata difference, `scheduling.timetable.changed.v1`, `operations.transport.subscription-changed.v1`, `attendance.attendance.marked.v1` unaffected for past dates, `school.audit.recorded.v1`.
 
 **Timeouts and escalation:** An approved transfer not effective within 30 days lapses. A blocked request reminds the registrar weekly for 4 weeks.
 
@@ -722,7 +722,7 @@ stateDiagram-v2
     SeatReleased --> [*]
 ```
 
-**Side effects:** `admissions.re-enrollment.confirmed.v1`, `admissions.re-enrollment.declined.v1`, `finance.account.restricted.v1` and `finance.account.cleared.v1`, `school.student.enrolled.v1`, `notification.notification.requested.v1` for each reminder, `audit.action.recorded.v1` for every waiver.
+**Side effects:** `admissions.re-enrollment.confirmed.v1`, `admissions.re-enrollment.declined.v1`, `finance.account.restricted.v1` and `finance.account.cleared.v1`, `school.student.enrolled.v1`, `notification.notification.requested.v1` for each reminder, `admissions.audit.recorded.v1` for every waiver.
 
 **Timeouts and escalation:** The invitation window is 21 days with reminders at day 7 and day 14. BlockedOnFees escalates to the finance manager at 14 days and to the principal at 30 days, after which the seat is released.
 
@@ -839,7 +839,7 @@ stateDiagram-v2
     ChangeRejected --> [*]
 ```
 
-**Side effects:** `requests.request.submitted.v1`, `assessment.grade-change.approved.v1`, `assessment.report-card.generated.v1` for the superseding version, `documents.certificate.revoked.v1` for the superseded card, `audit.action.recorded.v1` with the old mark, the new mark, the reason, and both signatories.
+**Side effects:** `requests.request.submitted.v1`, `assessment.grade-change.approved.v1`, `assessment.report-card.generated.v1` for the superseding version, `documents.certificate.revoked.v1` for the superseded card, `assessment.audit.recorded.v1` with the old mark, the new mark, the reason, and both signatories.
 
 **Timeouts and escalation:** Appeals are accepted for 10 working days after publication. A review open for 5 working days reminds the head of department; at 10 days it escalates to the principal. NeedsInformation lapses after 7 days.
 
@@ -877,7 +877,7 @@ stateDiagram-v2
     Reassigned --> Assigned: new setter named
 ```
 
-**Side effects:** `assessment.exam-paper.approved.v1`, `assessment.exam-paper.released.v1`, `documents.document.generation-requested.v1` for the print packet, `audit.action.recorded.v1` for every open, download, and print with the actor and the copy count, `notification.notification.requested.v1` to the exams officer on each state change.
+**Side effects:** `assessment.exam-paper.approved.v1`, `assessment.exam-paper.released.v1`, `documents.document.generation-requested.v1` for the print packet, `assessment.audit.recorded.v1` for every open, download, and print with the actor and the copy count, `notification.notification.requested.v1` to the exams officer on each state change.
 
 **Timeouts and escalation:** The setting deadline is 15 working days before the exam. A draft not reviewed within 3 working days escalates to the exams officer. A paper not approved 5 working days before the exam escalates to the principal.
 
@@ -888,7 +888,7 @@ stateDiagram-v2
 | Assigned to Drafted | Setter is the named teacher for that subject | Paper stored encrypted, visible only to setter and reviewer | TC-ASM-021 |
 | Drafted to UnderReview | Reviewer is not the setter | Reviewer access granted and the open audited | TC-ASM-022 |
 | UnderReview to Approved | Marking scheme present and total matches the blueprint | Paper sealed against further edits | TC-ASM-023 |
-| Approved to PrintRequested | Requester holds `assessment.exam-paper.print` | Copy count fixed to the registered candidates plus spares | TC-ASM-024 |
+| Approved to PrintRequested | Requester holds `assessment.exams.print-paper` | Copy count fixed to the registered candidates plus spares | TC-ASM-024 |
 | Printed to Released | Exam day reached and invigilator identified | Packet released, any extra open attempt refused | TC-ASM-025 |
 | UnderReview to UnderReview | A teacher without the reviewer role opens the paper | Refused, attempt audited and alerted | TC-ASM-026 |
 
@@ -953,7 +953,7 @@ stateDiagram-v2
     PassExpired --> [*]
 ```
 
-**Side effects:** `requests.request.approved.v1`, `attendance.gate-pass.issued.v1`, `attendance.gate-pass.used.v1`, `attendance.attendance.marked.v1` for the early-leave record, `notification.notification.requested.v1` to the guardian and the homeroom teacher, `audit.action.recorded.v1` with the collector identity and the handover time.
+**Side effects:** `requests.request.approved.v1`, `attendance.gate-pass.issued.v1`, `attendance.gate-pass.used.v1`, `attendance.attendance.marked.v1` for the early-leave record, `notification.notification.requested.v1` to the guardian and the homeroom teacher, `attendance.audit.recorded.v1` with the collector identity and the handover time.
 
 **Timeouts and escalation:** A request must be raised at least 30 minutes before the dismissal time. The pass is valid for 60 minutes around the approved time. An unreviewed request escalates to the principal after 15 minutes.
 
@@ -1035,7 +1035,7 @@ stateDiagram-v2
     RefundRejected --> [*]
 ```
 
-**Side effects:** `finance.credit-note.issued.v1`, `finance.refund.processed.v1`, `finance.account.cleared.v1` when the balance reaches zero, `documents.document.generated.v1` for the credit note and the refund advice, `notification.notification.requested.v1` to the guardian, `audit.action.recorded.v1` with the original invoice, the reason, and the approver.
+**Side effects:** `finance.credit-note.issued.v1`, `finance.refund.processed.v1`, `finance.account.cleared.v1` when the balance reaches zero, `documents.document.generated.v1` for the credit note and the refund advice, `notification.notification.requested.v1` to the guardian, `finance.audit.recorded.v1` with the original invoice, the reason, and the approver.
 
 **Timeouts and escalation:** A reversal request untouched for 3 working days escalates to the finance manager and at 7 days to the principal. An approved refund not paid within 10 working days is flagged on the finance dashboard.
 
@@ -1113,7 +1113,7 @@ stateDiagram-v2
     Declined --> [*]
 ```
 
-**Side effects:** `finance.scholarship.awarded.v1`, `finance.fee-plan.assigned.v1` for the recalculated plan, `finance.invoice.issued.v1` for reissued future installments, `documents.document.generated.v1` for the award letter, `notification.notification.requested.v1` to the family, `audit.action.recorded.v1` with the committee decision and the amount.
+**Side effects:** `finance.scholarship.awarded.v1`, `finance.fee-plan.assigned.v1` for the recalculated plan, `finance.invoice.issued.v1` for reissued future installments, `documents.document.generated.v1` for the award letter, `notification.notification.requested.v1` to the family, `finance.audit.recorded.v1` with the committee decision and the amount.
 
 **Timeouts and escalation:** EvidencePending lapses after 21 days. The committee must decide within 30 days of shortlisting. The annual review opens 60 days before the award period ends.
 
@@ -1148,7 +1148,7 @@ stateDiagram-v2
     Reverted --> [*]
 ```
 
-**Side effects:** `finance.payer.changed.v1`, `finance.invoice.issued.v1` for reissued future invoices, `documents.document.generated.v1` for the undertaking letter and the sponsor statement, `notification.notification.requested.v1` to the guardian and the sponsor contact, `audit.action.recorded.v1` recording who is liable from which date.
+**Side effects:** `finance.payer.changed.v1`, `finance.invoice.issued.v1` for reissued future invoices, `documents.document.generated.v1` for the undertaking letter and the sponsor statement, `notification.notification.requested.v1` to the guardian and the sponsor contact, `finance.audit.recorded.v1` recording who is liable from which date.
 
 **Timeouts and escalation:** The sponsor has 14 days to return the undertaking, with a reminder at day 7. A sponsor invoice unpaid at day 30 escalates to the finance manager and the guardian is informed that liability may revert.
 
@@ -1183,7 +1183,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-**Side effects:** `finance.cash-session.closed.v1`, `finance.deposit.recorded.v1`, `documents.document.generated.v1` for the day-close report, `notification.notification.requested.v1` to the finance officer on escalation, `audit.action.recorded.v1` with the counted and expected totals and the signing cashier.
+**Side effects:** `finance.cash-session.closed.v1`, `finance.deposit.recorded.v1`, `documents.document.generated.v1` for the day-close report, `notification.notification.requested.v1` to the finance officer on escalation, `finance.audit.recorded.v1` with the counted and expected totals and the signing cashier.
 
 **Timeouts and escalation:** A session open past midnight is force-closed as Discrepant and escalated. An escalation untouched for 1 working day alerts the principal.
 
@@ -1231,7 +1231,7 @@ stateDiagram-v2
     Expired --> [*]
 ```
 
-**Side effects:** `requests.request.submitted.v1`, `requests.request.needs-info.v1`, `requests.request.approved.v1`, `requests.request.rejected.v1`, `requests.request.completed.v1`, `requests.request.sla-breached.v1`, plus the effect events of the target service, `documents.document.generated.v1` for the output document, `notification.notification.requested.v1` at every state change, `audit.action.recorded.v1` per transition.
+**Side effects:** `requests.request.submitted.v1`, `requests.request.needs-info.v1`, `requests.request.approved.v1`, `requests.request.rejected.v1`, `requests.request.completed.v1`, `requests.request.sla-breached.v1`, plus the effect events of the target service, `documents.document.generated.v1` for the output document, `notification.notification.requested.v1` at every state change, `requests.audit.recorded.v1` per transition.
 
 **Timeouts and escalation:** Each request type carries an SLA target. Reminders fire at half the SLA, escalation to the approver manager at the SLA, and to the principal at twice the SLA. NeedsInformation pauses the SLA clock and lapses after 14 days.
 
@@ -1268,7 +1268,7 @@ stateDiagram-v2
     Dismissed --> [*]
 ```
 
-**Side effects:** `behavior.incident.recorded.v1`, `behavior.points.awarded.v1` where the scheme applies, `wellbeing.intervention.opened.v1` and `wellbeing.intervention.closed.v1`, `notification.notification.requested.v1` to the guardian, `reporting.early-warning.flag-raised.v1` when the incident pattern crosses the threshold, `audit.action.recorded.v1`.
+**Side effects:** `behavior.incident.recorded.v1`, `behavior.points.awarded.v1` where the scheme applies, `wellbeing.intervention.opened.v1` and `wellbeing.intervention.closed.v1`, `notification.notification.requested.v1` to the guardian, `reporting.early-warning.flag-raised.v1` when the incident pattern crosses the threshold, `behavior.audit.recorded.v1`.
 
 **Timeouts and escalation:** Review within 1 working day for high severity and 3 for others. Guardian notification must be sent within 24 hours of the action decision. A follow-up overdue by 5 working days escalates to the principal.
 
@@ -1307,7 +1307,7 @@ stateDiagram-v2
     PlanDeclined --> [*]
 ```
 
-**Side effects:** `wellbeing.accommodation-plan.published.v1`, `assessment.exam-accommodation.applied.v1`, `scheduling.room-booking.approved.v1` for separate rooms, `notification.notification.requested.v1` to the guardian and the exams officer, `audit.action.recorded.v1` for every access to the plan, which is confidential and visible only on a need-to-know basis.
+**Side effects:** `scheduling.room-booking.approved.v1` for separate rooms, `notification.notification.requested.v1` to the guardian and the exams officer, `wellbeing.audit.recorded.v1` for the plan publication, for each application to a sitting (the arrangement reaches Assessment as a flag and codes through the Requests exam-accommodation effect), and for every access to the plan, which is confidential and visible only on a need-to-know basis.
 
 **Timeouts and escalation:** Consent is chased at 7 and 14 days. Arrangements must exist 5 working days before each exam; a missing arrangement escalates to the exams officer daily and to the principal at 2 days before.
 
@@ -1345,7 +1345,7 @@ stateDiagram-v2
     ReturnedToClass --> [*]
 ```
 
-**Side effects:** `wellbeing.clinic-visit.recorded.v1`, `attendance.gate-pass.issued.v1` and `attendance.gate-pass.used.v1` for the collection, `attendance.attendance.marked.v1` for the early leave, `notification.notification.requested.v1` to the guardian and the homeroom teacher, `audit.action.recorded.v1` for every read of the medical note.
+**Side effects:** `wellbeing.clinic-visit.recorded.v1`, `attendance.gate-pass.issued.v1` and `attendance.gate-pass.used.v1` for the collection, `attendance.attendance.marked.v1` for the early leave, `notification.notification.requested.v1` to the guardian and the homeroom teacher, `wellbeing.audit.recorded.v1` for every read of the medical note.
 
 **Timeouts and escalation:** A guardian not reached within 15 minutes escalates to the second contact and then to the emergency contact. A student waiting for collection for 60 minutes escalates to the head of year.
 
@@ -1353,7 +1353,7 @@ stateDiagram-v2
 
 | Transition | Guard | Expected result | Test |
 |---|---|---|---|
-| Arrived to Assessed | Nurse holds `wellbeing.clinic-visit.record` | Visit opened with allergies and conditions shown | TC-WEL-011 |
+| Arrived to Assessed | Nurse holds `wellbeing.clinic-visits.create` | Visit opened with allergies and conditions shown | TC-WEL-011 |
 | Assessed to Treated | Treatment is within the standing first-aid protocol | Treatment recorded with time and dose | TC-WEL-012 |
 | SendHomeRecommended to GuardianContacted | At least one verified contact exists | Guardian reached and the decision logged | TC-WEL-013 |
 | GuardianContacted to GuardianContacted | No contact reached in 15 minutes | Escalation to the next contact on the list | TC-WEL-014 |
@@ -1383,7 +1383,7 @@ stateDiagram-v2
     Refused --> [*]
 ```
 
-**Side effects:** `wellbeing.medication-authorization.approved.v1`, `wellbeing.medication.administered.v1`, `wellbeing.medication.missed.v1`, `notification.notification.requested.v1` to the guardian on every administration and every missed dose, `documents.document.generated.v1` for the signed administration record, `audit.action.recorded.v1`.
+**Side effects:** `wellbeing.medication.administered.v1`, `notification.notification.requested.v1` to the guardian on every administration and every missed dose, `documents.document.generated.v1` for the signed administration record, `wellbeing.audit.recorded.v1` for the authorization, every administration, and every missed dose.
 
 **Timeouts and escalation:** Authorization lasts at most one term and must be renewed. A missed dose alerts the nurse immediately and the guardian within 15 minutes; two missed doses escalate to the principal.
 
@@ -1422,7 +1422,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-**Side effects:** `wellbeing.safeguarding-concern.raised.v1` carrying no reporter identity for the anonymous path, `wellbeing.referral.created.v1`, `wellbeing.intervention.opened.v1`, `notification.notification.requested.v1` to the designated leads only, `audit.action.recorded.v1` for every read and every state change.
+**Side effects:** `wellbeing.safeguarding.concern-raised.v1` carrying no reporter identity for the anonymous path, `wellbeing.referral.created.v1`, `wellbeing.intervention.opened.v1`, `notification.notification.requested.v1` to the designated leads only, `wellbeing.audit.recorded.v1` for every read and every state change.
 
 **Timeouts and escalation:** Triage within 1 hour for high risk and 1 working day otherwise. An untriaged concern escalates to the principal and the deputy lead automatically. A monitored concern is reviewed every 14 days.
 
@@ -1461,7 +1461,7 @@ stateDiagram-v2
     Resolved --> [*]
 ```
 
-**Side effects:** `wellbeing.check-in.recorded.v1`, `wellbeing.check-in.flagged.v1`, `wellbeing.referral.created.v1`, `notification.notification.requested.v1` to the homeroom teacher and the counsellor, `reporting.early-warning.flag-raised.v1` when the pattern joins other signals, `audit.action.recorded.v1` for every read of a check-in answer.
+**Side effects:** `wellbeing.referral.created.v1`, `notification.notification.requested.v1` to the homeroom teacher and the counsellor, `reporting.early-warning.flag-raised.v1` when the pattern joins other signals, `wellbeing.audit.recorded.v1` for every flag raised and every read of a check-in answer.
 
 **Timeouts and escalation:** A flagged check-in unacknowledged for 2 hours escalates to the counsellor. An urgent answer pages the counsellor immediately and the principal after 30 minutes. Three skipped days in a fortnight raise a flag.
 
@@ -1505,7 +1505,7 @@ stateDiagram-v2
     Cancelled --> [*]
 ```
 
-**Side effects:** `hr.leave.approved.v1`, `hr.leave.cancelled.v1`, `scheduling.substitution.assigned.v1`, `scheduling.timetable.changed.v1`, `academics.teaching-assignment.changed.v1`, `identity.delegation.activated.v1` when the leaver is also an approver, `notification.notification.requested.v1` to the substitute, the students, and the guardians.
+**Side effects:** `hr.leave.approved.v1`, `hr.leave.cancelled.v1`, `scheduling.substitution.assigned.v1`, `scheduling.timetable.changed.v1`, `academics.teaching-assignment.changed.v1`, `identity.delegation.started.v1` when the leaver is also an approver, `notification.notification.requested.v1` to the substitute, the students, and the guardians.
 
 **Timeouts and escalation:** Planned leave must be requested 5 working days ahead; same-day absence skips review and goes straight to SubstitutionNeeded. An unreviewed request reminds at 24 hours and escalates at 48. Uncovered periods escalate to the principal within 30 minutes on the day.
 
@@ -1545,7 +1545,7 @@ stateDiagram-v2
     OfferDeclined --> [*]
 ```
 
-**Side effects:** `hr.staff.hired.v1`, `school.staff.created.v1`, `identity.user.invited.v1`, `academics.teaching-assignment.changed.v1`, `documents.document.generated.v1` for the offer and the contract, `notification.notification.requested.v1` for each onboarding checklist item, `audit.action.recorded.v1` for every check result.
+**Side effects:** `hr.staff.hired.v1`, `school.staff.created.v1`, `identity.user.invited.v1`, `academics.teaching-assignment.changed.v1`, `documents.document.generated.v1` for the offer and the contract, `notification.notification.requested.v1` for each onboarding checklist item, `hr.audit.recorded.v1` for every check result.
 
 **Timeouts and escalation:** An offer expires after 7 days. Background checks outstanding 14 days before the start date escalate to the principal. Onboarding checklist items overdue by 3 working days escalate to the hr officer.
 
@@ -1581,7 +1581,7 @@ stateDiagram-v2
     Valid --> [*]
 ```
 
-**Side effects:** `hr.document.expiring.v1`, `hr.document.expired.v1`, `academics.teaching-assignment.changed.v1` on suspension, `scheduling.substitution.assigned.v1` for the affected periods, `notification.notification.requested.v1` to the staff member, the hr officer, and the principal, `audit.action.recorded.v1`.
+**Side effects:** `hr.staff-document.expiring.v1` at each warning threshold, `academics.teaching-assignment.changed.v1` on suspension, `scheduling.substitution.assigned.v1` for the affected periods, `notification.notification.requested.v1` to the staff member, the hr officer, and the principal, `hr.audit.recorded.v1` for the expiry, the suspension, and the restoration.
 
 **Timeouts and escalation:** Warnings at 90, 60, 30, and 7 days before expiry. From the expiry date the principal is alerted daily. Suspension of teaching assignments happens at expiry plus the configured grace period, which may be zero.
 
@@ -1618,7 +1618,7 @@ stateDiagram-v2
     Cancelled --> [*]
 ```
 
-**Side effects:** `hr.payroll-period.frozen.v1`, `hr.payroll-input.exported.v1`, `documents.export.completed.v1`, `notification.notification.requested.v1` to each line manager with their outstanding items, `audit.action.recorded.v1` with both approver identities and the input totals.
+**Side effects:** `hr.payroll.inputs-ready.v1` when the inputs are assembled, `documents.export.completed.v1`, `notification.notification.requested.v1` to each line manager with their outstanding items, `hr.audit.recorded.v1` for the freeze and the export, with both approver identities and the input totals.
 
 **Timeouts and escalation:** Input closes on the published cut-off date. Managers are reminded 3 days and 1 day before. Unapproved teams at the cut-off escalate to the principal, and their inputs are frozen as collected with the exception noted.
 
@@ -1664,7 +1664,7 @@ stateDiagram-v2
     Rejected --> [*]
 ```
 
-**Side effects:** `operations.requisition.approved.v1`, `operations.purchase-order.issued.v1`, `operations.goods.received.v1`, `operations.asset.registered.v1`, `finance.invoice.issued.v1` for the supplier invoice match, `documents.document.generated.v1` for the purchase order, `notification.notification.requested.v1` at each approval step.
+**Side effects:** `operations.audit.recorded.v1` for the requisition approval, the purchase order, the goods receipt, and the asset registration, `finance.invoice.issued.v1` for the supplier invoice match, `documents.document.generated.v1` for the purchase order, `notification.notification.requested.v1` at each approval step.
 
 **Timeouts and escalation:** Approvals follow the request SLA ladder. An order with no delivery after the promised date reminds the store keeper weekly and escalates to the principal at 30 days.
 
@@ -1703,7 +1703,7 @@ stateDiagram-v2
     Replaced --> [*]
 ```
 
-**Side effects:** `operations.loan.issued.v1`, `operations.loan.returned.v1`, `operations.loan.overdue.v1`, `operations.item.lost.v1`, `finance.invoice.issued.v1` for fines and replacement charges, `notification.notification.requested.v1` to the borrower and the guardian for a student, `audit.action.recorded.v1`.
+**Side effects:** `operations.library.loan-recorded.v1`, `operations.library.loan-overdue.v1`, `finance.invoice.issued.v1` for fines and replacement charges, `notification.notification.requested.v1` to the borrower and the guardian for a student, `operations.audit.recorded.v1` for every return and every item declared lost.
 
 **Timeouts and escalation:** Holds expire after 3 days. Overdue reminders at 1, 7, and 14 days. An item overdue by 30 days is declared lost and charged at the replacement value.
 
@@ -1740,7 +1740,7 @@ stateDiagram-v2
     Cancelled --> [*]
 ```
 
-**Side effects:** `operations.transport-subscription.changed.v1`, `operations.route-manifest.updated.v1`, `finance.invoice.issued.v1` or `finance.credit-note.issued.v1` for the pro-rata difference, `notification.notification.requested.v1` to the guardian and the driver, `audit.action.recorded.v1`.
+**Side effects:** `operations.transport.subscription-changed.v1`, `finance.invoice.issued.v1` or `finance.credit-note.issued.v1` for the pro-rata difference, `notification.notification.requested.v1` to the guardian and the driver, `operations.audit.recorded.v1` for the subscription change and the route manifest update.
 
 **Timeouts and escalation:** Changes requested less than 2 working days before the effective date are refused and offered the next available date. A waitlisted request is reconfirmed with the family every 14 days.
 
@@ -1778,7 +1778,7 @@ stateDiagram-v2
     Rejected --> [*]
 ```
 
-**Side effects:** `scheduling.room-booking.approved.v1`, `operations.facility-booking.confirmed.v1`, `operations.maintenance-ticket.created.v1` when setup is needed, `notification.notification.requested.v1` to the requester and the facilities team, `audit.action.recorded.v1` for every preemption with its reason.
+**Side effects:** `scheduling.room-booking.approved.v1`, `operations.facility.ticket-raised.v1` when setup is needed, `notification.notification.requested.v1` to the requester and the facilities team, `operations.audit.recorded.v1` for the booking confirmation and for every preemption with its reason.
 
 **Timeouts and escalation:** Approval is expected within 2 working days; at 3 days the request escalates to the facilities manager. A confirmed booking is reminded to the requester 24 hours before.
 
@@ -1816,7 +1816,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-**Side effects:** `operations.safety-incident.logged.v1`, `operations.drill.executed.v1`, `operations.corrective-action.raised.v1`, `documents.document.generated.v1` for the signed drill or incident report, `notification.notification.requested.v1` to action owners, `audit.action.recorded.v1`.
+**Side effects:** `documents.document.generated.v1` for the signed drill or incident report, `notification.notification.requested.v1` to action owners, `operations.audit.recorded.v1` for every incident logged, drill executed, and corrective action raised.
 
 **Timeouts and escalation:** Review within 1 working day for a high-severity incident. Corrective actions carry their own due dates; overdue actions escalate to the principal weekly. Drills that miss the scheduled frequency raise a compliance warning.
 
@@ -1853,7 +1853,7 @@ stateDiagram-v2
     Refused --> [*]
 ```
 
-**Side effects:** `platform.subject-request.received.v1`, `platform.subject-request.completed.v1`, `documents.export.completed.v1`, `documents.document.generated.v1` for the cover letter and the data map, `notification.notification.requested.v1` to the subject at receipt and delivery, `audit.action.recorded.v1` for every service queried and every redaction.
+**Side effects:** `documents.export.completed.v1`, `documents.document.generated.v1` for the cover letter and the data map, `notification.notification.requested.v1` to the subject at receipt and delivery, `platform.audit.recorded.v1` for receipt, completion, every service queried, and every redaction.
 
 **Timeouts and escalation:** The statutory answer window is 30 days; internal targets are collection by day 7 and review by day 20. A service that has not answered by day 10 escalates to the platform operator.
 
@@ -1893,7 +1893,7 @@ stateDiagram-v2
     LinkExpired --> [*]
 ```
 
-**Side effects:** `documents.export.requested.v1`, `documents.export.completed.v1`, `audit.action.recorded.v1` recording the exact columns, filters, row count, and purpose, `notification.notification.requested.v1` to the data protection officer on approval and on download.
+**Side effects:** `documents.export.completed.v1`, `documents.audit.recorded.v1` for every transition, recording the exact columns, filters, row count, and purpose, `notification.notification.requested.v1` to the data protection officer on approval and on download.
 
 **Timeouts and escalation:** Approval is expected within 2 working days and escalates to the principal at 5. The download link lives for 48 hours and allows a single download. An export left in Ready past the window expires and must be requested again.
 
@@ -1932,7 +1932,7 @@ stateDiagram-v2
     RolledBack --> [*]
 ```
 
-**Side effects:** `documents.import.started.v1`, `documents.import.completed.v1`, `documents.import.rolled-back.v1`, plus the domain events of each created entity, `documents.document.generated.v1` for the error report and the dry-run preview, `audit.action.recorded.v1` with the import identifier stamped on every row it created.
+**Side effects:** `documents.import.completed.v1` on commit, and again with zero rows succeeded on rollback, plus the domain events of each created entity, `documents.document.generated.v1` for the error report and the dry-run preview, `documents.audit.recorded.v1` for every transition, with the import identifier stamped on every row it created.
 
 **Timeouts and escalation:** A dry run older than 24 hours must be regenerated before commit, because the underlying data may have moved. The rollback window is 7 days. A commit with no progress for 10 minutes alerts the platform operator.
 
@@ -1971,7 +1971,7 @@ stateDiagram-v2
     Aborted --> [*]
 ```
 
-**Side effects:** `platform.upgrade.started.v1`, `platform.upgrade.completed.v1`, `platform.upgrade.rolled-back.v1`, `platform.backup.verified.v1`, `notification.notification.requested.v1` to the school administrator at start, completion, and rollback, `audit.action.recorded.v1` with the version pair and the duration.
+**Side effects:** `platform.upgrade.started.v1`, `notification.notification.requested.v1` to the school administrator at start, completion, and rollback, `platform.audit.recorded.v1` for the backup verification, the completion, and the rollback, with the version pair and the duration.
 
 **Timeouts and escalation:** The maintenance window is agreed in advance; exceeding it by 30 minutes triggers automatic rollback. Smoke checks must pass within 10 minutes of migration completing.
 
@@ -2007,7 +2007,7 @@ stateDiagram-v2
     RolledBack --> [*]
 ```
 
-**Side effects:** `platform.release.deployed.v1`, `platform.release.rolled-back.v1`, `platform.feature-flag.changed.v1` for flags enabled with the release, `notification.notification.requested.v1` to the operations channel at each stage, `audit.action.recorded.v1` with the version, the traffic share, and the decision metrics.
+**Side effects:** `platform.feature-flag.changed.v1` for flags enabled with the release, `notification.notification.requested.v1` to the operations channel at each stage, `platform.audit.recorded.v1` for the deployment and any rollback, with the version, the traffic share, and the decision metrics.
 
 **Timeouts and escalation:** The canary observes for 15 minutes minimum. A rollout stuck in Progressing for 60 minutes alerts the release manager. Rollback must complete within 10 minutes or it is escalated as an incident.
 
@@ -2046,7 +2046,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-**Side effects:** `platform.restore-drill.completed.v1`, `platform.failover.executed.v1`, `platform.backup.verified.v1`, `documents.document.generated.v1` for the drill report with the measured recovery time and recovery point, `notification.notification.requested.v1` to tenant owners on a real failover, `audit.action.recorded.v1`.
+**Side effects:** `documents.document.generated.v1` for the drill report with the measured recovery time and recovery point, `notification.notification.requested.v1` to tenant owners on a real failover, `platform.audit.recorded.v1` for the backup verification, the drill result, and any failover.
 
 **Timeouts and escalation:** Drills run at least quarterly; a missed drill raises a compliance warning. A restore that has not verified within the recovery time objective escalates to the release manager and, for a real event, to the tenant owners with a status page update.
 

@@ -5,9 +5,9 @@ Nibras is a multi-tenant, microservices school management platform. Angular web,
 ## Source of truth, in precedence order
 
 1. The product owner's explicit instruction in this conversation.
-2. `docs/brief/01-master-brief.md` (v9): vision, rules, method. 40 sections.
-3. `docs/brief/02-appendices/` (v9): one file per appendix, A to X. **Appendix L is the canonical registry** of service names, identifier formats and ownership decisions. Nothing redefines it.
-4. `docs/brief/03-reference-architecture.md` (v9): structures, service sheets, topology, delivery, operations. 17 sections.
+2. `docs/brief/01-master-brief.md` (v9.1): vision, rules, method. 40 sections.
+3. `docs/brief/02-appendices/` (v9.1): one file per appendix, A to X. **Appendix L is the canonical registry** of service names, identifier formats and ownership decisions. Nothing redefines it.
+4. `docs/brief/03-reference-architecture.md` (v9.1): structures, service sheets, topology, delivery, operations. 17 sections.
 5. `docs/plan/PLAN_SPEC.md`: what the plan must contain. `docs/plan/`: the approved plan.
 6. Your own assumptions, stated out loud.
 

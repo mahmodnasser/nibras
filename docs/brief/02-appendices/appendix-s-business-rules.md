@@ -832,7 +832,7 @@ Rule identifiers follow Appendix L: `BR-<AREA>-<NNN>`, unique across the file, n
 
 **Tests:** `CurrencyRoundingRulesTests`
 
-**Rule.** Every monetary amount is a decimal stored at the currency's minor-unit scale: 2 for SAR and AED, 3 for JOD. A computed amount is rounded half away from zero to that scale at the moment it becomes a document line, and never before.
+**Rule.** Every monetary amount is a decimal stored at the currency's ISO 4217 minor-unit scale: 2 for SAR and AED, 3 for JOD. A computed amount is rounded half away from zero to that scale at the moment it becomes a document line, and never before.
 
 **Examples.**
 
@@ -1528,13 +1528,13 @@ Rule identifiers follow Appendix L: `BR-<AREA>-<NNN>`, unique across the file, n
 
 **Tests:** `NotificationDeduplicationRulesTests`
 
-**Rule.** Two notifications sharing the same template, recipient and subject key inside the deduplication window collapse into one. The first is delivered and every later duplicate is recorded as suppressed with a running count.
+**Rule.** Two notifications sharing the same template, recipient and subject key inside the deduplication window collapse into one. The window defaults to 5 minutes. The first is delivered and every later duplicate is recorded as suppressed with a running count.
 
 **Examples.**
 
-- Given a deduplication window of 10 minutes and two "assignment updated" notifications for the same assignment to the same parent at 14:02 and 14:07, when the second arrives, then one message was delivered at 14:02 and the second is suppressed with a count of 2.
-- Given the second arriving at 14:13 instead, when it is processed, then it is outside the 10-minute window and is delivered as a separate notification.
-- Given two notifications for two different assignments at 14:02 and 14:07, when they are processed, then the subject keys differ and both are delivered.
+- Given a deduplication window of 5 minutes and two "assignment updated" notifications for the same assignment to the same parent at 14:02 and 14:05, when the second arrives, then one message was delivered at 14:02 and the second is suppressed with a count of 2.
+- Given the second arriving at 14:08 instead, when it is processed, then it is 6 minutes after the first delivery, outside the 5-minute window, and is delivered as a separate notification.
+- Given two notifications for two different assignments at 14:02 and 14:05, when they are processed, then the subject keys differ and both are delivered.
 
 **Edge cases.**
 
@@ -1931,12 +1931,14 @@ Rule identifiers follow Appendix L: `BR-<AREA>-<NNN>`, unique across the file, n
 - Given a stored name of "مُحمَّد" and a query of "محمد", when the search runs, then the record matches, because diacritics are stripped on both sides, and the name still displays as "مُحمَّد".
 - Given a stored name of "فاطمة" and a query of "فاطمه", when the search runs, then the record matches, because ta marbuta folds to ه.
 - Given a stored name of "إبراهيم" and a query of "ابراهيم", when the search runs, then the record matches; and given a query of "ابرهيم", then it does not match, because normalization folds letters and never deletes them.
+- Given a student stored as "يوسف" with the English name part "Yousef", and a Latin query of "Yousef" in the admissions or directory search, when the search runs, then the record matches through the English name part; and given the same student with the English name part empty, then the cross-script key does not match, because و written as a long vowel keeps a `w` in the Arabic key (`wsf`) that the Latin spelling drops (`sf`).
 
 **Edge cases.**
 
 - Normalization runs in the database so that the index and the query agree; doing it only in application code produces a search that silently misses rows.
 - The same normalization applies to the duplicate detection in BR-ADM-006, so search and deduplication cannot disagree.
 - Latin text passes through unchanged apart from case folding, so a bilingual name field works with one index.
+- A query in one script against a name stored in the other is matched on a consonant key derived from both scripts, used only by duplicate detection and the admissions and directory search. The key cannot see long vowels written as و or ي in Arabic, so pairs such as "يوسف" and "Yousef" rely on the English name part, and a person confirms every duplicate under BR-ADM-006.
 
 ### BR-L10N-002 Numeral rendering
 

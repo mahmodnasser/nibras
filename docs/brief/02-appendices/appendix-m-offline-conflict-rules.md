@@ -19,6 +19,7 @@ Master brief Section 18 requires offline-first behaviour with "defined conflict 
 | Record a behaviour point or incident | Yes, queued | |
 | Record a clinic visit | **No** | Wellbeing data is never stored on a device |
 | View a wellbeing record | **No** | Same rule |
+| Record a medication administration | **No** | Same rule; the dose is signed at the moment it happens, while connected |
 | Approve anything | **No** | Approval needs the current permission version and the current state |
 | Issue or verify a gate pass | Verify yes, issue no | Verification uses a signed payload that works offline; issuing needs server state |
 | Emergency roll call | Yes, queued, and it says so | Safety work must not stop for a network |

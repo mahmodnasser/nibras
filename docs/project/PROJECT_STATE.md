@@ -1,7 +1,7 @@
 # Nibras: Project State
 
 **Phase:** Planning. 34 of 35 plan documents are written and lint-clean; only 00 (executive summary) is left. **The scorecard (document 30) blocks every group**: coverage is complete, but consistency, feasibility and testability are at 2. About 14 to 15 days of remediation in eight themes stand between the plan and approval.
-**Kit version:** v9, on `github.com/mahmodnasser/nibras`, branch `main`. The plan documents are committed.
+**Kit version:** v9, brief v9.1 (ADR-0019), on `github.com/mahmodnasser/nibras`, branch `main`. The plan documents are committed.
 **Last updated:** 2026-09-22, by the plan build
 
 ## Done: complete and lint-clean
@@ -34,7 +34,7 @@
 |---|---|---|
 | 1 | Product-owner decisions: absence-alert timing; public API, OneRoster, iCal in Tier 1; countries, Apple build capacity, certifications | 1 hour of the owner's time |
 | 2 | **Done**: document 17's ranges derived from document 34 by `schedule-34.mjs`: phase 1 14 to 22 weeks, launch 61 to 93, MVP 42 capabilities in 33 to 50; RISK-03 recorded as occurred | done |
-| 3 | Brief corrections v9.1 under ADR-0019 (`tools/plan-build/parts/brief-findings.md`), including the k6 Section 6.4 row and the proposed CAP-INT-02 and CAP-INT-03 | 3 days |
+| 3 | **Done**: ADR-0019 applied 317 brief corrections, all three briefs are v9.1; four value decisions settled (cooling-off 30 days, invitations 14 days, dedupe 5 minutes, feature 39 to engineering); R03 checks minor versions | done |
 | 4 | One meaning per fact across plan documents (sync-call graph, `embedding_chunk`, Gateway Redis reads, permission-refresh owner, OneRoster and WF-INF-01 phases, API count) | 3 days |
 | 5 | One test-identifier registry in document 16, collisions resolved, a kit-lint rule | 2 to 3 days |
 | 6 | Verification claims that name checks that exist | 2 days |

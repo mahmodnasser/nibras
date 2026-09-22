@@ -31,9 +31,11 @@ Every service emits these eight with its own prefix. They are listed once and ar
 | `IDENTITY_ACCOUNT_LOCKED` | 423 | Lockout threshold reached | Show the unlock time and the self-service path | yes |
 | `IDENTITY_TWO_FACTOR_REQUIRED` | 401 | Password accepted, second factor missing | Open the second-factor step with the enrolled method | yes |
 | `IDENTITY_TOKEN_EXPIRED` | 401 | Access token past its 15-minute life | Refresh once, then sign in again | yes |
+| `IDENTITY_TOKEN_INVALID` | 401 | The token is malformed, its signature does not verify, or it was issued for another tenant or audience; raised by Identity and by the Gateway | Discard the local session and sign in again; never attempt a refresh with it | yes, as "please sign in again" |
 | `IDENTITY_REFRESH_TOKEN_REUSED` | 401 | A rotated refresh token was presented twice | Destroy the local session, force sign-in, alert the user's devices | no |
 | `IDENTITY_PERMISSION_VERSION_STALE` | 409 | The token's permission version is behind the server | Re-fetch the permission set and retry once | yes |
 | `IDENTITY_JOIN_CODE_INVALID` | 400 | Join code unknown, expired or already used | Offer to request a new invitation | yes |
+| `IDENTITY_INVITATION_EXPIRED` | 410 | An invitation link past its 14-day validity, revoked, or already accepted | Show the school's name and offer to ask the school for a new invitation; never reveal the invited contact | yes |
 | `IDENTITY_GUARDIAN_LINK_UNVERIFIED` | 403 | The guardian is not yet verified against the child | Show the verification step and the school contact | yes |
 | `IDENTITY_FOUR_EYES_REQUIRED` | 409 | A high-risk grant needs a second approver | Submit the grant as a proposal and show who can approve | no |
 | `IDENTITY_SELF_APPROVAL_REFUSED` | 403 | The proposer tried to approve their own grant | Show the approver list; never offer a bypass | no |
@@ -67,6 +69,7 @@ Every service emits these eight with its own prefix. They are listed once and ar
 | `SCHOOL_MERGE_CONFLICT` | 409 | Two student records disagree on a field during merge | Show a side-by-side chooser for the conflicting fields | no |
 | `SCHOOL_PROMOTION_BLOCKED` | 409 | Promotion blocked by unpublished results or unsettled clearance | List the blocking items with links | no |
 | `SCHOOL_CAMPUS_TRANSFER_BLOCKED` | 409 | The target campus has no seat or no matching stage | Show seat counts by grade | no |
+| `SCHOOL_CONFIGURATION_IN_USE` | 409 | A delete of a configuration record (grade level, stage, room, subject, department, house, grading period) that other records still reference | List the dependants and offer to archive the record instead | no |
 
 ## K.5 Admissions
 
@@ -95,6 +98,7 @@ Every service emits these eight with its own prefix. They are listed once and ar
 | `ACADEMICS_ONLINE_EXAM_ALREADY_STARTED` | 409 | An edit to a live exam | Block the edit and offer a new version | no |
 | `ACADEMICS_CURRICULUM_STANDARD_UNKNOWN` | 400 | A CASE standard reference does not resolve | Show the standards picker | no |
 | `ACADEMICS_RESUBMISSION_NOT_ALLOWED` | 409 | Resubmission after the teacher started grading | Show the grading state | yes |
+| `ACADEMICS_GRADING_PERIOD_LOCKED` | 409 | Grading a submission whose grading period Assessment has locked | Show the lock and route to the grade-change request path | no |
 
 ## K.7 Assessment
 
@@ -109,6 +113,8 @@ Every service emits these eight with its own prefix. They are listed once and ar
 | `ASSESSMENT_REPORT_CARD_TEMPLATE_INVALID` | 400 | A template placeholder does not resolve | Show the unresolved placeholders | no |
 | `ASSESSMENT_POST_LOCK_CHANGE_REFUSED` | 403 | A post-lock change without the high-risk permission | Route to the grade-appeal workflow | no |
 | `ASSESSMENT_TRANSCRIPT_NOT_REPRODUCIBLE` | 500 | A closed year recomputes to a different number | Block the document and raise a data-quality issue | no |
+| `ASSESSMENT_APPEAL_WINDOW_CLOSED` | 409 | A grade appeal raised outside the appeal window after publication | Show the window dates and the school contact | yes |
+| `ASSESSMENT_MARK_GRID_INCOMPLETE` | 400 | A mark grid submitted for approval with students who have neither a mark nor an absent, exempt or incomplete code | Highlight the empty rows and list the students | no |
 
 ## K.8 Scheduling
 
@@ -117,6 +123,7 @@ Every service emits these eight with its own prefix. They are listed once and ar
 | `SCHEDULING_TIMETABLE_CONFLICT` | 409 | Teacher, room or section double-booked | Show both sides of the clash and the resolve action | no |
 | `SCHEDULING_SOLVER_INFEASIBLE` | 422 | Constraints cannot all be satisfied | Show the smallest conflicting constraint set | no |
 | `SCHEDULING_SOLVER_TIMEOUT` | 504 | The solver exceeded its budget | Offer the best partial solution and a longer run | no |
+| `SCHEDULING_SOLVER_RUNNING` | 409 | A solve or a constraint edit while a solve for the same timetable version is running | Show the running job and its progress; offer to cancel it | no |
 | `SCHEDULING_PERIOD_OUTSIDE_BELL_SCHEDULE` | 400 | A period falls outside the day's bell schedule | Show the schedule and snap to a valid slot | no |
 | `SCHEDULING_ROOM_UNSUITABLE` | 409 | The room lacks a required facility | List rooms that qualify | no |
 | `SCHEDULING_SUBSTITUTE_UNAVAILABLE` | 409 | No ranked substitute is free | Widen the criteria or escalate to the coordinator | no |
@@ -302,7 +309,7 @@ Every code here is written so that the message can be shown without revealing th
 | Code | HTTP | When it happens | What the client does | Parent-safe |
 |---|---|---|---|---|
 | `AI_DISABLED_FOR_TENANT` | 403 | The tenant has AI assist switched off | Hide the assist entry points | yes |
-| `AI_USAGE_LIMIT_REACHED` | 402 | The plan's AI allowance is spent | Show usage and the upgrade path | no |
+| `AI_USAGE_LIMIT_REACHED` | 200 on assist requests; 402 only on a rung 4 request | The plan's AI allowance for the feature is spent. An assist request never fails for it: the answer is the rung 1 result (template, rule result or blank field with guidance) marked degraded, with this code as the degradation reason. The 402 is returned only to an administrator's explicit request to route a feature to the external provider (rung 4) while the plan's rung 4 allowance is spent | On an assist request, show the rung 1 result and the Because line saying which rung produced it. On the rung 4 request, show usage and the upgrade path | no |
 | `AI_MODEL_UNAVAILABLE` | 503 | The model host is down | Fall back to the manual path; never block the task | yes |
 | `AI_OUTPUT_REQUIRES_REVIEW` | 200 | A draft is returned that a human must approve | Show the draft in review state; never auto-publish | no |
 | `AI_PROMPT_INJECTION_BLOCKED` | 422 | Untrusted content tried to steer the assistant | Discard the output, log the attempt, notify the administrator | no |
@@ -322,3 +329,14 @@ Every code here is written so that the message can be shown without revealing th
 5. **Not-found hides existence where existence is the secret.** Wellbeing returns `WELLBEING_ACCESS_DENIED` with 404 rather than 403, because a 403 would confirm that a record exists. Every other service returns 403 for a permission failure so that the user can be told to ask for access.
 6. **Cross-cutting codes are generated, not hand-written.** The eight suffixes in K.1 are emitted by the shared problem-details middleware in `Nibras.BuildingBlocks`, so every service reports them identically and no service invents a local variant.
 7. **Every code carries a test.** The authorization and validation tests generated from Appendix B assert the exact code, not the status alone, so a refactor that changes a code fails the build rather than a client.
+
+---
+
+## K.23 Gateway and backends-for-frontends
+
+The Gateway emits the K.1 suffixes with the `GATEWAY_` prefix, and both backends-for-frontends with the `BFF_` prefix, for failures raised before any upstream service is reached; upstream codes pass through unchanged. The codes below are their only service-specific codes. This section follows the rules of K.22 and is numbered after it so that existing references to K.22 stay valid.
+
+| Code | HTTP | When it happens | What the client does | Parent-safe |
+|---|---|---|---|---|
+| `GATEWAY_BODY_TOO_LARGE` | 413 | The request body exceeds the route's size limit | Show the limit; for an upload, offer compression or splitting; do not retry unchanged | yes |
+| `BFF_APP_VERSION_BELOW_MINIMUM` | 403 | The mobile app's version is below the tenant's minimum supported version (master brief Section 37) | Show the upgrade screen with the store link; keep queued offline actions on the device until the updated app sends them | yes |

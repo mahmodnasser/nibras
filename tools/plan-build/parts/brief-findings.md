@@ -1,5 +1,7 @@
 # Appendix defects found while writing the plan (for ADR-0019 and v9.1)
 
+**Closed.** Applied to the brief under ADR-0019 (v9.1); what changed and what was deliberately not applied is in `docs/project/KIT_V9_1_CHANGES.md`. New brief defects start a new log.
+
 ## From document 02
 - Appendix P: 21 corrections (PowerSchool regional Arabic edition; API is table stakes; openSIS and Gibbon also open source; Fedena not on-premises; Gibbon has Finance, no API; Classera finance and HR depth). Tier 1 API/OneRoster/iCal recommendation pending product owner.
 

@@ -29,9 +29,11 @@ Questions 1, 9 and 13 from v8 are settled and appear at the bottom with the deci
 | 21 | Which payment gateway first? | Manual and bank transfer by default, with one gateway adapter chosen with the first customer | Per-transaction cost and the reconciliation work | Product owner | Open |
 | 22 | Which SMS provider first? | None. Email and push cover everything except the urgent fallback | Per-message cost, and whether the urgent fallback exists at launch | Product owner | Open |
 | 23 | Riverpod or flutter_bloc for mobile state? | Riverpod | Mobile structure only. Either satisfies the layering rules | Architect | Open |
-| 24 | Team size and shape? | The shape in master brief Section 29 | Phase durations in Section 28 scale roughly in proportion | Product owner | Open |
+| 24 | Team size and shape? | The shape in master brief Section 29: five to eight engineers building slices | Every phase range. `tools/plan-build/schedule-34.mjs` recomputes them from document 34; phase 1 is 14 weeks with eight builders and 22 with five | Product owner | Open |
 | 25 | Is there a fixed launch date or an external commitment? | No fixed date; phases are sequenced by dependency | Whether the MVP cut line in Section 28 needs to move | Product owner | Open |
 | 26 | Does any first customer require a formal certification, for example SOC 2 or 1EdTech? | No. Compatibility yes, certification only when someone pays for it | Budget and timeline, both material | Product owner | Open |
+| 27 | When does a parent receive an absence alert: within 30 seconds of the mark, or 30 minutes after the register closes? | Within 30 seconds, as REQ-ATT-017 and master brief Section 31 require; Appendix R WF-ATT-01 is aligned once decided | A grace window avoids alarming a parent over a teacher's correction; immediacy is what parents expect and what the service levels promise. Changes WF-ATT-01, TC-ATT-003 and the notification lane | Product owner | Open |
+| 28 | Do a read-only public API, the OneRoster export and iCal move from Tier 2 into Tier 1? | They stay where the roadmap builds them: iCal in phase 2, the public API and OneRoster in phase 3 under CAP-INT-01, as Tier 2 features | Document 02 found a public API in six of ten competitors; if it is table stakes, a first customer may require it before phase 3. Changes Appendix W row 24 and the MVP cut line | Product owner | Open |
 
 ---
 
@@ -45,3 +47,12 @@ Questions 1, 9 and 13 from v8 are settled and appear at the bottom with the deci
 | Are Assessment and Behavior separate services? | Yes, for load and sensitivity, with a named merge option for a smaller first release | ADR-0002 |
 | Who owns the public API, webhooks and standards? | Platform, as the Integrations capability | ADR-0012 |
 | What does rollback mean? | Redeploy the previous image. The schema is never rolled back | ADR-0010 |
+
+## Settled in v9.1
+
+| Was | Decision | Record |
+|---|---|---|
+| Tenant-deletion cooling-off: 7 days (Appendix R, document 13) or 30 days (Section 32, REQ-PLT-007, BR-PLT-003, Appendix J)? | 30 days, export available throughout | ADR-0019 |
+| Invitation link validity: 7 days (Appendix J) or 14 days (Appendix R)? | 14 days, with a reminder at day 7 | ADR-0019 |
+| Notification deduplication window: 10 minutes (BR-NOT-004) or 5 minutes (Appendix C)? | 5 minutes; urgent templates are never deduplicated | ADR-0019 |
+| Does calendar-aware scaling (feature 39) stay a signature feature? | No. It is built and measured as an engineering capability, and leaves the signature list and the demo script | ADR-0019 |

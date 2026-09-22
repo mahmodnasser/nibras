@@ -43,7 +43,7 @@ Smart defaults (master brief Section 12.1 item 29) pick which of these templates
 | **Accountant** | Collect, reconcile and close the day balanced | All tenant finance, one series set | Accountant "Today" | Payment capture, receipt issue, day-close read; no refund approval on mobile |
 | **HR Officer** | Staff records, leave, payroll inputs, appraisals | All staff, one campus by default | HR officer "Today" | Leave decisions, document expiry chase, headcount read |
 | **Counselor** | Care with confidentiality | Own caseload | Counselor "Today" | Referral triage, follow-up log, intervention steps |
-| **Nurse** | Treat, record and tell the right guardian fast | All students, clinic context only | Nurse "Today" | Clinic visit entry, medication round, allergy lookup, offline queue |
+| **Nurse** | Treat, record and tell the right guardian fast | All students, clinic context only | Nurse "Today" | Clinic visit entry, medication round and allergy lookup while connected; nothing is queued or stored on the device, because Appendix M forbids recording a clinic visit offline |
 | **Special-Needs Coordinator** | Plans that hold up in class and in exams | Students with an active plan | Counselor "Today", plan review cards first | Plan read, accommodation check at exam sitting |
 | **Safeguarding Officer** | See the pattern nobody else can see, and act | All tenant, safeguarding context only | Safeguarding queue with concern age and escalation clock | Concern intake, escalation, reported-message review |
 | **Librarian** | Circulation that never blocks a class | Library catalogue and loans | Library circulation and overdue cards | Issue, return, reserve, stocktake scan — offline-capable |
@@ -56,29 +56,29 @@ Smart defaults (master brief Section 12.1 item 29) pick which of these templates
 
 | Role | Holds (permission groups, I.3) | Must **not** hold |
 |---|---|---|
-| **Platform Administrator** | G01, G24, plus `platform.support.impersonate` under consent | Any tenant academic, finance, behavior or wellbeing permission; `wellbeing.*`; `assessment.marks.enter`; silent impersonation |
-| **School Owner / Group Director** | G03 (view), G14 (view), G15 (approve only above the principal limit), G23, G24 (view) | `assessment.marks.enter`, `attendance.student-attendance.mark`, `wellbeing.*`, `identity.roles.grant-high-risk` |
-| **School Administrator / Principal** | G02, G03, G04, G06, G07, G09, G10, G12, G13, G16, G17, G18, G19, G21 (view), G22 (view), G23, G24 (view) | `wellbeing.safeguarding.view` by default, `hr.payroll.view-salary`, `platform.tenants.provision`, `audit.entries.export` |
-| **Vice Principal** | Principal set minus G14, G15; adds `scheduling.substitutions.assign` | `finance.*` beyond view, `hr.payroll.view-salary`, `wellbeing.*` |
-| **Academic Coordinator** | G07, G08 (view), G09, G10 (view), G12 (view), G23 | `assessment.marks.unlock`, `finance.*`, `school.custody.view`, `identity.roles.assign-role` |
-| **Head of Department** | G07 (department), G08 (view), G09 (moderate only), G23 (department) | `assessment.report-cards.publish`, `attendance.thresholds.edit`, `hr.*` |
-| **Registrar** | G04, G05 (`view-sensitive` only, logged), G06, G18, G23 (records) | `finance.payments.record`, `assessment.marks.enter`, `wellbeing.*`, `documents.exports.export-sensitive` without approval |
-| **Admissions Officer** | G06, G04 (view of applicants only) | `school.students.change-status` for enrolled students, `finance.discounts.approve-above-limit`, G05 |
-| **Teacher** | G07 (own), G08, G11, G16 (own classes), G17 (submit), G19 (record) | `assessment.marks.approve`, `assessment.marks.unlock`, `attendance.student-attendance.edit-after-lock`, `school.medical-summary.view` beyond the allergy alert, `finance.*` |
-| **Homeroom Teacher** | Teacher set plus G12 (own homeroom), G04 (view, own homeroom), G23 (own homeroom) | `assessment.marks.approve`, `wellbeing.counseling-cases.view`, `school.custody.view` |
+| **Platform Administrator** | G01, G24, G25 (`notification.templates.*` for the platform library), plus `platform.support.impersonate` under consent | Any tenant academic, finance, behavior or wellbeing permission; `wellbeing.*`; `assessment.marks.enter`; silent impersonation |
+| **School Owner / Group Director** | G03 (view), G14 (view), G15 (approve only above the principal limit), G23, G24 (view), G26 (use), `platform.tenants.export` (high, four-eyes grant, BR-PLT-006) | `assessment.marks.enter`, `attendance.student-attendance.mark`, `wellbeing.*`, `identity.roles.grant-high-risk` |
+| **School Administrator / Principal** | G02, G03, G04, G06, G07, G09, G10, G12, G13, G16, G17, G18, G19, G21 (view), G22 (view), G23, G24 (view), G25, G26 | `wellbeing.safeguarding.view` by default, `hr.payroll.view-salary`, `platform.tenants.provision`, `audit.entries.export`, `communication.concerns.view`, `attendance.excuses.view-medical-detail` |
+| **Vice Principal** | Principal set minus G14, G15; adds `scheduling.substitutions.assign`; G26 for use only, without `ai.configuration.*` | `finance.*` beyond view, `hr.payroll.view-salary`, `wellbeing.*` |
+| **Academic Coordinator** | G07, G08 (view), G09 including `assessment.exams.print-paper`, G10 (view), G12 (view), G23, G26 (use) | `assessment.marks.unlock`, `finance.*`, `school.custody.view`, `identity.roles.assign-role` |
+| **Head of Department** | G07 (department), G08 (view), G09 (moderate only), G23 (department), G26 (use), `school.departments.view` and `.edit` (department) | `assessment.report-cards.publish`, `attendance.thresholds.edit`, `hr.*` |
+| **Registrar** | G04, G05 (`view-sensitive` only, logged), G06, G18, G23 (records), G26 (use) | `finance.payments.record`, `assessment.marks.enter`, `wellbeing.*`, `documents.exports.export-sensitive` without approval |
+| **Admissions Officer** | G06 without `admissions.applications.override-age`, G04 (view of applicants only), G26 (use) | `school.students.change-status` for enrolled students, `finance.discounts.approve-above-limit`, `admissions.applications.override-age`, G05 |
+| **Teacher** | G07 (own), G08, G11, G16 (own classes), G17 (submit), G19 (record), G26 (use, own sections) | `assessment.marks.approve`, `assessment.marks.unlock`, `attendance.student-attendance.edit-after-lock`, `school.medical-summary.view` beyond the allergy alert, `finance.*` |
+| **Homeroom Teacher** | Teacher set plus G12 (own homeroom), G04 (view, own homeroom), G23 (own homeroom) | `assessment.marks.approve`, `wellbeing.counseling-cases.view`, `school.custody.view`, `attendance.excuses.view-medical-detail` |
 | **Student** | G07 (self), G16 (self, policy-bounded), G23 (self) | Any permission over another student; `communication.messages.create` to other students when the tenant keeps the default off |
-| **Parent / Guardian** | G04 (own children, view), G14 (own invoices), G16 (own threads), G17 (submit), G23 (own children) | Any permission over another family's child; `behavior.incidents.view` for other students; staff-side anything |
-| **Accountant** | G14, G15 (`post`, `close-day`; `refund` and `write-off` only with four-eyes), G18 (finance templates), G23 (finance) | `assessment.*`, `school.students.change-status`, `wellbeing.*`, `hr.payroll.view-salary` |
-| **HR Officer** | G21, G18 (staff documents), G23 (staff) | `school.students.*`, `assessment.*`, `finance.invoices.post`, `wellbeing.*` |
-| **Counselor** | G20 (counseling and interventions), G19 (view-restricted), G04 (view), G23 (caseload) | `wellbeing.clinic-visits.edit`, `wellbeing.break-glass.use`, `finance.*` |
-| **Nurse** | G20 (clinic, medications, allergy), G04 (view) | `wellbeing.counseling-cases.view`, `wellbeing.safeguarding.view`, `assessment.*` |
-| **Special-Needs Coordinator** | G20 (education-plans, interventions), G07 (view), G09 (accommodation flag only) | `wellbeing.clinic-visits.view`, `wellbeing.safeguarding.view`, `assessment.marks.enter` |
-| **Safeguarding Officer** | G20 (safeguarding and `wellbeing.break-glass.use`, high and logged), `communication.messages.oversee-messages` (high, logged) | `assessment.*`, `finance.*`, `hr.*`, `identity.roles.grant-high-risk` |
+| **Parent / Guardian** | G04 (own children, view), G14 (own invoices), G16 (own threads), G17 (submit), G23 (own children), `audit.access-transparency.view` (own children) | Any permission over another family's child; `behavior.incidents.view` for other students; staff-side anything |
+| **Accountant** | G14 including `finance.payers.*`, G15 (`post`, `close-day`; `refund`, `write-off` and `finance.payers.view-bank-details` only with four-eyes), G18 (finance templates), G23 (finance), G26 (use) | `assessment.*`, `school.students.change-status`, `wellbeing.*`, `hr.payroll.view-salary` |
+| **HR Officer** | G21, G18 (staff documents), G23 (staff), G26 (use) | `school.students.*`, `assessment.*`, `finance.invoices.post`, `wellbeing.*` |
+| **Counselor** | G20 (counseling and interventions), G19 (view-restricted), G04 (view), G23 (caseload) | `wellbeing.clinic-visits.edit`, `wellbeing.break-glass.use`, `finance.*`, `ai.*` |
+| **Nurse** | G20 (clinic, medications, allergy; online only, Appendix M), G04 (view), `attendance.excuses.view-medical-detail` (high, four-eyes grant, every read logged) | `wellbeing.counseling-cases.view`, `wellbeing.safeguarding.view`, `assessment.*`, `ai.*` |
+| **Special-Needs Coordinator** | G20 (education-plans, interventions), G07 (view), G09 (accommodation flag only) | `wellbeing.clinic-visits.view`, `wellbeing.safeguarding.view`, `assessment.marks.enter`, `ai.*` |
+| **Safeguarding Officer** | G20 (safeguarding and `wellbeing.break-glass.use`, high and logged), `communication.messages.oversee-messages` (high, logged), `communication.concerns.view` (high, reason required, logged) | `assessment.*`, `finance.*`, `hr.*`, `identity.roles.grant-high-risk`, `ai.*` |
 | **Librarian** | G22 (library), G04 (view name and section only) | `school.guardians.view`, `finance.payments.record` beyond library fines, `assessment.*` |
 | **Transport Coordinator** | G22 (transport), G04 (view of subscribers), G13 (boarding events) | `school.medical-summary.view`, `attendance.student-attendance.mark`, `finance.refunds.approve` |
 | **Receptionist / Security** | G13, G04 (photo, name, section, authorized pickups) | `school.custody.view` text, `behavior.incidents.view`, `assessment.*`, `finance.*` |
 | **Store Keeper** | G22 (inventory, assets) | `school.students.*`, `finance.payments.record`, `hr.*` |
-| **IT Support** | G02 (`reset-password`, `force-signout`, device objects), `platform.jobs.retry`, `platform.failed-messages.replay` | `identity.roles.grant-high-risk`, `school.students.view`, `assessment.*`, `finance.*`, `wellbeing.*`, `audit.entries.export` |
+| **IT Support** | G02 (`reset-password`, `force-signout`, device objects), `platform.jobs.retry`, `platform.jobs.replay`, `platform.failed-messages.replay`, G25 (`notification.delivery-log.*`, `notification.channels.*`), `ai.usage.view` | `identity.roles.grant-high-risk`, `school.students.view`, `assessment.*`, `finance.*`, `wellbeing.*`, `audit.entries.export` |
 
 ---
 
@@ -86,23 +86,23 @@ Smart defaults (master brief Section 12.1 item 29) pick which of these templates
 
 | Code | Group | Representative permissions | Highest risk inside |
 |---|---|---|---|
-| G01 | Platform administration | `platform.tenants.provision`, `platform.tenants.suspend`, `platform.plans.edit`, `platform.feature-flags.edit` | high |
-| G02 | Identity and access | `identity.users.invite`, `identity.roles.assign-role`, `identity.sessions.revoke`, `identity.users.reset-password` | high (`identity.roles.grant-high-risk`) |
-| G03 | School configuration | `school.profile.edit`, `school.campuses.create`, `school.academic-years.close-year`, `school.numbering.edit` | high (`close-year`, `reopen-year`) |
+| G01 | Platform administration | `platform.tenants.provision`, `platform.tenants.suspend`, `platform.plans.edit`, `platform.feature-flags.edit`, `platform.template-library.publish` | high |
+| G02 | Identity and access | `identity.users.invite`, `identity.roles.assign-role`, `identity.sessions.revoke`, `identity.users.reset-password`, `identity.join-codes.create` | high (`identity.roles.grant-high-risk`) |
+| G03 | School configuration | `school.profile.edit`, `school.campuses.create`, `school.academic-years.close-year`, `school.numbering.edit`, `school.departments.edit`, `school.houses.edit`, `platform.modules.enable`, `platform.template-library.import` | high (`close-year`, `reopen-year`) |
 | G04 | Student records | `school.students.view`, `school.students.edit`, `school.guardians.edit`, `school.students.print-id-cards` | elevated |
 | G05 | Sensitive student fields | `school.students.view-sensitive`, `school.custody.view`, `school.medical-summary.view` | elevated, always logged |
-| G06 | Admissions | `admissions.applications.decide`, `admissions.offers.make`, `admissions.enrollment.enroll`, `admissions.capacity.override-capacity` | elevated |
-| G07 | Academics and coursework | `academics.teaching-assignments.edit`, `academics.lesson-plans.review`, `academics.assignments.publish`, `academics.question-bank.edit` | normal |
+| G06 | Admissions | `admissions.applications.decide`, `admissions.offers.make`, `admissions.enrollment.enroll`, `admissions.capacity.override-capacity`, `admissions.campaigns.open`, `admissions.applications.override-age` | elevated |
+| G07 | Academics and coursework | `academics.teaching-assignments.edit`, `academics.lesson-plans.review`, `academics.assignments.publish`, `academics.question-bank.edit`, `academics.student-groups.edit`, `academics.rubrics.edit` | normal |
 | G08 | Mark entry | `assessment.marks.enter`, `assessment.marks.view`, `assessment.structures.view` | normal |
-| G09 | Mark approval and publishing | `assessment.marks.moderate`, `assessment.marks.approve`, `assessment.report-cards.publish`, `assessment.marks.lock` | high (`unlock`, `change-after-lock`) |
-| G10 | Scheduling and cover | `scheduling.timetable.generate`, `scheduling.timetable.publish`, `scheduling.substitutions.assign`, `scheduling.room-bookings.approve` | elevated (`override-conflict`) |
+| G09 | Mark approval and publishing | `assessment.marks.moderate`, `assessment.marks.approve`, `assessment.report-cards.publish`, `assessment.marks.lock`, `assessment.exams.print-paper` | high (`unlock`, `change-after-lock`) |
+| G10 | Scheduling and cover | `scheduling.timetable.generate`, `scheduling.timetable.publish`, `scheduling.substitutions.assign`, `scheduling.room-bookings.approve`, `scheduling.constraints.edit` | elevated (`override-conflict`) |
 | G11 | Attendance marking | `attendance.student-attendance.mark`, `attendance.student-attendance.view` | normal |
-| G12 | Attendance oversight | `attendance.excuses.approve`, `attendance.thresholds.edit`, `attendance.student-attendance.edit-after-lock` | elevated |
+| G12 | Attendance oversight | `attendance.excuses.approve`, `attendance.thresholds.edit`, `attendance.student-attendance.edit-after-lock`, `attendance.student-attendance.nudge` | elevated |
 | G13 | Safety and dismissal | `attendance.safety.gate-passes.issue`, `attendance.safety.gate-passes.verify`, `attendance.safety.visitors.check-in`, `attendance.safety.emergency.broadcast` | high (`broadcast`) |
-| G14 | Finance operations | `finance.invoices.create`, `finance.payments.record`, `finance.cashier.close-day`, `finance.reports.view` | normal to elevated |
-| G15 | Finance approvals | `finance.refunds.approve`, `finance.write-offs.approve`, `finance.discounts.approve-above-limit` | high |
-| G16 | Communication | `communication.announcements.publish`, `communication.messages.create`, `communication.surveys.publish` | high (`oversee-messages`) |
-| G17 | Requests and approvals | `requests.requests.create`, `requests.requests.approve`, `requests.types.design`, `requests.requests.reassign` | elevated (`override`) |
+| G14 | Finance operations | `finance.invoices.create`, `finance.payments.record`, `finance.cashier.close-day`, `finance.reports.view`, `finance.payers.edit` | normal to elevated |
+| G15 | Finance approvals | `finance.refunds.approve`, `finance.write-offs.approve`, `finance.discounts.approve-above-limit`, `finance.payers.view-bank-details` | high |
+| G16 | Communication | `communication.announcements.publish`, `communication.messages.create`, `communication.surveys.publish`, `communication.concerns.create` | high (`oversee-messages`) |
+| G17 | Requests and approvals | `requests.requests.create`, `requests.requests.approve`, `requests.types.design`, `requests.requests.reassign`, `requests.duty-rosters.publish` | elevated (`override`) |
 | G18 | Documents and transfers | `documents.certificates.generate`, `documents.imports.commit`, `documents.exports.create`, `documents.templates.edit` | high (`export-sensitive`) |
 | G19 | Behavior and recognition | `behavior.incidents.create`, `behavior.points.award`, `behavior.badges.award`, `behavior.incidents.view-restricted` | elevated |
 | G20 | Wellbeing (isolation level S) | `wellbeing.clinic-visits.create`, `wellbeing.counseling-cases.view`, `wellbeing.safeguarding.create`, `wellbeing.education-plans.edit` | high (`break-glass`) |
@@ -110,6 +110,8 @@ Smart defaults (master brief Section 12.1 item 29) pick which of these templates
 | G22 | Operations modules | `operations.library.issue`, `operations.transport.edit`, `operations.inventory.receive`, `operations.frontdesk.edit` | normal |
 | G23 | Reporting and analytics | `reporting.dashboards.view`, `reporting.reports.view`, `reporting.reports.edit`, `reporting.reports.schedule` | normal |
 | G24 | Audit and compliance | `audit.entries.view`, `audit.login-history.view`, `audit.integrity.verify` | high (`audit.entries.export`) |
+| G25 | Notification | `notification.preferences.view`, `notification.preferences.edit`, `notification.templates.publish`, `notification.delivery-log.resend`, `notification.channels.enable` | normal |
+| G26 | Assist (Ai) | `ai.assistant.use`, `ai.drafting.use`, `ai.drafting.accept-draft`, `ai.configuration.set-provider`, `ai.usage.view` | elevated (`set-provider`) |
 
 ---
 
@@ -169,6 +171,34 @@ Smart defaults (master brief Section 12.1 item 29) pick which of these templates
 | Store Keeper | — | — | — | — | S | — | — | — | — | F | S | — |
 | IT Support | — | — | — | — | S | — | — | — | — | — | — | — |
 
+For G25, `S` means `notification.preferences.view` and `.edit` in the `self` scope, and `F` adds templates, delivery log and channels in the role's scope, narrowed where I.2 names the resources (IT Support holds delivery log and channels, not templates). For G26, `S` means `ai.assistant.use`, `ai.drafting.use` and `ai.drafting.accept-draft` applied within the role's own data scope, `V` means `ai.usage.view` only, and `F` adds `ai.configuration.*` and `ai.usage.*`. Roles whose work sits in isolation level S hold no G26 grant, because the Ai index refuses Sensitive and S data.
+
+| Role | G25 | G26 |
+|---|---|---|
+| Platform Administrator | F | — |
+| School Owner | S | S |
+| Principal | F | F |
+| Vice Principal | F | S |
+| Academic Coordinator | S | S |
+| Head of Department | S | S |
+| Registrar | S | S |
+| Admissions Officer | S | S |
+| Teacher | S | S |
+| Homeroom Teacher | S | S |
+| Student | S | — |
+| Parent / Guardian | S | — |
+| Accountant | S | S |
+| HR Officer | S | S |
+| Counselor | S | — |
+| Nurse | S | — |
+| Special-Needs Coordinator | S | — |
+| Safeguarding Officer | S | — |
+| Librarian | S | S |
+| Transport Coordinator | S | S |
+| Receptionist / Security | S | — |
+| Store Keeper | S | S |
+| IT Support | F | V |
+
 ---
 
 ## I.5 Rules that govern these templates
@@ -180,4 +210,5 @@ Smart defaults (master brief Section 12.1 item 29) pick which of these templates
 5. **A role change takes effect within seconds.** Each user carries a permission version. Identity publishes `identity.permissions.changed.v1` on every grant, revocation, delegation start and delegation end; Gateway and every service read the version from the token and revalidate against the cached permission set, whose cache entry is tagged by user and invalidated by that event. The contract is: **a revoked permission stops working within 5 seconds of the revocation, on web and on mobile, without a sign-out.** A mobile client that is offline holds no more than its last-synced permission set and refuses every write that its cached set does not allow, then revalidates on reconnect.
 6. **Scope is enforced with the permission, not after it.** `S` in the matrix is a server-side predicate, applied in the query, and backed by row-level security as the second barrier (master brief Section 7.4).
 7. **Isolation level S is opt-in only.** No template inherits G20 by holding a broader role. A principal who needs a safeguarding record uses break-glass (`WF-SEC-02`), states a reason, and the access alerts the safeguarding officer and is itself logged.
-8. **Every template ships with its own tests.** The permission matrix generates authorization tests (master brief Section 20): for each role and each endpoint, one test that the allowed call succeeds and one that the forbidden call returns the permission-denied code from Appendix K.
+8. **Every tenant template holds two self-service grants.** `notification.preferences.view` and `.edit` in the `self` scope, so every person reads their own inbox and sets their own channels, and `communication.concerns.create`, so every member of the school can raise an anonymous concern. The reporter is never recorded, and only the Safeguarding Officer holds `communication.concerns.view`.
+9. **Every template ships with its own tests.** The permission matrix generates authorization tests (master brief Section 20): for each role and each endpoint, one test that the allowed call succeeds and one that the forbidden call returns the permission-denied code from Appendix K.
