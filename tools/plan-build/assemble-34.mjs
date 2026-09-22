@@ -1,5 +1,6 @@
 // Validate the work-breakdown parts and, with --write, assemble document 34.
 //   node assemble-34.mjs --part A     validate one part (writers run this)
+//   node assemble-34.mjs --part C --phase 3   validate one phase of a two-phase part before its second phase exists
 //   node assemble-34.mjs              validate all parts that exist
 //   node assemble-34.mjs --write      validate all four and write docs/plan/34-work-breakdown.md
 //   node assemble-34.mjs --write --partial   write from the parts that exist; missing phases are listed as pending
@@ -16,6 +17,7 @@ const args = process.argv.slice(2);
 const onlyPart = args.includes('--part') ? args[args.indexOf('--part') + 1] : null;
 const write = args.includes('--write');
 const partial = args.includes('--partial');
+const onlyPhase = args.includes('--phase') ? args[args.indexOf('--phase') + 1] : null;
 
 const RANGES = { A: [1, 199], B: [200, 399], C: [400, 599], D: [600, 799] };
 const PHASES = { A: ['1'], B: ['2'], C: ['3', '4'], D: ['5', '6'] };
@@ -28,16 +30,32 @@ const BRS = new Set([...c31.matchAll(/`(BR-[A-Z0-9]+-\d{3})`/g)].map((m) => m[1]
 const WFS = new Set([...c31.matchAll(/`(WF-[A-Z]+-\d{2})`/g)].map((m) => m[1]));
 const c17 = readFileSync(K + 'docs/plan/17-roadmap.md', 'utf8');
 const CAPS = new Map(); // id -> phase
+const PHASE_SERVICES = {}; // phase -> services its capabilities name
 let curPhase = null;
 for (const line of c17.split('\n')) {
   const ph = /^#### Phase (\d):/.exec(line);
   if (ph) curPhase = ph[1];
   const cap = /^\| (CAP-[A-Z0-9]+-\d{2}) \|/.exec(line);
-  if (cap && curPhase) CAPS.set(cap[1], curPhase);
+  if (cap && curPhase) {
+    CAPS.set(cap[1], curPhase);
+    PHASE_SERVICES[curPhase] = PHASE_SERVICES[curPhase] || new Set();
+    for (const svc of line.split('|')[3].split(',')) PHASE_SERVICES[curPhase].add(svc.trim());
+  }
 }
+// With --phase, a two-phase part is checked against the requirements of that phase's
+// services only; cross-cutting requirements belong to the part's first phase.
 const scope = (w) => {
   const f = S + 'wb-scope-' + w + '.md';
-  return existsSync(f) ? new Set([...readFileSync(f, 'utf8').matchAll(/^\| (REQ-[A-Z0-9]+-\d{3}) \|/gm)].map((m) => m[1])) : new Set();
+  if (!existsSync(f)) return new Set();
+  const out = new Set();
+  for (const line of readFileSync(f, 'utf8').split(/\r?\n/)) {
+    const m = /^\| (REQ-[A-Z0-9]+-\d{3}) \|/.exec(line);
+    if (!m) continue;
+    const svc = line.split('|')[4].trim();
+    if (onlyPhase && PHASES[w].includes(onlyPhase) && !(PHASE_SERVICES[onlyPhase].has(svc) || (svc === 'cross-cutting' && PHASES[w][0] === onlyPhase))) continue;
+    out.add(m[1]);
+  }
+  return out;
 };
 
 // ---- parse a part --------------------------------------------------------------
@@ -94,7 +112,7 @@ function validate(parts) {
     // Requirements from this part's scope, satisfied either by a slice or named in the coverage notes.
     for (const r of scope(p.w)) if (!covered.has(r) && !p.notes.includes(r)) problems.push(p.w + ': ' + r + ' in scope but covered by no slice and not explained in the coverage notes');
     // Missing capabilities of this part's phases.
-    for (const [cap, ph] of CAPS) if (PHASES[p.w].includes(ph) && !p.caps.some((c) => c.id === cap)) problems.push(p.w + ': ' + cap + ' (phase ' + ph + ') has no section');
+    for (const [cap, ph] of CAPS) if (PHASES[p.w].includes(ph) && (!onlyPhase || !PHASES[p.w].includes(onlyPhase) || ph === onlyPhase) && !p.caps.some((c) => c.id === cap)) problems.push(p.w + ': ' + cap + ' (phase ' + ph + ') has no section');
   }
   // Slice-to-slice dependencies must exist.
   for (const s of allSlices.values()) for (const d of s.deps.match(/SL-[A-Z0-9]+-\d{3}/g) || []) if (!allSlices.has(d)) problems.push(s.part + ': ' + s.id + ' depends on unknown ' + d);
@@ -121,7 +139,8 @@ for (const part of parts) {
     if (!target) continue;
     for (const r of line.match(/REQ-[A-Z0-9]+-\d{3}/g) || []) {
       const owner = parts.find((x) => x.w === target[1]);
-      if (!owner && partial) { pending.push(r + ' (handed to part ' + target[1] + ')'); continue; }
+      const ownerDone = owner && !(onlyPhase && PHASES[owner.w].includes(onlyPhase));
+      if (!ownerDone && partial) { pending.push(r + ' (handed to part ' + target[1] + ')'); continue; }
       const built = owner && owner.caps.some((c) => c.slices.some((s) => s.covers.includes(r)));
       if (!built) problems.push(part.w + ': ' + r + ' is handed to part ' + target[1] + ', which builds no slice for it');
     }
@@ -191,7 +210,7 @@ for (const ph of ['1', '2', '3', '4', '5', '6']) {
   p('### ' + sec++ + '. Phase ' + ph + ': ' + phaseNames[ph]);
   p();
   const owner = Object.keys(PHASES).find((w) => PHASES[w].includes(ph));
-  if (!present.has(owner)) {
+  if (!present.has(owner) || (onlyPhase && PHASES[owner].includes(onlyPhase) && ph !== onlyPhase && !parts.some((x) => x.caps.some((c) => phaseOf(c.id) === ph)))) {
     const caps = [...CAPS].filter(([, x]) => x === ph).map(([c]) => c);
     p('**Not yet broken down.** This phase is written in the next step of the plan build (part ' + owner + ', slice numbers ' + RANGES[owner].join(' to ') + '). Its capabilities, from document 17: ' + caps.join(', ') + '.');
     p();

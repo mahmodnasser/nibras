@@ -21,7 +21,8 @@
 |---|---|---|---|
 | Part A | 1 Foundation | 001 to 199 | **Done** |
 | Part B | 2 The school year loop | 200 to 399 | **Done**. Parts A and B together: 38 capabilities, 353 slices, 825 slice-days, 618 requirements built |
-| Part C | 3 Money and paperwork; 4 Growth | 400 to 599 | Next. 22 capabilities; scope in `tools/plan-build/parts/wb-scope-C.md` |
+| Part C, phase 3 | 3 Money and paperwork | 400 to 599 | **Done**: 14 capabilities, 135 slices, 321 slice-days, 106 requirements (REQ-INT-016's LTI part handed to phase 4). Validate with `--part C --phase 3` |
+| Part C, phase 4 | 4 Growth | 400 to 599, continuing | Next. 8 capabilities, 60 requirements (Admissions, Behavior, Reporting), appended to `wb-part-C.md` |
 | Part D | 5 Extended; 6 Hardening and launch | 600 to 799 | After C. 17 capabilities; also builds INF-027..033 and INF-036, handed over by part A |
 
 **How to resume.** Writer prompt: `tools/plan-build/wb-prompt.md` with `{{W}}`, `{{SCOPE}}` and `{{RANGE}}` filled. The writer appends to `tools/plan-build/parts/wb-part-<W>.md`, one capability at a time, so a partial part survives an interruption. Validate with `node tools/plan-build/assemble-34.mjs --part <W>`. Rewrite document 34 with `--write --partial` after each part, and `--write` once all four exist. See `tools/plan-build/README.md`.
