@@ -22,16 +22,29 @@ The durations below are ranges for a small, experienced team, per Section 28 and
 | Phase | Goal | Services | Range | Capabilities | Workflows | Service requirements | Demo at the end |
 |---|---|---|---|---|---|---|---|
 | **0 Plan** | The documents in `docs/plan/`, approved group by group | none | 3 to 5 weeks | none | none | none | The plan, scored at 4 or better on every axis |
-| **1 Foundation** | Everything every later service stands on | Gateway, Bff.Web, Identity, Platform, Notification, Audit, and the Documents rendering pipeline | 8 to 10 weeks | 19 | 16 | 156 plus the cross-cutting obligations | A tenant is provisioned live, its administrator signs in with a second factor, a notification arrives, the audit entry is visible |
-| **2 School year loop** | A class is taught, attended, graded and reported, in both languages, on web and phone | School, Scheduling, Attendance, Academics, Assessment, Bff.Mobile | 16 to 20 weeks | 19 | 10 | 177 | Acts one and two of Appendix O. **The MVP cut line** |
-| **3 Money and paperwork** | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate verifies | Finance, Requests, Communication, Documents | 10 to 12 weeks | 14 | 9 | 101 | Act three of Appendix O |
-| **4 Growth** | An applicant becomes a student; dashboards answer Appendix D; mobile reaches parity | Admissions, Behavior, Reporting | 8 to 10 weeks | 8 | 3 | 60 | The full Appendix O script on a fresh tenant with one-click reset |
-| **5 Extended** | Wellbeing, human resources, operations and assistance, each to the definition of done | Wellbeing, Hr, Operations, Ai | 10 to 14 weeks | 11 | 14 | 67 | A clinic visit, a substitution from leave, a library loan, and a reviewed draft comment |
+| **1 Foundation** | Everything every later service stands on | Gateway, Bff.Web, Identity, Platform, Notification, Audit, and the Documents rendering pipeline | 14 to 22 weeks | 19 | 16 | 156 plus the cross-cutting obligations | A tenant is provisioned live, its administrator signs in with a second factor, a notification arrives, the audit entry is visible |
+| **2 School year loop** | A class is taught, attended, graded and reported, in both languages, on web and phone | School, Scheduling, Attendance, Academics, Assessment, Bff.Mobile | 14 to 21 weeks | 19 | 10 | 177 | Acts one and two of Appendix O. **The MVP cut line** |
+| **3 Money and paperwork** | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate verifies | Finance, Requests, Communication, Documents | 11 to 17 weeks | 14 | 9 | 101 | Act three of Appendix O |
+| **4 Growth** | An applicant becomes a student; dashboards answer Appendix D; mobile reaches parity | Admissions, Behavior, Reporting | 7 to 11 weeks | 8 | 3 | 60 | The full Appendix O script on a fresh tenant with one-click reset |
+| **5 Extended** | Wellbeing, human resources, operations and assistance, each to the definition of done | Wellbeing, Hr, Operations, Ai | 9 to 14 weeks | 11 | 14 | 67 | A clinic visit, a substitution from leave, a library loan, and a reviewed draft comment |
 | **6 Hardening and launch** | Evidence that every gate in Section 24 holds at scale | all | 6 to 8 weeks | 6 | 0 new | the phase 6 obligations below | Restore drill, penetration-test close-out, and the scale-tier load run, each with its record |
 
 The service requirement counts are computed from `03-requirements-catalog.md` by the owning service's build phase in `05-service-catalog.md`. They add to 561. The remaining 299 requirements are cross-cutting and are covered in Section 3.
 
-**Total from start of phase 1 to launch: roughly 58 to 74 weeks** for the assumed team. The honest reading of that range is "about fifteen months, plus or minus two", and the biggest lever on it is the MVP cut line in Section 5, not working faster.
+**Total from start of phase 1 to launch: 61 to 93 weeks** for the team in master brief Section 29. The honest reading is "about eighteen months, plus or minus four": the low end needs eight engineers building from the first week, the high end is five. The biggest lever on it is the MVP cut line in Section 5, not working faster.
+
+**How the ranges are computed.** Every range above is derived from the slices in `34-work-breakdown.md` by `tools/plan-build/schedule-34.mjs`, not estimated separately:
+
+| Input | Value | Why |
+|---|---|---|
+| Effort | The phase's slice-days in document 34 | One to three days per slice, one engineer |
+| Builders | 5 to 8 | Master brief Section 29: two to four backend, one to two web, one mobile, one quality engineer |
+| Overhead | × 1.3 | Review, integration and the demonstration that closes each capability |
+| Calendar weeks | slice-days × 1.3 ÷ (builders × 5) | Eight builders give the low end, five the high end |
+| Dependency floor | The longest chain of slice-to-slice dependencies in the phase, × 1.3 ÷ 5 | No headcount shortens it. It is 4 to 7 weeks in every phase, under the effort figure, so capacity, not sequencing, sets the pace. Dependencies stated as contracts are not in the chain, so it is a lower bound |
+| Calendar floor | Phase 6: 6 to 8 weeks | The external penetration test, its retest window and an isolated restore drill take calendar time whatever the effort |
+
+These replace the ranges of master brief Section 28, which were set before any slice existed and put phase 1 at 8 to 10 weeks against 423 slice-days. The brief is corrected to match under ADR-0019. A team outside Section 29's shape changes the builders input and nothing else; the ranges are recomputed, never adjusted by hand.
 
 ### 2. Scope of each phase by requirement identifier
 
@@ -91,7 +104,7 @@ Computed from document 03. A requirement belongs to the phase in which its ownin
 | MOB | 38 | 2 | CAP-MOB-01 | Goldens in both directions and the offline sync tests |
 | INF | 37 | 1 and 6 | CAP-INF-01, CAP-INF-03 in phase 1; CAP-INF-04, CAP-INF-05 in phase 6 | Pipeline stages from phase 1; drills and the appliance from phase 6 |
 
-Phase 1 therefore carries far more than its 156 service requirements. That is why it is the phase most likely to overrun, and why its range is stated as 8 to 10 weeks rather than something tidier.
+Phase 1 therefore carries far more than its 156 service requirements. That is why it is the largest phase by effort, 423 slice-days, and why its range of 14 to 22 weeks is the widest. A larger team helps less here than anywhere, because the building blocks come first and everything waits on them.
 
 ### 4. Capabilities
 
@@ -220,7 +233,7 @@ Three workflows owned by Platform are scheduled by capability rather than by the
 
 ### 5. The MVP cut line
 
-The first paying school needs **phases 1 and 2 complete**, plus from phase 3 only what term one uses: **CAP-RQS-01** limited to the attendance and document request types, **CAP-COM-01** and **CAP-COM-02**, and **CAP-DOC-02**. That is about 38 capabilities and 30 to 36 weeks from the start of phase 1.
+The first paying school needs **phases 1 and 2 complete**, plus from phase 3 only what term one uses: **CAP-RQS-01** limited to the attendance and document request types, **CAP-COM-01** and **CAP-COM-02**, and **CAP-DOC-02**. That is **42 capabilities, 954 slice-days, and 33 to 50 weeks from the start of phase 1**, computed the same way as Section 1. At the middle of the team range that is about ten months to the first paying school.
 
 | In the MVP | Not in the MVP, and why |
 |---|---|
@@ -287,7 +300,8 @@ flowchart LR
 
 | Decision | Record |
 |---|---|
-| Phases, ranges and the MVP cut line | Master brief Section 28 |
+| Phases and the MVP cut line | Master brief Section 28 |
+| Phase ranges derived from document 34's slice-days, not estimated | This document, Section 1; brief Section 28 corrected under ADR-0019 |
 | Capabilities and slices, split by use case never by layer | ADR-0018 |
 | Contract-first dependencies between streams | ADR-0018, `docs/plan/PLAN_SPEC.md` |
 | Workflow timing is by capability, overriding the service phase where stated | This document, Section 4 |
@@ -308,13 +322,14 @@ flowchart LR
 |---|---|---|
 | Whether a read-only public API, OneRoster export and iCal move to Tier 1, per document 02 | Stays in phase 3 as CAP-INT-01, except iCal which is already in phase 2 through CAP-SCD-03 | Product owner, then an ADR |
 | Whether Finance is needed by the first customer in term one | No; it is outside the MVP | Product owner, Open Question 25 |
-| Team size and shape | Master brief Section 29; ranges scale roughly in proportion | Product owner, Open Question 24 |
+| Team size and shape | Master brief Section 29, five to eight builders. A different team changes the builders input of `schedule-34.mjs` and the ranges are recomputed | Product owner, Open Question 24 |
 
 ## Review record
 
 | Date | Reviewer | Result |
 |---|---|---|
 | 2026-09-21 | Plan build | Written from Section 28 and computed from documents 03, 05 and 31 |
+| 2026-09-22 | Scorecard remediation, theme 2 | Ranges re-derived from document 34: phase 1 from 8 to 10 to 14 to 22 weeks, total from 58 to 74 to 61 to 93 weeks, MVP from about 38 capabilities and 30 to 36 weeks to 42 and 33 to 50 |
 
 ## How this document is verified
 
@@ -324,4 +339,5 @@ flowchart LR
 | Every workflow has a capability | Every `WF-` identifier in document 31 appears in a capability row in Section 4; `/lint-plan` checks it once document 34 exists |
 | Every capability is broken into slices | Document 34 lists slices under every `CAP-` identifier here; a capability with no slices fails `/lint-plan` |
 | Every requirement reaches a slice | Document 34 and document 20 together; a requirement with no slice is scope nobody will build |
-| The ranges are honest | Re-estimated at the end of each phase from the slices actually delivered, and recorded in the review record |
+| The ranges match the work | `node tools/plan-build/schedule-34.mjs` prints the Section 1 ranges and the MVP figure from document 34; a mismatch with this document is a defect |
+| The ranges stay honest | Re-computed at the end of each phase from the slices actually delivered and the team actually present, and recorded in the review record |

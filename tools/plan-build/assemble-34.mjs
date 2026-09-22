@@ -200,12 +200,14 @@ p('### 2. Totals');
 p();
 p('| Phase | Capabilities | Slices | Slice-days | Roadmap range |');
 p('|---|---|---|---|---|');
-const ranges = { 1: '8 to 10 weeks', 2: '16 to 20 weeks', 3: '10 to 12 weeks', 4: '8 to 10 weeks', 5: '10 to 14 weeks', 6: '6 to 8 weeks' };
+// The roadmap range per phase is document 17's, which tools/plan-build/schedule-34.mjs derives from these slices.
+const ranges = {};
+for (const line of c17.split('\n')) { const m = /^\| \*\*(\d) [^*]+\*\* \|(?:[^|]*\|){2} ([^|]+) \|/.exec(line); if (m) ranges[m[1]] = m[2].trim(); }
 let tc = 0, ts = 0, td = 0;
 for (const ph of Object.keys(perPhase).sort()) { const v = perPhase[ph]; tc += v.caps.size; ts += v.slices; td += v.days; p('| ' + ph + ' | ' + v.caps.size + ' | ' + v.slices + ' | ' + v.days + ' | ' + ranges[ph] + ' |'); }
 p('| **Total** | **' + tc + '** | **' + ts + '** | **' + td + '** | |');
 p();
-p('**Reading the slice-days against the ranges.** Slice-days are single-person working days of build effort. With the four streams in document 17 Section 6 working in parallel, and allowing for review, integration and the demonstration at each capability, the calendar time per phase is roughly slice-days divided by the number of engineers in the phase\'s streams, then multiplied by about 1.3. Where that disagrees with the roadmap range by more than a quarter, the roadmap is re-estimated at the end of phase 0, not the slices shortened.');
+p('**Reading the slice-days against the ranges.** Slice-days are single-person working days of build effort. The roadmap range in the last column is computed from them by `tools/plan-build/schedule-34.mjs`: slice-days × 1.3 for review, integration and demonstration, divided by five to eight builders (master brief Section 29) working five days a week, and never below the phase\'s longest chain of slice dependencies or, for phase 6, the calendar time of the penetration test and the restore drill. Document 17 Section 1 explains each input. The two documents cannot drift: a change to the slices changes the ranges when the script is rerun.');
 p();
 const phaseNames = { 1: 'Foundation', 2: 'The school year loop', 3: 'Money and paperwork', 4: 'Growth', 5: 'Extended', 6: 'Hardening and launch' };
 let sec = 3;
@@ -263,7 +265,7 @@ p('## Open points');
 p();
 p('| Point | Default | Owner |');
 p('|---|---|---|');
-p('| Slice-days versus roadmap ranges | Re-estimated at the end of phase 0 with the team actually assembled; the slices are not shortened to fit | Architect and product owner |');
+p('| The ranges assume five to eight builders from the first week of phase 1 | Recomputed with `schedule-34.mjs` whenever the team differs, and at the end of every phase from the slices actually delivered | Architect and product owner |');
 p('| Team size changes the calendar, not the slices | Open Question 24 | Product owner |');
 p();
 p('## Review record');

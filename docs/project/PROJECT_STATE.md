@@ -33,7 +33,7 @@
 | # | Theme | Effort |
 |---|---|---|
 | 1 | Product-owner decisions: absence-alert timing; public API, OneRoster, iCal in Tier 1; countries, Apple build capacity, certifications | 1 hour of the owner's time |
-| 2 | Re-range document 17's phases from document 34's slice-days at the Section 29 team shape (phase 1 is 14 to 22 weeks, not 8 to 10) | 1 day |
+| 2 | **Done**: document 17's ranges derived from document 34 by `schedule-34.mjs`: phase 1 14 to 22 weeks, launch 61 to 93, MVP 42 capabilities in 33 to 50; RISK-03 recorded as occurred | done |
 | 3 | Brief corrections v9.1 under ADR-0019 (`tools/plan-build/parts/brief-findings.md`), including the k6 Section 6.4 row and the proposed CAP-INT-02 and CAP-INT-03 | 3 days |
 | 4 | One meaning per fact across plan documents (sync-call graph, `embedding_chunk`, Gateway Redis reads, permission-refresh owner, OneRoster and WF-INF-01 phases, API count) | 3 days |
 | 5 | One test-identifier registry in document 16, collisions resolved, a kit-lint rule | 2 to 3 days |

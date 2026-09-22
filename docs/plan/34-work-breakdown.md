@@ -33,15 +33,15 @@ The sizing rules and the reasons for them are in `PLAN_SPEC.md`, "How work is br
 
 | Phase | Capabilities | Slices | Slice-days | Roadmap range |
 |---|---|---|---|---|
-| 1 | 19 | 179 | 423 | 8 to 10 weeks |
-| 2 | 19 | 174 | 402 | 16 to 20 weeks |
-| 3 | 14 | 135 | 321 | 10 to 12 weeks |
-| 4 | 8 | 84 | 210 | 8 to 10 weeks |
-| 5 | 11 | 105 | 252 | 10 to 14 weeks |
+| 1 | 19 | 179 | 423 | 14 to 22 weeks |
+| 2 | 19 | 174 | 402 | 14 to 21 weeks |
+| 3 | 14 | 135 | 321 | 11 to 17 weeks |
+| 4 | 8 | 84 | 210 | 7 to 11 weeks |
+| 5 | 11 | 105 | 252 | 9 to 14 weeks |
 | 6 | 6 | 41 | 97 | 6 to 8 weeks |
 | **Total** | **77** | **718** | **1705** | |
 
-**Reading the slice-days against the ranges.** Slice-days are single-person working days of build effort. With the four streams in document 17 Section 6 working in parallel, and allowing for review, integration and the demonstration at each capability, the calendar time per phase is roughly slice-days divided by the number of engineers in the phase's streams, then multiplied by about 1.3. Where that disagrees with the roadmap range by more than a quarter, the roadmap is re-estimated at the end of phase 0, not the slices shortened.
+**Reading the slice-days against the ranges.** Slice-days are single-person working days of build effort. The roadmap range in the last column is computed from them by `tools/plan-build/schedule-34.mjs`: slice-days × 1.3 for review, integration and demonstration, divided by five to eight builders (master brief Section 29) working five days a week, and never below the phase's longest chain of slice dependencies or, for phase 6, the calendar time of the penetration test and the restore drill. Document 17 Section 1 explains each input. The two documents cannot drift: a change to the slices changes the ranges when the script is rerun.
 
 ### 3. Phase 1: Foundation
 
@@ -1414,7 +1414,7 @@ Every phase 5 requirement in this part's scope is built by at least one slice ab
 
 | Point | Default | Owner |
 |---|---|---|
-| Slice-days versus roadmap ranges | Re-estimated at the end of phase 0 with the team actually assembled; the slices are not shortened to fit | Architect and product owner |
+| The ranges assume five to eight builders from the first week of phase 1 | Recomputed with `schedule-34.mjs` whenever the team differs, and at the end of every phase from the slices actually delivered | Architect and product owner |
 | Team size changes the calendar, not the slices | Open Question 24 | Product owner |
 
 ## Review record
