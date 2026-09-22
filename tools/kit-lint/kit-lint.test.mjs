@@ -283,3 +283,67 @@ test('R18 warns about a directory tree with no purpose comments', () => {
   ].join('\n');
   assert.ok(fired(lintFixture(kit, ['R18-tree-comments']), 'R18-tree-comments'));
 });
+
+/* ---------------------------------------------------------------- R19 */
+
+const catalogKit = () => ({
+  ...baseKit(),
+  'docs/brief/02-appendices/appendix-e-event-catalog.md': '# Appendix E. Events\n\n| Event |\n|---|\n| `attendance.student.absent.v1` |\n',
+  'docs/brief/02-appendices/appendix-r-workflow-catalog.md': '# Appendix R. Workflows\n\n### WF-ATT-01 Mark attendance\n',
+  'docs/brief/02-appendices/appendix-s-business-rules.md': '# Appendix S. Rules\n\n### BR-ATT-001 Lock window\n',
+  'docs/brief/02-appendices/appendix-k-error-codes.md': '# Appendix K. Errors\n\n| Code | Status |\n|---|---|\n| `_VALIDATION_FAILED` | 400 |\n| `ATTENDANCE_SESSION_LOCKED` | 409 |\n',
+  'docs/brief/02-appendices/appendix-b-permissions.md': '# Appendix B. Permissions\n\n| Resource | Standard | Special | Risk |\n|---|---|---|---|\n| `attendance.student-attendance` | view, export | `mark`, `edit-after-lock` (elevated) | elevated |\n',
+  'docs/plan/03-requirements-catalog.md': '# 03\n\n| ID | Requirement |\n|---|---|\n| REQ-ATT-001 | Mark attendance |\n',
+  'docs/plan/17-roadmap.md': '# 17\n\n| Capability | What |\n|---|---|\n| CAP-ATT-01 | Take attendance |\n',
+});
+
+const r19 = (planText) => {
+  const kit = catalogKit();
+  kit['docs/plan/06-services/attendance.md'] = planText;
+  return lintFixture(kit, ['R19-plan-identifiers']);
+};
+
+test('R19 accepts identifiers that exist in their catalogs', () => {
+  const findings = r19([
+    '# Attendance', '', '## Content', '',
+    'Covers REQ-ATT-001, WF-ATT-01, BR-ATT-001 and CAP-ATT-01.',
+    'Publishes `attendance.student.absent.v1` and `attendance.audit.recorded.v1`.',
+    'Fails with `ATTENDANCE_SESSION_LOCKED` or `ATTENDANCE_VALIDATION_FAILED`.',
+    '', '| Method | Path | Permission |', '|---|---|---|', '| POST | /x | `attendance.student-attendance.mark` |', '',
+  ].join('\n'));
+  assert.deepEqual(findings, [], JSON.stringify(findings));
+});
+
+test('R19 catches every kind of invented identifier', () => {
+  const findings = r19([
+    '# Attendance', '', '## Content', '',
+    'Covers REQ-ATT-099, WF-ATT-09, BR-ATT-999 and CAP-ATT-99.',
+    'Publishes `attendance.student.vanished.v1`.',
+    'Fails with `ATTENDANCE_MADE_UP`.',
+    '', '| Method | Path | Permission |', '|---|---|---|', '| POST | /x | `attendance.student-attendance.teleport` |', '',
+  ].join('\n'));
+  const kinds = findings.map((f) => f.message.split(' ')[0] + ' ' + f.message.split(' ')[1]);
+  for (const expected of ['Requirement REQ-ATT-099', 'Workflow WF-ATT-09', 'Business rule', 'Capability CAP-ATT-99', 'Routing key', 'Error code', 'Permission attendance.student-attendance.teleport']) {
+    assert.ok(findings.some((f) => f.message.startsWith(expected)), 'expected a finding for ' + expected + ', got ' + JSON.stringify(kinds));
+  }
+});
+
+test('R19 leaves a defect alone when it is reported under Open points or said to be missing', () => {
+  const findings = r19([
+    '# Attendance', '', '## Content', '',
+    'Appendix E lacks `attendance.student.vanished.v1`, so it is not published.',
+    '', '## Open points', '',
+    '| Point | Default |', '|---|---|',
+    '| `attendance.roll.called.v1` and `ATTENDANCE_MADE_UP` for REQ-ATT-099 | Keep |', '',
+  ].join('\n'));
+  assert.deepEqual(findings, [], JSON.stringify(findings));
+});
+
+test('R19 accepts a command key derived from a name in document 11 and refuses an invented one', () => {
+  const kit = catalogKit();
+  kit['docs/plan/11-messaging-architecture.md'] = '# 11\n\n| Target | Commands |\n|---|---|\n| Communication | `BookMeeting` |\n';
+  kit['docs/plan/06-services/communication.md'] = '# Communication\n\n## Content\n\nConsumes `communication.commands.book-meeting.v1` and `communication.commands.teleport-meeting.v1`.\n';
+  const findings = lintFixture(kit, ['R19-plan-identifiers']);
+  assert.equal(findings.length, 1, JSON.stringify(findings));
+  assert.match(findings[0].message, /teleport-meeting/);
+});

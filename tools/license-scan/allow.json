@@ -43,5 +43,7 @@
       "justification": "Dependency update pull requests. A continuous integration tool, never shipped.",
       "adr": "0005-redis-agpl-standalone-valkey-fallback"
     }
-  ]
+  ],
+  "overrides_note": "Packages that ship their licence as a file instead of an SPDX expression. Key: <package>@<exact version>. Value: { spdx: identifier read from the file, source: the URL it was read from, checked: ISO date }. An override missing any field, or recording a licence that is itself not allowed, fails the scan.",
+  "overrides": {}
 }

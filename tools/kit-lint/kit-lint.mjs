@@ -494,6 +494,141 @@ rule('R18-tree-comments', 'Directory trees explain every entry', (ctx) => {
   return out;
 });
 
+/**
+ * R19: every identifier a plan document cites exists in the catalog that owns it.
+ *
+ * Plan documents are written by many hands in parallel; this is the rule that
+ * stops one of them citing an event, a requirement or a permission that no
+ * catalog defines. A missing identifier may be quoted deliberately, so lines
+ * under an "Open points" heading, and lines that say an identifier is missing,
+ * are exempt: that is where a defect in a catalog is reported, not hidden.
+ */
+const PLAN_SKIP = /^docs\/plan\/(PLAN_SPEC|README|REVIEW_GUIDE|WORKFLOWS)\.md$/;
+const DISCUSSES_ABSENCE = /\b(not in|missing from|absent from|lacks|lack|proposed|proposal|propose|does not exist|do not exist|not an Appendix|not catalogued|no such|would need|needs an ADR|to be added|add to Appendix)\b/i;
+const SERVICE_PREFIXES = ['IDENTITY', 'PLATFORM', 'SCHOOL', 'ADMISSIONS', 'ACADEMICS', 'ASSESSMENT', 'SCHEDULING', 'ATTENDANCE', 'FINANCE', 'COMMUNICATION', 'NOTIFICATION', 'REQUESTS', 'DOCUMENTS', 'BEHAVIOR', 'REPORTING', 'AUDIT', 'WELLBEING', 'HR', 'OPERATIONS', 'AI', 'GATEWAY', 'BFF'];
+const SERVICE_NAMESPACES = new Set(SERVICE_PREFIXES.map((s) => s.toLowerCase()));
+
+export function buildCatalogs(ctx) {
+  const byName = (re) => ctx.md.find((f) => re.test(f.rel));
+  const keyRe = /`([a-z][a-z0-9-]*(?:\.[a-z0-9-]+){2,}\.v\d+)`/g;
+  const collectKeys = (f, into) => { if (f) for (const m of f.text.matchAll(keyRe)) into.add(m[1]); };
+  const events = new Set();
+  collectKeys(byName(/appendix-e-event-catalog/), events);
+  const c11 = byName(/^docs\/plan\/11-messaging-architecture\.md$/);
+  collectKeys(c11, events);
+  // Document 11 defines commands and replies by pattern plus a list of names,
+  // e.g. `<target>.commands.<command-kebab>.v<n>` and `BookMeeting`. A derived
+  // key is valid only when its name appears in document 11 in PascalCase.
+  const messageNames = new Set();
+  if (c11) for (const m of c11.text.matchAll(/`([A-Z][A-Za-z0-9]+)`/g)) messageNames.add(m[1]);
+
+  const reqs = new Set();
+  const c03 = byName(/^docs\/plan\/03-requirements-catalog\.md$/);
+  if (c03) for (const m of c03.text.matchAll(/^\| (REQ-[A-Z0-9]+-\d{3}) \|/gm)) reqs.add(m[1]);
+
+  const headIds = (re, pat) => {
+    const out = new Set();
+    const f = byName(re);
+    if (f) for (const h of headings(f)) { const m = pat.exec(h.text); if (m) out.add(m[1]); }
+    return out;
+  };
+  const wfs = headIds(/appendix-r-workflow-catalog/, /^(WF-[A-Z]+-\d{2})\b/);
+  const brs = headIds(/appendix-s-business-rules/, /^(BR-[A-Z0-9]+-\d{3})\b/);
+
+  const caps = new Set();
+  const c17 = byName(/^docs\/plan\/17-roadmap\.md$/);
+  if (c17) for (const m of c17.text.matchAll(/^\| (CAP-[A-Z0-9]+-\d{2}) \|/gm)) caps.add(m[1]);
+
+  const codes = new Set();
+  const suffixes = new Set();
+  const k = byName(/appendix-k-error-codes/);
+  if (k) for (const m of k.text.matchAll(/^\| `([A-Z_][A-Z0-9_]*)` \|/gm)) {
+    if (m[1].startsWith('_')) suffixes.add(m[1]); else codes.add(m[1]);
+  }
+
+  const perms = new Set();
+  const b = byName(/appendix-b-permissions/);
+  if (b) for (const t of tables(b)) {
+    for (const r of t.rows) {
+      const res = /^`([a-z][a-z0-9.-]+)`$/.exec(r[0] || '');
+      if (!res) continue;
+      for (const a of (r[1] || '').split(',').map((x) => x.trim()).filter((x) => /^[a-z-]+$/.test(x))) perms.add(res[1] + '.' + a);
+      for (const m of (r[2] || '').matchAll(/`([a-z-]+)`/g)) perms.add(res[1] + '.' + m[1]);
+    }
+  }
+  return { events, messageNames, reqs, wfs, brs, caps, codes, suffixes, perms, ready: { events: events.size > 0, reqs: reqs.size > 0, wfs: wfs.size > 0, brs: brs.size > 0, caps: caps.size > 0, codes: codes.size > 0, perms: perms.size > 0 } };
+}
+
+rule('R19-plan-identifiers', 'Every identifier a plan document cites exists in the catalog that owns it', (ctx) => {
+  const cat = buildCatalogs(ctx);
+  const out = [];
+  const report = (f, ln, what, id) => out.push(finding('R19-plan-identifiers', 'error', f.rel, ln, what + ' ' + id + ' is not in its catalog'));
+  for (const f of ctx.md) {
+    if (!f.rel.startsWith('docs/plan/') || PLAN_SKIP.test(f.rel)) continue;
+    let section = '';
+    let permCols = null;
+    let fenced = false;
+    f.lines.forEach((line, i) => {
+      const ln = i + 1;
+      if (/^\s*```/.test(line)) { fenced = !fenced; }
+      const h2 = /^##\s+(.*)$/.exec(line);
+      if (h2 && !fenced) section = h2[1].trim();
+      if (/^open points/i.test(section)) return;
+      if (DISCUSSES_ABSENCE.test(line)) return;
+
+      // Track which columns of the current table are permission columns.
+      if (/^\s*\|.*\|\s*$/.test(line)) {
+        const cells = line.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim());
+        if (permCols === null) permCols = cells.map((c, idx) => (/permission/i.test(c) ? idx : -1)).filter((x) => x >= 0);
+        else if (!/^:?-{2,}/.test(cells[0] || '') && permCols.length && cat.ready.perms) {
+          for (const idx of permCols) {
+            for (const m of (cells[idx] || '').matchAll(/`([a-z][a-z0-9-]*(?:\.[a-z0-9-]+){2,})`/g)) {
+              const p = m[1];
+              if (/\.v\d+$/.test(p) || !SERVICE_NAMESPACES.has(p.split('.')[0])) continue;
+              if (!cat.perms.has(p)) report(f, ln, 'Permission', p);
+            }
+          }
+        }
+      } else {
+        permCols = null;
+      }
+
+      if (cat.ready.events) {
+        for (const m of line.matchAll(/`([a-z][a-z0-9-]*(?:\.[a-z0-9-]+){2,}\.v\d+)`/g)) {
+          const key = m[1];
+          if (!SERVICE_NAMESPACES.has(key.split('.')[0])) continue;
+          if (/\.(usage|audit)\.recorded\.v\d+$/.test(key) && key.split('.').length === 4) continue;
+          if (cat.events.has(key)) continue;
+          const derived = /^[a-z][a-z0-9-]*\.(commands|replies)\.([a-z0-9-]+)\.v\d+$/.exec(key);
+          if (derived) {
+            const pascal = derived[2].split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+            if (cat.messageNames.has(pascal)) continue;
+          }
+          report(f, ln, 'Routing key', key);
+        }
+      }
+      const idCheck = (re, set, ready, what) => {
+        if (!ready) return;
+        for (const m of line.matchAll(re)) if (!set.has(m[1])) report(f, ln, what, m[1]);
+      };
+      idCheck(/\b(REQ-[A-Z0-9]+-\d{3})\b/g, cat.reqs, cat.ready.reqs, 'Requirement');
+      idCheck(/\b(WF-[A-Z]+-\d{2})\b/g, cat.wfs, cat.ready.wfs, 'Workflow');
+      idCheck(/\b(BR-[A-Z0-9]+-\d{3})\b/g, cat.brs, cat.ready.brs, 'Business rule');
+      idCheck(/\b(CAP-[A-Z0-9]+-\d{2})\b/g, cat.caps, cat.ready.caps, 'Capability');
+      if (cat.ready.codes) {
+        for (const m of line.matchAll(/`([A-Z][A-Z0-9]*_[A-Z0-9_]+)`/g)) {
+          const code = m[1];
+          const prefix = SERVICE_PREFIXES.find((p) => code.startsWith(p + '_'));
+          if (!prefix) continue;
+          if (cat.codes.has(code) || cat.suffixes.has(code.slice(prefix.length))) continue;
+          report(f, ln, 'Error code', code);
+        }
+      }
+    });
+  }
+  return out;
+});
+
 /* ---------------------------------------------------------------------- run */
 
 export function lint(root, only) {
