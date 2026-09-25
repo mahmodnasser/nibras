@@ -57,8 +57,8 @@ Master brief Section 33 states each framework's status. Each row below names the
 | GDPR-style baseline | Completable impact assessment | Platform `DpiaRecord`; `12-security-privacy-safety.md` §10.6 | `TC-PRV-080`, REQ-PRV-017 |
 | GDPR-style baseline | Data inventory with classification per field | Every service's entity configuration; Appendix J | REQ-PRV-001 architecture test |
 | GDPR-style baseline | Breach readiness: tamper-evident audit, access logs on Sensitive reads | Audit; `12-security-privacy-safety.md` §6 | `TC-AUD-101` onwards |
-| Saudi PDPL | Residency in region | Platform `region_code` immutable; §8 here | `TC-PLT-001`; REQ-PLT-030 |
-| Saudi PDPL | Arabic privacy notices, consent versions | Platform `LegalDocument` per country; §5 here | `TC-PRV-063` |
+| Saudi PDPL | Residency in region | Platform `region_code` immutable; §8 here | `TC-PLT-101`; REQ-PLT-030 |
+| Saudi PDPL | Arabic privacy notices, consent versions | Platform `LegalDocument` per country; §5 here | `TC-PRV-063` (document 12) |
 | Saudi PDPL | Transfer outside the Kingdom only with consent and disclosure | Rung 4 AI and any foreign sub-processor behind consent; `25-ai-and-assist-ladder.md` §3.3 | `TC-SEC-323`, `TC-PRV-079` |
 | Saudi PDPL | ZATCA e-invoicing plug-in interface | Finance with the `IEInvoicingProvider` plug-in; §9 here | Plug-in conformance suite; `TC-INT-002` |
 | UAE PDPL | As Saudi Arabia, with the UAE e-invoicing and reporting plug-ins when the programme is live | Finance, Reporting; §9 here | Plug-in conformance suite |
@@ -71,22 +71,22 @@ Master brief Section 33 states each framework's status. Each row below names the
 
 ### 2. Retention schedule and the enforcing job
 
-Quoted from master brief Section 32. The job names are those of `10-data-architecture.md` §8, which owns them; tests are from `12-security-privacy-safety.md` §10.3. Legal hold behaviour for every row is `12-security-privacy-safety.md` §10.4.
+The rows, their default retention, what follows and the legal-hold column are quoted from master brief Section 32. The job name and the services that run it are quoted from `10-data-architecture.md` §8, which owns them; this document names no job of its own and invents no schedule. Tests are from `12-security-privacy-safety.md` §10.3, whose job names are the older ones and are aligned at its next revision (open point 1). Legal hold behaviour for every row is `12-security-privacy-safety.md` §10.4.
 
 | Data | Default retention | Then | Legal hold | Enforcing job and service | Test |
 |---|---|---|---|---|---|
-| Student academic record (enrollment, results, transcripts) | 10 years after leaving | Archive read-only, then anonymize | Suspends deletion | `LeaverRetentionJob`, School with Assessment; identifiers destroyed first | `TC-PRV-069`, `TC-PRV-075` |
-| Attendance records | 7 years | Delete by partition | Suspends deletion | `PartitionMaintenanceJob`, Attendance | `TC-PRV-068` |
-| Behavior incidents | Until leaving, plus 3 years | Anonymize | Suspends deletion | `LeaverRetentionJob`, Behavior | `TC-PRV-071` |
-| Wellbeing records (clinic, counseling, safeguarding) | Per country law; default until leaving plus 7 years | Delete; safeguarding concerns follow the local safeguarding retention rule instead | Suspends deletion, and the hold is itself logged | `WellbeingRetentionJob`, Wellbeing | `TC-PRV-029`, `TC-PRV-070` |
-| Financial documents (invoices, payments, credit notes) | 10 years | Archive read-only | Suspends deletion | `FinanceArchiveJob`, Finance | `TC-PRV-072` |
+| Student academic record (enrollment, results, transcripts) | 10 years after leaving | Archive read-only, then anonymize | Suspends deletion | `LeaverRetentionJob`, School with Academics, Assessment, Requests and Finance for their year partitions; identifiers destroyed first | `TC-PRV-069`, `TC-PRV-075` |
+| Attendance records | 7 years | Delete by partition | Suspends deletion | `PartitionMaintenanceJob`, Attendance | `TC-PRV-068` (document 12) |
+| Behavior incidents | Until leaving, plus 3 years | Anonymize | Suspends deletion | `LeaverRetentionJob`, Behavior | `TC-PRV-071` (document 12) |
+| Wellbeing records (clinic, counseling, safeguarding) | Per country law; default until leaving plus 7 years | Delete; safeguarding concerns follow the local safeguarding retention rule instead | Suspends deletion, and the hold is itself logged | `WellbeingRetentionJob`, Wellbeing, under Wellbeing's own credentials | `TC-PRV-029`, `TC-PRV-070` |
+| Financial documents (invoices, payments, credit notes) | 10 years | Archive read-only | Suspends deletion | `FinanceArchiveJob`, Finance | `TC-PRV-072` (document 12) |
 | Messages and announcements | 2 years | Delete; content flagged for safeguarding follows the wellbeing rule | Suspends deletion | `PartitionMaintenanceJob`, Communication; flagged rows moved out first | `TC-PRV-068`, `TC-PRV-029` |
-| Notification delivery log | 90 days | Delete | no | `PartitionMaintenanceJob`, Notification | `TC-PRV-073` |
-| Audit entries | 7 years | Detach partition to cold storage | Suspends deletion | `PartitionMaintenanceJob`, Audit; publishes `audit.retention.partition-detached.v1` | `TC-PRV-068` |
-| Application logs | 30 days | Delete | no | Log store retention policy, observability stack | `TC-PRV-073` |
-| Metrics | 13 months downsampled | Delete | no | Metrics store retention, observability stack | `TC-PRV-073` |
-| Traces | 7 days | Delete | no | Trace store retention, observability stack | `TC-PRV-073` |
-| Backups | 35 days point-in-time plus 12 monthly | Expire | A hold pins the relevant backup set | pgBackRest expiry, operations runbook | `TC-PRV-074` |
+| Notification delivery log | 90 days | Delete | no | `PartitionMaintenanceJob`, Notification | `TC-PRV-073` (document 12) |
+| Audit entries | 7 years | Detach partition to cold storage | Suspends deletion | `PartitionMaintenanceJob`, Audit; publishes `audit.retention.partition-detached.v1` | `TC-PRV-068` (document 12) |
+| Application logs | 30 days | Delete | no | Log store retention policy, observability stack | `TC-PRV-073` (document 12) |
+| Metrics | 13 months downsampled | Delete | no | Metrics store retention, observability stack | `TC-PRV-073` (document 12) |
+| Traces | 7 days | Delete | no | Trace store retention, observability stack | `TC-PRV-073` (document 12) |
+| Backups | 35 days point-in-time plus 12 monthly | Expire | A hold pins the relevant backup set | pgBackRest expiry, operations runbook | `TC-PRV-074` (document 12) |
 | Deleted tenant | 30-day cooling-off, export available throughout | Purge, then issue a certificate of deletion | A hold blocks the purge and notifies both parties | `TenantPurgeJob` driven by WF-PLT-03 | `TC-PLT-026`, `TC-PRV-901` |
 
 | What this document adds | Detail |
@@ -195,7 +195,7 @@ A release with a new "does not support" row on a Tier 1 screen is not published 
 | Every acceptance is a row | `LegalAcceptance`: document, version, user or tenant, time, hashed address (`06-services/platform.md` §4.9) through `POST /api/v1/platform/legal-acceptances` | REQ-PLT-033 acceptance test |
 | Publishing a version asks once | `POST /api/v1/platform/legal-documents/{documentId}/publish`; the next sign-in shows the new version in the user's language with a summary of changes | REQ-PLT-033 |
 | Material change notice | Terms and DPA changes are announced 30 days before they take effect; the owner may export and leave in that window under §7 | Platform announcement record |
-| Arabic and English are equal | Both bodies are published together; neither is a translation of record unless the country's law requires one, in which case the country plug-in names it | `TC-PRV-063` |
+| Arabic and English are equal | Both bodies are published together; neither is a translation of record unless the country's law requires one, in which case the country plug-in names it | `TC-PRV-063` (document 12) |
 | Nothing is used before acceptance | A user without acceptance of the current privacy policy reaches only the acceptance screen and sign-out | Identity sign-in integration test |
 | Evidence export | `GET /api/v1/platform/legal-acceptances` with the keyset envelope, exportable by the owner | REQ-PLT-033 |
 
@@ -227,9 +227,9 @@ Master brief Section 36 says the sentence is in the contract. The clause, as it 
 
 | Stage | Export | Mechanism | Test |
 |---|---|---|---|
-| Active | Available | WF-PLT-03 export rung; configuration as code for settings | `TC-PLT-023` |
+| Active | Available | WF-PLT-03 export rung; configuration as code for settings | `TC-PLT-023` (Appendix R) |
 | Past due, reminders at 7, 14 and 30 days | Available | Dunning never touches export | REQ-PLT-013 acceptance test |
-| Read-only at 30 days past due | Available | Read-only blocks writes, never exports | `TC-PLT-022` |
+| Read-only at 30 days past due | Available | Read-only blocks writes, never exports | `TC-PLT-022` (Appendix R) |
 | Suspended | Available to the owner | Export route exempt from suspension; the owner keeps sign-in | `TC-PLT-021`, `TC-PLT-903` |
 | Deletion requested, 30-day cooling-off | Available throughout, cancellable | WF-PLT-03 with BR-PLT-003 | `TC-PLT-024`, `TC-PLT-025` |
 | Purged | Not available; certificate issued | `TenantPurgeJob` | `TC-PLT-026`, `TC-PRV-901` |
@@ -248,7 +248,7 @@ Quoted from master brief Section 34: a region is a whole deployment. A tenant is
 
 | Control | Where it lives | Proof |
 |---|---|---|
-| Region chosen at signup and immutable after `Validated` | Platform `Tenant.region_code`; BR-PLT-004; `PLATFORM_RESIDENCY_VIOLATION` | `TC-PLT-001`; REQ-PLT-030 |
+| Region chosen at signup and immutable after `Validated` | Platform `Tenant.region_code`; BR-PLT-004; `PLATFORM_RESIDENCY_VIOLATION` | `TC-PLT-101`; REQ-PLT-030 |
 | Databases, object storage, queues and caches of a region run only in that region | `15-deployment-and-operations.md` per deployment | Deployment review per region |
 | Backups stay in region | Backup target per region (`10-data-architecture.md` §9) | `TC-PRV-074` |
 | Staging copies are anonymized and stay in region | Master brief Section 34 environments table; REQ-PRV-023 | Staging refresh test |
@@ -419,7 +419,7 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 | Consent, subject rights, sub-processors and impact assessment behave as summarised | The tests cited in §3 | Per `12-security-privacy-safety.md` |
 | Legal acceptance is recorded and enforced | REQ-PLT-033 acceptance test; sign-in integration test for the acceptance gate | Every pull request touching Platform or Identity sign-in |
 | Export is available at every stage | `TC-PLT-021` to `TC-PLT-026`, `TC-PLT-903` | Every pull request touching Platform |
-| Residency holds | `TC-PLT-001`; deployment review per region | Every pull request touching Platform; per region at release |
+| Residency holds | `TC-PLT-101`; deployment review per region | Every pull request touching Platform; per region at release |
 | Child-safety clauses are true | The tests in §6 | Every pull request touching the owning services |
 | The accessibility statement is generated from real results | Release pipeline stage that assembles §4 from CI and the manual pass | Every release |
 | E-invoicing plug-ins meet §9 | Conformance suite in `Nibras.Plugins.Testing` per plug-in version | Plug-in certification |

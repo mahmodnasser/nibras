@@ -1,0 +1,52 @@
+# Test-case work for `docs/plan/23-integrations-and-public-api.md`
+
+## Tests cited but defined nowhere: define them here
+
+- **TC-INT-005**
+  - cited `docs/plan/06-services/platform.md` line 2232: "Revocation within 5 s across services; no secret stored or logged; daily API meter | Integration"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 754: "Revocation reaches every service within 5 seconds | Nightly"
+- **TC-INT-006**
+  - cited `docs/plan/06-services/platform.md` line 2232: "Revocation within 5 s across services; no secret stored or logged; daily API meter | Integration"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 755: "Secrets are revealed once and never stored in clear | Every pull request in Identity"
+- **TC-INT-007**
+  - cited `docs/plan/06-services/platform.md` line 2232: "Revocation within 5 s across services; no secret stored or logged; daily API meter | Integration"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 756: "Quotas return 402, rate limits 429 | Every pull request in `BuildingBlocks`; nightly"
+- **TC-INT-010**
+  - cited `docs/plan/06-services/platform.md` line 2233: "Webhook challenge, replay window, signature vector, retry schedule, endpoint states, rotation overlap, eligibility | Integration"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 757: "The webhook challenge, signature, replay window and deduplication | Every pull request in Platform; the sample receivers in the portal build"
+- **TC-INT-016**
+  - cited `docs/plan/06-services/platform.md` line 2233: "Webhook challenge, replay window, signature vector, retry schedule, endpoint states, rotation overlap, eligibility | Integration"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 761: "Only eligible events are subscribable and every one exists in Appendix E | Every pull request touching Appendix E or this document"
+- **TC-INT-031**
+  - cited `docs/plan/06-services/platform.md` line 2234: "OneRoster 1.2 schema validation; LTI 1.3 launch | Integration, phase 4"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 764: "Standards | Nightly from the phase that ships each standard"
+- **TC-INT-032**
+  - cited `docs/plan/06-services/platform.md` line 2234: "OneRoster 1.2 schema validation; LTI 1.3 launch | Integration, phase 4"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 764: "Standards | Nightly from the phase that ships each standard"
+- **TC-INT-012**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 254: "Test vector, published in the portal and asserted by `TC-INT-012`:"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 757: "The webhook challenge, signature, replay window and deduplication | Every pull request in Platform; the sample receivers in the portal build"
+- **TC-INT-003**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 753: "Scopes, data scope and the intersection rule for personal tokens | Every pull request in Identity and Platform"
+- **TC-INT-004**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 753: "Scopes, data scope and the intersection rule for personal tokens | Every pull request in Identity and Platform"
+- **TC-INT-011**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 757: "The webhook challenge, signature, replay window and deduplication | Every pull request in Platform; the sample receivers in the portal build"
+- **TC-INT-013**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 758: "The retry schedule, jitter bounds and outcome classification | Every pull request in Platform"
+- **TC-INT-014**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 759: "Endpoint states and disable rules | Every pull request in Platform"
+- **TC-INT-015**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 760: "Secret rotation has no outage | Nightly; rehearsed in the `rotate-webhook-secret.md` game day"
+- **TC-INT-030**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 764: "Standards | Nightly from the phase that ships each standard"
+- **TC-INT-033**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 764: "Standards | Nightly from the phase that ships each standard"
+- **TC-INT-034**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 764: "Standards | Nightly from the phase that ships each standard"
+- **TC-INT-035**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 764: "Standards | Nightly from the phase that ships each standard"
+- **TC-INT-040**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 765: "SAML and SCIM adapters | From the Tier 2 slice that ships them"
+- **TC-INT-041**
+  - cited `docs/plan/23-integrations-and-public-api.md` line 765: "SAML and SCIM adapters | From the Tier 2 slice that ships them"

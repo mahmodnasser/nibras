@@ -60,6 +60,8 @@ flowchart LR
 | External system | Adapter interface | Owning service | Default implementation | Cost note (master brief Section 6.3) |
 |---|---|---|---|---|
 | Push providers | `IPushSender` | Notification | Firebase Cloud Messaging, Apple Push Notification service | Free of charge, not open source; the one accepted exception |
+| Devices without Google services | the `IPushSender` fallback path | Notification | no external provider: the in-app real-time channel while the app is open, plus email and, for urgent messages only, SMS (master brief Section 37) | None beyond the SMS carrier charge; the fallback uses the product's own channels |
+| Huawei push (AppGallery devices) | `IPushSender` | Notification | Tier 2 plug-in, built when the device share justifies it (master brief Section 37) | Free of charge, not open source; built only on demand |
 | SMS and WhatsApp | channel adapter | Notification | none; email and push fallback | Charged per message by carriers; SMS stays optional |
 | Payment gateway | `IPaymentGateway` | Finance | manual and bank transfer | Charged per transaction; card data never touches Nibras (Section 36) |
 | E-invoicing | country plug-in | Finance | interface only in Tier 1; ZATCA and JoFotara implementations per target country | Regional plug-in (Section 17) |
@@ -305,7 +307,8 @@ flowchart LR
     GW --> BW & BM
     GW --> IDN & SCH & ATT & FIN & COM & OTH
     BW & BM --> RPT
-    ATT & FIN & OTH -->|"gRPC, one hop"| SCH
+    IDN & ATT & FIN & COM & OTH -->|"gRPC, one hop: School directories and checksums"| SCH
+    ATT & FIN & COM & OTH -->|"gRPC, one hop: Identity permissions"| IDN
     IDN & SCH & ATT & FIN & COM & OTH <-->|"outbox and inbox"| MQ
     MQ --> NW & DW & RP & OW & AUD
     RP --> RPT
@@ -316,11 +319,15 @@ flowchart LR
     COM -->|"SignalR"| WEB & MOB
 ```
 
+The diagram draws the two synchronous callees that are separate nodes. Platform, Scheduling, Academics and Hr are also called over gRPC and sit inside "the other 15 services", so their edges are internal to that node. Reference architecture Section 8.0 is the complete synchronous list; document 05 reproduces it per service, and the table below quotes the rules that govern each path.
+
 | Path | Route | Rule that governs it |
 |---|---|---|
 | Request | client, edge proxy, Gateway, service or backend-for-frontend | The Gateway resolves the tenant; a request without a tenant is rejected except on platform endpoints (master brief Section 7.4) |
 | Screen composition | Gateway, Bff.Web or Bff.Mobile, several services over HTTP and the Reporting read models | Cross-service screens are served by the backends-for-frontends or Reporting, never by the browser calling ten services (Section 7.3) |
-| Synchronous query | service, gRPC, School or Identity | Maximum one hop, with timeouts, retries with jitter, circuit breaker and a cached fallback (Section 7.3) |
+| Synchronous query | service, gRPC, the callee named in reference architecture Section 8.0 | The callees are Platform, Identity, School, Scheduling, Academics and Hr, and Platform's metering job additionally calls every data-owning service's `Usage.Recount`. At most one hop, with timeouts, retries with jitter, circuit breaker and a cached fallback (Section 7.3) |
+| The one-hop rule | the callee answers from its own data, or the caller falls back | Quoted from reference architecture Section 8.0: "No service makes a synchronous call from inside a handler that is itself serving a synchronous call." The `GrpcHopRules` architecture test enforces it; a call marked *job only* in Section 8.0 runs in a scheduled or queued job and adds no hop to any request chain |
+| Assist request | Bff.Web, REST, Ai; then Ai's job, REST, a Bff.Web internal route, the owning service | Ai makes no gRPC call. Bff.Web submits assist jobs over REST and every model call answers 202, so no user request waits on a model; Ai's jobs read back through Bff.Web's three internal routes, one hop each (reference architecture Section 8.0) |
 | Event | service outbox, RabbitMQ exchange, consumer inbox | At-least-once delivery; every handler safe to run twice; ordered per subject through a `partitionKey` (Section 8) |
 | Job | API creates the job record, publishes to the bulk lane, worker runs it, progress over SignalR, result record with output | Long jobs report progress, can be cancelled, and leave an error report (Section 8, item 10) |
 | Real time | Communication hubs on the `redis-state` backplane | Messaging, notifications, job progress and live permission refresh; no logout needed after a role change (Section 7.5) |

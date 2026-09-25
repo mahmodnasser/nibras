@@ -23,7 +23,7 @@ This document lets a platform engineer stand the product up in any of the three 
 | Secrets and rotation as operations | The secrets and key inventory and the threat model | `12-security-privacy-safety.md` |
 | The runbook list and the template every runbook follows | The runbooks themselves | `docs/runbooks/`, written from `docs/templates/runbook.md` before each alert is enabled |
 | Calendar-aware scaling and the warm-up job as operations | The cache entries the warm-up loads and their lifetimes | `21-performance-engineering.md` |
-| Incident process, post-mortem outline, status page rules | Sizing numbers, thresholds and cost | `28-capacity-and-cost-model.md` |
+| Incident process, post-mortem outline, status page rules; and what operations does with the capacity and cost model, which figure sets a chart value, an alert threshold, a peak-window minimum or a FinOps review input (part 13) | The sizing numbers, thresholds and prices themselves, and whether each is quoted, a starting point or an estimate | `28-capacity-and-cost-model.md` |
 
 ## Content
 
@@ -243,7 +243,7 @@ Reference architecture Section 11 lists the stages; this table adds the tool and
 | 5 | Format check | `dotnet format --verify-no-changes` | Any unformatted file |
 | 6 | Integration tests | xUnit with Testcontainers for PostgreSQL, RabbitMQ and Redis | A failing test; a container that does not start within the timeout is a failure, not a skip |
 | 7 | Contract tests | PactNet for consumer-driven contracts; OpenAPI diff against the published contract | A breaking change to an endpoint or a message shape without a new version |
-| 8 | Generated permission and tenant-isolation suites | The generators in document 12, parts 4.3 and 4.4 | Any endpoint reachable without its declared permission; any row readable across tenants, including through a pooled connection (`TC-DATA-001`) |
+| 8 | Generated permission and tenant-isolation suites | The generators in document 12, parts 4.3 and 4.4 | Any endpoint reachable without its declared permission; any row readable across tenants, including through a pooled connection (`TC-DATA-643` (document 10)) |
 | 9 | Query-budget assertions | The command-counting interceptor from master brief Section 19 | More than five database commands on a budgeted request, or an N+1 detected |
 | 10 | Licence scan | `license-scan.yml` called as a job, against `tools/license-scan/allow.json` | A dependency whose licence is not on the allow-list, or is unverified |
 | 11 | Dependency and container vulnerability scan | Trivy on the lock files and the built image | A critical or high finding without an accepted exception recorded in `RISKS.md` with an owner and a date |
@@ -511,9 +511,9 @@ Two clarifications this plan adds. First, master brief Section 34 pins a tenant 
 | Drill | Cadence | Scope | Environment | Test | Owner |
 |---|---|---|---|---|---|
 | Timed single-tenant restore | Once per release, at least | Restore the demo tenant to a point 2 hours earlier while other tenants keep working | Staging | `TC-DATA-020` on the load tier | Platform engineer |
-| Single-tenant restore under load | Quarterly | As above on the load tier with 49 busy tenants; p95 of the others must not move by more than 10% | Test, load tier | `TC-DATA-020` | Platform engineer |
+| Single-tenant restore under load | Quarterly | As above on the load tier with 49 busy tenants; p95 of the others must not move by more than 10% | Test, load tier | `TC-DATA-020` (document 10) | Platform engineer |
 | Regional failover | Quarterly | WF-INF-03 with the drill flag: restore into the isolated standby, verify, report, never switch traffic | Isolated standby | `TC-INF-021` to `TC-INF-024`, `TC-INF-026` | Platform engineer with the architect |
-| Real-event path rehearsal | Yearly | WF-INF-03 with the real-event flag against staging, traffic switched and switched back | Staging | `TC-INF-025` | Architect |
+| Real-event path rehearsal | Yearly | WF-INF-03 with the real-event flag against staging, traffic switched and switched back | Staging | `TC-INF-025` (Appendix R) | Architect |
 | Appliance upgrade and restore | Quarterly | Part 8: install the previous release on real Hyper-V, upgrade, restore from the appliance's own backup | A physical Hyper-V host | `TC-INF-001` to `TC-INF-006` | Platform engineer |
 | Backup verification | After every backup | `verify-restore.sh` restores the newest backup into a scratch container and checks row counts | Every mode | `BackupFailed` alert on failure | Automated |
 
@@ -689,7 +689,7 @@ The procedures follow the same nine headings; "What this means" states the trigg
 | `warm-caches-manually.md` | `WarmUpJobMissed`, `RedisUnavailable` recovery, or a release inside a peak window | Caches for a band of tenants are loaded by hand before first period | Redis healthy; the band's tenant list; time to first period | Call the warm endpoints per tenant in the band, largest tenants first, with the stampede guard on; verify `nibras_cache_hit_ratio` rising | Never flush to warm; never warm every band at once at 05:00; never bypass the single-flight guard | Platform engineer if first period is under 10 minutes away for any tenant not yet warm |
 | `rebuild-projection.md` | `ReportingProjectionLagCritical`, a restore, or a projection change | One or all projections for one tenant are rebuilt from the sources; dashboards show "rebuilding" | Source services healthy; the checkpoint; `--dry-run` row counts | `nibras-reporting rebuild --projection <name> --tenant <id>`; `--from-checkpoint` for a short outage; verify row counts and checksums; clear the tenant's cache | Never rebuild every tenant at once during school hours; never restore a projection from backup (document 10) | Reporting owner after a second failed rebuild |
 
-Eight procedure runbooks, plus `raise-tenant-sampling.md` (part 5.4) and `drills/` records (part 7). Sixty runbook files in total under `docs/runbooks/`: fifty-one alert runbooks, eight procedures, and the sampling procedure.
+Eleven procedure runbooks, plus `raise-tenant-sampling.md` (part 5.4) and `drills/` records (part 7). Sixty-three runbook files in total under `docs/runbooks/`: fifty-one alert runbooks, eleven procedures, and the sampling procedure. Both figures are counted from the tables above, not carried forward.
 
 ---
 
@@ -790,6 +790,25 @@ stateDiagram-v2
 
 ---
 
+### 13. Capacity and cost, as operations
+
+`28-capacity-and-cost-model.md` owns every sizing number, threshold and price, and states for each one whether it is **quoted**, a **starting point** or an **estimate**. Nothing in this part restates a figure; this part says what operations does with them, so that the PLAN_SPEC row for this document resolves to one place rather than none.
+
+| What operations takes from document 28 | Which part of it | What this document does with it |
+|---|---|---|
+| Sizing per deployment mode: replicas, requests and limits, database and cache memory per tier | Part 2 | The umbrella chart values in part 1 and the three modes in part 2 are generated against it; a workload with no request or limit fails review (`.claude/rules/deploy.md`) |
+| HPA targets and latency triggers per service class | Part 3.1 | The service classes in part 5.1 and the burn-rate alerts in part 5.7 are the same classes; `ApiLatencyBudgetBreach` fires at the budget the trigger protects |
+| KEDA target depth, minimum and maximum per worker | Part 3.2 | The scale-up and scale-down behaviour behind `WorkerQueueNotDraining` and `NotificationLaneBacklog`; the peak-window minimums in part 11 are the same numbers |
+| Cache memory per tier | Part 2, quoted from document 21 §2.4 | The thresholds behind `RedisStateMemoryHigh` and `RedisCacheEvictionsHigh`; the runbook for the second names document 28 as the first thing to check |
+| Storage per student per data class, and backup growth | Parts 2.8 and 4 | `PostgresDiskHigh`, `PostgresDiskCritical` and the restore-bandwidth check in the drill record (part 7) |
+| The cold standby, provisioned by the same OpenTofu environment scaled to zero | Part 4 | The failover procedure in part 7 and `fail-over-region.md`; a warm standby would change the compute line, which is why the decision is recorded in "Decisions in force" |
+| FinOps labels on every chart object and OpenTofu resource | Part 7.1 | Part 1's chart lint and the OpenTofu plan check refuse an unlabelled resource; the `cost.json` board in part 5.6 is built from the same labels |
+| The monthly FinOps review | Part 7.2 | Operations supplies the inputs: the bill by `nibras/cost-line`, the board, peak versus off-peak node-hours per band from part 11, and the idle ratio per service class. A cost line growing faster than students for three months becomes a risk in `18-risk-register.md` |
+
+**What is not settled yet.** Document 28 says of itself that nothing in it is a measurement: the starting points come from master brief Section 34 and are replaced by the Appendix N scenario named in its part 6, at the latest in phase 6 under CAP-PERF-02. Operations therefore treats every threshold in part 5.7 as provisional until the scale run, and a threshold changed by a measurement is changed in document 28 first and quoted here after.
+
+---
+
 ## Brief sources covered
 
 | Source | What it means here | Acceptance criterion | Test case ID |
@@ -822,7 +841,8 @@ stateDiagram-v2
 | The standby region is cold, provisioned by the same OpenTofu environment scaled to zero | This document, part 7 | Cold standby | A warm standby doubles the compute line in document 28 |
 | The "off-region copy" stays inside the residency boundary | This document, part 7; master brief Section 34 | In residency | Cross-border backup would break the residency promise |
 | Stage 14, the in-image culture test, sits between publish and SBOM | This document, part 4.1; document 33, part 5 | In force | Testing on the runner tests a different artefact |
-| Fifty-four alerts, each with a runbook file before it is enabled | This document, parts 5.7 and 10 | In force | An alert without a runbook is disabled by `TC-INF-107` until the file exists |
+| Fifty-four alerts, each with a runbook file before it is enabled; sixty-three runbook files counted from the part 10 tables | This document, parts 5.7 and 10 | In force | An alert without a runbook is disabled by `TC-INF-107` until the file exists |
+| Capacity, sizing and cost figures are quoted from document 28, never restated here | This document, part 13 | In force | Two sets of thresholds, and the one operations reads is the stale one |
 | Forge stays GitHub with `.github/workflows/` | Document 07, open point | GitHub | The folder becomes `.woodpecker/` with the same stages |
 
 ## Dependencies on other documents
@@ -836,7 +856,7 @@ stateDiagram-v2
 | Queue topology, lanes, dead-letter policy, tenant fairness | `11-messaging-architecture.md` | Group E review |
 | Secrets and key inventory, break-glass path, generated suites | `12-security-privacy-safety.md` | Group E review |
 | Runner matrix, culture checklist, appliance in the platform matrix | `33-platform-support-and-dev-environments.md` | Group F review |
-| Sizing, thresholds, cost of peak minimums and the cold standby | `28-capacity-and-cost-model.md` | Group F review |
+| Sizing, thresholds, cost of peak minimums and the cold standby, and the status of every figure | `28-capacity-and-cost-model.md` | Group F review; part 13 quotes it and restates nothing |
 | Cache entries the warm-up loads, and their lifetimes | `21-performance-engineering.md` | Group C review |
 | Test case identifiers `TC-INF-101` and above | `16-test-strategy.md`, which registers them | Group E review |
 
@@ -855,6 +875,7 @@ stateDiagram-v2
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
 | 2026-09-20 | Group E review pending | Draft | none recorded yet |
+| 2026-09-22 | Scorecard remediation, theme 4 | Amended: part 13 added so the PLAN_SPEC capacity-and-cost row resolves here by quoting document 28; the procedure-runbook count corrected from eight to eleven and the total from sixty to sixty-three, counted from the part 10 tables | `34-work-breakdown.md` SL-INF-617 still says "sixty runbook files" |
 
 ## How this document is verified
 
@@ -876,5 +897,21 @@ stateDiagram-v2
 | Appliance builds, upgrades, rolls back, restores | `TC-INF-001` to `TC-INF-006`, `TC-INF-105`, `TC-INF-106`; the quarterly Hyper-V drill record | Per release; quarterly |
 | Rotation works before launch | `TC-INF-113`: every rotation runbook executed on staging with the drill record | Before the first paying customer; then per interval |
 | Calendar-aware scaling and warm-up | Appendix N, N-01 across four waves and N-11; `WarmUpJobMissed` and `CalendarScaleUpMissed` silent on the load tier for a full school week | Nightly; weekly |
+| No capacity, sizing or cost figure is restated here | Review only: part 13 is read against `28-capacity-and-cost-model.md`; a number written into part 13 rather than cited is a finding | Group E and Group F reviews |
 | Incident process is followed | Every Sev1 and Sev2 has a post-mortem file with the nine headings within 5 business days, checked by `/lint-plan` over `docs/runbooks/incidents/` | Monthly review |
 | This document agrees with the catalogs and the briefs | `tools/kit-lint` for section and appendix references and Mermaid types; `/lint-plan` for consistency with documents 04, 07, 10, 11, 28 and 33 | Every change under `docs/` |
+
+### Test cases
+
+This document defines the operations tests below; `TC-INF-001` to `TC-INF-026` are the Appendix R transitions of WF-INF-01 to WF-INF-03, and `TC-DATA-020` is defined in `10-data-architecture.md`.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-INF-101 | Given an image built on merge, when the release is promoted through test and staging to production, then the digest in `gitops/prod/` equals the digest signed on merge and `release.yml` re-tagged it without a rebuild | REQ-INF-009 |
+| TC-INF-102 | Given every image in the registry, when its OCI referrers are listed, then each has a CycloneDX SBOM referrer and the security scan reads it | REQ-SEC-011 |
+| TC-INF-103 | Given the test environment's admission controller, when an unsigned image and an image signed by an unknown key are deployed, then both are rejected and a correctly signed image is admitted | REQ-INF-010, REQ-SEC-011 |
+| TC-INF-104 | Given every service dashboard, when the dashboard definitions are read, then each has the SLO panel and the runbook link panel | REQ-INF-017 |
+| TC-INF-105 | Given the appliance built by `release.yml`, when it completes first boot, then the signed release manifest lists every image digest and each digest equals the digest of the container actually running | REQ-PLAT-004, WF-INF-01 |
+| TC-INF-106 | Given an appliance with no network access, when a versioned offline upgrade bundle is applied, then the upgrade completes from the bundle alone after the pre-upgrade check passes | REQ-INF-031, WF-INF-01 |
+| TC-INF-108 | Given the single-server Docker Compose profile, when CI starts it on one machine with the documented command, then every service reports ready and `healthcheck.sh` passes | REQ-INF-002 |
+| TC-INF-114 | Given a throwaway branch in the test environment, when one deliberate violation per `ci-service.yml` stage is committed (a warning, an unformatted file, an N+1, a secret string, an unsigned image), then each stage fails on its own violation | REQ-INF-008 |

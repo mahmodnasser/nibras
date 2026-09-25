@@ -256,13 +256,14 @@ Base path `/api/v1/admissions`. Conventions from `22-api-conventions-and-error-c
 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
-| GET | `/campaigns` | `admissions.capacity.view` | `academicYearId`, `campusId` | `CampaignDto[]` | none | safe |
-| POST | `/campaigns` | `admissions.capacity.edit` | `CreateCampaignRequest` (window, grade rules, document rules, validity, fee) | 201 draft | `ADMISSIONS_VALIDATION_FAILED` (overlap, age range) | `Idempotency-Key` |
-| PUT | `/campaigns/{id}` | `admissions.capacity.edit` | `UpdateCampaignRequest` | 200; evicts the form keys | `ADMISSIONS_CONCURRENCY_CONFLICT` | `If-Match` |
-| POST | `/campaigns/{id}/open` | `admissions.capacity.edit` | none | 200 | `ADMISSIONS_VALIDATION_FAILED` (no grade rules) | state check |
-| POST | `/campaigns/{id}/close` | `admissions.capacity.edit` | none | 200 | none | state check |
+| GET | `/campaigns` | `admissions.campaigns.view` | `academicYearId`, `campusId` | `CampaignDto[]` | none | safe |
+| POST | `/campaigns` | `admissions.campaigns.create` | `CreateCampaignRequest` (window, grade rules, document rules, validity, fee) | 201 draft | `ADMISSIONS_VALIDATION_FAILED` (overlap, age range) | `Idempotency-Key` |
+| PUT | `/campaigns/{id}` | `admissions.campaigns.edit` | `UpdateCampaignRequest` | 200; evicts the form keys | `ADMISSIONS_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/campaigns/{id}` | `admissions.campaigns.delete` | none | 204 for a draft with no application | `ADMISSIONS_VALIDATION_FAILED` | by id |
+| POST | `/campaigns/{id}/open` | `admissions.campaigns.open` | none | 200 | `ADMISSIONS_VALIDATION_FAILED` (no grade rules) | state check |
+| POST | `/campaigns/{id}/close` | `admissions.campaigns.close` | none | 200 | none | state check |
 
-Campaign configuration has no resource in Appendix B and uses `admissions.capacity.*` (open point 1).
+Campaigns are their own Appendix B resource, `admissions.campaigns` with view, create, edit, delete and the special actions `open` and `close`, added under ADR-0019, so campaign configuration can be delegated apart from capacity.
 
 ### 5.3 Inquiries, follow-ups, tours
 
@@ -291,7 +292,7 @@ Campaign configuration has no resource in Appendix B and uses `admissions.capaci
 | POST | `/applications` | `admissions.applications.create` | `CreateApplicationRequest` (staff-entered) | 201 | `ADMISSIONS_WINDOW_CLOSED`, `ADMISSIONS_VALIDATION_FAILED` | `Idempotency-Key` |
 | PATCH | `/applications/{id}` | `admissions.applications.edit` | `UpdateApplicationRequest` | 200; a grade change recomputes the required set | `ADMISSIONS_CONCURRENCY_CONFLICT` | `If-Match` |
 | POST | `/applications/{id}/stage-transitions` | `admissions.applications.edit` | `MoveStageRequest` (to UnderReview, NeedsInformation with the question, Withdrawn) | 200; stage-changed event | `ADMISSIONS_APPLICATION_STAGE_INVALID`, `ADMISSIONS_DOCUMENT_MISSING` | state check |
-| POST | `/applications/{id}/age-override` | `admissions.applications.decide` | `AgeOverrideRequest` (reason) | 200 | `ADMISSIONS_VALIDATION_FAILED` (no reason) | state check |
+| POST | `/applications/{id}/age-override` | `admissions.applications.override-age` | `AgeOverrideRequest` (reason) | 200 | `ADMISSIONS_VALIDATION_FAILED` (no reason) | state check |
 | POST | `/applications/{id}/duplicate-resolution` | `admissions.applications.edit` | `ResolveDuplicateRequest` (not-duplicate or duplicate, reason) | 200 | `ADMISSIONS_VALIDATION_FAILED` | state check |
 | POST | `/applications/{id}/scores` | `admissions.applications.score` | `ScoreApplicationRequest` | 200 | `ADMISSIONS_APPLICATION_STAGE_INVALID` | `If-Match` |
 | POST | `/applications/{id}/decision` | `admissions.applications.decide` | `DecideApplicationRequest` (offer, conditional-offer, reject, waitlist, conditions) | 200; `Assessed → Offered, Rejected or Waitlisted` | `ADMISSIONS_ASSESSMENT_NOT_SCHEDULED`, `ADMISSIONS_SEAT_UNAVAILABLE` (offer without a seat, waiting list offered), `ADMISSIONS_DUPLICATE_APPLICANT` | `Idempotency-Key`; state check |
@@ -312,7 +313,7 @@ Campaign configuration has no resource in Appendix B and uses `admissions.capaci
 | POST | `/applications/{id}/offers` | `admissions.offers.make`; above capacity also `admissions.capacity.override-capacity` with a reason | `MakeOfferRequest` (deposit, fee plan code, conditions, waived documents, override reason) | 201; publishes `admissions.offer.made.v1`; Documents renders the letter | `ADMISSIONS_CAPACITY_OVERRIDE_REQUIRED`, `ADMISSIONS_SEAT_UNAVAILABLE`, `ADMISSIONS_DUPLICATE_APPLICANT` | `Idempotency-Key`; capacity row lock |
 | POST | `/offers/{id}/withdraw` | `admissions.offers.withdraw` | reason | 200; seat released | `ADMISSIONS_VALIDATION_FAILED` (deposit paid) | state check |
 | POST | `/offers/{id}/extend` | `admissions.offers.extend-expiry` | `ExtendOfferRequest` (days, reason) | 200 new expiry | `ADMISSIONS_OFFER_EXPIRED` | `If-Match` |
-| POST | `/offers/{id}/confirm-deposit` | `admissions.enrollment.enroll` | `ConfirmDepositRequest` (Finance receipt reference, reason) | 200 `DepositPaid`; Saga 3 starts; publishes `admissions.offer.accepted.v1` | `ADMISSIONS_OFFER_EXPIRED`, `ADMISSIONS_VALIDATION_FAILED` | `Idempotency-Key`; used until open point 4 is closed |
+| POST | `/offers/{id}/confirm-deposit` | `admissions.enrollment.enroll` | `ConfirmDepositRequest` (Finance receipt reference, reason) | 200 `DepositPaid`; Saga 3 starts; publishes `admissions.offer.accepted.v1` | `ADMISSIONS_OFFER_EXPIRED`, `ADMISSIONS_VALIDATION_FAILED` | `Idempotency-Key`; the manual repair path when `sourceRefs` cannot match a payment |
 | GET | `/offers/export` | `admissions.offers.export` | filters | streamed CSV | none | safe |
 | GET | `/seat-capacity` | `admissions.capacity.view` | `academicYearId`, `campusId` | capacity, enrolled, offers, holds per grade | none | safe; cached 30 s |
 | PUT | `/seat-capacity/{id}` | `admissions.capacity.edit` | `SetPlannedCapacityRequest` | 200; waiting list consulted | `ADMISSIONS_CONCURRENCY_CONFLICT` | `If-Match` |
@@ -376,15 +377,15 @@ Payload fields are owned by Appendix E, Admissions section; cited, not restated.
 | `admissions.inquiry.created.v1` | `inquiryId` | `SubmitInquiryHandler` (public), `CreateInquiryHandler` | Reporting, Notification |
 | `admissions.application.submitted.v1` | `applicationId` | `SubmitApplicationHandler` | Documents, Notification, Reporting |
 | `admissions.application.stage-changed.v1` | `applicationId` | Every transition of `InquiryToEnrollmentStatus`, including Saga 3 step 6 | Reporting, Notification |
-| `admissions.offer.made.v1` | `applicationId` | `MakeOfferHandler`, waiting-list promotion | Finance, Documents, Notification |
+| `admissions.offer.made.v1` | `applicationId` | `MakeOfferHandler`, waiting-list promotion | Finance, Documents, Notification, Reporting |
 | `admissions.offer.accepted.v1` | `applicationId` | Deposit matched (`PaymentReceivedConsumer` or `ConfirmDepositHandler`) or zero-deposit acceptance, at the moment Saga 3 starts | School, Identity, Finance, Documents |
 | `admissions.offer.expired.v1` | `applicationId` | `OfferExpiryJob` and the acceptance-time check | Notification, Reporting |
-| `admissions.re-enrollment.confirmed.v1` | `studentId` | `ConfirmReEnrollmentHandler` and the Saga 6 `ConfirmReEnrollment` command | School, Finance, Reporting |
-| `admissions.re-enrollment.declined.v1` | `studentId` | `DeclineReEnrollmentHandler` and the `DeclineReEnrollment` command | School, Finance, Reporting, Notification |
+| `admissions.re-enrollment.confirmed.v1` | `studentId` | `ConfirmReEnrollmentHandler` and the Saga 6 `ConfirmReEnrollment` command | School, Finance, Reporting, Requests |
+| `admissions.re-enrollment.declined.v1` | `studentId` | `DeclineReEnrollmentHandler` and the `DeclineReEnrollment` command | School, Finance, Reporting, Notification, Requests |
 | `admissions.usage.recorded.v1` | `tenantId` | Hourly: applications, OTP sends | Platform |
 | `admissions.audit.recorded.v1` | `tenantId` | Every write and transition, every override and waiver | Audit |
 
-Commands sent on `nibras.admissions` by Saga 3: `EnrolStudent`, `WithdrawEnrolment` (School); `AssignFeePlan`, `VoidFeePlan` (Finance); `ProvisionGuardianAccess`, `RevokeGuardianAccess` (Identity); `GenerateDocument`, `RevokeDocument` (Documents); and `RequestNotification` for the welcome pack, OTP codes, offer reminders and re-enrolment invitations (`11-messaging-architecture.md` section 2.4).
+Commands sent on `nibras.admissions` by Saga 3: `EnrolStudent`, `WithdrawEnrolment` (School); `AssignFeePlan`, `VoidFeePlan` (Finance); `ProvisionGuardianAccess`, `RevokeGuardianAccess` (Identity); `GenerateDocument`, `RevokeDocument` (Documents); and `RequestNotification` for the welcome pack, OTP codes, offer reminders and re-enrolment invitations (`11-messaging-architecture.md` section 2.4). Appendix E also catalogues `RaiseApplicationFee` (`finance.commands.raise-application-fee.v1`, sent on `nibras.admissions`), which is how REQ-ADM-006 raises the application fee; document 11's command catalog still has to list it.
 
 ### 7.2 Consumed
 
@@ -394,8 +395,10 @@ Queues from `11-messaging-architecture.md` section 2.5 (Admissions table).
 |---|---|---|---|
 | The doc 11 section 2.3 set | `admissions.tenant-lifecycle` | `TenantLifecycleConsumer` | Tenant rows, read-only (public writes refused during suspension), settings, custom-field values on applications |
 | `school.section.created.v1`, `school.section.changed.v1` | `admissions.reference-copies` | `SectionConsumer` | `ref_section`; recomputes `planned_capacity` for the section's grade and campus; a capacity rise consults the waiting list |
-| `finance.payment.received.v1` | `admissions.events` | `PaymentReceivedConsumer` | Matches a deposit or application fee to its offer or application (open point 4); `Offered → DepositPaid`, starts Saga 3; `fee_status = paid` |
-| `finance.invoice.overdue.v1` | `admissions.events` | `InvoiceOverdueConsumer` | For deposit and application-fee invoices Admissions knows, flags the offer or application on the registrar home |
+| `finance.payment.received.v1` | `admissions.events` | `PaymentReceivedConsumer` | Matches a deposit or application fee to its offer or application through the optional `sourceRefs` field of the payload; `Offered → DepositPaid`, starts Saga 3; `fee_status = paid` |
+| `finance.invoice.overdue.v1` | `admissions.events` | `InvoiceOverdueConsumer` | For deposit and application-fee invoices Admissions knows, flags the offer or application on the registrar home; the payload's `studentId` is null for a pre-enrolment invoice |
+| `finance.account.restricted.v1`, `finance.account.cleared.v1` | `admissions.events` | `AccountStandingConsumer` | WF-ADM-02: blocks or releases the re-enrolment confirmation (`ADMISSIONS_REENROLLMENT_BLOCKED_BY_BALANCE`) |
+| `school.student.promoted.v1` | `admissions.reference-copies` | `StudentPromotedConsumer` | Records next-year enrolment so WF-ADM-02 can reach `Enrolled` |
 | `requests.request.approved.v1` | `admissions.events` | `RequestApprovedConsumer` | "Approved, being applied" on a re-enrolment response |
 | `school.student.enrolled.v1`, `school.student.status-changed.v1`, `finance.fee-plan.assigned.v1`, `finance.credit-note.issued.v1`, `identity.guardian-link.created.v1`, `identity.user.invited.v1`, `identity.user.deactivated.v1`, `documents.document.generated.v1`, `documents.certificate.revoked.v1` | `admissions.saga-outcomes` | `EnrolmentSagaOutcomeHandler`, `OfferLetterConsumer` | Saga 3 step outcomes and compensation acknowledgements; `documents.document.generated.v1` for the offer letter sets `letter_document_id` |
 | `admissions.replies.#` from School, Finance, Identity, Documents | `admissions.replies` | `EnrolmentSaga` | `Failed` replies move the saga to `Compensating` |
@@ -409,7 +412,7 @@ Queues from `11-messaging-architecture.md` section 2.5 (Admissions table).
 |---|---|---|
 | WF-ADM-01 Inquiry to enrollment | Owner | State type `InquiryToEnrollmentStatus`, feature folder `Application/Features/InquiryToEnrollment/` (document 31). Every transition runs through the transition pipeline (`13-workflows-and-sagas.md` section 5.1). Timeouts: offer expires 14 days after issue with reminders at days 7 and 12; `NeedsInformation` for 21 days becomes `Withdrawn`; a waitlisted application is reconfirmed every 30 days. The last transition `DepositPaid → Enrolled` is **Saga 3**, orchestrated here |
 | Saga 3 Enrolment from an accepted offer | Orchestrator | `13-workflows-and-sagas.md` section 3, Saga 3: handler `Nibras.Admissions.Application/Sagas/EnrolmentSaga/`, state enum `Nibras.Admissions.Domain.Applications.EnrolmentSagaState`, rules BR-ADM-003 and BR-FIN-001. Steps: seat hold confirmed; `EnrolStudent` (School); `AssignFeePlan` (Finance); `ProvisionGuardianAccess` (Identity); `GenerateDocument` (Documents); local `Enrolled`; welcome pack. Failure returns the application to `DepositPaid` with the seat **held** and the failed step named. Tests `EnrolmentSagaTests` |
-| WF-ADM-02 Re-enrollment with fee settlement check | Owner, single-service choreography | State type `ReEnrollmentWithFeeSettlementCheckStatus`, feature folder `Application/Features/ReEnrollmentWithFeeSettlementCheck/`. Timeouts: 21-day window, reminders at days 7 and 14; `BlockedOnFees` escalates to the finance manager at 14 days and the principal at 30, then releases the seat. `SettlementChecked` reads the account standing from `finance.account.restricted.v1` and `finance.account.cleared.v1` (open point 6). `SeatReserved → Enrolled` is recorded when School's rollover writes the next-year enrolment (open point 6) |
+| WF-ADM-02 Re-enrollment with fee settlement check | Owner, single-service choreography | State type `ReEnrollmentWithFeeSettlementCheckStatus`, feature folder `Application/Features/ReEnrollmentWithFeeSettlementCheck/`. Timeouts: 21-day window, reminders at days 7 and 14; `BlockedOnFees` escalates to the finance manager at 14 days and the principal at 30, then releases the seat. `SettlementChecked` reads the account standing from `finance.account.restricted.v1` and `finance.account.cleared.v1`, which Appendix E routes here. `SeatReserved → Enrolled` is recorded on `school.student.promoted.v1` when School's rollover writes the next-year enrolment |
 | WF-RQS-01 Service request lifecycle | Effect owner | `ConfirmReEnrollment`, `DeclineReEnrollment` (doc 13 section 4) |
 | WF-FIN-01 Fee plan to collection | Participant | `finance.invoice.overdue.v1` flags unpaid deposits |
 
@@ -422,7 +425,7 @@ In schema `admissions`, `ref_<entity>` with `tenant_id`, `source_version`, `reco
 | Copy | Source | Fields kept | Reconciliation |
 |---|---|---|---|
 | `ref_section` | `school.section.created.v1`, `school.section.changed.v1` | `section_id`, `grade_level_id`, `campus_id`, `capacity`, `academic_year_id` and `name` fetched over gRPC | Nightly against School `ReferenceReconciliation.Checksum(section)` |
-| `ref_grade_level` | No change event exists; `StructureDirectory.ListGradeLevels` at provisioning, on `platform.tenant.reactivated.v1` and nightly | `grade_level_id`, `name_en`, `name_ar`, `stage_id`, `sequence` | Nightly snapshot replaces the copy (`10-data-architecture.md` open point 1) |
+| `ref_grade_level` | `school.grade-level.changed.v1`; `StructureDirectory.ListGradeLevels` at provisioning, on `platform.tenant.reactivated.v1` and nightly | `grade_level_id`, `name_en`, `name_ar`, `stage_id`, `sequence` | The change event keeps the copy current; the nightly snapshot repairs it |
 | Fee plan names | Not copied: Admissions stores `fee_plan_code` only and the offer screen lists plans through Bff.Web from Finance's REST | none | none (open point 2) |
 
 A missing section copy needed at offer time is fetched once over gRPC and reported as a data-quality issue.
@@ -461,11 +464,13 @@ All run in the Api host through Quartz.NET, per-tenant concurrency of one per jo
 | `admissions.inquiries.view`, `.create`, `.edit`, `.delete`, `.export`, `admissions.inquiries.convert` | Admissions officer, registrar | campus |
 | `admissions.applications.view`, `.create`, `.edit`, `.export`, `admissions.applications.score` | Admissions officer, registrar | campus |
 | `admissions.applications.decide` | Registrar, principal | campus |
+| `admissions.applications.override-age` | Registrar, principal (elevated, reason required, BR-ADM-001); never the admissions officer | campus |
 | `admissions.assessments.view`, `.create`, `.edit`, `admissions.assessments.schedule`, `admissions.assessments.evaluate` | Admissions officer; evaluators | campus |
 | `admissions.offers.view`, `.create`, `.export`, `admissions.offers.make`, `admissions.offers.withdraw` | Registrar, principal | campus |
 | `admissions.offers.extend-expiry` | Registrar (elevated, reason recorded) | campus |
 | `admissions.waiting-list.view`, `.edit`, `admissions.waiting-list.promote` | Admissions officer, registrar | campus |
 | `admissions.waiting-list.reorder` | Registrar (elevated, T-ADM-04) | campus |
+| `admissions.campaigns.view`, `.create`, `.edit`, `.delete`, `admissions.campaigns.open`, `admissions.campaigns.close` | Registrar, principal; admissions officer view | campus |
 | `admissions.capacity.view`, `.edit` | Registrar, principal | campus |
 | `admissions.capacity.override-capacity` | Principal, registrar (elevated, T-ADM-05) | campus |
 | `admissions.enrollment.view`, `admissions.enrollment.enroll` | Registrar | campus |
@@ -476,8 +481,10 @@ All run in the Api host through Quartz.NET, per-tenant concurrency of one per jo
 | Appendix C row | Trigger | Recipients | Urgency, channels |
 |---|---|---|---|
 | Application stage change, offer made, offer expiring | `admissions.application.stage-changed.v1`, `admissions.offer.made.v1`, `admissions.offer.expired.v1` | Applicant guardian, registrar | N, email, push |
-| Re-enrollment opened, reminder | `admissions.re-enrollment.declined.v1`, job: reminder ladder | Guardians | N, push, email |
-| OTP code, welcome pack, offer and re-enrolment reminders | `RequestNotification` command → `notification.notification.requested.v1` | Applicant contact, guardians | No dedicated Appendix C row (open point 10) |
+| Re-enrollment opened, reminder | `admissions.re-enrollment.declined.v1`, job: `ReEnrollmentWindowJob` (Appendix E jobs table, daily 08:00 campus time) | Guardians | N, push, email |
+| Welcome pack after enrolment | `RequestNotification` on the Saga 3 outcome | Guardians | N, email, push |
+| One-time code or password reset link | `RequestNotification` from the public form | Applicant contact | U, never deduplicated |
+| Offer reminders | `RequestNotification` command → `notification.notification.requested.v1` | Applicant guardian | No dedicated Appendix C row (open point 10) |
 
 **Settings (Appendix G) read by Admissions.**
 
@@ -785,6 +792,7 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 | TC-ADM-001 to TC-ADM-006 | Every WF-ADM-01 row of Appendix R, including Saga 3 happy path and the Identity-step failure with the seat held | Integration, `InquiryToEnrollmentWorkflowTests`, `EnrolmentSagaTests` |
 | TC-ADM-011 to TC-ADM-016 | Every WF-ADM-02 row of Appendix R | Integration, `ReEnrollmentWithFeeSettlementCheckWorkflowTests` |
 | TC-ADM-301 to TC-ADM-305 | Registrar home, inquiry conversion without retyping, offer by email and push with the clock, capacity refused and overridden (Appendix Q) | End-to-end |
+| TC-ADM-305 | Given a grade with every seat taken and the registrar's offer refused with `ADMISSIONS_CAPACITY_OVERRIDE_REQUIRED`, when a colleague holding `admissions.capacity.override-capacity` places the student with a reason, then the offer is made, `capacity_override_reason` and `capacity_override_by` are recorded, `override_count` rises by 1, and the enrolment completes; the same request without a reason is refused (REQ-ADM-013, BR-ADM-003) | End-to-end |
 | TC-SEC-140 to TC-SEC-143, TC-SEC-240 | T-ADM-01 to T-ADM-05 | Security suite |
 | TC-ADM-401 | `AgeEligibilityRulesTests` (BR-ADM-001): the three Appendix S examples, the 29 February edge and the Hijri input | Unit |
 | TC-ADM-402 | `RequiredDocumentRulesTests` (BR-ADM-002): union of 4 documents, missing and expired documents named | Unit |
@@ -828,11 +836,11 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 
 | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|
-| Deposit payments cannot be matched to offers because the payment event carries only invoice ids | high | high | Open point 4: `sourceRefs` on the payment event, manual deposit confirmation until then | Architect, Finance team |
+| Deposit payments cannot be matched to offers | low | high | `sourceRefs` on `finance.payment.received.v1` (Appendix E, ADR-0019); `POST /offers/{id}/confirm-deposit` remains as the manual repair | Architect, Finance team |
 | Oversubscription under concurrent offers | low | high | Row lock and TC-ADM-407 | Admissions team |
 | A half-created student after a failed saga | low | high | Saga 3 compensation with the seat held, operator `Stuck` visibility, TC-ADM-414 to TC-ADM-419 | Admissions team |
 | Bot floods exhaust SMS credits through OTP | med | med | OTP per contact and per address limits, proof-of-work, SMS credit check in Notification | Security reviewer |
-| Re-enrolment block cannot read balances because Admissions holds no Finance data | high | med | Open point 6: bind `finance.account.restricted.v1` and `finance.account.cleared.v1`; amounts composed by Bff.Web from Finance | Architect |
+| Re-enrolment block cannot read balances because Admissions holds no Finance data | low | med | `finance.account.restricted.v1` and `finance.account.cleared.v1` are bound (Appendix E, ADR-0019); amounts composed by Bff.Web from Finance | Architect |
 
 ---
 
@@ -843,7 +851,7 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 | Jobs run in the Api host | Appendix L lists no admissions-worker image | As stated | A worker image moves `Api/Jobs/` |
 | Seat decisions read the database under a row lock, never the cache | BR-ADM-003 edge case, doc 21 section 1.4 | As stated | Double-booked seats |
 | Offer letters are generated by Documents from `admissions.offer.made.v1`; the enrolment letter by the `GenerateDocument` command | Appendix E consumers, Saga 3 step 5 | As stated | A second letter path |
-| Campaign configuration uses `admissions.capacity.*` | Appendix B has no campaign resource | Until Appendix B gains one (open point 1) | Principal and registrar only |
+| Campaign configuration uses `admissions.campaigns.*`, with `open` and `close` as special actions | Appendix B (ADR-0019) | As stated | Campaign configuration can be delegated apart from capacity |
 | No fee-plan copy; the code travels, names come from Finance through Bff.Web | Reference architecture table 8.0 allows only the School hop | As stated (open point 2) | Offers show codes if Bff.Web cannot reach Finance |
 
 ## Dependencies on other documents
@@ -864,16 +872,16 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix B has no resource for campaigns and form configuration, and no named permission for the age override that BR-ADM-001 requires | Campaigns under `admissions.capacity.*`; the age override under `admissions.applications.decide` with a reason | Product owner, Appendix B amendment | Configuration cannot be delegated separately; an inspector sees the override under a broader permission |
+| 1 | Closed by ADR-0019. Appendix B now carries `admissions.campaigns` (view, create, edit, delete, plus `open` and `close`) and the `override-age` action on `admissions.applications` (elevated, reason required, BR-ADM-001). Appendix I gives the admissions officer G06 without `override-age` and adds it to that role's must-not list | Sections 5.2 and 5.4 use the new names; the `admissions.capacity.*` and `admissions.applications.decide` mappings are withdrawn | Closed | None; an inspector sees the override under its own permission |
 | 2 | `10-data-architecture.md` section 6 copies fee-plan names from Finance by gRPC, which table 8.0 does not allow | No copy; codes only; names through Bff.Web | Architect | Doc 10 row is corrected |
 | 3 | Appendix R's WF-ADM-01 diagram has no `Withdrawn` or `Declined` state, yet its timeouts withdraw applications and BR-ADM-003 releases seats on decline | Both states added to `InquiryToEnrollmentStatus` as terminal; Appendix R amended | Architect | Transition tests for those paths have no Appendix R identifier |
-| 4 | `finance.payment.received.v1` carries `invoiceIds` only; Admissions cannot tell which offer or application a deposit or application fee pays, and no event or command asks Finance to raise the application fee (REQ-ADM-006) | Propose optional `sourceRefs` on the payment event (additive, non-breaking under Appendix E versioning) and Finance keying deposit invoices on `offerId`; until then `POST /offers/{id}/confirm-deposit` and a fee confirmation by the officer | Architect, Finance team | Deposits are confirmed by hand in the first season |
+| 4 | Closed by ADR-0019. Appendix E adds the optional `sourceRefs` field to `finance.payment.received.v1`, with a paragraph defining it, and catalogues the `RaiseApplicationFee` command (`finance.commands.raise-application-fee.v1`, sent on `nibras.admissions`) for REQ-ADM-006 | Section 7.2 matches deposits through `sourceRefs`; `POST /offers/{id}/confirm-deposit` stays as the manual repair path, not as the normal one. Document 11's command catalog still has to list the command, which the change list records as plan-side work outside the brief | Document 11 owner | Deposit matching is automatic; a missing doc 11 entry only delays the command binding |
 | 5 | BR-ADM-006 compares national identifiers with enrolled students, but no identifier may cross a contract; Appendix J.3 does not list Admissions as holding a sensitive field | HMAC under a per-tenant matching key shared by School and Admissions only; Appendix J.3 gains the Admissions row | Security reviewer | Identifier matching falls back to name and date of birth |
-| 6 | WF-ADM-02 needs account standing and the next-year enrolment, but Appendix E names neither `finance.account.restricted.v1`, `finance.account.cleared.v1` nor `school.student.promoted.v1` as consumed by Admissions, and `finance.invoice.overdue.v1` carries no `studentId` | Bind the three keys as starred bindings under `11-messaging-architecture.md` section 2.6 and amend Appendix E | Architect | The block and the `Enrolled` transition cannot be automated |
+| 6 | Closed by ADR-0019. Appendix E now names Admissions as a consumer of `finance.account.restricted.v1`, `finance.account.cleared.v1` and `school.student.promoted.v1`, and `finance.invoice.overdue.v1` now carries `studentId`, null for a pre-enrolment invoice | Section 7.2 binds all three as ordinary consumers; the starred-binding workaround is withdrawn | Closed | None; the WF-ADM-02 block and the `Enrolled` transition are automated |
 | 7 | REQ-ADM-001 expects a follow-up "task", while ADR-0012 gives `Task` to Requests and no command creates one from Admissions | Admissions follow-ups are pipeline items on the registrar home | Product owner | Follow-ups do not appear in the unified inbox |
 | 8 | REQ-ADM-018 expects a transport subscription request at enrolment, but no Saga 3 step or event reaches Operations | Out of Saga 3; the family raises the transport request through Requests after enrolment | Product owner | One extra step for families who want transport |
 | 9 | Appendix J has no retention row for applicants who never enrol | Anonymize 2 years after the campaign closes, identifiers destroyed at once | Product owner with privacy counsel | Retention longer or shorter than local law requires |
-| 10 | Appendix C has no rows for the OTP code, welcome pack, offer reminders and re-enrolment invitations sent through `RequestNotification` | Templates in Notification; rows proposed for Appendix C | Product owner | kit-lint R12 cannot check these messages |
+| 10 | Closed by ADR-0019 for three of the four: Appendix C now has "Welcome pack after enrolment", "One-time code or password reset link" (urgent, never deduplicated, covering the Admissions public-form OTP) and the re-enrolment row, whose trigger job is now Admissions' `ReEnrollmentWindowJob` rather than the Finance reminder ladder. Still open: the offer reminder has no row of its own | The offer reminder keeps its Notification template and its `RequestNotification` command. No open question owns it; the change list records it as outside the logged rows | Product owner, Appendix C owner | kit-lint R12 cannot check the offer reminder |
 | 11 | `05-service-catalog.md` lists `documents.document.generated.v1` among Admissions' consumed events, and doc 11 binds it in `admissions.saga-outcomes` only | One binding serves both the offer letter and Saga 3 step 5 | Architect | None |
 
 ## Review record

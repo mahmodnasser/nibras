@@ -14,7 +14,7 @@ Approval is a written note in `docs/project/PROJECT_STATE.md` naming the group, 
 
 ## Before Group A: the decisions workshop
 
-Master brief Section 27 lists the decisions, and `docs/project/OPEN_QUESTIONS.md` holds 26 questions, each with a default. **Every default is safe enough to proceed on**, so nothing here blocks. Answering changes the default; silence accepts it.
+Master brief Section 27 lists the decisions, and `docs/project/OPEN_QUESTIONS.md` holds 28 questions, the last two settled during the scorecard remediation (27 absence-alert timing, 28 the Tier 1 public API, OneRoster and iCal), each with a default. **Every default is safe enough to proceed on**, so nothing here blocks. Answering changes the default; silence accepts it.
 
 One 90-minute session covers it:
 

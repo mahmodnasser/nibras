@@ -326,17 +326,17 @@ Base path `/api/v1/school`. Conventions from `22-api-conventions-and-error-catal
 | GET | `/campuses/{id}` | `school.campuses.view` | none | `CampusDto` | `SCHOOL_NOT_FOUND` | safe |
 | POST | `/campuses` | `school.campuses.create` | `CreateCampusRequest` | 201 `CampusDto` | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
 | PUT | `/campuses/{id}` | `school.campuses.edit` | `UpdateCampusRequest` | 200 `CampusDto` | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/campuses/{id}` | `school.campuses.delete` | none | 204, or a refusal naming dependants and offering archive | `SCHOOL_VALIDATION_FAILED` (in use, open point 8) | by id |
+| DELETE | `/campuses/{id}` | `school.campuses.delete` | none | 204, or a refusal naming dependants and offering archive | `SCHOOL_CONFIGURATION_IN_USE` | by id |
 | POST | `/campuses/{id}/archive` | `school.campuses.edit` | `ArchiveRequest` (reason) | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | state check |
 | GET | `/buildings` | `school.campuses.view` | filter `campusId` | `BuildingDto[]` | none | safe |
 | POST | `/buildings` | `school.campuses.edit` | `CreateBuildingRequest` | 201 `BuildingDto` | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
 | PUT | `/buildings/{id}` | `school.campuses.edit` | `UpdateBuildingRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/buildings/{id}` | `school.campuses.edit` | none | 204 | `SCHOOL_VALIDATION_FAILED` (in use) | by id |
+| DELETE | `/buildings/{id}` | `school.campuses.edit` | none | 204 | `SCHOOL_CONFIGURATION_IN_USE` | by id |
 | GET | `/rooms` | `school.rooms.view` | filter `campusId`, `buildingId`, `kind`, `minCapacity`, `facility` | keyset `RoomDto` | none | safe |
 | GET | `/rooms/{id}` | `school.rooms.view` | none | `RoomDto` | `SCHOOL_NOT_FOUND` | safe |
 | POST | `/rooms` | `school.rooms.create` | `CreateRoomRequest` | 201 `RoomDto` | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
-| PUT | `/rooms/{id}` | `school.rooms.edit` | `UpdateRoomRequest` | 200 `RoomDto` | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/rooms/{id}` | `school.rooms.delete` | none | 204 | `SCHOOL_VALIDATION_FAILED` (in use) | by id |
+| PUT | `/rooms/{id}` | `school.rooms.edit` | `UpdateRoomRequest` | 200 `RoomDto`; publishes `school.room.changed.v1` | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/rooms/{id}` | `school.rooms.delete` | none | 204 | `SCHOOL_CONFIGURATION_IN_USE` | by id |
 
 ### 5.3 Academic years, terms, grading periods, calendar days
 
@@ -352,10 +352,10 @@ Base path `/api/v1/school`. Conventions from `22-api-conventions-and-error-catal
 | PUT | `/terms/{id}` | `school.terms.edit` | `UpdateTermRequest` | 200 | `SCHOOL_ACADEMIC_YEAR_CLOSED`, `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
 | GET | `/grading-periods` | `school.terms.view` | filter `termId` | `GradingPeriodDto[]` | none | safe |
 | POST | `/grading-periods` | `school.terms.create` | `CreateGradingPeriodRequest` | 201 | `SCHOOL_ACADEMIC_YEAR_CLOSED`, `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
-| PUT | `/grading-periods/{id}` | `school.terms.edit` | `UpdateGradingPeriodRequest` | 200; evicts the calendar cache key | `SCHOOL_ACADEMIC_YEAR_CLOSED`, `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| PUT | `/grading-periods/{id}` | `school.terms.edit` | `UpdateGradingPeriodRequest` | 200; evicts the calendar cache key; publishes `school.grading-period.changed.v1` | `SCHOOL_ACADEMIC_YEAR_CLOSED`, `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
 | GET | `/calendar-days` | `school.terms.view` | filter `campusId`, `from`, `to` | `CalendarDayDto[]` | none | safe |
-| POST | `/calendar-days` | `school.terms.edit` | `CreateCalendarDayRequest` (campus, date, kind, labels) | 201 | `SCHOOL_ACADEMIC_YEAR_CLOSED` | `Idempotency-Key`; natural key `(campusId, date, kind)` |
-| DELETE | `/calendar-days/{id}` | `school.terms.edit` | none | 204 | `SCHOOL_ACADEMIC_YEAR_CLOSED` | by id |
+| POST | `/calendar-days` | `school.terms.edit` | `CreateCalendarDayRequest` (campus, date, kind, labels) | 201; publishes `school.calendar-day.changed.v1` | `SCHOOL_ACADEMIC_YEAR_CLOSED` | `Idempotency-Key`; natural key `(campusId, date, kind)` |
+| DELETE | `/calendar-days/{id}` | `school.terms.edit` | none | 204; publishes `school.calendar-day.changed.v1` | `SCHOOL_ACADEMIC_YEAR_CLOSED` | by id |
 
 ### 5.4 Structure: stages, grade levels, sections, subjects, departments, houses
 
@@ -366,13 +366,13 @@ Base path `/api/v1/school`. Conventions from `22-api-conventions-and-error-catal
 | PUT | `/stages/{id}` | `school.grade-levels.edit` | `UpdateStageRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
 | GET | `/grade-levels` | `school.grade-levels.view` | filter `stageId` | `GradeLevelDto[]` | none | safe |
 | POST | `/grade-levels` | `school.grade-levels.create` | `CreateGradeLevelRequest` | 201 | `SCHOOL_VALIDATION_FAILED` (cycle in `nextGradeLevelId`) | `Idempotency-Key` |
-| PUT | `/grade-levels/{id}` | `school.grade-levels.edit` | `UpdateGradeLevelRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/grade-levels/{id}` | `school.grade-levels.delete` | none | 204, or refusal naming the sections that use it | `SCHOOL_VALIDATION_FAILED` (in use) | by id |
+| PUT | `/grade-levels/{id}` | `school.grade-levels.edit` | `UpdateGradeLevelRequest` | 200; publishes `school.grade-level.changed.v1` | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/grade-levels/{id}` | `school.grade-levels.delete` | none | 204, or refusal naming the sections that use it | `SCHOOL_CONFIGURATION_IN_USE` | by id |
 | GET | `/sections` | `school.sections.view` | filter `academicYearId`, `campusId`, `gradeLevelId` | keyset `SectionDto` | none | safe |
 | GET | `/sections/{id}` | `school.sections.view` | none | `SectionDto` with active count | `SCHOOL_NOT_FOUND` | safe |
 | POST | `/sections` | `school.sections.create` | `CreateSectionRequest` | 201; publishes `school.section.created.v1` | `SCHOOL_ACADEMIC_YEAR_CLOSED`, `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key`; natural key `(academicYearId, campusId, code)` |
 | PUT | `/sections/{id}` | `school.sections.edit` | `UpdateSectionRequest` | 200; publishes `school.section.changed.v1` with the changed fields | `SCHOOL_ACADEMIC_YEAR_CLOSED`, `SCHOOL_SECTION_CAPACITY_EXCEEDED` (capacity below active count), `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/sections/{id}` | `school.sections.delete` | none | 204 when empty; refusal otherwise | `SCHOOL_VALIDATION_FAILED` (in use) | by id |
+| DELETE | `/sections/{id}` | `school.sections.delete` | none | 204 when empty; refusal otherwise | `SCHOOL_CONFIGURATION_IN_USE` | by id |
 | GET | `/sections/{id}/roster` | `school.students.view` | none | `RosterEntryDto[]` (id, number, names, photo, status) | `SCHOOL_NOT_FOUND` | safe; compiled query |
 | POST | `/section-formations` | `school.sections.balance-formation` | `StartSectionFormationRequest` (year, grade, target sections, rules) | 202 job (Tier 2) | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` required |
 | GET | `/section-formations/{id}` | `school.sections.balance-formation` | none | `SectionFormationDto` with the proposal | `SCHOOL_NOT_FOUND` | safe |
@@ -381,15 +381,17 @@ Base path `/api/v1/school`. Conventions from `22-api-conventions-and-error-catal
 | GET | `/subjects` | `school.subjects.view` | filter `departmentId` | `SubjectDto[]` | none | safe |
 | POST | `/subjects` | `school.subjects.create` | `CreateSubjectRequest` | 201 | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
 | PUT | `/subjects/{id}` | `school.subjects.edit` | `UpdateSubjectRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/subjects/{id}` | `school.subjects.delete` | none | 204 | `SCHOOL_VALIDATION_FAILED` (in use) | by id |
-| GET | `/departments` | `school.profile.view` | none | `DepartmentDto[]` | none | safe |
-| POST | `/departments` | `school.profile.edit` | `CreateDepartmentRequest` | 201 | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
-| PUT | `/departments/{id}` | `school.profile.edit` | `UpdateDepartmentRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
-| GET | `/houses` | `school.profile.view` | none | `HouseDto[]` | none | safe |
-| POST | `/houses` | `school.profile.edit` | `CreateHouseRequest` | 201 | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
-| PUT | `/houses/{id}` | `school.profile.edit` | `UpdateHouseRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/subjects/{id}` | `school.subjects.delete` | none | 204 | `SCHOOL_CONFIGURATION_IN_USE` | by id |
+| GET | `/departments` | `school.departments.view` | none | `DepartmentDto[]` | none | safe |
+| POST | `/departments` | `school.departments.create` | `CreateDepartmentRequest` | 201 | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
+| PUT | `/departments/{id}` | `school.departments.edit` | `UpdateDepartmentRequest` | 200; publishes `school.department.changed.v1` | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/departments/{id}` | `school.departments.delete` | none | 204 | `SCHOOL_CONFIGURATION_IN_USE` | by id |
+| GET | `/houses` | `school.houses.view` | none | `HouseDto[]` | none | safe |
+| POST | `/houses` | `school.houses.create` | `CreateHouseRequest` | 201 | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
+| PUT | `/houses/{id}` | `school.houses.edit` | `UpdateHouseRequest` | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/houses/{id}` | `school.houses.delete` | none | 204 | `SCHOOL_CONFIGURATION_IN_USE` | by id |
 
-Departments and houses have no resource in Appendix B; they are mapped to `school.profile.*` until the catalog gains one (open point 1).
+Departments and houses are their own resources in Appendix B (`school.departments`, `school.houses`, each with view, create, edit and delete), added under ADR-0019. A head of department holds `school.departments.view` and `.edit` in department scope (Appendix I, I.2), which the `school.profile.*` mapping could not express.
 
 ### 5.5 Students
 
@@ -417,7 +419,8 @@ Departments and houses have no resource in Appendix B; they are mapped to `schoo
 | GET | `/students/{id}/notes` | `school.students.view` | none | `StudentNoteDto[]` filtered by the caller's visibility level | none | safe |
 | POST | `/students/{id}/notes` | `school.students.edit` | `AddStudentNoteRequest` (visibility, body) | 201 | `SCHOOL_VALIDATION_FAILED` (visibility above the author's level) | `Idempotency-Key` |
 | GET | `/students/{id}/siblings` | `school.students.view` | none | `SiblingDto[]` | none | safe |
-| POST | `/students/{id}/sibling-links` | `school.students.edit` | `LinkSiblingRequest` | 201 | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
+| POST | `/students/{id}/sibling-links` | `school.students.edit` | `LinkSiblingRequest` | 201; publishes `school.sibling.linked.v1` | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
+| DELETE | `/students/{id}/sibling-links/{siblingStudentId}` | `school.students.edit` | none | 204; publishes `school.sibling.unlinked.v1` | `SCHOOL_NOT_FOUND` | by id |
 | PUT | `/students/{id}/alumni-profile` | `school.students.edit` | `UpsertAlumniProfileRequest` | 200 (Tier 3) | `SCHOOL_STUDENT_STATUS_TRANSITION_INVALID` (not alumni) | `If-Match` |
 | GET | `/students/export` | `school.students.export` | filters and an Internal or Confidential column set | streamed CSV (`IAsyncEnumerable`) | `SCHOOL_SENSITIVE_FIELD_ACCESS_DENIED` (a sensitive column requested: routed to Documents under WF-PRV-02) | safe |
 | POST | `/students/bulk-section-changes` | `school.students.edit` | up to 500 items, mode `independent` or `allOrNothing` | 202 job with per-item results | `SCHOOL_SECTION_CAPACITY_EXCEEDED` per item | `Idempotency-Key` required |
@@ -453,7 +456,7 @@ Departments and houses have no resource in Appendix B; they are mapped to `schoo
 | GET | `/staff` | `school.staff.view` | `q`, `campusId`, `departmentId`, `status` | keyset `StaffListItemDto` | none | safe |
 | GET | `/staff/{id}` | `school.staff.view` | none | `StaffDto` | `SCHOOL_NOT_FOUND` | safe |
 | POST | `/staff` | `school.staff.create` | `CreateStaffRequest` | 201; publishes `school.staff.created.v1` | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key`; natural key `employeeNumber` |
-| PATCH | `/staff/{id}` | `school.staff.edit` | `UpdateStaffRequest` (names, department, campuses, qualifications, load) | 200 | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
+| PATCH | `/staff/{id}` | `school.staff.edit` | `UpdateStaffRequest` (names, department, campuses, qualifications, load) | 200; publishes `school.staff.changed.v1` | `SCHOOL_CONCURRENCY_CONFLICT` | `If-Match` |
 | POST | `/staff/{id}/departure` | `school.staff.edit` | `RecordDepartureRequest` (lastWorkingDay, reassignTo) | 200; publishes `school.staff.left.v1` | `SCHOOL_VALIDATION_FAILED` | `Idempotency-Key` |
 | DELETE | `/staff/{id}` | `school.staff.delete` | none | 204 only for a record never linked to a user or section | `SCHOOL_VALIDATION_FAILED` | by id |
 | GET | `/staff/export` | `school.staff.export` | filters | streamed CSV | none | safe |
@@ -514,7 +517,7 @@ One proto, `Nibras.Contracts.School/Grpc/school.proto`, four services. Every met
 | `StructureDirectory` | `GetSection`, `ListSections(academic_year_id, campus_id)` | `SectionEntry`: id, code, name, grade level, campus, capacity, homeroom staff id, year | 2 s, 5 s | every academic service | 2 commands |
 | `StructureDirectory` | `ListGradeLevels`, `ListCampuses`, `ListDepartments`, `ListRooms(campus_id)` | slim structure entries | 5 s | Admissions, Hr, Scheduling (`10-data-architecture.md` section 6) | 2 commands |
 | `StructureDirectory` | `ListGradingPeriods(term_id)` | id, term, dates, lock at | 2 s | Assessment | 2 commands |
-| `StructureDirectory` | `ListCalendarDays(campus_id, from, to)` | date, kind, labels | 2 s | Scheduling, Attendance (no calendar-day event exists, open point 2) | 2 commands |
+| `StructureDirectory` | `ListCalendarDays(campus_id, from, to)` | date, kind, labels | 2 s | Scheduling, Attendance, for the first load and for repair; the day-to-day change arrives as `school.calendar-day.changed.v1` | 2 commands |
 | `StructureDirectory` | `GetSeatUsage(campus_id, grade_level_id, academic_year_id)` | enrolled count, total section capacity | 2 s | Admissions (BR-ADM-003) | 2 commands |
 | `GuardianDirectory` | `GetGuardianContact(guardian_id)` | name, preferred language, mobile, email: the one Confidential response | 2 s | Finance only (receipt delivery, `10-data-architecture.md` section 6) | 2 commands; access-logged |
 | `ReferenceReconciliation` | `Checksum(entity_kind, as_of)` | `md5` over `(id, updated_at)` for student, section, staff, guardian-link, room, grade-level, grading-period, term, academic-year | 30 s | every service holding a copy | 1 command (query 5 of section 12) |
@@ -539,21 +542,29 @@ Payload fields are quoted from Appendix E, School section, and owned there; this
 | `school.academic-year.opened.v1` | `academicYearId`, `campusId`, `startsOn`, `endsOn` | `tenantId` | A year becomes current: `CreateAcademicYearHandler`, `SetCurrentYearHandler`, Saga 1 step 4 `OpenFirstAcademicYear`, Saga 4 step 5 | Academics, Assessment, Scheduling, Attendance, Finance; Platform as a Saga 1 outcome |
 | `school.academic-year.closed.v1` | `academicYearId`, `closedBy`, `closedAt` | `tenantId` | Saga 4 step 8, last and irreversible | Academics, Assessment, Scheduling, Attendance, Finance, Reporting |
 | `school.term.started.v1` | `termId`, `academicYearId`, `startsOn`, `endsOn` | `tenantId` | `TermStartJob` on the term's first day at 00:05 in the campus time zone, once per term | Academics, Assessment, Scheduling, Attendance, Finance |
-| `school.section.created.v1` | `sectionId`, `gradeLevelId`, `campusId`, `capacity` | `sectionId` | `CreateSectionHandler`, Saga 4 step 5 | Academics, Assessment, Scheduling, Attendance, Admissions; Communication, Behavior, Operations, Wellbeing by the doc 11 section 2.6 bindings |
+| `school.section.created.v1` | `sectionId`, `gradeLevelId`, `campusId`, `capacity`, `nameEn`, `nameAr` | `sectionId` | `CreateSectionHandler`, Saga 4 step 5 | Academics, Assessment, Scheduling, Attendance, Admissions, Communication, Behavior, Operations, Wellbeing |
 | `school.section.changed.v1` | `sectionId`, changed fields | `sectionId` | `UpdateSectionHandler`; changed fields among `capacity`, `gradeLevelId`, `campusId`, `homeroomStaffId`, `code`, `name`, `archived` | same set |
-| `school.student.enrolled.v1` | `studentId`, `studentNumber`, `sectionId`, `campusId`, `enrolledOn`, `namesEnAr` | `studentId` | `CreateStudentHandler`, `EnrolStudentHandler` (Saga 3 step 2, re-published with the same `studentId` on a duplicate), Saga 9 commit, `ReverseWithdrawalHandler` | Academics, Assessment, Attendance, Finance, Communication, Behavior, Operations, Reporting; Requests and Admissions by doc 11 section 2.6 |
-| `school.student.section-changed.v1` | `studentId`, `fromSectionId`, `toSectionId`, `effectiveOn` | `studentId` | `ChangeSectionHandler`, the `ChangeSection` effect command, bulk section change, campus transfer `Effective` | Academics, Assessment, Attendance, Behavior, Operations |
+| `school.grade-level.changed.v1` | `gradeLevelId`, changed fields | `tenantId` | `UpdateGradeLevelHandler` | Admissions |
+| `school.grading-period.changed.v1` | `gradingPeriodId`, `termId`, changed fields | `tenantId` | `UpdateGradingPeriodHandler` | Assessment |
+| `school.calendar-day.changed.v1` | `campusId`, `date`, `kind`, `change` (added or removed) | `tenantId` | `CreateCalendarDayHandler`, `DeleteCalendarDayHandler` | Scheduling, Attendance, Requests |
+| `school.room.changed.v1` | `roomId`, `campusId`, changed fields | `tenantId` | `UpdateRoomHandler`; satisfies the REQ-SCH-002 60-second acceptance | Scheduling |
+| `school.department.changed.v1` | `departmentId`, changed fields | `tenantId` | `UpdateDepartmentHandler` | Hr |
+| `school.student.enrolled.v1` | `studentId`, `studentNumber`, `sectionId`, `campusId`, `enrolledOn`, `namesEnAr` | `studentId` | `CreateStudentHandler`, `EnrolStudentHandler` (Saga 3 step 2, re-published with the same `studentId` on a duplicate), Saga 9 commit, `ReverseWithdrawalHandler` | Academics, Assessment, Attendance, Finance, Communication, Behavior, Operations, Reporting, Requests, Admissions, Notification |
+| `school.student.section-changed.v1` | `studentId`, `fromSectionId`, `toSectionId`, `effectiveOn` | `studentId` | `ChangeSectionHandler`, the `ChangeSection` effect command, bulk section change, campus transfer `Effective` | Academics, Assessment, Attendance, Behavior, Operations, Requests, Notification, Ai |
 | `school.student.status-changed.v1` | `studentId`, `fromStatus`, `toStatus`, `effectiveOn`, `reasonCode` | `studentId` | Every `Student.ChangeStatus` transition: status change, withdrawal step 5, rollover for graduates and leavers, `WithdrawEnrolment` compensation (`toStatus = never-attended`), merge victim | Academics, Assessment, Attendance, Finance, Communication, Behavior, Operations, Requests, Wellbeing, Reporting, Ai; Admissions as a Saga 3 outcome |
-| `school.student.promoted.v1` | `studentId`, `fromGradeLevelId`, `toGradeLevelId`, `outcome` | `studentId` | Saga 4 step 4 per student, bulk promotion | Academics, Assessment, Finance, Reporting |
-| `school.student.profile-updated.v1` | `studentId`, changed field names only | `studentId` | `UpdateStudentProfileHandler`, photo, consent, medical summary, merge survivor; never the values | Academics, Assessment, Attendance, Finance, Communication, Behavior, Wellbeing, Reporting; Notification (Appendix C) |
+| `school.student.promoted.v1` | `studentId`, `fromGradeLevelId`, `toGradeLevelId`, `outcome` | `studentId` | Saga 4 step 4 per student, bulk promotion | Academics, Assessment, Finance, Reporting, Admissions |
+| `school.student.profile-updated.v1` | `studentId`, changed field names only | `studentId` | `UpdateStudentProfileHandler`, photo, consent, medical summary, merge survivor; never the values | Academics, Assessment, Attendance, Finance, Communication, Behavior, Wellbeing, Reporting, Requests; Notification (Appendix C) |
 | `school.student-document.expiring.v1` | `studentId`, `documentType`, `expiresOn` | `studentId` | `DocumentExpiryScanJob`, weekly | Notification, Requests |
-| `school.guardian.updated.v1` | `guardianId`, `studentIds`, changed field names | `studentId` | Guardian edit, link, unlink, custody restriction, `UpdateGuardianDetails` effect | Communication, Finance, Notification; Wellbeing by doc 11 section 2.6 |
-| `school.staff.created.v1` | `staffId`, `employeeNumber`, `departmentId`, `campusIds` | `staffId` | `CreateStaffHandler`, `StaffHiredConsumer` | Identity, Academics, Scheduling, Hr; Communication, Requests by doc 11 section 2.6 |
-| `school.staff.left.v1` | `staffId`, `lastWorkingDay`, `reassignTo` | `staffId` | `RecordDepartureHandler` | Identity, Academics, Scheduling, Requests, Hr; Communication by doc 11 section 2.6 |
+| `school.guardian.updated.v1` | `guardianId`, `studentIds`, changed field names | `studentId` | Guardian edit, link, unlink, custody restriction, `UpdateGuardianDetails` effect | Communication, Finance, Notification, Wellbeing, Requests, Reporting |
+| `school.sibling.linked.v1` | `studentId`, `siblingStudentId`, `source` | `studentId` | `LinkSiblingHandler`; carries REQ-SCH-018 to Finance for the sibling discount and to Admissions for BR-ADM-005 priority | Finance, Admissions |
+| `school.sibling.unlinked.v1` | `studentId`, `siblingStudentId` | `studentId` | `UnlinkSiblingHandler`; ends the sibling discount under BR-FIN-005 | Finance, Admissions |
+| `school.staff.created.v1` | `staffId`, `employeeNumber`, `departmentId`, `campusIds`, `namesEnAr` | `staffId` | `CreateStaffHandler`, `StaffHiredConsumer` | Identity, Academics, Scheduling, Hr, Communication, Requests, Notification |
+| `school.staff.changed.v1` | `staffId`, changed fields, `namesEnAr` when the name changed | `staffId` | `UpdateStaffHandler` | the `school.staff.created.v1` consumer set |
+| `school.staff.left.v1` | `staffId`, `lastWorkingDay`, `reassignTo` | `staffId` | `RecordDepartureHandler` | Identity, Academics, Scheduling, Requests, Hr, Communication, Notification |
 | `school.usage.recorded.v1` | `meter`, `quantity`, `unit`, `periodStart`, `periodEnd` (Appendix E cross-cutting) | `tenantId` | Hourly usage flush: active students, active staff | Platform |
 | `school.audit.recorded.v1` | `actorId`, `action`, `resourceType`, `resourceId`, `before`, `after`, `reason`, `ipHash` (Appendix E cross-cutting) | `tenantId` | Every write, every workflow transition, every sensitive read (Appendix J rule 8) | Audit |
 
-Payload gaps that consumers work around today are listed in open point 2: no names on `school.section.created.v1` and `school.staff.created.v1`, no staff or room change event, no grade-level or grading-period event, and no sibling event. Consumers fetch the missing fields through section 6.1 on first use, as `10-data-architecture.md` section 6 rule 4 prescribes.
+Every key and every payload field above is catalogued in Appendix E (School) as amended by ADR-0019, which added the names on `school.section.created.v1` and `school.staff.created.v1` and the seven change and sibling keys this sheet proposed. Consumers no longer wait for a nightly snapshot to see a rename: they apply the change event and fall back to section 6.1 only for a field the event does not carry, as `10-data-architecture.md` section 6 rule 4 prescribes.
 
 ### 7.2 Consumed
 
@@ -608,7 +619,7 @@ Status changes are a workflow, not a field (REQ-SCH-020): the transition table f
 
 None, by design. School is the source of the most-replicated data; it keeps no copy of another service's data. The two values it holds that originate elsewhere are identifiers, not copies: `user_id` on guardians and staff (from Identity events) and `return_intent` (from Admissions events). Neither is reconciled, because a missing value is recovered by the next event and never drives a decision School must make alone.
 
-What School provides for everyone else's copies: the checksum and snapshot methods of section 6.1, the `ix_students_tenant_id_updated` index that makes the checksum a single index walk that includes soft-deleted rows (so a deletion changes the checksum), and a guarantee that every change to a copied field publishes an event or is covered by the nightly snapshot (open point 2).
+What School provides for everyone else's copies: the checksum and snapshot methods of section 6.1, the `ix_students_tenant_id_updated` index that makes the checksum a single index walk that includes soft-deleted rows (so a deletion changes the checksum), and a guarantee that every change to a copied field publishes one of the section 7.1 events, with the nightly snapshot as repair rather than as the carrier.
 
 ---
 
@@ -622,7 +633,7 @@ All jobs run in the Api host (no worker image) through Quartz.NET with the Postg
 | `TermStartJob` | Daily 00:05 in each campus time zone | Publishes term start once for terms starting today | `school.term.started.v1` | Guarded by `started_event_published_at` |
 | `RolloverApplyJob` | Saga 4 `DecisionsApproved → Applying` | Writes next-year enrolments and status changes in batches of 200, each student in its own transaction keyed on `(studentId, nextAcademicYearId)`, checkpoint after each batch | `school.student.promoted.v1`, `school.student.status-changed.v1` | Progress "Applied n of N"; pausable and cancellable between batches; a crash resumes from `batch_checkpoint` (TC-SCH-015) |
 | `RolloverStallMonitorJob` | Every minute while a rollover is `Applying` | No progress for 15 minutes moves the saga to `Stalled` and alerts the registrar | `RequestNotification` command | Short |
-| `RolloverDecisionEscalationJob` | Daily 07:00 campus time | Decisions undrafted 14 days after results are finalised escalate to the principal daily (TC-SCH-012) | `RequestNotification` command | Short |
+| `RolloverDecisionEscalationJob` | Daily 07:00 campus time | Decisions undrafted 14 days after results are finalised escalate to the principal daily (TC-SCH-551) | `RequestNotification` command | Short |
 | `ClearanceEscalationJob` | Daily 07:00 campus time | Items open 10 days escalate to the principal; `ClearanceBlocked` for 60 days cancels the withdrawal | `RequestNotification`, `school.audit.recorded.v1` | Short |
 | `YearArchivalJob` | Daily 02:30 tenant time | Moves closed years past `archival_due_on` to `ArchivePending` and runs the snapshot (row counts and checksums per table); three failures alert the platform operator | `school.audit.recorded.v1` | Long: progress per table; retried 3 times |
 | `ReopenWindowCloseJob` | Every 15 minutes | Closes reopen windows at their end, refreshes the snapshot, keeps the pre-reopen snapshot until the new one verifies | `school.audit.recorded.v1` | Short |
@@ -652,6 +663,8 @@ All jobs run in the Api host (no worker image) through Quartz.NET with the Postg
 | `school.grade-levels.view`, `.create`, `.edit`, `.delete` | normal | Principal (G03) | all-tenant |
 | `school.sections.view`, `.create`, `.edit`, `.delete`, `school.sections.balance-formation` | normal | Principal, vice principal | campus, stage |
 | `school.subjects.view`, `.create`, `.edit`, `.delete` | normal | Principal, academic coordinator view | all-tenant |
+| `school.departments.view`, `.create`, `.edit`, `.delete` | normal | Principal (G03); head of department holds `.view` and `.edit` | all-tenant, department for the head |
+| `school.houses.view`, `.create`, `.edit`, `.delete` | normal | Principal (G03) | all-tenant |
 | `school.students.view`, `.create`, `.edit`, `.delete`, `.export` | normal to elevated | Registrar, principal (G04); teachers `own-sections`, homeroom `own-homeroom`, parents `own-children`, students `self` | per role |
 | `school.students.change-status`, `school.students.promote`, `school.students.print-id-cards` | normal | Registrar, principal | campus |
 | `school.students.merge`, `school.students.view-sensitive` | elevated, reason recorded | Registrar (`view-sensitive` only, logged), principal with four-eyes on G05 | campus |
@@ -694,6 +707,7 @@ All jobs run in the Api host (no worker image) through Quartz.NET with the Postg
 | `SCHOOL_MERGE_CONFLICT` | 409 | Merge with unresolved conflicting fields |
 | `SCHOOL_PROMOTION_BLOCKED` | 409 | Rollover or promotion with unpublished results or unsettled clearance |
 | `SCHOOL_CAMPUS_TRANSFER_BLOCKED` | 409 | Target campus without a seat or matching stage |
+| `SCHOOL_CONFIGURATION_IN_USE` | 409 | Deleting a campus, building, room, grade level, section, subject, department or house that dependants still use (REQ-SCH-007); `params` names the dependants and the response offers archive instead |
 | `SCHOOL_VALIDATION_FAILED`, `SCHOOL_PERMISSION_DENIED`, `SCHOOL_TENANT_MISMATCH`, `SCHOOL_NOT_FOUND`, `SCHOOL_CONCURRENCY_CONFLICT`, `SCHOOL_IDEMPOTENCY_REPLAY`, `SCHOOL_RATE_LIMITED`, `SCHOOL_DEPENDENCY_UNAVAILABLE` | K.1 | Every endpoint and gRPC method |
 
 ---
@@ -1138,9 +1152,9 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 | TC-SCH-201 | Contact a guardian from the student page; restricted guardian not listed (Appendix Q) | End-to-end |
 | TC-SEC-501, TC-SEC-130, TC-SEC-131, TC-SEC-132, TC-IDN-015, TC-PRV-301, TC-PRV-013 | T-SCH-01 to T-SCH-06 controls | Security suite |
 | TC-PRV-502 | Media consent consulted at publishing time (REQ-SCH-034) | Integration |
-| TC-WEL-203 | Medical summary encrypted and every read logged (REQ-SCH-016) | Integration |
-| TC-DATA-006 | A corrupted consumer copy is repaired from `ListSnapshotPage` and reported | Nightly |
-| TC-PERF-004 | Section change evicts both rosters and the student entry | Integration |
+| TC-WEL-680 | Medical summary encrypted and every read logged (REQ-SCH-016) | Integration |
+| `TC-DATA-642` (document 10) | A corrupted consumer copy is repaired from `ListSnapshotPage` and reported | Nightly |
+| `TC-PERF-004` (document 21) | Section change evicts both rosters and the student entry | Integration |
 | TC-SCH-401 | `BilingualNameRulesTests`: every Appendix S example of BR-L10N-007 as a theory row | Unit |
 | TC-SCH-402 | `StudentStatusTransitions`: every allowed transition succeeds and every other pair returns `SCHOOL_STUDENT_STATUS_TRANSITION_INVALID` | Unit |
 | TC-SCH-403 | A PATCH naming `status` returns 400 and 0 rows change (REQ-SCH-020) | Integration |
@@ -1187,7 +1201,7 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 |---|---|---|---|---|
 | School slips and every phase 2 service waits (critical path) | med | high | Contracts and proto in week 1 of phase 2; `SampleDataJob` seeds through the real events so consumers start before School's screens exist | Platform stream lead |
 | An event payload changes and breaks 13 consumers | med | high | Publisher contract tests (TC-SCH-419), `buf breaking` on the proto, additive-only changes within V1 | Architect |
-| Consumers display stale names because Appendix E has no staff or room change event | high | med | gRPC fetch on first use and nightly snapshot; open point 2 proposes the events | Architect |
+| Consumers display stale names between a change event and its consumption | low | med | `school.staff.changed.v1` and `school.room.changed.v1` (Appendix E, ADR-0019) carry the change within seconds; the gRPC fetch and the nightly snapshot remain the repair path | Architect |
 | Directory outage stops attendance marking | low | high | Consumers fall back to their local copy (doc 22 section 10.2); the directory is never on the marking write path | School team |
 | Sensitive value leaks through a log, cache or event | low | critical | Classification attribute per property, log scrubber (`TC-PRV-041`), payload contract (`TC-PRV-048`), cache refusal (`TC-PRV-040`) | Security reviewer |
 | Rollover leaves a half-promoted cohort | low | high | One transaction per student, checkpoint, compensation stamped by `RolloverId`, chaos test TC-SCH-428 | School team |
@@ -1200,7 +1214,7 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 |---|---|---|---|
 | School jobs run in the Api host | Appendix L lists no school-worker image | As stated | A worker image is added under an ADR and `Api/Jobs/` moves to `Nibras.School.Worker` |
 | Four gRPC services in one `nibras.school.v1` proto: `StudentDirectory`, `StaffDirectory`, `StructureDirectory` (with `GuardianDirectory`), `ReferenceReconciliation` | `07-solution-structure.md` section 2.3 and `22-api-conventions-and-error-catalog.md` section 10.1 | As stated | Renaming a gRPC service is a `v2` package |
-| Departments and houses use `school.profile.*` | Appendix B has no resource for them | Until Appendix B gains them (open point 1) | Principal-only editing of departments and houses |
+| Departments and houses use `school.departments.*` and `school.houses.*` | Appendix B (ADR-0019) | As stated | A head of department could not maintain their own department |
 | The allergy alert is read live from Wellbeing; School's medical summary holds conditions, medications held, blood group and instructions | Appendix J.4 and `21-performance-engineering.md` section 1.3 | As stated (open point 5) | Two places to maintain health data |
 | Section change and campus transfer close and reopen enrolment rows, never update them | REQ-SCH-031, BR-SCD-006 | As stated | History would move with the student |
 
@@ -1222,17 +1236,17 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix B has no permission for departments, houses, buildings, grading periods or calendar days | Mapped to `school.profile.*`, `school.campuses.*` and `school.terms.*` as in section 5 | Product owner, Appendix B amendment under an ADR | A department head could not maintain their own department without principal rights |
-| 2 | Appendix E lacks names on `school.section.created.v1` and `school.staff.created.v1`, and has no staff, room, grade-level, grading-period, calendar-day or sibling change event, although REQ-SCH-002 and REQ-SCH-018 expect Scheduling and Finance to receive them | Consumers fetch through section 6.1 and replace copies by nightly snapshot (`10-data-architecture.md` open point 1); propose optional `name` fields and `school.staff.changed.v1`, `school.room.changed.v1`, `school.grade-level.changed.v1`, `school.grading-period.changed.v1`, `school.calendar-day.changed.v1`, `school.sibling.linked.v1` | Architect | Renames appear in consumers up to 24 hours late; REQ-SCH-002's 60-second acceptance fails until the room event exists |
+| 1 | Closed by ADR-0019 for departments and houses. Appendix B now carries `school.departments` and `school.houses`, each with view, create, edit and delete, and section 5.4 uses them; Appendix I gives the head of department `school.departments.view` and `.edit` in department scope. Buildings, grading periods and calendar days still have no resource of their own | Buildings stay under `school.campuses.*`, grading periods and calendar days under `school.terms.*`, as section 5.2 and section 5.3 show. No open question owns this; it was not in the defect log, so it needs its own ADR | Product owner, Appendix B amendment under an ADR | Building or calendar editing cannot be delegated apart from campus and term editing |
+| 2 | Closed by ADR-0019. Appendix E (School) now carries `nameEn` and `nameAr` on `school.section.created.v1`, `namesEnAr` on `school.staff.created.v1`, and the seven keys this sheet proposed: `school.staff.changed.v1`, `school.room.changed.v1`, `school.grade-level.changed.v1`, `school.grading-period.changed.v1`, `school.calendar-day.changed.v1`, `school.department.changed.v1` and `school.sibling.linked.v1`, plus `school.sibling.unlinked.v1` so a removed link ends the sibling discount (BR-FIN-005) | Section 7.1 publishes all of them; the nightly-snapshot workaround is withdrawn and the snapshot is repair only | Closed | None; REQ-SCH-002's 60-second acceptance is met by `school.room.changed.v1` |
 | 3 | REQ-SCH-010 assigns bell schedules to School, while reference architecture section 8.9 and `07-solution-structure.md` place `BellSchedule` in Scheduling | Scheduling owns bell schedules; REQ-SCH-010 is re-assigned to Scheduling in the next revision of document 03 | Architect | None functionally; traceability shows the requirement under the wrong service |
-| 4 | Appendix R names events that Appendix E lacks: `school.academic-year.archived.v1`, `school.academic-year.reopened.v1`, `reporting.snapshot.sealed.v1`, `audit.action.recorded.v1`, `operations.loan.returned.v1`, `operations.transport-subscription.changed.v1` | This sheet publishes only catalogued keys: archival and reopen are recorded through `school.audit.recorded.v1`; Appendix R is corrected to the catalogued names | Architect, Appendix R and E amendment | Reporting cannot mark reports superseded on reopen until an archived or reopened event exists |
+| 4 | Closed by ADR-0019, the way this sheet proposed: Appendix R was corrected to catalogued names rather than Appendix E gaining keys. WF-SCH-03 now records archival and reopen as `school.audit.recorded.v1` and the seal as `reporting.audit.recorded.v1`; WF-SCH-01 uses `operations.audit.recorded.v1` for a returned loan; WF-SCH-04 uses `operations.transport.subscription-changed.v1`; and `audit.action.recorded.v1` is gone from Appendix R, since Appendix E states that `<service>.audit.recorded.v1` is the only audit form. Reporting takes the seal on `school.academic-year.closed.v1`. The one cost the correction leaves standing is that Reporting still cannot mark reports superseded on a reopen, because no reopen event exists; that is Appendix E work for a later ADR | This sheet publishes only catalogued keys, which is what Appendix R now cites | Closed | None here; Reporting still cannot mark reports superseded on a reopen, which the change list records as a later Appendix E item |
 | 5 | Where the allergy alert is authored | Wellbeing (Appendix J.4, doc 21 section 1.3); School's `MedicalSummary.has_alert` only mirrors that an alert exists | Product owner with the nurse persona | Nurses maintain health data in two screens |
 | 6 | `21-performance-engineering.md` section 1.3 caches pickup authorization under `school:pickup`, but `PickupPerson` belongs to Attendance | Attendance owns and caches it; doc 21 row moves to section 1.8 | Architect | None if the row moves; a stale cache owner otherwise |
 | 7 | No Appendix C row exists for the leaving pack, rollover stall, decision escalation or clearance escalation messages | Sent through the `RequestNotification` command with templates in Notification; rows proposed for Appendix C | Product owner | Messages exist without a catalog row, so kit-lint R12 cannot check them |
-| 8 | Appendix K has no "configuration in use" code for REQ-SCH-007 | `SCHOOL_VALIDATION_FAILED` with the dependants in the field list; propose `SCHOOL_CONFIGURATION_IN_USE` (409) | Architect | Clients show a validation message instead of an archive offer |
+| 8 | Closed by ADR-0019. Appendix K.4 now defines `SCHOOL_CONFIGURATION_IN_USE` (409), the name this sheet proposed. Every delete of a campus, building, room, grade level, section, subject, department or house raises it with the dependants in `params`, and the client shows the archive offer (REQ-SCH-007). | The code is raised by every delete in section 5.2, 5.4 and 5.7; the `SCHOOL_VALIDATION_FAILED` workaround is withdrawn from section 5 and section 11 | Closed | None; clients get the archive offer REQ-SCH-007 asks for |
 | 9 | `10-data-architecture.md` section 6 names the checksum methods `Directory/<Entity>Checksum` and `Directory/Rooms` | Mapped as stated in section 6.1; doc 10 wording aligned in its next revision | Architect | Two names for one method in the plan |
 | 10 | BR-ADM-006 matches applicants on national identifier against students, but no identifier may cross a contract | `FindDuplicateCandidates` takes an HMAC of the identifier under a per-tenant matching key held by School and Admissions only (key inventory in document 12 section 9) | Security reviewer | Without the key, identifier matching falls back to name and date of birth only |
-| 11 | Appendix R WF-IDN-02 names `school.students.link-guardian`, which Appendix B does not define | `school.guardians.link` is the permission checked | Architect, Appendix R amendment | A generated permission test would target a string that does not exist |
+| 11 | Closed by ADR-0019. Appendix R WF-IDN-02 (`MatchProposed → LinkApproved`) now guards on `school.guardians.link`, Appendix B's existing name, which is the permission this sheet checks in section 5.6 | Appendix B kept its existing name and gained no near-duplicate | Closed | None; a generated permission test now targets a string that exists |
 | 12 | `05-service-catalog.md` diagram 4.1 draws `assessment.grades.locked.v1` into School, but Appendix E does not list School as a consumer and Saga 4 uses the `ConfirmYearResultsLocked` command instead | No binding; the command is the mechanism | Architect | None |
 
 ## Review record

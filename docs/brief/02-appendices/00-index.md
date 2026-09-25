@@ -1,4 +1,4 @@
-# Nibras: Appendices v9.1
+# Nibras: Appendices v9.2
 
 **Status: normative.** Every item in these appendices is a requirement unless marked *(T2)* for Tier 2 or *(T3)* for Tier 3. Unmarked items are Tier 1. Read together with `01-master-brief.md` and `03-reference-architecture.md`, which carry the same version. If an appendix and the master brief conflict, the master brief wins **and you must report the conflict** rather than picking one quietly.
 

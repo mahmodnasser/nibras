@@ -320,7 +320,7 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 
 | Routing key | Partition key | Raised by | Consumers (Appendix E) |
 |---|---|---|---|
-| `behavior.incident.recorded.v1` | `studentId` | `RecordIncidentHandler`, `SyncIncidentsHandler`; one per incident, `studentIds` listing the involved students; `restricted` carried; no narrative | Wellbeing, Notification, Reporting |
+| `behavior.incident.recorded.v1` | `studentId` | `RecordIncidentHandler`, `SyncIncidentsHandler`; one per incident, `studentIds` listing the involved students; `restricted` carried; no narrative | Wellbeing, Notification, Reporting, Ai (which skips a restricted incident under `25-ai-and-assist-ladder.md` section 4.2) |
 | `behavior.points.awarded.v1` | `studentId` | `AwardPointsHandler`, incident points, `RevokePointsHandler` and dismissal (negative amount, Open point 4); one per student | Notification, Reporting |
 | `behavior.badge.awarded.v1` | `studentId` | `AwardBadgeHandler`, once per `(badge, student)` | Notification, Documents, Reporting |
 | `behavior.consequence.assigned.v1` | `studentId` | `DecideIncidentHandler` and `ApproveSanctionHandler` when a consequence becomes `Scheduled` | Notification, Reporting |
@@ -797,16 +797,16 @@ src/Services/Behavior/                                                Behavior a
 
 ## 14. Test plan
 
-Existing identifiers are reused; new ones are minted in `TC-BEH-310` to `TC-BEH-360`, a range no document in the kit uses (checked with a search of `docs/` and `.claude/` on 2026-09-21: existing BEH identifiers are 001 to 006 and 601).
+Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (310 to 360 reserved), a range no document in the kit uses (checked with a search of `docs/` and `.claude/` on 2026-09-21: existing BEH identifiers are 001 to 006 and 601).
 
 | Test case | Level | What it proves |
 |---|---|---|
-| TC-BEH-001 | Workflow | `Recorded → UnderReview`: recorder in scope, case routed to the head of year for that section |
-| TC-BEH-002 | Workflow | `UnderReview → ActionDecided`: action within the decider's authority recorded with its category |
-| TC-BEH-003 | Workflow | `ActionDecided → GuardianNotified`: notice in the guardian's preferred language |
-| TC-BEH-004 | Workflow | `GuardianNotified → PlanOpened`: plan with a named owner and a review date |
-| TC-BEH-005 | Workflow, security | `UnderReview → Dismissed`: points reversed, correction sent, signal recalculated (T-BEH-03) |
-| TC-BEH-006 | Workflow | `FollowUpDue → Closed`: outcome recorded, timeline entry visible on Student 360 |
+| `TC-BEH-001` (Appendix R) | Workflow | `Recorded → UnderReview`: recorder in scope, case routed to the head of year for that section |
+| `TC-BEH-002` (Appendix R) | Workflow | `UnderReview → ActionDecided`: action within the decider's authority recorded with its category |
+| `TC-BEH-003` (Appendix R) | Workflow | `ActionDecided → GuardianNotified`: notice in the guardian's preferred language |
+| `TC-BEH-004` (Appendix R) | Workflow | `GuardianNotified → PlanOpened`: plan with a named owner and a review date |
+| `TC-BEH-005` (Appendix R) | Workflow, security | `UnderReview → Dismissed`: points reversed, correction sent, signal recalculated (T-BEH-03) |
+| `TC-BEH-006` (Appendix R) | Workflow | `FollowUpDue → Closed`: outcome recorded, timeline entry visible on Student 360 |
 | TC-BEH-601 | UAT | Badges, house points and selected work across years on the portfolio page |
 | TC-SEC-250 to TC-SEC-252 | Security | T-BEH-01, T-BEH-02, T-BEH-04 |
 | TC-BEH-310 | Integration | "Helping others" +5 and "late to class" -2 each recorded once give a balance of +3 (REQ-BEH-001) |
@@ -901,7 +901,7 @@ Existing identifiers are reused; new ones are minted in `TC-BEH-310` to `TC-BEH-
 | 2. Houses are School's (Appendix F) but no House event exists in Appendix E | Houses fetched through `StudentDirectory` at provisioning and nightly; the student copy carries `house_id` from the student events | School lead, Appendix E owner | A house rename appears the next morning |
 | 3. Nothing tells Behavior that an incident is part of a safeguarding case, yet Appendix K has `BEHAVIOR_INCIDENT_LINKED_TO_CONCERN` | The safeguarding officer, who holds `view-restricted`, sets the link in Behavior; no Wellbeing identifier is stored | Safeguarding lead | A Wellbeing command would automate it but carries a level-S fact across the boundary |
 | 4. Appendix E has no key for a points reversal or an incident dismissal | Reversal published as `behavior.points.awarded.v1` with a negative amount and `categoryCode = reversal`; dismissal only in `behavior.audit.recorded.v1` | Appendix E owner | Reporting cannot recalculate the early-warning signal on a dismissal (Appendix R compensation) until a `behavior.incident.dismissed.v1` exists |
-| 5. `behavior.badges` has no export action for the portfolio, and students editing their own portfolio has no permission | Portfolio export under `behavior.badges.view` in `self` and `own-children`; students reorder their own items under the same | Appendix B owner | A `behavior.badges.export` action would replace it |
+| 5. Still open. ADR-0019 considered `behavior.badges.export` and did not apply it: the change list records it among the gaps named only in sheet open points and not in the defect log, left for a later ADR. Appendix B is unchanged for Behavior | Portfolio export under `behavior.badges.view` in `self` and `own-children`; students reorder their own items under the same. No open question owns it | Appendix B owner, later ADR | An export cannot be withheld from a reader who may view the portfolio |
 | 6. WF-BEH-01's guard "recorder taught or supervised the student that day" needs the timetable and duty rota, which Behavior does not copy | The recorder's data scope is the guard (`BEHAVIOR_STUDENT_NOT_IN_SCOPE`) | Architect | A timetable copy from Scheduling would tighten it |
 | 7. Open Badges issuance needs the student's sharing consent, which School owns | School's consent flag is read through `StudentDirectory` at issuance | School lead | Without it no credential leaves the tenant |
 | 8. Behavior sends `GenerateDocument`, but `documents.commands` does not bind `nibras.behavior` and `documents.document.generated.v1` does not name Behavior | Add both under document 11 (`06-services/documents.md` Open point 7) | Document 11 owner | Award certificates cannot be requested |

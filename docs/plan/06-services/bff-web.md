@@ -109,7 +109,7 @@ All routes are under `/bff/web/v1/`, reached through the Gateway on the tenant h
 | GET | `/bff/web/v1/home/operator` | `platform.tenants.view` (platform scope) | none | `OperatorToday` (platform console) | as above | Safe |
 | GET | `/bff/web/v1/students/{studentId}/360` | `school.students.view` | `tab` | `Student360`: header, tab list with counts and access flags, first timeline page | `BFF_NOT_FOUND` (student outside scope, no hint it exists) | Safe |
 | GET | `/bff/web/v1/students/{studentId}/360/timeline?cursor=&kinds=&from=&to=` | `school.students.view` | query, keyset cursor | Timeline page, newest first, page cap 50 | `BFF_VALIDATION_FAILED` (bad cursor) | Safe |
-| GET | `/bff/web/v1/students/{studentId}/transparency` | `audit.access-log.view` (own-children) | none | Reads of sensitive records by role and time, consents, retention clocks | `BFF_NOT_FOUND` | Safe; never cached |
+| GET | `/bff/web/v1/students/{studentId}/transparency` | `audit.access-transparency.view` (own-children) | none | Reads of sensitive records by role and time, consents, retention clocks | `BFF_NOT_FOUND` | Safe; never cached |
 | GET | `/bff/web/v1/search?q=&kinds=&limit=` | signed in; each result kind gated by its upstream view permission | `q` at least 2 characters, Arabic-normalized upstream | `SearchResults` grouped by kind plus permitted navigation and action entries | `BFF_VALIDATION_FAILED` | Safe; never cached |
 | POST | `/bff/web/v1/search/natural-language` | `ai.assistant.use` | `{ question }` | Answer with sources, limited by the caller's scope; `AI_*` codes passed through | `AI_DISABLED_FOR_TENANT`, `AI_SCOPE_VIOLATION_BLOCKED` passed through | No side effect; not replayed |
 | GET | `/bff/web/v1/console/jobs?tenantId=&state=` | `platform.jobs.view` | query | Jobs from every service that runs them, merged and ordered by age | none beyond K.1; a silent service shows as `partial` | Safe |
@@ -146,7 +146,7 @@ Every composition fans out in parallel with a per-call deadline (section 5), for
 | `home/operator` | Platform → provisioning in progress, trials ending, tickets at risk; Reporting → `platform_health` projection (failing services, queue alarms, failed messages) | platform-scoped |
 | `students/{id}/360` | School → student header (name, photo reference, section, status; never custody text); Reporting → `student_360` read model (timeline and counts); for each tab the owning service's permission check through a `HEAD` or count read: Attendance `GET /api/v1/attendance/students/{id}/summary`, Assessment `GET /api/v1/assessment/students/{id}/term-results`, Behavior, Finance, Communication, Documents, Wellbeing (existence and count only) | Reporting for the timeline; the owning service decides whether the viewer may open each tab |
 | `students/{id}/360/timeline` | Reporting → `student_360` timeline page by keyset; entries of kinds the viewer cannot read are replaced by an "exists, no access" marker with no content | Reporting |
-| `students/{id}/transparency` | Audit → access-log entries for the child's sensitive records (role, time, category; never content); Platform → consents and retention clocks per category | Audit, Platform |
+| `students/{id}/transparency` | Audit → the guardian transparency facts for the child's sensitive records (role, time, category; never reader names, never content); Platform → consents and retention clocks per category | Audit, Platform |
 | `search` | School → students, guardians, staff; Requests → requests; Documents → files the caller may read; Academics → assignments; plus the static navigation manifest filtered by the effective set | each owner; results are the union of what each owner returned for this caller |
 | `search/natural-language` | Ai → assistant query with the caller's scope | Ai |
 | `console/jobs` | The `/jobs` resource of Assessment, Documents, Scheduling, Finance, Reporting, Platform (document 22 §6) | each owner |
@@ -423,14 +423,14 @@ src/Bff.Web/                                                      web backend-fo
 
 ## 14. Test plan
 
-New identifiers are minted in `TC-BFF-001` to `TC-BFF-060` for Bff.Web (Bff.Mobile uses `TC-BFF-101` onward); no document in the kit used a `TC-BFF-` identifier before these sheets (searched on 2026-09-21).
+New identifiers are minted from `TC-BFF-001` upward for Bff.Web, numbers 001 to 060 (Bff.Mobile uses `TC-BFF-101` onward); no document in the kit used a `TC-BFF-` identifier before these sheets (searched on 2026-09-21).
 
 | Test case | Level | What it proves |
 |---|---|---|
-| TC-RPT-002 | End to end | Student 360 timeline filtered by the viewer's permissions (REQ-BFF-003) |
-| TC-WEB-001 | End to end | Command palette and natural-language search limited by permissions (REQ-BFF-006) |
-| TC-RPT-201 | UAT | Homeroom home card shows absent today, excuses to review, flags, birthdays |
-| TC-SEC-331 | Security | T-GW-04: no field the user may not see |
+| `TC-RPT-002` (Appendix W) | End to end | Student 360 timeline filtered by the viewer's permissions (REQ-BFF-003) |
+| `TC-WEB-001` (Appendix W) | End to end | Command palette and natural-language search limited by permissions (REQ-BFF-006) |
+| `TC-RPT-201` (Reporting sheet) | UAT | Homeroom home card shows absent today, excuses to review, flags, birthdays |
+| `TC-SEC-331` (document 12) | Security | T-GW-04: no field the user may not see |
 | TC-PRV-501, TC-PRV-702 | Privacy | Transparency panel lists reads by role and time without content |
 | TC-TST-114 | Architecture | `Nibras.Bff.Web` references no `Nibras.<S>.*` assembly |
 | TC-BFF-001 | Architecture | No `Bff.*` project references a Domain project or a database driver (REQ-BFF-001) |
@@ -509,7 +509,7 @@ New identifiers are minted in `TC-BFF-001` to `TC-BFF-060` for Bff.Web (Bff.Mobi
 |---|---|---|---|
 | 1. `08-web-structure.md` §3.2 and §5 name `/api/v1/bff-web/me/bootstrap` and `/api/v1/bff-web/me/permissions`; document 22 and its Spectral rule require `/bff/web/v1/` | `/bff/web/v1/me/bootstrap` and `/bff/web/v1/me/permissions`; document 08 corrected at its Group D review | Web lead | The generated client and the Gateway route table disagree |
 | 2. `10-data-architecture.md` §7.4 has both backends-for-frontends reading the Reporting replica through a connection string | Read through the Reporting API; the replica routing and the `Nibras-Expect-Message` check run inside Reporting | Data architect | A direct connection makes the BFF a reader of another service's database, which Appendix L and master brief Section 7.1 forbid |
-| 3. Saved views, table columns, density and pinned actions "persist per person through Bff.Web" (`08-web-structure.md` §3.1), but Bff.Web stores nothing and no Appendix B permission covers user preferences | Stored as user preferences in Identity (which owns `User`), forwarded unchanged, self-scoped | Identity lead | If Identity declines, the preferences stay browser-local and do not follow the person across devices |
+| 3. Saved views, table columns, density and pinned actions "persist per person through Bff.Web" (`08-web-structure.md` §3.1), but Bff.Web stores nothing and no Appendix B permission covers user preferences | Stored as user preferences in Identity (which owns `User`), forwarded unchanged, self-scoped. ADR-0019 did not add an `identity.me.*` resource to Appendix B, so the two preference routes keep declaring the `self` scope and no permission, as the Identity sheet's Decisions in force say | Identity lead | If Identity declines, the preferences stay browser-local and do not follow the person across devices |
 | 4. `21-performance-engineering.md` §1.21 lists routing keys as the invalidators of the BFF entries; the BFF consumes no event | The owning services' consumers publish the tag eviction on `state:invalidate`; document 21 records which service broadcasts which tag | Performance owner | Without the broadcast, entries live to their 60-second lifetime, which the budget tolerates |
 
 ## Review record

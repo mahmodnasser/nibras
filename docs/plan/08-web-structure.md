@@ -337,7 +337,7 @@ Every route is lazy-loaded by lazy area. Every route carries a `permissionGuard`
 | Parent | `/parent/children/:studentId/attendance` | `features/attendance` | `attendance.excuses.view` | Attendance and excuse submission |
 | Parent | `/parent/children/:studentId/fees` | `features/finance` | `finance.invoices.view` | Fees, pay, receipts |
 | Parent | `/parent/children/:studentId/documents` | `features/documents` | `assessment.report-cards.view` | Report cards, certificates, portfolio download |
-| Parent | `/parent/children/:studentId/transparency` | `features/students` | `audit.access-log.view` | Guardian transparency: who read what, consents, retention clock |
+| Parent | `/parent/children/:studentId/transparency` | `features/students` | `audit.access-transparency.view` | Guardian transparency: who read what, consents, retention clock |
 | Parent | `/parent/children/:studentId/consents` | `features/students` | `school.students.view` | Consents including media consent |
 | Parent | `/parent/children/:studentId/gate-pass/:passId` | `features/safety` | `attendance.safety.gate-passes.view` | Gate pass with QR and validity window |
 | Parent | `/parent/requests` | `features/requests` | `requests.requests.view` | Requests including early dismissal |
@@ -444,7 +444,7 @@ sequenceDiagram
     Admin->>Identity: PUT role assignment (identity.roles.assign-role)
     Identity->>Identity: write, bump permissionVersion for affected users
     Identity->>RabbitMQ: publish identity.permissions.changed.v1 {tenantId, permissionVersion, affectedUserIds or all}
-    RabbitMQ->>Communication: consume (queue communication.permission-refresh)
+    RabbitMQ->>Communication: consume (queue communication.tenant-lifecycle)
     Communication->>Client: hub message permissions.changed {permissionVersion}
     Client->>Client: compare with held permissionVersion
     Client->>BffWeb: GET /api/v1/bff-web/me/permissions (If-None-Match: held ETag)
@@ -457,7 +457,7 @@ sequenceDiagram
 | Step | Detail |
 |---|---|
 | Event | `identity.permissions.changed.v1` (Appendix E), partition key `tenantId`, payload `permissionVersion` and `affectedUserIds` or `all` |
-| Fan-out | Communication owns the SignalR hubs (master brief Section 7.2). It consumes the event and sends `permissions.changed` to the connections of the affected users in that tenant, or to the tenant group when `all` |
+| Fan-out | Communication owns the SignalR hubs (master brief Section 7.2). `11-messaging-architecture.md` §2.3 and §2.5 own the queue: Communication consumes the event on `communication.tenant-lifecycle`, which carries `identity.role.changed.v1` and `identity.permissions.changed.v1` in order per tenant and drops a `permissionVersion` lower than the one already pushed. It then sends `permissions.changed` to the connections of the affected users in that tenant, or to the tenant group when `all` |
 | Client reaction | `PermissionStore.refresh()` fetches the effective set from Bff.Web with `If-None-Match`; a `304` means the event was for a version already held |
 | What changes on screen | The navigation manifest is re-filtered, `*nbHasPermission` blocks re-render, and the active route's `CanMatch` guard is re-run against the new set; a lost permission shows the no-permission state on the current screen and removes the menu entry |
 | What never happens | No sign-out, no reload, no loss of unsaved form state. Appendix B rule 3 |
@@ -557,7 +557,7 @@ The snapshot job renders every `States`, `Directions` and `Themes` story in the 
 
 ## 7. Screen inventory per workspace
 
-Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` Section 8 are designed (loading, empty, error, offline, partial, processing, no-permission); a shorter list names the ones that apply. **Mobile web**: whether the screen is in the progressive-web-application scope of Section 8 (Appendix X: parent, student, teacher and principal workspaces installable; the consoles available but not optimised). **Journey**: the Appendix U section the screen serves. **TC**: the test case id from Appendix Q or Appendix O where one exists; `—` where the screen is proven by a service test plan only.
+Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` Section 8 are designed (loading, empty, error, offline, partial, processing, no-permission); a shorter list names the ones that apply. **Mobile web**: whether the screen is in the progressive-web-application scope of Section 8 (Appendix X: parent, student, teacher and principal workspaces installable; the consoles available but not optimised). **Journey**: the Appendix U section the screen serves. **TC**: the test case id from Appendix Q or Appendix O where one exists, with the document that defines it in brackets (ADR-0020: Appendix W for a demo test, the service sheet for an Appendix Q test, document 12 for a security test); an id without an owner is defined by this document, and the ones minted here are stated under "Test cases" in "How this document is verified"; `—` where the screen is proven by a service test plan only.
 
 ### 7.1 Shell and public
 
@@ -568,9 +568,9 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Shell | Two-factor enrolment | `/auth/2fa` | `stepper`, `text-field`, `button` | loading, error | signed in | yes | U.11 | — |
 | Shell | Accept invitation | `/auth/invitation/:token` | `card`, `form-field`, `button`, `error-state` (expired) | loading, error | none | yes | U.6 | — |
 | Shell | Join and waiting screen | `/auth/join` | `stepper`, `text-field`, `empty-state` (waiting) | loading, error, processing | none | yes | U.8 | — |
-| Shell | No permission | `/no-access` | `empty-state`, `button` | none | none | yes | all | TC-SEC-201 |
-| Shell | Offline page | `/offline` | `offline-banner`, `empty-state` | offline | none | yes | all | TC-MOB-101 |
-| Public | Document verification | `/verify/:code` | `card`, `badge`, `key-value`, `error-state` (revoked) | loading, error | none | yes | U.6 | TC-DOC-302 |
+| Shell | No permission | `/no-access` | `empty-state`, `button` | none | none | yes | all | `TC-SEC-201` (document 12) |
+| Shell | Offline page | `/offline` | `offline-banner`, `empty-state` | offline | none | yes | all | `TC-MOB-101` (Bff.Mobile sheet) |
+| Public | Document verification | `/verify/:code` | `card`, `badge`, `key-value`, `error-state` (revoked) | loading, error | none | yes | U.6 | `TC-DOC-302` (Documents sheet) |
 
 ### 7.2 Platform console
 
@@ -586,15 +586,15 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Platform console | Feature flags | `/feature-flags` | `data-table`, `switch`, `chip`, `dialog` (rollout) | 7 | `platform.feature-flags.view` | no | U.11 | — |
 | Platform console | Service health | `/health` | `bento-grid`, `stat-tile`, `line-chart`, `badge`, `list` | 7 | `platform.jobs.view` | no | U.11 | — |
 | Platform console | Job monitor | `/jobs` | `data-table`, `progress-bar`, `menu` (cancel, retry) | 7 | `platform.jobs.view` | no | U.11 | — |
-| Platform console | Failed messages | `/failed-messages` | `data-table`, `panel` (payload), `action-bar` (replay, discard), `dialog` | 7 | `platform.failed-messages.view` | no | U.11 | TC-MSG-901 |
+| Platform console | Failed messages | `/failed-messages` | `data-table`, `panel` (payload), `action-bar` (replay, discard), `dialog` | 7 | `platform.failed-messages.view` | no | U.11 | `TC-MSG-901` (Platform sheet) |
 | Platform console | Support tickets | `/support` | `list`, `panel`, `text-area`, `badge` (SLA) | 7 | `platform.support.view` | no | U.11 | — |
 | Platform console | Impersonation request | `/support/:ticketId/impersonate` | `dialog`, `key-value` (consent state), `badge`, `button` | 7 | `platform.support.impersonate` | no | U.11 | TC-SEC-902 |
 | Platform console | Announcements and releases | `/announcements` | `list`, `text-area`, `date-picker`, `chip-input` (tenants), `dialog` (maintenance) | 7 | `platform.announcements.view` | no | U.11 | — |
 | Platform console | Billing and usage | `/billing` | `data-table`, `stat-tile`, `bar-chart`, `explain-number` | 7 | `platform.subscriptions.view` | no | U.11 | — |
-| Platform console | Retention and legal hold | `/retention` | `data-table`, `dialog` (reason), `badge` (hold), `timeline` | 7 | `platform.retention.view` | no | U.11 | TC-PRV-902 |
-| Platform console | Audit integrity | `/audit-integrity` | `stat-tile`, `data-table`, `badge` (chain state), `button` (verify) | 7 | `audit.integrity.view` | no | U.11 | TC-AUD-901 |
+| Platform console | Retention and legal hold | `/retention` | `data-table`, `dialog` (reason), `badge` (hold), `timeline` | 7 | `platform.retention.view` | no | U.11 | `TC-PRV-902` (document 12) |
+| Platform console | Audit integrity | `/audit-integrity` | `stat-tile`, `data-table`, `badge` (chain state), `button` (verify) | 7 | `audit.integrity.view` | no | U.11 | `TC-AUD-901` (Audit sheet) |
 | Platform console | Access reviews (platform staff) | `/access-reviews` | `data-table`, `action-bar` (certify, revoke), `progress-bar` | 7 | `identity.access-reviews.view` | no | U.11 | — |
-| Platform console | Global template library | `/templates` | `list`, `panel`, `badge` (attribution), `dialog` (review) | 7 | `documents.templates.view` | no | U.11 | TC-PLT-004 |
+| Platform console | Global template library | `/templates` | `list`, `panel`, `badge` (attribution), `dialog` (review) | 7 | `documents.templates.view` | no | U.11 | `TC-PLT-803` (Appendix W) |
 
 ### 7.3 School admin console
 
@@ -622,17 +622,17 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | School admin | Notification templates | `/admin/templates/notifications` | `tabs` (channels), `text-area`, `chip` (placeholders), `button` (send test) | 7 | `notification.templates.view` | no | U.2 | — |
 | School admin | Document templates | `/admin/templates/documents` | `list`, `panel` (preview), `file-upload`, `badge` | 7 | `documents.templates.view` | no | U.2 | — |
 | School admin | Numbering | `/admin/numbering` | `data-table`, `text-field` (pattern), `key-value` (preview) | 7 | `school.numbering.view` | no | U.7 | — |
-| School admin | Integrations, API keys, webhooks | `/admin/integrations` | `tabs`, `data-table`, `dialog` (reveal once), `list` (delivery log), `button` (replay) | 7 | `platform.integrations.view` | no | U.11 | TC-INT-001 |
+| School admin | Integrations, API keys, webhooks | `/admin/integrations` | `tabs`, `data-table`, `dialog` (reveal once), `list` (delivery log), `button` (replay) | 7 | `platform.integrations.view` | no | U.11 | `TC-INT-001` (Appendix W) |
 | School admin | Imports | `/admin/imports` | `stepper`, `file-upload`, `data-table` (error report), `progress-ring`, `dialog` (rollback) | 7 | `documents.imports.view` | no | U.6 | TC-DATA-301 |
-| School admin | Exports | `/admin/exports` | `data-table`, `dialog` (reason, watermark notice), `badge` (approval) | 7 | `documents.exports.view` | no | U.6 | TC-PRV-301 |
-| School admin | Audit viewer | `/admin/audit` | `data-table`, `filters`, `panel` (before and after), `dialog` (export reason) | 7 | `audit.entries.view` | no | U.2 | TC-SEC-001 |
+| School admin | Exports | `/admin/exports` | `data-table`, `dialog` (reason, watermark notice), `badge` (approval) | 7 | `documents.exports.view` | no | U.6 | `TC-PRV-301` (Documents sheet) |
+| School admin | Audit viewer | `/admin/audit` | `data-table`, `filters`, `panel` (before and after), `dialog` (export reason) | 7 | `audit.entries.view` | no | U.2 | TC-SEC-530 |
 | School admin | Access log | `/admin/access-log` | `data-table`, `filters`, `badge` (break-glass) | 7 | `audit.access-log.view` | no | U.2 | TC-SEC-101 |
 | School admin | Job monitor | `/admin/jobs` | `data-table`, `progress-bar`, `menu` | 7 | `platform.jobs.view` | no | U.2 | — |
 | School admin | Failed messages | `/admin/failed-messages` | `data-table`, `panel`, `action-bar` | 7 | `platform.failed-messages.view` | no | U.11 | — |
-| School admin | Data quality center | `/admin/data-quality` | `bento-grid`, `stat-tile`, `list`, `button` (fix), `explain-number` | 7 | `reporting.data-quality.view` | no | U.6 | TC-RPT-004 |
+| School admin | Data quality center | `/admin/data-quality` | `bento-grid`, `stat-tile`, `list`, `button` (fix), `explain-number` | 7 | `reporting.data-quality.view` | no | U.6 | `TC-RPT-004` (Appendix W) |
 | School admin | Recycle bin | `/admin/recycle-bin` | `data-table`, `action-bar` (restore), `dialog` (purge) | 7 | `platform.recycle-bin.view` | no | U.2 | — |
-| School admin | Privacy dashboard | `/admin/privacy` | `bento-grid`, `stat-tile`, `data-table` (retention clocks), `list` (subject requests) | 7 | `platform.retention.view` | no | U.2 | TC-AUD-001 |
-| School admin | Configuration as code | `/admin/configuration` | `tabs`, `data-table` (versions), `panel` (diff), `dialog` (restore) | 7 | `platform.settings.view` | no | U.11 | TC-PLT-005 |
+| School admin | Privacy dashboard | `/admin/privacy` | `bento-grid`, `stat-tile`, `data-table` (retention clocks), `list` (subject requests) | 7 | `platform.retention.view` | no | U.2 | `TC-AUD-001` (Appendix W) |
+| School admin | Configuration as code | `/admin/configuration` | `tabs`, `data-table` (versions), `panel` (diff), `dialog` (restore) | 7 | `platform.settings.view` | no | U.11 | `TC-PLT-804` (Appendix W) |
 
 ### 7.4 Teacher and homeroom
 
@@ -642,25 +642,25 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Teacher | My classes | `/teacher/classes` | `list`, `avatar`, `badge`, `sparkline` | 7 | `academics.teaching-assignments.view` | yes | U.4 | — |
 | Teacher | Register | `/teacher/classes/:sectionId/attendance` | `student-header`, `seating-chart`, `attendance-list`, `attendance-mark`, `exception-bar`, `lock-window-notice`, `undo-sheet` | 7 | `attendance.student-attendance.view` | yes | U.4 | TC-ATT-201 |
 | Teacher | Register, all present then exceptions | same route, mode | as above plus `toast` | 7 | `attendance.student-attendance.mark` | yes | U.4 | TC-ATT-202 |
-| Teacher | Assignments | `/teacher/classes/:sectionId/assignments` | `list`, `panel`, `date-picker`, `file-upload`, `dialog` (homework ceiling warning) | 7 | `academics.assignments.view` | yes | U.4 | TC-ACA-201 |
-| Teacher | Grading queue and fast grid | `/teacher/grading` | `grid`, `panel` (submission), `chip` (rubric), `toast` | 7 | `academics.submissions.view` | yes | U.4 | TC-ACA-202 |
-| Teacher | Mark entry grid | `/teacher/marks/:assessmentId` | `grid`, `badge` (state), `error-state` (out of range inline), `button` (submit for moderation) | 7 | `assessment.marks.view` | yes | U.4 | TC-ASM-001 |
+| Teacher | Assignments | `/teacher/classes/:sectionId/assignments` | `list`, `panel`, `date-picker`, `file-upload`, `dialog` (homework ceiling warning) | 7 | `academics.assignments.view` | yes | U.4 | `TC-ACA-201` (Academics sheet) |
+| Teacher | Grading queue and fast grid | `/teacher/grading` | `grid`, `panel` (submission), `chip` (rubric), `toast` | 7 | `academics.submissions.view` | yes | U.4 | `TC-ACA-202` (Academics sheet) |
+| Teacher | Mark entry grid | `/teacher/marks/:assessmentId` | `grid`, `badge` (state), `error-state` (out of range inline), `button` (submit for moderation) | 7 | `assessment.marks.view` | yes | U.4 | `TC-ASM-810` (Appendix W) |
 | Teacher | Mark entry in Arabic | same route | as above; numerals per tenant, numbers isolated LTR | 7 | `assessment.marks.enter` | yes | U.4 | TC-L10N-201 |
-| Teacher | Comment bank and drafts | `/teacher/comments/:cycleId` | `list`, `text-area`, `badge` (draft, reviewed), `because-panel` (sources) | 7 | `assessment.report-cards.view` | no | U.4 | TC-AI-201 |
-| Teacher | Messages | `/teacher/messages` | `list`, `text-area`, `badge` (read receipt, quiet hours), `file-upload` | 7 | `communication.messages.view` | yes | U.4 | TC-COM-201 |
+| Teacher | Comment bank and drafts | `/teacher/comments/:cycleId` | `list`, `text-area`, `badge` (draft, reviewed), `because-panel` (sources) | 7 | `assessment.report-cards.view` | no | U.4 | `TC-AI-201` (Ai sheet) |
+| Teacher | Messages | `/teacher/messages` | `list`, `text-area`, `badge` (read receipt, quiet hours), `file-upload` | 7 | `communication.messages.view` | yes | U.4 | `TC-COM-201` (Communication sheet) |
 | Teacher | Meetings | `/teacher/meetings` | `timetable-grid` (slots), `list`, `dialog` | 7 | `communication.meetings.view` | yes | U.4 | — |
 | Teacher | My timetable and cover | `/teacher/timetable` | `timetable-grid`, `card` (cover request), `dialog` (accept, decline with reason) | 7 | `scheduling.timetable.view` | yes | U.4 | — |
 | Teacher | Lesson plans | `/teacher/lesson-plans` | `list`, `stepper`, `text-area`, `badge` (review state) | 7 | `academics.lesson-plans.view` | no | U.4 | — |
 | Teacher | Behavior quick note | `/teacher/behavior` | `student-header`, `chip` (category), `number-field` (points), `toast` (celebration for badge) | 7 | `behavior.points.view` | yes | U.4 | — |
-| Teacher | Another teacher's register (refusal) | `/teacher/classes/:sectionId/attendance` | `empty-state` (no permission with coordinator link) | no-permission | `attendance.student-attendance.view` (own-sections) | yes | U.4 | TC-SEC-201 |
-| Homeroom | Homeroom Today | `/homeroom` | `bento-grid`, `card`, `list`, `avatar`, `badge` (birthday) | 7 | `attendance.student-attendance.view` | yes | U.5 | TC-RPT-201 |
+| Teacher | Another teacher's register (refusal) | `/teacher/classes/:sectionId/attendance` | `empty-state` (no permission with coordinator link) | no-permission | `attendance.student-attendance.view` (own-sections) | yes | U.4 | `TC-SEC-201` (document 12) |
+| Homeroom | Homeroom Today | `/homeroom` | `bento-grid`, `card`, `list`, `avatar`, `badge` (birthday) | 7 | `attendance.student-attendance.view` | yes | U.5 | `TC-RPT-201` (Reporting sheet) |
 | Homeroom | Excuse review | `/homeroom/excuses` | `list`, `panel`, `file-upload` (view through short-lived link), `dialog` (reject reason) | 7 | `attendance.excuses.view` | yes | U.5 | TC-ATT-206 |
 | Homeroom | Class overview | `/homeroom/overview` | `data-table`, `sparkline`, `heatmap`, `explain-number` | 7 | `reporting.dashboards.view` | yes | U.5 | — |
 | Homeroom | Student 360 (homeroom scope) | `/homeroom/students/:studentId` | `student-header`, `tabs`, `timeline`, `filters`, `key-value`, `badge` (exists, closed) | 7 | `school.students.view` | yes | U.5 | TC-ATT-205 |
-| Homeroom | Early-warning flags | `/homeroom/flags` | `list`, `because-panel`, `button` (open intervention) | 7 | `reporting.early-warning.view` | yes | U.5 | TC-RPT-202 |
-| Homeroom | Intervention playbook | `/homeroom/interventions/:interventionId` | `stepper`, `date-picker`, `select` (owner), `text-area`, `timeline` | 7 | `wellbeing.interventions.view` | yes | U.5 | TC-WEL-201 |
+| Homeroom | Early-warning flags | `/homeroom/flags` | `list`, `because-panel`, `button` (open intervention) | 7 | `reporting.early-warning.view` | yes | U.5 | `TC-RPT-202` (Reporting sheet) |
+| Homeroom | Intervention playbook | `/homeroom/interventions/:interventionId` | `stepper`, `date-picker`, `select` (owner), `text-area`, `timeline` | 7 | `wellbeing.interventions.view` | yes | U.5 | `TC-WEL-201` (Wellbeing sheet) |
 | Homeroom | Class list print | `/homeroom/print` | `data-table` (print layout), `avatar`, `button` (print) | loading, error, no-permission | `school.students.view` | no | U.5 | TC-L10N-202 |
-| Homeroom | Counseling case (refusal) | `/homeroom/students/:studentId` | `badge` (exists) with no content, `empty-state` | no-permission | `wellbeing.counseling-cases.view` | yes | U.5 | TC-WEL-202 |
+| Homeroom | Counseling case (refusal) | `/homeroom/students/:studentId` | `badge` (exists) with no content, `empty-state` | no-permission | `wellbeing.counseling-cases.view` | yes | U.5 | `TC-WEL-202` (Wellbeing sheet) |
 
 ### 7.5 Student and parent
 
@@ -670,28 +670,28 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Student | Timetable | `/student/timetable` | `timetable-grid`, `tabs` (week, day) | 7 | `scheduling.timetable.view` | yes | U.9 | TC-L10N-601 |
 | Student | Coursework list | `/student/coursework` | `list`, `badge` (due, late, graded), `filters` | 7 | `academics.assignments.view` | yes | U.9 | — |
 | Student | Assignment and submission | `/student/coursework/:assignmentId` | `card`, `file-upload`, `button`, `badge` (state), `error-state` (grading started) | 7 | `academics.assignments.view` | yes | U.9 | TC-ACA-601 |
-| Student | Grades and feedback | `/student/grades` | `list`, `key-value` (rubric), `explain-number` (scheme), `line-chart` (trend) | 7 | `assessment.marks.view` | yes | U.9 | TC-ASM-601 |
+| Student | Grades and feedback | `/student/grades` | `list`, `key-value` (rubric), `explain-number` (scheme), `line-chart` (trend) | 7 | `assessment.marks.view` | yes | U.9 | `TC-ASM-601` (Assessment sheet) |
 | Student | My attendance | `/student/attendance` | `stat-tile`, `heatmap` (calendar), `list` | 7 | `attendance.student-attendance.view` | yes | U.9 | — |
-| Student | Badges and portfolio | `/student/portfolio` | `bento-grid`, `card`, `badge`, `avatar`, `button` (export) | 7 | `behavior.badges.view` | yes | U.9 | TC-BEH-601 |
+| Student | Badges and portfolio | `/student/portfolio` | `bento-grid`, `card`, `badge`, `avatar`, `button` (export) | 7 | `behavior.badges.view` | yes | U.9 | `TC-BEH-601` (Behavior sheet) |
 | Student | Quiz player | `/student/quizzes/:quizId` | `stepper`, `radio-group`, `text-area`, `progress-bar`, `dialog` (submit) | 7 | `academics.quizzes.view` | no | U.9 | — |
-| Student | Messages and announcements | `/student/messages` | `list`, `text-area`, `button` (report), `empty-state` (messaging off) | 7 | `communication.messages.view` | yes | U.9 | TC-COM-601 |
+| Student | Messages and announcements | `/student/messages` | `list`, `text-area`, `button` (report), `empty-state` (messaging off) | 7 | `communication.messages.view` | yes | U.9 | `TC-COM-601` (Communication sheet) |
 | Student | Private request | `/student/requests` | `list`, `stepper`, `select` (type), `badge` (private) | 7 | `requests.requests.view` | yes | U.9 | — |
 | Student | Classmate's grades (refusal) | `/student/grades` with another id | `empty-state` (no hint of the record) | no-permission | `assessment.marks.view` (self) | yes | U.9 | TC-SEC-601 |
 | Parent | Calm screen | `/parent` | `bento-grid`, `card` (one per child), `empty-state` ("nothing needs your attention"), `as-of-badge` | 7 | `school.students.view` | yes | U.8 | TC-MOB-501 |
-| Parent | Child today | `/parent/children/:studentId` | `student-header`, `card`, `list`, `badge`, `stat-tile` | 7 | `school.students.view` | yes | U.8 | TC-RPT-501 |
+| Parent | Child today | `/parent/children/:studentId` | `student-header`, `card`, `list`, `badge`, `stat-tile` | 7 | `school.students.view` | yes | U.8 | `TC-RPT-501` (Reporting sheet) |
 | Parent | Attendance and excuse | `/parent/children/:studentId/attendance` | `heatmap`, `list`, `dialog` (submit excuse), `file-upload` | 7 | `attendance.excuses.view` | yes | U.8 | — |
-| Parent | Fees and pay | `/parent/children/:studentId/fees` | `stat-tile` (balance), `list` (invoices), `button` (pay), `stepper` (payment), `key-value` (receipt) | 7 | `finance.invoices.view` | yes | U.8 | TC-FIN-501 |
-| Parent | Report cards and documents | `/parent/children/:studentId/documents` | `list`, `badge` (QR verified), `button` (download) | 7 | `assessment.report-cards.view` | yes | U.8 | TC-MOB-502 |
-| Parent | Guardian transparency | `/parent/children/:studentId/transparency` | `timeline` (reads by role and time), `data-table` (consents), `progress-bar` (retention clock), `button` (export) | 7 | `audit.access-log.view` | yes | U.8 | TC-PRV-501 |
-| Parent | Consents | `/parent/children/:studentId/consents` | `list`, `switch`, `dialog` (withdraw) | 7 | `school.students.view` | yes | U.8 | TC-PRV-502 |
-| Parent | Gate pass | `/parent/children/:studentId/gate-pass/:passId` | `card`, QR image, `badge` (validity window), `as-of-badge` | loading, error, offline | `attendance.safety.gate-passes.view` | yes | U.8 | TC-ATT-501 |
-| Parent | Requests | `/parent/requests` | `list`, `stepper`, `select`, `time-picker`, `badge` (approver, expected decision) | 7 | `requests.requests.view` | yes | U.8 | TC-RQS-501 |
-| Parent | Messages and digest | `/parent/messages` | `list`, `text-area`, `chip` (translated, show original), `badge` | 7 | `communication.messages.view` | yes | U.8 | TC-L10N-501 |
+| Parent | Fees and pay | `/parent/children/:studentId/fees` | `stat-tile` (balance), `list` (invoices), `button` (pay), `stepper` (payment), `key-value` (receipt) | 7 | `finance.invoices.view` | yes | U.8 | `TC-FIN-501` (Finance sheet) |
+| Parent | Report cards and documents | `/parent/children/:studentId/documents` | `list`, `badge` (QR verified), `button` (download) | 7 | `assessment.report-cards.view` | yes | U.8 | `TC-MOB-502` (Bff.Mobile sheet) |
+| Parent | Guardian transparency | `/parent/children/:studentId/transparency` | `timeline` (reads by role and time), `data-table` (consents), `progress-bar` (retention clock), `button` (export) | 7 | `audit.access-transparency.view` | yes | U.8 | TC-PRV-501 |
+| Parent | Consents | `/parent/children/:studentId/consents` | `list`, `switch`, `dialog` (withdraw) | 7 | `school.students.view` | yes | U.8 | `TC-PRV-502` (School sheet) |
+| Parent | Gate pass | `/parent/children/:studentId/gate-pass/:passId` | `card`, QR image, `badge` (validity window), `as-of-badge` | loading, error, offline | `attendance.safety.gate-passes.view` | yes | U.8 | `TC-ATT-501` (Attendance sheet) |
+| Parent | Requests | `/parent/requests` | `list`, `stepper`, `select`, `time-picker`, `badge` (approver, expected decision) | 7 | `requests.requests.view` | yes | U.8 | `TC-RQS-501` (Requests sheet) |
+| Parent | Messages and digest | `/parent/messages` | `list`, `text-area`, `chip` (translated, show original), `badge` | 7 | `communication.messages.view` | yes | U.8 | `TC-L10N-501` (Communication sheet) |
 | Parent | Meetings | `/parent/meetings` | `timetable-grid` (slots), `dialog` (book) | 7 | `communication.meetings.view` | yes | U.8 | — |
-| Parent | Notification preferences | `/parent/preferences` | `form-field`, `switch`, `time-picker` (quiet hours), `tabs` (per child) | 7 | `notification.preferences.view` | yes | U.8 | TC-NOT-501 |
+| Parent | Notification preferences | `/parent/preferences` | `form-field`, `switch`, `time-picker` (quiet hours), `tabs` (per child) | 7 | `notification.preferences.view` | yes | U.8 | `TC-NOT-501` (Notification sheet) |
 | Parent | Re-enrollment | `/parent/re-enrollment` | `stepper`, `card`, `button` (confirm), `key-value` (deposit) | 7 | `admissions.re-enrollment.view` | yes | U.8 | — |
-| Parent | Policy acknowledgment | `/parent/policies` | `list`, `panel` (document), `checkbox`, `button` (sign) | 7 | `communication.policies.view` | yes | U.8 | TC-COM-002 |
-| Parent | Another family's child (refusal) | `/parent/children/:studentId` with a foreign id | `empty-state` (no hint) | no-permission | `school.students.view` (own-children) | yes | U.8 | TC-SEC-501 |
+| Parent | Policy acknowledgment | `/parent/policies` | `list`, `panel` (document), `checkbox`, `button` (sign) | 7 | `communication.policies.view` | yes | U.8 | `TC-COM-002` (Appendix W) |
+| Parent | Another family's child (refusal) | `/parent/children/:studentId` with a foreign id | `empty-state` (no hint) | no-permission | `school.students.view` (own-children) | yes | U.8 | `TC-SEC-501` (document 12) |
 
 ### 7.6 Registrar and accountant
 
@@ -700,15 +700,15 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Registrar | Registrar Today | `/registrar` | `bento-grid`, `card`, `stat-tile`, `list`, `bar-chart` (per stage) | 7 | `admissions.applications.view` | no | U.6 | TC-ADM-301 |
 | Registrar | Inquiries | `/registrar/inquiries` | `data-table`, `filters`, `panel`, `button` (convert) | 7 | `admissions.inquiries.view` | no | U.6 | TC-ADM-302 |
 | Registrar | Applications pipeline | `/registrar/applications` | `tabs` (board, table), `card`, `badge` (stage, missing documents), `filters` | 7 | `admissions.applications.view` | no | U.6 | — |
-| Registrar | Application detail | `/registrar/applications/:applicationId` | `student-header`, `tabs`, `file-upload` (documents), `stepper` (stage), `timeline` | 7 | `admissions.applications.view` | no | U.6 | TC-DOC-301 |
+| Registrar | Application detail | `/registrar/applications/:applicationId` | `student-header`, `tabs`, `file-upload` (documents), `stepper` (stage), `timeline` | 7 | `admissions.applications.view` | no | U.6 | `TC-DOC-301` (Documents sheet) |
 | Registrar | Offers and waiting list | `/registrar/offers` | `data-table`, `badge` (expiry clock), `dialog` (make, withdraw, extend) | 7 | `admissions.offers.view` | no | U.6 | TC-ADM-303 |
 | Registrar | Enrollment | `/registrar/enrollment` | `select` (section), `stat-tile` (seats), `error-state` (full, waiting list offered), `dialog` (override reason) | 7 | `admissions.enrollment.view` | no | U.6 | TC-ADM-304 |
-| Registrar | Student directory | `/registrar/students` | `data-table`, `filters`, `action-bar` (export with reason), `avatar` | 7 | `school.students.view` | no | U.6 | TC-PRV-301 |
+| Registrar | Student directory | `/registrar/students` | `data-table`, `filters`, `action-bar` (export with reason), `avatar` | 7 | `school.students.view` | no | U.6 | `TC-PRV-301` (Documents sheet) |
 | Registrar | Student record | `/registrar/students/:studentId` | `student-header`, `tabs`, `form-field`, `key-value`, `badge` (sensitive, logged) | 7 | `school.students.view` | no | U.6 | — |
-| Registrar | Transfer and certificate | `/registrar/students/:studentId/transfer` | `stepper` (clearance), `list` (finance, library), `panel` (certificate preview), `badge` (QR) | 7 | `documents.certificates.view` | no | U.6 | TC-L10N-301 |
+| Registrar | Transfer and certificate | `/registrar/students/:studentId/transfer` | `stepper` (clearance), `list` (finance, library), `panel` (certificate preview), `badge` (QR) | 7 | `documents.certificates.view` | no | U.6 | `TC-L10N-301` (Documents sheet) |
 | Registrar | Re-enrollment campaign | `/registrar/re-enrollment` | `stat-tile`, `progress-bar` (conversion), `data-table`, `dialog` (open, close) | 7 | `admissions.re-enrollment.view` | no | U.6 | — |
 | Registrar | Promotion and rollover | `/registrar/promotion` | `stepper`, `data-table`, `badge` (result), `progress-ring` | 7 | `school.students.promote` | no | U.6 | — |
-| Registrar | Class formation | `/registrar/class-formation` | `bento-grid` (sections), drag and drop with keyboard move menu, `chip` (keep together, keep apart), `stat-tile` (balance) | 7 | `school.sections.balance-formation` | no | U.3 | TC-SCH-001 |
+| Registrar | Class formation | `/registrar/class-formation` | `bento-grid` (sections), drag and drop with keyboard move menu, `chip` (keep together, keep apart), `stat-tile` (balance) | 7 | `school.sections.balance-formation` | no | U.3 | `TC-SCH-810` (Appendix W) |
 | Registrar | ID cards | `/registrar/id-cards` | `data-table`, `panel` (preview), `progress-ring` | 7 | `school.students.print-id-cards` | no | U.6 | — |
 | Registrar | Post a payment (refusal) | `/registrar/students/:studentId` | finance action absent, `empty-state` on direct route | no-permission | `finance.payments.record` | no | U.6 | TC-SEC-301 |
 | Accountant | Accountant Today | `/accountant` | `bento-grid`, `card`, `stat-tile`, `list`, `sparkline` | 7 | `finance.payments.view` | no | U.7 | TC-FIN-401 |
@@ -730,29 +730,29 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 
 | Workspace | Screen | Route | Components used | States | Permission | Mobile web | Journey | TC |
 |---|---|---|---|---|---|---|---|---|
-| Principal | Morning brief and Today | `/principal` | `bento-grid`, `card`, `stat-tile`, `list`, `unmarked-classes-card`, `as-of-badge` | 7 | `reporting.dashboards.view` | yes | U.2 | TC-RPT-001 |
-| Principal | Approvals inbox | `/principal/approvals` | `list`, `panel`, `button` (approve, reject), `undo-sheet`, `badge` (SLA) | 7 | `requests.requests.view` | yes | U.2 | TC-RQS-101 |
+| Principal | Morning brief and Today | `/principal` | `bento-grid`, `card`, `stat-tile`, `list`, `unmarked-classes-card`, `as-of-badge` | 7 | `reporting.dashboards.view` | yes | U.2 | `TC-RPT-001` (Appendix W) |
+| Principal | Approvals inbox | `/principal/approvals` | `list`, `panel`, `button` (approve, reject), `undo-sheet`, `badge` (SLA) | 7 | `requests.requests.view` | yes | U.2 | `TC-RQS-101` (Requests sheet) |
 | Principal | Approvals in Arabic | same route | as above, mirrored | 7 | `requests.requests.approve` | yes | U.2 | TC-L10N-101 |
 | Principal | Unmarked attendance | `/principal/attendance` | `list`, `avatar`, `button` (nudge), `empty-state` (all marked) | 7 | `attendance.student-attendance.view` | yes | U.2 | TC-ATT-101 |
 | Principal | Staff absence and cover | `/principal/cover` | `list`, `card` (suggested substitute with reasons), `because-panel`, `button` (confirm) | 7 | `scheduling.substitutions.view` | yes | U.2 | — |
-| Principal | Student 360 | `/principal/students/:studentId` | `student-header`, `tabs`, `timeline`, `filters`, `explain-number`, `badge` (sensitive entry exists) | 7 | `school.students.view` | yes | U.2 | TC-SCH-101 |
-| Principal | Counseling note (refusal) | `/principal/students/:studentId` | `badge` (exists), no content | no-permission | `wellbeing.counseling-cases.view` | yes | U.2 | TC-WEL-101 |
+| Principal | Student 360 | `/principal/students/:studentId` | `student-header`, `tabs`, `timeline`, `filters`, `explain-number`, `badge` (sensitive entry exists) | 7 | `school.students.view` | yes | U.2 | `TC-SCH-101` (School sheet) |
+| Principal | Counseling note (refusal) | `/principal/students/:studentId` | `badge` (exists), no content | no-permission | `wellbeing.counseling-cases.view` | yes | U.2 | `TC-WEL-101` (Wellbeing sheet) |
 | Principal | Break-glass | `/principal/students/:studentId/break-glass` | `dialog` (reason required, window shown), `badge` (alert sent), `timeline` | 7 | `wellbeing.break-glass.use` | yes | U.2 | TC-SEC-101 |
-| Principal | Early warning | `/principal/early-warning` | `list`, `because-panel`, `dialog` (override with reason), `button` (open intervention) | 7 | `reporting.early-warning.view` | yes | U.2 | TC-RPT-008 |
-| Principal | School dashboard | `/principal/dashboard` | `bento-grid`, `stat-tile`, `line-chart`, `bar-chart`, `explain-number` | 7 | `reporting.dashboards.view` | yes | U.2 | TC-RPT-102 |
-| Principal | Campus comparison | `/principal/campuses` | `data-table`, `bar-chart`, `explain-number`, `select` (currency display) | 7 | `reporting.dashboards.view` | yes | U.1 | TC-RPT-007 |
-| Principal | Marks approval and lock | `/principal/assessment` | `data-table`, `badge` (state), `dialog` (lock), `error-state` (post-lock change refused, appeal offered) | 7 | `assessment.marks.view` | no | U.2 | TC-ASM-101 |
-| Principal | Report card batch | `/principal/report-cards` | `stepper`, `progress-ring` (live over realtime), `list` (results), `badge` (QR) | 7 | `assessment.report-cards.view` | no | U.2 | TC-ASM-001 |
+| Principal | Early warning | `/principal/early-warning` | `list`, `because-panel`, `dialog` (override with reason), `button` (open intervention) | 7 | `reporting.early-warning.view` | yes | U.2 | `TC-RPT-008` (Appendix W) |
+| Principal | School dashboard | `/principal/dashboard` | `bento-grid`, `stat-tile`, `line-chart`, `bar-chart`, `explain-number` | 7 | `reporting.dashboards.view` | yes | U.2 | `TC-RPT-102` (Reporting sheet) |
+| Principal | Campus comparison | `/principal/campuses` | `data-table`, `bar-chart`, `explain-number`, `select` (currency display) | 7 | `reporting.dashboards.view` | yes | U.1 | `TC-RPT-007` (Appendix W) |
+| Principal | Marks approval and lock | `/principal/assessment` | `data-table`, `badge` (state), `dialog` (lock), `error-state` (post-lock change refused, appeal offered) | 7 | `assessment.marks.view` | no | U.2 | `TC-ASM-101` (Assessment sheet) |
+| Principal | Report card batch | `/principal/report-cards` | `stepper`, `progress-ring` (live over realtime), `list` (results), `badge` (QR) | 7 | `assessment.report-cards.view` | no | U.2 | `TC-ASM-810` (Appendix W) |
 | Principal | Moderation queue | `/principal/moderation` | `data-table`, `grid`, `heatmap` (distribution), `button` (release) | 7 | `assessment.marks.view` | no | U.3 | — |
 | Principal | Lesson plan review and coverage | `/principal/academics` | `list`, `panel`, `heatmap` (syllabus coverage), `button` (approve, return) | 7 | `academics.lesson-plans.view` | no | U.3 | — |
-| Principal | Timetable editor | `/principal/timetable` | `timetable-grid` (drag with keyboard alternative), `badge` (conflict live), `panel` (what-if), `dialog` (publish) | 7 | `scheduling.timetable.view` | no | U.3 | TC-SCD-001 |
+| Principal | Timetable editor | `/principal/timetable` | `timetable-grid` (drag with keyboard alternative), `badge` (conflict live), `panel` (what-if), `dialog` (publish) | 7 | `scheduling.timetable.view` | no | U.3 | `TC-SCD-001` (Appendix W) |
 | Principal | Exam timetable | `/principal/timetable/exams` | `timetable-grid`, `data-table` (seating, invigilators), `dialog` (publish) | 7 | `scheduling.exam-timetable.view` | no | U.3 | — |
-| Principal | Workload balance | `/principal/workload` | `data-table`, `bar-chart`, `because-panel` (strain factors), `badge` | 7 | `academics.teaching-assignments.view` | no | U.3 | TC-HR-001 |
+| Principal | Workload balance | `/principal/workload` | `data-table`, `bar-chart`, `because-panel` (strain factors), `badge` | 7 | `academics.teaching-assignments.view` | no | U.3 | `TC-HR-810` (Appendix W) |
 | Principal | Incidents | `/principal/incidents` | `list`, `panel`, `stepper` (consequence), `badge` (restricted) | 7 | `behavior.incidents.view` | yes | U.2 | — |
 | Principal | Emergency mode | `/principal/emergency` | `top-bar` (emergency banner), `stat-tile` (accounted, not yet), `list` (by location), `button` (broadcast), `progress-bar` | 7 | `attendance.safety.emergency.view` | yes | U.2 | TC-ATT-102 |
-| Principal | Reunification | `/principal/emergency/reunify` | `search-field`, `student-header`, `avatar` (pickup person photo), `button` (verify) | 7 | `attendance.safety.emergency.reunify` | yes | U.2 | TC-ATT-004 |
+| Principal | Reunification | `/principal/emergency/reunify` | `search-field`, `student-header`, `avatar` (pickup person photo), `button` (verify) | 7 | `attendance.safety.emergency.reunify` | yes | U.2 | `TC-ATT-813` (Appendix W) |
 | Principal | Oversight | `/principal/oversight` | `tabs`, `data-table` (sensitive exports, break-glass uses), `list` (access review queue) | 7 | `audit.entries.view` | no | U.2 | — |
-| Principal | Inspection readiness | `/principal/inspection` | `stepper` (framework), `progress-bar`, `list` (evidence folder), `button` (export) | 7 | `reporting.reports.view` | no | U.1 | TC-RPT-005 |
+| Principal | Inspection readiness | `/principal/inspection` | `stepper` (framework), `progress-bar`, `list` (evidence folder), `button` (export) | 7 | `reporting.reports.view` | no | U.1 | `TC-RPT-005` (Appendix W) |
 
 ### 7.8 HR, counselor and nurse, front desk
 
@@ -763,34 +763,34 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | HR | Staff file | `/hr/staff/:staffId` | `tabs`, `key-value`, `file-upload`, `error-state` (licence expired, assignment blocked) | 7 | `hr.staff-files.view` | no | Appendix D HR officer row | TC-HR-804 |
 | HR | Salary section (absent without permission) | `/hr/staff/:staffId` | section not rendered; no placeholder | no-permission | `hr.payroll.view-salary` | no | Appendix D HR officer row | TC-SEC-801 |
 | HR | Leave | `/hr/leave` | `list`, `panel`, `stepper` (substitution step before approval), `error-state` (exceeds balance, unpaid offered) | 7 | `hr.leave.view` | no | U.2 | TC-HR-802 |
-| HR | Substitute suggestion | `/hr/leave/:leaveId/cover` | `list` (ranked), `because-panel` (availability, subject, fairness), `button` (accept) | 7 | `scheduling.substitutions.view` | no | U.2 | TC-SCD-801 |
+| HR | Substitute suggestion | `/hr/leave/:leaveId/cover` | `list` (ranked), `because-panel` (availability, subject, fairness), `button` (accept) | 7 | `scheduling.substitutions.view` | no | U.2 | `TC-SCD-801` (Scheduling sheet) |
 | HR | Contracts | `/hr/contracts` | `data-table`, `form-field`, `dialog` (approve) | 7 | `hr.contracts.view` | no | Appendix D HR officer row | — |
 | HR | Payroll inputs | `/hr/payroll` | `grid`, `key-value` (components from contract), `badge` (period locked), `error-state` (adjustment in next period offered) | 7 | `hr.payroll.view` | no | Appendix D HR officer row | TC-HR-805 |
 | HR | Appraisals | `/hr/appraisals` | `list`, `stepper`, `text-area`, `date-picker` | 7 | `hr.appraisals.view` | no | U.3 | — |
 | HR | Vacancies | `/hr/vacancies` | `data-table`, `panel`, `dialog` (publish, make offer) | 7 | `hr.vacancies.view` | no | Appendix D HR officer row | — |
 | HR | Document expiry | `/hr/documents` | `data-table`, `badge` (days left), `button` (request upload) | 7 | `hr.staff-files.view` | no | Appendix D HR officer row | TC-HR-807 |
-| HR | Service certificate | `/hr/staff/:staffId/certificates` | `panel` (preview, Hijri and Gregorian), `button` (generate), `badge` (QR) | 7 | `documents.certificates.view` | no | Appendix D HR officer row | TC-L10N-801 |
+| HR | Service certificate | `/hr/staff/:staffId/certificates` | `panel` (preview, Hijri and Gregorian), `button` (generate), `badge` (QR) | 7 | `documents.certificates.view` | no | Appendix D HR officer row | `TC-L10N-801` (Hr sheet) |
 | HR | Onboarding and offboarding | `/hr/onboarding` | `stepper`, `checkbox`, `list` (reassign classes, tasks) | 7 | `hr.staff-files.view` | no | U.11 | — |
 | HR | Student record (refusal) | `/registrar/students/:studentId` | `empty-state` | no-permission | `school.students.view` | no | Appendix D HR officer row | TC-SEC-802 |
 | Counselor and nurse | Care Today | `/care` | `bento-grid`, `card`, `list` (visits, medication schedule, follow-ups), `as-of-badge` | 7 | `wellbeing.interventions.view` | no | U.10 | TC-WEL-701 |
 | Counselor and nurse | Referrals | `/care/referrals` | `list`, `panel` (referral reason, referrer), `button` (accept) | 7 | `wellbeing.counseling-cases.view` | no | U.10 | TC-WEL-702 |
-| Counselor and nurse | Case file | `/care/cases/:caseId` | `student-header`, `timeline`, `text-area` (session note), `badge` (logged), `dialog` (close with outcome) | 7 | `wellbeing.counseling-cases.view` | no | U.10 | TC-WEL-703 |
+| Counselor and nurse | Case file | `/care/cases/:caseId` | `student-header`, `timeline`, `text-area` (session note), `badge` (logged), `dialog` (close with outcome) | 7 | `wellbeing.counseling-cases.view` | no | U.10 | `TC-WEL-703` (Audit sheet) |
 | Counselor and nurse | Session note in Arabic | same route | as above with mixed-script note | 7 | `wellbeing.counseling-cases.edit` | no | U.10 | TC-L10N-701 |
 | Counselor and nurse | Interventions and playbooks | `/care/interventions` | `list`, `stepper`, `select` (owner), `date-picker`, `timeline` | 7 | `wellbeing.interventions.view` | no | U.10 | TC-WEL-705 |
 | Counselor and nurse | Clinic visits | `/care/clinic` | `list`, `form-field`, `checkbox` (notify guardian, send home), `toast` | 7 | `wellbeing.clinic-visits.view` | no | U.10 | TC-WEL-706 |
 | Counselor and nurse | Medication schedule | `/care/medications` | `timetable-grid` (windows), `list`, `button` (administer), `error-state` (outside window) | 7 | `wellbeing.medications.view` | no | U.10 | — |
-| Counselor and nurse | Allergy and medical alerts | `/care/alerts` | `list`, `badge` (severity), `key-value` (substance, action), `error-state` (offline: never cached) | loading, error, offline, no-permission | `school.medical-summary.view` | no | U.10 | TC-WEL-203 |
+| Counselor and nurse | Allergy and medical alerts | `/care/alerts` | `list`, `badge` (severity), `key-value` (substance, action), `error-state` (offline: never cached) | loading, error, offline, no-permission | `school.medical-summary.view` | no | U.10 | `TC-WEL-203` (Wellbeing sheet) |
 | Counselor and nurse | Education plans | `/care/plans` | `list`, `stepper`, `chip` (accommodations), `dialog` (approve) | 7 | `wellbeing.education-plans.view` | no | U.10 | — |
 | Counselor and nurse | Safeguarding queue | `/care/safeguarding` | `list`, `badge` (concern age, escalation clock), `panel` (chronology), `dialog` (escalate) | 7 | `wellbeing.safeguarding.view` | no | U.10 | — |
 | Counselor and nurse | Caseload export (refusal) | `/care/cases` | `dialog` (needs approval and reason; principal notified) | no-permission | `documents.exports.export-sensitive` | no | U.10 | TC-PRV-701 |
 | Front desk | Front desk Today | `/front-desk` | `bento-grid`, `card`, `list` (visitors on site, expected pickups, passes to verify) | 7 | `operations.frontdesk.view` | no | Appendix I receptionist row | — |
 | Front desk | Visitors | `/front-desk/visitors` | `data-table`, `form-field`, `avatar` (photo), `badge` (watchlist), `button` (check in, check out) | 7 | `attendance.safety.visitors.view` | no | U.2 | — |
-| Front desk | Gate and passes | `/front-desk/gate` | `search-field`, `list`, `badge` (valid, expired, revoked), `button` (verify) | 7 | `attendance.safety.gate-passes.view` | no | U.8 | TC-ATT-002 |
+| Front desk | Gate and passes | `/front-desk/gate` | `search-field`, `list`, `badge` (valid, expired, revoked), `button` (verify) | 7 | `attendance.safety.gate-passes.view` | no | U.8 | `TC-ATT-811` (Appendix W) |
 | Front desk | Pickup persons | `/front-desk/pickups/:studentId` | `student-header`, `list`, `avatar` (photo), `badge` (verified), `error-state` (restricted guardian) | 7 | `attendance.safety.pickup-persons.view` | no | U.8 | — |
 | Front desk | Enquiries and complaints | `/front-desk/enquiries` | `list`, `form-field`, `select` (route to), `badge` (SLA) | 7 | `operations.frontdesk.view` | no | Appendix I receptionist row | — |
-| Front desk | Emergency roll call | `/front-desk/emergency` | `list` (by location), `stat-tile`, `search-field`, `button` (mark accounted) | 7 | `attendance.safety.emergency.view` | no | U.2 | TC-ATT-004 |
+| Front desk | Emergency roll call | `/front-desk/emergency` | `list` (by location), `stat-tile`, `search-field`, `button` (mark accounted) | 7 | `attendance.safety.emergency.view` | no | U.2 | `TC-ATT-813` (Appendix W) |
 
-**Counts.** 8 shell and public, 19 platform console, 33 school admin, 23 teacher and homeroom, 26 student and parent, 28 registrar and accountant, 23 principal and academic leadership, 31 HR, care and front desk: **191 screen rows**, of which 14 are refusal or same-route variants that the Appendix Q boundary steps require, so **177 distinct screens**. Every row uses only components from Section 6.
+**Counts.** 8 shell and public, 19 platform console, 33 school admin, 23 teacher and homeroom, 26 student and parent, 28 registrar and accountant, 23 principal and academic leadership, 31 HR, care and front desk: **191 screen rows**, of which 14 are refusal or same-route variants that the Appendix Q boundary steps require, so **177 distinct screens**. Every row is built from the 64 components of Section 6, the `@nibras/shared` composites of Section 1.1 (`filters` on 12 rows), and the five feature-local presentational components the attendance tree in Section 2 declares: `register-card`, `attendance-list`, `exception-bar`, `lock-window-notice` and `unmarked-classes-card`. None of these is a new primitive: each is a composition of Section 6 components, which is why `14-design-system-and-ux.md` Section 7 inventories the 64 primitives and not the compositions.
 
 ---
 
@@ -871,7 +871,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | The tree in Section 1 matches the workspace | `ci-web.yml` runs a structure check that lists `apps/*`, `libs/*` and `libs/features/*` and diffs against the tree in this document; a new library without an entry here fails |
 | Boundaries hold | ESLint boundary rules in `eslint.config.mjs`, run on every pull request; a feature-to-feature import or an `@angular/animations` import fails lint |
 | Every route in Section 2 has a guard with a real permission | A unit test walks every route configuration and asserts a `permissionGuard` with a string present in Appendix B; the string set is generated from the appendix |
-| Permission refresh without sign-out | `TC-SEC-001`-family end-to-end spec: change a role while a second browser context is open, assert the menu changes within five seconds and the session persists |
+| Permission refresh without sign-out | `TC-SEC-047` (document 12) with `TC-IDN-044`, as an end-to-end spec on web: change a role while a second browser context is open, assert the menu changes within five seconds and the session persists |
 | Generated clients are current | `ci-web.yml` regenerates from the published OpenAPI artefacts and fails on diff |
 | Every screen in Section 7 exists with its seven states | One Playwright spec per screen row in `e2e/screens/`, each asserting the state components render for loading, empty, error, offline, partial, processing and no-permission fixtures, and taking the four snapshots |
 | Accessibility | axe-core in the Storybook test runner for every component and in Playwright for every screen; the manual screen-reader pass per release from Appendix X |
@@ -879,3 +879,11 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Bundle budgets and Core Web Vitals | Angular build budgets fail the build; Lighthouse asserts LCP, INP and CLS; `TC-ATT-202` times the sixty-second attendance |
 | Appendix Q and O coverage | Every TC id in Section 7 maps to a spec in `e2e/journeys/`; `20-traceability-matrix.md` lists the mapping and `/lint-plan` reports a TC id here with no spec |
 | Design system inventory | The Storybook test runner fails on any component in Section 6 missing one of the seven required stories; the contrast and four-way snapshot jobs in `14-design-system-and-ux.md` cover their rendering |
+
+### Test cases
+
+Tests minted by this document. Every other id in Section 7 without an owner in brackets is an Appendix Q or Appendix O step, and its Section 7 row is its definition.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-SEC-530 | Given a teacher refused twice on the web (another teacher's class register, then a Wellbeing record of a student they do not support, Appendix O minute 12), when the school admin opens `/admin/audit` filtered to that teacher, then both refusals are listed within 5 seconds with who, what, when and where, and opening either shows its entry in the before-and-after panel | REQ-AUD-002, REQ-AUD-003 |

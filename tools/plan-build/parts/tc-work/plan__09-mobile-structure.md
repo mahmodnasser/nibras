@@ -1,0 +1,81 @@
+# Test-case work for `docs/plan/09-mobile-structure.md`
+
+## Collisions to resolve here (the owner keeps the identifier)
+
+- **TC-SEC-041** at line 755: "Secure storage | Refresh token, Drift key, device credential and pinned-certificate set in `flutter_secure_storage`: Android Keystore with `StrongBox` where present, iOS Keychain with `kSecAttrAccessibleWhenUnlockedThisD"
+  - owner `docs/plan/12-security-privacy-safety.md` line 48: "STORAGE | Tokens in platform secure storage; Drift database encrypted with a key from the keystore; no level-S data on the device ever | `09-mobile-structure.md` offline design"
+- **TC-SEC-041** at line 757: "Database encryption | SQLCipher with a 256-bit key generated on first sign-in and stored in secure storage; the key is never derived from a PIN | none"
+  - owner `docs/plan/12-security-privacy-safety.md` line 48: "STORAGE | Tokens in platform secure storage; Drift database encrypted with a key from the keystore; no level-S data on the device ever | `09-mobile-structure.md` offline design"
+- **TC-SEC-043** at line 758: "Biometric unlock | `local_auth` gates the local session after the tenant's inactivity timeout; it never replaces the server token | No biometric enrolled: device PIN or pattern through the same API. No device lock at all"
+  - owner `docs/plan/12-security-privacy-safety.md` line 50: "AUTH | Biometric unlock gates the local session, never replaces the server token; session timeout from the tenant security policy | Identity token rules apply unchanged"
+- **TC-SEC-043** at line 759: "Session timeout | From the tenant security policy through remote configuration; default 15 minutes of inactivity for staff, 30 for guardians; kiosk flavor has no personal session | none"
+  - owner `docs/plan/12-security-privacy-safety.md` line 50: "AUTH | Biometric unlock gates the local session, never replaces the server token; session timeout from the tenant security policy | Identity token rules apply unchanged"
+- **TC-SEC-046** at line 761: "Nothing sensitive in logs | GlitchTip scrubbing rules drop names, identifiers, message bodies and every request body; breadcrumbs carry route names and Appendix K codes only; `print` is banned by lint; release builds str"
+  - owner `docs/plan/12-security-privacy-safety.md` line 53: "CODE | Obfuscation on release builds; no debug logging of personal data | Mobile pipeline `ci-mobile.yml`"
+- **TC-SEC-046** at line 764: "Root and jailbreak | Advisory banner for a guardian or teacher; gate and nurse modes refuse to start | none"
+  - owner `docs/plan/12-security-privacy-safety.md` line 53: "CODE | Obfuscation on release builds; no debug logging of personal data | Mobile pipeline `ci-mobile.yml`"
+- **TC-SEC-045** at line 762: "Nothing sensitive on the lock screen | Android: `visibility = private` on every channel with the safe public text; iOS: the notification service extension rewrites to the safe template; content is fetched after unlock (§"
+  - owner `docs/plan/12-security-privacy-safety.md` line 52: "PLATFORM | Screenshot protection on sensitive screens; no sensitive data in lock-screen previews; deep links validated against the permission set | Notification templates per BR-WEL-003; Flutter route guards"
+- **TC-SEC-045** at line 763: "Screenshot protection | `FLAG_SECURE` on Android and a secure-field overlay on iOS for the register, Student 360, fees, messages and every mode; the share sheet is disabled on the same screens | none"
+  - owner `docs/plan/12-security-privacy-safety.md` line 52: "PLATFORM | Screenshot protection on sensitive screens; no sensitive data in lock-screen previews; deep links validated against the permission set | Notification templates per BR-WEL-003; Flutter route guards"
+- **TC-SEC-044** at line 765: "Certificate pinning | Optional per flavor from the flavor file; pins rotate through remote configuration with an overlap window | A pin failure shows a plain "connection not trusted" state; no cleartext fallback"
+  - owner `docs/plan/12-security-privacy-safety.md` line 51: "NETWORK | TLS only; optional certificate pinning per flavor; no cleartext fallback | Bff.Mobile is the only endpoint the app talks to"
+- **TC-PRV-060** at line 769: "Account deletion request | `/profile/account` opens the erasure workflow; the store listings say so | none"
+  - owner `docs/plan/12-security-privacy-safety.md` line 55: "PRIVACY | In-app account deletion request; no third-party tracking SDKs; privacy labels accurate | Master brief Section 18 store compliance"
+
+## Tests cited but defined nowhere: define them here
+
+- **TC-MOB-102**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 35: "12 | Restore the network | Queued approvals apply once each, and the counts match the server"
+  - cited `docs/plan/09-mobile-structure.md` line 7: "**Cross-references.** `§N` means a section of this document; "Section N" means the master brief unless the reference architecture is named. **Test identifiers.** `TC-MOB-001` to `TC-MOB-005`, `TC-MOB-"
+  - cited `docs/plan/09-mobile-structure.md` line 552: "**Approvals.** Appendix U.2 describes principal approvals that queue offline; Appendix M section M.1 says "Approve anything: No. Approval needs the current permission version and the current state." A"
+  - cited `docs/plan/09-mobile-structure.md` line 963: "The Appendix M rules are implemented"
+- **TC-MOB-202**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 45: "5 | Restore the network | The queue clears, each mark applies exactly once, and no duplicate appears in the register"
+  - cited `docs/plan/02-competitive-gap-analysis.md` line 43: "Offline mobile attendance with sync | unverified | unverified: no mobile application found [3] | unverified: mobile application marks attendance; offline not stated [7], [31] | unverified: mobile appl"
+  - cited `docs/plan/02-competitive-gap-analysis.md` line 154: "Every difference names a passing test"
+  - cited `docs/plan/09-mobile-structure.md` line 963: "The Appendix M rules are implemented"
+- **TC-MOB-203**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 65: "7 | In airplane mode, add a note to a student's timeline | The note is saved locally with an offline badge and syncs on reconnect"
+  - cited `docs/plan/09-mobile-structure.md` line 7: "**Cross-references.** `§N` means a section of this document; "Section N" means the master brief unless the reference architecture is named. **Test identifiers.** `TC-MOB-001` to `TC-MOB-005`, `TC-MOB-"
+  - cited `docs/plan/09-mobile-structure.md` line 963: "The Appendix M rules are implemented"
+- **TC-MOB-602**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 134: "7 | Turn on airplane mode and open the timetable and due list | Both open from the local copy; submitting queues with a visible badge"
+  - cited `docs/plan/03-requirements-catalog.md` line 858: "REQ-MOB-015 | Every queued item shows as pending on the screen that created it, and the app never presents a queued action as complete | 1 | cross-cutting | Appendix M.2 | none"
+  - cited `docs/plan/09-mobile-structure.md` line 7: "**Cross-references.** `§N` means a section of this document; "Section N" means the master brief unless the reference architecture is named. **Test identifiers.** `TC-MOB-001` to `TC-MOB-005`, `TC-MOB-"
+  - cited `docs/plan/09-mobile-structure.md` line 963: "The Appendix M rules are implemented"
+- **TC-MOB-704**
+  - cited `docs/plan/03-requirements-catalog.md` line 852: "REQ-MOB-009 | The device cache holds nothing classified sensitive in Appendix J, and no wellbeing table, column, or file exists on the device | 1 | cross-cutting | Appendix M.1; Appendix J | none"
+  - cited `docs/plan/06-services/bff-mobile.md` line 530: "Sensitive data reaches a device | low | critical | Privacy officer"
+  - cited `docs/plan/09-mobile-structure.md` line 178: "Wellbeing data never enters `core/offline`"
+  - cited `docs/plan/09-mobile-structure.md` line 760: "No wellbeing data on the device | No Drift table, no file, no cache entry for Wellbeing; nurse mode holds the current screen's data in memory only and clears it on navigation; the Student 360 shows ex"
+- **TC-MOB-707**
+  - cited `docs/plan/03-requirements-catalog.md` line 856: "REQ-MOB-013 | One sync request carries at most 5 MB or 500 queued actions and continues with the next batch | 1 | cross-cutting | Appendix M.2 | none"
+  - cited `docs/plan/09-mobile-structure.md` line 574: "Action payload | This document"
+  - cited `docs/plan/09-mobile-structure.md` line 966: "Payload limits and resumable upload"
+  - cited `docs/plan/20-traceability-matrix.md` line 694: "REQ-MOB-013 | One sync request carries at most 5 MB or 500 queued actions and continues with the next batch | 1 | cross-cutting | none | none | 09 | 2 | SL-BFF-202, SL-MOB-205 | Android, iOS | Planned"
+- **TC-MOB-717**
+  - cited `docs/plan/03-requirements-catalog.md` line 875: "REQ-MOB-032 | Every screen supports phones and tablets and survives a text scale of 2.0 without clipping | 1 | cross-cutting | Master brief Section 18 | none"
+  - cited `docs/plan/09-mobile-structure.md` line 813: "Dynamic type | Every screen survives `textScaleFactor` 2.0 without clipping or horizontal scroll; the register switches to list mode above 1.5 automatically"
+  - cited `docs/plan/20-traceability-matrix.md` line 713: "REQ-MOB-032 | Every screen supports phones and tablets and survives a text scale of 2.0 without clipping | 1 | cross-cutting | none | none | 09 | 2, 6 | SL-MOB-210, SL-UX-601 | Android, iOS | Planned"
+- **TC-MOB-710**
+  - cited `docs/plan/06-services/attendance.md` line 1180: "Integration (Offline folder) | The Appendix M.5 tests on the attendance entity group"
+  - cited `docs/plan/06-services/attendance.md` line 1199: "Silent loss of an offline register | med | high | Attendance lead with mobile lead"
+  - cited `docs/plan/06-services/bff-mobile.md` line 482: "Integration through this host | The Appendix M.5 tests end to end: replay, conflict banner, two devices, after lock, 45-day token, clock skew, interrupted upload, full day offline"
+  - cited `docs/plan/06-services/bff-mobile.md` line 528: "A teacher's offline work lost or applied twice | med | high | Mobile lead"
+- **TC-MOB-711**
+  - cited `docs/plan/09-mobile-structure.md` line 624: "Android | App Links: `intent-filter` with `autoVerify` for `https://<tenant host>/*`; `/.well-known/assetlinks.json` lists the shared application and every white-label package with its signing certifi"
+  - cited `docs/plan/09-mobile-structure.md` line 967: "Notifications and deep links"
+- **TC-MOB-712**
+  - cited `docs/plan/09-mobile-structure.md` line 625: "iOS | Universal Links: Associated Domains entitlement `applinks:<tenant host>`; `/.well-known/apple-app-site-association` lists the team and bundle identifiers per flavor | Same"
+  - cited `docs/plan/09-mobile-structure.md` line 967: "Notifications and deep links"
+- **TC-MOB-716**
+  - cited `docs/plan/09-mobile-structure.md` line 812: "Screen readers | Every control has a `Semantics` label in both languages; icon-only buttons carry `tooltip` and `semanticsLabel`; the seating chart exposes each seat as a button with the student name "
+  - cited `docs/plan/09-mobile-structure.md` line 972: "Accessibility and RTL"
+- **TC-MOB-718**
+  - cited `docs/plan/09-mobile-structure.md` line 816: "Contrast and colour | Tokens from `14-design-system-and-ux.md`; status never by colour alone (icon plus text); 4.5:1 text and 3:1 interface in light, dark and every white-label palette"
+- **TC-MOB-719**
+  - cited `docs/plan/09-mobile-structure.md` line 819: "Reduced motion | `MediaQuery.disableAnimations` and the platform accessibility setting collapse durations to zero and replace movement with a fade"
+  - cited `docs/plan/09-mobile-structure.md` line 972: "Accessibility and RTL"
+- **TC-MOB-721**
+  - cited `docs/plan/09-mobile-structure.md` line 975: "Open question 23"

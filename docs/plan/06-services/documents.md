@@ -507,9 +507,9 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 |---|---|---|---|
 | `documents.document.generation-requested.v1` | `subjectId` | `GenerateDocumentHandler`, `RequestGenerationHandler`, `RenderBatchHandler`: one per accepted generation request, after the dedupe check | `Documents.Worker` (`documents-worker.render.bulk`) |
 | `documents.document.generated.v1` | `subjectId` | `RenderDocumentHandler` in the worker, once per request; also re-published unchanged on a duplicate request | the requesting service (Platform, Admissions, School, Assessment, Finance, Requests), Notification |
-| `documents.certificate.revoked.v1` | `subjectId` | `RevokeCertificateHandler`, `RevokeDocumentHandler`, supersession on reissue | Notification, Reporting; Saga 3, 5 and 6 compensations |
+| `documents.certificate.revoked.v1` | `subjectId` | `RevokeCertificateHandler`, `RevokeDocumentHandler`, supersession on reissue | Notification, Reporting, Admissions, School, Requests; Saga 3, 5 and 6 compensations |
 | `documents.import.completed.v1` | `jobId` | `LegacyImportSaga` at `Committed` or `RolledBack` (a second event with `succeeded = 0` on rollback, Saga 9 step 5) | the target service (School, Hr, Finance), Notification, Reporting |
-| `documents.export.completed.v1` | `jobId` | `RunExportHandler` at `Ready`; `ExportTenantHandler` for Saga 2 | Notification, Audit; Platform saga outcomes |
+| `documents.export.completed.v1` | `jobId` | `RunExportHandler` at `Ready`; `ExportTenantHandler` for Saga 2 | Notification, Audit, Platform, Requests, Reporting |
 | `documents.sensitive-export.performed.v1` | `jobId` | `IssueExportDownloadHandler` on the first and only download of a sensitive export | Notification, Audit |
 | `documents.file.scan-failed.v1` | `fileId` | `ScanFileHandler` on an infected verdict or a parked scan | Notification, Audit |
 | `documents.audit.recorded.v1` | `tenantId` | Every write, every transition of WF-DATA-01 and WF-PRV-02, every download of a Sensitive owner's file, every certificate revocation, every template publish | Audit |
@@ -1186,31 +1186,31 @@ src/Services/Documents/                                               Documents:
 
 ## 14. Test plan
 
-Existing identifiers are reused; new ones are minted in `TC-DOC-310` to `TC-DOC-360`, a range no document in the kit uses (checked with a search of `docs/` and `.claude/` on 2026-09-21: only `TC-DOC-001`, `TC-DOC-002`, `TC-DOC-301` and `TC-DOC-302` exist).
+Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in the 310 to 360 block, a range no document in the kit uses (checked with a search of `docs/` and `.claude/` on 2026-09-21: only `TC-DOC-001`, `TC-DOC-002`, `TC-DOC-301` and `TC-DOC-302` exist).
 
 | Test case | Level | What it proves |
 |---|---|---|
-| TC-DATA-001 | Workflow | `Uploaded → Parsed`: known template, columns mapped, unknown columns reported |
-| TC-DATA-002 | Workflow | `Parsed → ErrorsReported`: required field empty, row-level report, nothing written |
-| TC-DATA-003 | Workflow, perf | `Validated → DryRunReady`: 10,000 rows inside the budget |
-| TC-DATA-004 | Workflow | `DryRunReady → Committing`: preview under 24 h, batched commit with an import identifier |
-| TC-DATA-005 | Workflow, chaos | `Committing → CommitFailed`: import reversed as a unit, no partial data |
-| TC-DATA-006 | Workflow | `Committed → RolledBack`: created rows removed, updated rows restored, conflicts reported |
+| `TC-DATA-001` (Appendix R) | Workflow | `Uploaded → Parsed`: known template, columns mapped, unknown columns reported |
+| `TC-DATA-002` (Appendix R) | Workflow | `Parsed → ErrorsReported`: required field empty, row-level report, nothing written |
+| `TC-DATA-003` (Appendix R) | Workflow, perf | `Validated → DryRunReady`: 10,000 rows inside the budget |
+| `TC-DATA-004` (Appendix R) | Workflow | `DryRunReady → Committing`: preview under 24 h, batched commit with an import identifier |
+| `TC-DATA-005` (Appendix R) | Workflow, chaos | `Committing → CommitFailed`: import reversed as a unit, no partial data |
+| `TC-DATA-006` (Appendix R) | Workflow | `Committed → RolledBack`: created rows removed, updated rows restored, conflicts reported |
 | TC-DATA-301 to TC-DATA-303 | UAT | Dry run from the Excel template, commit in under 5 minutes, exact rollback (Appendix Q) |
-| TC-PRV-011 | Workflow | `Requested → Classified`: sensitivity and row count from the actual query |
-| TC-PRV-012 | Workflow | `Classified → AutoApproved` below the threshold |
-| TC-PRV-013 | Workflow | `Classified → PendingApproval` for medical, safeguarding or bulk identifiers |
-| TC-PRV-014 | Workflow, security | `Approved → Generating` only when the approver differs from the requester (T-DOC-04) |
-| TC-PRV-015 | Workflow, security | `Ready → Downloaded` once, watermarked with the requester |
-| TC-PRV-016 | Workflow | `Ready → LinkExpired`: link dead, temporary file deleted |
+| `TC-PRV-011` (Appendix R) | Workflow | `Requested → Classified`: sensitivity and row count from the actual query |
+| `TC-PRV-012` (Appendix R) | Workflow | `Classified → AutoApproved` below the threshold |
+| `TC-PRV-013` (Appendix R) | Workflow | `Classified → PendingApproval` for medical, safeguarding or bulk identifiers |
+| `TC-PRV-014` (Appendix R) | Workflow, security | `Approved → Generating` only when the approver differs from the requester (T-DOC-04) |
+| `TC-PRV-015` (Appendix R) | Workflow, security | `Ready → Downloaded` once, watermarked with the requester |
+| `TC-PRV-016` (Appendix R) | Workflow | `Ready → LinkExpired`: link dead, temporary file deleted |
 | TC-PRV-301 | UAT | Export with national identity numbers needs approval and a reason, is watermarked, notifies the principal |
-| TC-DOC-001 | Feature register | Go live in a day: import with dry run and rollback |
+| `TC-DOC-001` (Appendix W) | Feature register | Go live in a day: import with dry run and rollback |
 | TC-DOC-002 | Feature register | School memory: portfolio and yearbook (Tier 2) |
 | TC-DOC-301 | UAT | Birth certificate upload scanned and accepted; missing-document count drops |
 | TC-DOC-302 | UAT | Public verification page confirms a certificate without personal data beyond the school's choice |
 | TC-L10N-301 | UAT | Arabic transfer certificate renders right to left with a resolving QR code |
-| TC-TST-208 | Integration | English and Arabic PDF snapshots match the committed baselines with the shaping check |
-| TC-PLAT-008 | Integration | Arabic-Indic digits normalized before import validation |
+| `TC-TST-208` (document 16) | Integration | English and Arabic PDF snapshots match the committed baselines with the shaping check |
+| `TC-PLAT-008` (document 33) | Integration | Arabic-Indic digits normalized before import validation |
 | TC-SEC-240 to TC-SEC-245 | Security | T-DOC-01, T-DOC-02, T-DOC-03, T-DOC-06, T-DOC-07, T-DOC-08 |
 | TC-DOC-310 | Integration | EICAR upload rejected, file quarantined, `documents.file.scan-failed.v1` published, download URL refused with `DOCUMENTS_VIRUS_DETECTED` (REQ-DOC-002) |
 | TC-DOC-311 | Integration | Signed URL used after 5 minutes, by another user or in another tenant returns `DOCUMENTS_SIGNED_URL_EXPIRED` |
@@ -1313,13 +1313,15 @@ Existing identifiers are reused; new ones are minted in `TC-DOC-310` to `TC-DOC-
 
 ## Open points
 
+**What ADR-0019 settled, and what it left.** Appendix R now records every WF-PRV-02 and WF-DATA-01 transition as `documents.audit.recorded.v1` and treats a rollback as a second `documents.import.completed.v1` with zero rows succeeded, which is what point 3 proposed; Appendix E added Platform, Requests and Reporting to `documents.export.completed.v1` and Admissions, School and Requests to `documents.certificate.revoked.v1`, and named Documents a consumer of `platform.tenant.provisioned.v1` for the branding copy, which section 6.2 already binds. The brief deliberately left three things: the nightly `Settings/BrandingChecksum` call still has no row in reference architecture Section 8.0, the four notification rows of point 4 were not added to Appendix C, and `documents.files.edit` and `documents.imports.edit` were not added to Appendix B. Those points stay open and say so; no point is renumbered.
+
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
-| 1. Table 8.0 gives Documents no synchronous dependency, but `10-data-architecture.md` part 6 reconciles the branding copy "nightly against Platform `Settings/BrandingChecksum`" | Keep the nightly call as a job-only read outside any request path and add it to table 8.0 under an ADR | Architect | Without the ADR the one-hop table and this sheet disagree; the alternative is a full snapshot event from Platform |
+| 1. Table 8.0's "Calls every service makes" now covers Platform `Settings.GetSettings` and `Retention.ListActiveHolds`, but not the nightly `Settings/BrandingChecksum` reconciliation of `10-data-architecture.md` part 6; ADR-0019 deliberately left the Documents branding row out of Section 8.0 | Keep the nightly call as a job-only read outside any request path and add it to table 8.0 under a later ADR | Architect | Without the ADR the one-hop table and this sheet disagree; the alternative is a full snapshot event from Platform |
 | 2. No command exists for a source service to stream its rows into an export job, and Documents may not call the source | The source service uploads its rows as a file (`POST /files`, `ownerType = export`) and Documents classifies, watermarks and serves it; a `<source>.commands.stream-export-rows.v1` contract is proposed for document 11 | Architect, document 11 owner | Classification from a file is weaker than from the query; TC-PRV-011 would then test the file's columns |
-| 3. Appendix R side effects name `documents.export.requested.v1`, `documents.import.started.v1`, `documents.import.rolled-back.v1` and `audit.action.recorded.v1`, none of which is in Appendix E; Appendix R has no `Revoked` state in WF-PRV-02 and no `Rejected` or `Cancelled` state in WF-DATA-01 | Publish only catalogued keys: `documents.export.completed.v1`, a second `documents.import.completed.v1` with `succeeded = 0` on rollback, `documents.audit.recorded.v1` for every transition; keep the extra states | Appendix E and Appendix R owners | A version bump of both appendices adds the keys and states |
-| 4. Appendix C has no row and Appendix E no event for export approval reminders, the approval request to the data protection officer, central-storage expiry reminders and a stalled import | Send `RequestNotification` (`notification.commands.request-notification.v1`) with a Documents template code | Appendix C owner | Four catalogued rows would move these to event triggers |
-| 5. Appendix B gives `documents.files` no `edit` action and `documents.imports` no mapping action, yet files are renamed and re-tagged, folder access rules change and mappings are edited | Metadata edits and mapping edits under the resource's `create`; folder access-rule changes under `documents.files.share-link` (elevated) | Appendix B owner | A `documents.files.edit` and `documents.imports.edit` pair would replace these |
+| 3. Appendix R now names only catalogued keys, and `documents.audit.recorded.v1` for every transition, so the event half of this point is closed. Appendix R still has no `Revoked` state in WF-PRV-02 and no `Rejected` or `Cancelled` state in WF-DATA-01 | Keep the three extra states here, with the Appendix R status as a projection of `ImportState` (section 5) | Appendix R owner | A version bump of Appendix R adds the states and the projection becomes an identity |
+| 4. Appendix C gained thirteen rows under ADR-0019 but none for export approval reminders, the approval request to the data protection officer, central-storage expiry reminders or a stalled import, and Appendix E has no event for them | Send `RequestNotification` (`notification.commands.request-notification.v1`) with a Documents template code | Appendix C owner | Four catalogued rows would move these to event triggers |
+| 5. Appendix B still gives `documents.files` no `edit` action and `documents.imports` no mapping action, yet files are renamed and re-tagged, folder access rules change and mappings are edited; ADR-0019 considered the pair and left it to a later ADR | Metadata edits and mapping edits under the resource's `create`; folder access-rule changes under `documents.files.share-link` (elevated) | Appendix B owner | A `documents.files.edit` and `documents.imports.edit` pair would replace these |
 | 6. The Admissions sheet says offer letters are generated from `admissions.offer.made.v1`; document 11 says `documents.subjects` never renders | Offer letters come from Admissions' `GenerateDocument`; the consumer only registers the subject | Admissions lead, document 11 owner | Admissions sends one more command; no letter is lost |
 | 7. Behavior awards certificates (REQ-BEH-007) and Hr, Operations and Wellbeing workflows name `documents.document.generated.v1`, but `documents.commands` binds only `nibras.admissions`, `nibras.school`, `nibras.assessment`, `nibras.finance`, `nibras.requests` and `nibras.platform` | Add `nibras.behavior`, `nibras.hr` and `nibras.operations` to the `documents.commands` bindings; Wellbeing documents stay out of Documents (section 1) | Document 11 owner | Those services could not request a render |
 | 8. `assessment.report-cards.generation-requested.v1` carries identifiers only, so Documents has no merge values for a card | Assessment adds an optional `mergeValues` field (adding an optional field is not breaking under Appendix E versioning) | Assessment lead, Appendix E owner | Report cards could not render without a synchronous read |

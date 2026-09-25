@@ -103,15 +103,15 @@ Every route carries the metadata generated from the aggregated OpenAPI at start-
 |---|---|---|
 | 1 | Correlation id and `traceparent` issued if absent | none |
 | 2 | Maintenance check, platform-wide then per tenant, skipped for `/health/` | 503 `GATEWAY_DEPENDENCY_UNAVAILABLE` with `params.reason = "maintenance"` and `Retry-After` to the window end |
-| 3 | Body size limit per route class (1 MiB JSON, 64 KiB on anonymous routes) | 413 with `GATEWAY_VALIDATION_FAILED` and `params.reason = "bodyTooLarge"` (Open point 2) |
+| 3 | Body size limit per route class (1 MiB JSON, 64 KiB on anonymous routes) | 413 `GATEWAY_BODY_TOO_LARGE` with the route's limit in `params` (Appendix K.23) |
 | 4 | Tenant resolution: host through the Platform entry, then the header for mobile and credential callers only | 400 `GATEWAY_VALIDATION_FAILED` (`tenantUnresolved`); 409 `PLATFORM_PROVISIONING_IN_PROGRESS` while Saga 1 runs |
 | 5 | Layer 1 rate limit per source address, then per tenant with the plan's bucket | 429 `GATEWAY_RATE_LIMITED` with `Retry-After` |
 | 6 | Credential presented in a query string | 400 `GATEWAY_VALIDATION_FAILED` and the key flagged for rotation (document 23 §2.3) |
-| 7 | API credential exchange, or JWT validation: signature against the key set, lifetime, issuer, audience | 401 `IDENTITY_TOKEN_EXPIRED` for an expired token and for one that fails the signature, issuer or audience check, so the client refreshes once and then signs in again (Open point 5) |
+| 7 | API credential exchange, or JWT validation: signature against the key set, lifetime, issuer, audience | 401 `IDENTITY_TOKEN_EXPIRED` for an expired token, so the client refreshes once; 401 `IDENTITY_TOKEN_INVALID` for a malformed token, a failed signature, or a foreign issuer, audience or tenant, so the client discards the session and signs in again (Appendix K.2) |
 | 8 | Token tenant equals the resolved tenant; `test` key only on a sandbox and `live` never on one | 403 `GATEWAY_TENANT_MISMATCH` |
 | 9 | Revoked-subject mark for the token's subject | 401 `IDENTITY_TOKEN_EXPIRED`, forcing a refresh that Identity refuses |
 | 10 | Audience restriction of a seeded-credential token, key or token on an untagged operation, key on a Wellbeing route | 403 `GATEWAY_PERMISSION_DENIED` |
-| 11 | Administrative route from an address outside the tenant's allowlist | 403 `GATEWAY_PERMISSION_DENIED` with `params.reason = "ipNotAllowed"`, audited through the upstream's audit path on the next allowed request of that tenant (Open point 3) |
+| 11 | Administrative route from an address outside the tenant's allowlist | 403 `GATEWAY_PERMISSION_DENIED` with `params.reason = "ipNotAllowed"`, audited through the upstream's audit path on the next allowed request of that tenant (Open point 2) |
 | 12 | Forward with `X-Nibras-Tenant-Id`, the internal token, correlation and trace headers; strip hop-by-hop and client-supplied internal headers | none |
 | 13 | Per-cluster timeout (30 s default, 5 s for `/connect/token`), circuit breaker per cluster | 503 `GATEWAY_DEPENDENCY_UNAVAILABLE` with `Retry-After` for that route only |
 | 14 | Response: security headers, `RateLimit-*`, deprecation headers, `X-Nibras-Correlation-Id`, Brotli | none |
@@ -196,7 +196,8 @@ None: the Gateway triggers no Appendix C row. Its alerts (`GatewayErrorRateHigh`
 
 | Code | HTTP | Raised here when |
 |---|---|---|
-| `GATEWAY_VALIDATION_FAILED` | 400, and 413 for an oversized body | Tenant unresolved, credential in a query string, oversized body |
+| `GATEWAY_VALIDATION_FAILED` | 400 | Tenant unresolved, credential in a query string |
+| `GATEWAY_BODY_TOO_LARGE` | 413 | Body over the route class limit (step 3) |
 | `GATEWAY_PERMISSION_DENIED` | 403 | Credential on an untagged operation, key on Wellbeing, seeded-credential restriction, IP allowlist, aggregated document without a first-party token |
 | `GATEWAY_TENANT_MISMATCH` | 403 | Header or token tenant differs from the resolved tenant; `test` key on a live tenant or `live` key on a sandbox |
 | `GATEWAY_NOT_FOUND` | 404 | No route; unknown host; retired API version |
@@ -205,6 +206,7 @@ None: the Gateway triggers no Appendix C row. Its alerts (`GatewayErrorRateHigh`
 | `GATEWAY_CONCURRENCY_CONFLICT`, `GATEWAY_IDEMPOTENCY_REPLAY` | 409, 200 | Never raised here; listed because the shared middleware generates all eight suffixes |
 | `PLATFORM_PROVISIONING_IN_PROGRESS` | 409 | Tenant routes while Saga 1 runs |
 | `IDENTITY_TOKEN_EXPIRED` | 401 | Expired token or revoked-subject mark |
+| `IDENTITY_TOKEN_INVALID` | 401 | Malformed token, failed signature, foreign issuer or audience |
 
 ---
 
@@ -331,16 +333,16 @@ src/Gateway/                                 the single public entry point; one 
 
 | Test case | What it proves | Level |
 |---|---|---|
-| TC-SEC-330 | A browser-supplied tenant header is refused; the token's tenant must match (T-GW-01) | Integration |
-| TC-SEC-039 | A token signed with a retired key is refused after the overlap (T-GW-02) | Integration |
-| TC-SEC-058 | One tenant at its limit does not exhaust the platform (T-GW-03); Appendix N scenario N-06 at load | Integration, load |
-| TC-SEC-122 | The maintenance flag changes only through Platform with the operator role and is audited (T-GW-05) | Integration |
-| TC-SEC-362 | The seeded account's restricted token reaches only the Identity self-service routes in Production | Integration |
+| `TC-SEC-330` (document 12) | A browser-supplied tenant header is refused; the token's tenant must match (T-GW-01) | Integration |
+| `TC-SEC-039` (document 12) | A token signed with a retired key is refused after the overlap (T-GW-02) | Integration |
+| `TC-SEC-058` (document 12) | One tenant at its limit does not exhaust the platform (T-GW-03); Appendix N scenario N-06 at load | Integration, load |
+| `TC-SEC-122` (document 12) | The maintenance flag changes only through Platform with the operator role and is audited (T-GW-05) | Integration |
+| `TC-SEC-362` (document 12) | The seeded account's restricted token reaches only the Identity self-service routes in Production | Integration |
 | TC-SEC-056 | Header swap and token swap of the tenant-isolation suite are refused at the Gateway | Generated suite |
-| TC-IDN-056 | A leaver presenting a cached token is refused at the Gateway | Integration with Identity |
-| TC-INT-001 | Keys and tokens are refused on every operation not tagged `public` | Generated suite |
+| `TC-IDN-056` (Appendix R) | A leaver presenting a cached token is refused at the Gateway | Integration with Identity |
+| TC-INT-660 | Keys and tokens are refused on every operation not tagged `public` | Generated suite |
 | TC-INT-020 | Deprecated version headers, then `GATEWAY_NOT_FOUND` with the successor after the sunset | Integration with the fake clock |
-| TC-INF-110 | One correlation id from the Gateway span to the last consumer | Nightly trace test |
+| `TC-INF-110` (document 15) | One correlation id from the Gateway span to the last consumer | Nightly trace test |
 | TC-GW-001 | Each of the routed prefixes reaches its cluster; `/api/v1/ai/` and `/api/v1/platform/tenant-resolution/` are not routable from outside | Integration |
 | TC-GW-002 | Tenant resolved by custom domain, by subdomain and by header for mobile and credential callers; the header is ignored for web clients | Integration |
 | TC-GW-003 | A tenant route with no resolvable tenant returns 400 `GATEWAY_VALIDATION_FAILED`; a platform route proceeds (REQ-GW-002) | Integration |
@@ -405,13 +407,13 @@ src/Gateway/                                 the single public entry point; one 
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Appendix K.23 now carries `GATEWAY_BODY_TOO_LARGE` (413), so step 3 of section 5.2 raises that code instead of a `GATEWAY_VALIDATION_FAILED` with `params.reason`, and REQ-GW-004's 413 has a code of its own. Appendix K.2 now carries `IDENTITY_TOKEN_INVALID` (401) for a malformed, unverifiable or foreign token, so step 7 tells a client to sign in again rather than to refresh a token that was never valid. The two points those codes answered are gone from the table below and the points that remain are renumbered.
+
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
 | 1 | `21-performance-engineering.md` §2.3 gives `svc_gateway` read access only to tenant resolution and its rate-limit prefix; this sheet also reads the key set, maintenance entries, the security settings entry and the revoked-subject mark | Extend the ACL with read-only access to those four keys | Architect, update to document 21 | Without it the Gateway cannot enforce maintenance, the allowlist or the leaver rule |
-| 2 | Appendix K has no code for an oversized body although REQ-GW-004 requires 413 | 413 with `GATEWAY_VALIDATION_FAILED` and `params.reason = "bodyTooLarge"` | Architect, ADR on Appendix K | Clients map the status rather than a specific code |
-| 3 | The Gateway has no audit channel of its own for refused allowlist attempts (REQ-IDN-047 asks that the attempt is logged) | A structured security log line with the tenant and address prefix, exported to the log store and counted on the abuse dashboard; not an audit-chain entry | Security lead | An auditor looking only at the audit viewer does not see refused administrative attempts |
-| 4 | "Administrative route" needs a definition the OpenAPI can carry | Operations declaring any permission in Appendix I groups G01, G02, G03 or G24 are marked `x-nibras-admin` by the generator | Architect | A route missing the flag is not protected by the allowlist |
-| 5 | Appendix K has no generic code for an unauthenticated request with a malformed or foreign token | `IDENTITY_TOKEN_EXPIRED` (401), whose client action "refresh once, then sign in again" is the right behaviour | Architect, ADR on Appendix K | Diagnostics cannot tell an expired token from a forged one without the log |
+| 2 | The Gateway has no audit channel of its own for refused allowlist attempts (REQ-IDN-047 asks that the attempt is logged) | A structured security log line with the tenant and address prefix, exported to the log store and counted on the abuse dashboard; not an audit-chain entry | Security lead | An auditor looking only at the audit viewer does not see refused administrative attempts |
+| 3 | "Administrative route" needs a definition the OpenAPI can carry | Operations declaring any permission in Appendix I groups G01, G02, G03 or G24 are marked `x-nibras-admin` by the generator | Architect | A route missing the flag is not protected by the allowlist |
 
 ## Review record
 

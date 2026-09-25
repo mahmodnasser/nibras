@@ -52,7 +52,7 @@ Every service runs under two PostgreSQL roles. `svc_<service>` is the applicatio
 | Wellbeing | `nibras_wellbeing` | `svc_wellbeing` | **Level S** | Read committed | **Per tenant, separate key-encryption key**, separate credentials, separate PgBouncer pool | none |
 | Hr | `nibras_hr` | `svc_hr` | Sensitive (salary, bank accounts, payslip lines) | Read committed | Per deployment | `payslip_lines` by payroll period |
 | Operations | `nibras_operations` | `svc_operations` | Confidential; schema per sub-domain (`library`, `transport`, `inventory`, `facilities`, `frontdesk`, `activities`) | Read committed | Visitor and driver identity references per deployment | `transport.vehicle_locations` by day; `transport.boarding_events` by month |
-| Ai | `nibras_ai` | `svc_ai` | Inherits the class of each indexed source; never level S | Read committed | none; the index holds embeddings tagged with tenant and data scope, never the source text of a sensitive field | `embeddings` by tenant hash (8 partitions) |
+| Ai | `nibras_ai` | `svc_ai` | Inherits the class of each indexed source; never level S | Read committed | none; the index holds embeddings tagged with tenant and data scope, never the source text of a sensitive field | `ai_index.embedding_chunk` by tenant hash (8 partitions) |
 
 Every database also holds the messaging tables from `11-messaging-architecture.md`: `outbox_messages` (partitioned by day), `inbox_messages` (partitioned by month) and, where the service orchestrates a saga, `saga_instances`. Gateway, Bff.Web and Bff.Mobile own no database.
 
@@ -146,7 +146,7 @@ Platform-scoped operations (tenant provisioning, the registry) run as `svc_platf
 This is the test that makes the design trustworthy rather than intended, required by both master brief Section 19 and reference architecture Section 14. It lives in `TenantIsolation.Tests` and runs against real PostgreSQL and real PgBouncer through Testcontainers.
 
 ```
-### TC-DATA-001 A pooled connection cannot read the previous tenant's rows
+### TC-DATA-643 A pooled connection cannot read the previous tenant's rows
 
 **Covers:** master brief Section 7.4, master brief Section 19, reference architecture Section 14
 **Level:** integration
@@ -160,7 +160,7 @@ This is the test that makes the design trustworthy rather than intended, require
 **And** an insert issued for tenant B carrying tenant A's identifier fails with a row-level security violation rather than succeeding invisibly.
 ```
 
-Two companion tests share the fixture: `TC-DATA-002` proves that `ExecuteUpdateAsync` inside the pipeline transaction touches only the current tenant's rows, and `TC-DATA-003` proves that a consumed message with `tenantId` for tenant B cannot write into tenant A even when the handler is given tenant A's identifiers in the payload. The generated `TenantIsolation.Tests` suite in Appendix V extends the same idea to every endpoint and every consumer.
+Two companion tests share the fixture: `TC-DATA-644` proves that `ExecuteUpdateAsync` inside the pipeline transaction touches only the current tenant's rows, and `TC-DATA-645` proves that a consumed message with `tenantId` for tenant B cannot write into tenant A even when the handler is given tenant A's identifiers in the payload. The generated `TenantIsolation.Tests` suite in Appendix V extends the same idea to every endpoint and every consumer.
 
 #### 2.6 Request path through the three barriers
 
@@ -263,7 +263,7 @@ Master brief Section 19 names the tables to partition by month; master brief Sec
 | `transport.boarding_events` | Operations | Range by month on `boarded_at` | Subscription end plus 2 years | Monthly | Dropped |
 | `usage_records` | Platform | Range by month on `period_start` | Billing reads one period | 13 months, monthly, aggregated first into `usage_monthly` | Dropped |
 | `payslip_lines` | Hr | List by `payroll_period_id` | Payroll runs as a period | 10 years after leaving, per row by the leaver job | Archive database |
-| `embeddings` | Ai | Hash by `tenant_id`, 8 partitions | Spreads vector index maintenance; a tenant rebuild touches one partition | Rebuilt on `ai.index.rebuild-completed.v1`; rows of a deleted tenant are dropped with the tenant | Dropped |
+| `ai_index.embedding_chunk` | Ai | Hash by `tenant_id`, 8 partitions, one HNSW index per partition | Spreads vector index maintenance; a tenant rebuild touches one partition. The table, its columns and its four indexes are `25-ai-and-assist-ladder.md` §4.1; this row adds only the partitioning | Rebuilt on `ai.index.rebuild-completed.v1`; rows of a deleted tenant are dropped with the tenant | Dropped |
 
 **Partition management.** A Quartz job `PartitionMaintenanceJob` in every service creates the next three monthly partitions on the first of each month and detaches by the schedule above with `ALTER TABLE ... DETACH PARTITION CONCURRENTLY`. Detach runs only after the job has confirmed no legal hold references the partition's tenant and period (`retention_holds` table, Appendix J rule 4); a held partition is skipped and reported to the Data Quality Center. Every detach writes an audit entry and a `reporting.data-quality.issue-detected.v1` only if the expected partition was not found. The 24-hour soak in Appendix N asserts that retention jobs detach the expected partitions and nothing else.
 
@@ -316,7 +316,7 @@ Master brief Section 7.3: a service that needs another service's data keeps a sl
 | Hr | Campus, department | No change event exists in Appendix E; fetched over gRPC at provisioning and on each `school.staff.created.v1` whose `departmentId` is unknown | `campus_id`, `name_en`, `name_ar`; `department_id`, `name_en`, `name_ar` | Nightly snapshot; see open point 1 |
 | Operations | Student, staff, section | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.section.created.v1`, `school.section.changed.v1`, `identity.user.activated.v1`, `identity.user.deactivated.v1` | Names, section, campus, status; staff as users with roles | Nightly against School and Identity |
 | Operations | Timetable and room bookings | `scheduling.timetable.published.v1`, `scheduling.room-booking.approved.v1` | `timetable_version_id`, `effective_from`; `booking_id`, `room_id`, `from`, `to` | Nightly against Scheduling |
-| Ai | Embeddings with tenant and scope tags | Indexing reads through the backends-for-frontends only (reference architecture Section 8); `school.student.status-changed.v1` removes a leaver's chunks | `chunk_id`, `tenant_id`, `source_service`, `source_id`, `data_scope`, `data_class`, `embedding` | Rebuilt per tenant, reported by `ai.index.rebuild-completed.v1` |
+| Ai | `ai_index.embedding_chunk`, chunks with tenant, permission and scope tags | Indexing reads through the backends-for-frontends only (reference architecture Section 8); `school.student.status-changed.v1` removes a leaver's chunks | The column list is `25-ai-and-assist-ladder.md` §4.1: `tenant_id`, `source_service`, `source_entity`, `source_id`, `source_version`, `data_class`, `required_permission`, `scope_campus_id`, `scope_section_ids`, `scope_student_ids`, `embedding` | Rebuilt per tenant, reported by `ai.index.rebuild-completed.v1` |
 
 **The Student subject across services.** School owns the student; every other service holds a slim copy keyed by the same `student_id`, with the fields above and nothing sensitive. Wellbeing's copy exists only for students with a wellbeing record, and Reporting holds a projection rather than a copy.
 
@@ -570,16 +570,28 @@ Appendix J defines five levels. This table is what each level means for every pl
 
 **Encryption in practice.** The tenancy building block's `EncryptedColumnConverter` encrypts with AES-256-GCM using a per-tenant data key fetched from the key service, wrapped by the service's key-encryption key in OpenBao (reference architecture Section 12). The data key is cached in process for 10 minutes under the tenant tag; rotation re-wraps the data key and never rewrites rows. A tenant export hands the tenant its data key through the export manifest (Appendix J rule 7), which is what makes the export usable and the certificate of deletion meaningful.
 
+### 11. Risks this document carries
+
+`18-risk-register.md` owns the register, the scoring scale and the identifiers; this table is the data-architecture view of it and adds no identifier of its own. Likelihood and impact use the 1 to 5 scale of that document's part 1. A row whose "In the register" cell names no identifier is proposed to the register at the Group E review by the owner named.
+
+| Risk | L | I | Mitigation in this document | Owner role | In the register |
+|---|---|---|---|---|---|
+| A pooled connection under PgBouncer transaction mode serves one tenant's rows to another, and row-level security does not catch it | 3 | 5 | Three barriers in Section 2: the named `Tenant` filter, `SET LOCAL` inside every transaction, and `FORCE ROW LEVEL SECURITY` with `WITH CHECK` on the `svc_` role; proved by `TC-DATA-643` to `TC-DATA-645` through PgBouncer | Architect | RISK-14 |
+| The single-tenant restore of Section 9 misses the 15-minute recovery point or the 4-hour recovery time at scale, and the drill is the first place it shows | 2 | 5 | The ordering and freeze rules of Section 9, the audit splice with a chain anchor, and the quarterly drill `TC-DATA-020` scripted in `tools/restore-tenant/` with its timings recorded | Platform engineering | RISK-34 |
+| A reference copy from Section 6 diverges from its owner and nobody sees it, so a decision is made on a stale name or status | 3 | 3 | Rule 3 (an event older than `source_version` is discarded), rule 4 (a missing copy is a data-quality issue), and the nightly `ReferenceCopyReconciliationJob` checksum with self-repair, `TC-DATA-006` | Architect | RISK-15 |
+| A hot partition at a 20,000-student tenant makes the current attendance month the bottleneck before general availability | 3 | 3 | Open point 2 keeps hash sub-partitions as a named option decided by the N-01 scale run rather than guessed now; the pruning rule and the per-partition autovacuum settings in `21-performance-engineering.md` Section 4 keep the current month planned well | Architect | none yet; Data architect proposes it at the Group E review |
+| A retention job detaches or drops a partition that a legal hold covers, and the evidence is gone | 2 | 5 | The `retention_holds` check before every detach (Section 5, Appendix J rule 4), a skipped partition reported to the Data Quality Center, the checksum before the drop, and `TC-DATA-014` with `TC-PRV-902` for the hold cases | Data architect | none yet; Data architect proposes it at the Group E review |
+
 ## Brief sources covered
 
 The requirements catalog is written in parallel; this table cites the brief directly and will be joined to requirement identifiers by `20-traceability-matrix.md`.
 
 | Source | What it means here | Acceptance criterion | Test case ID |
 |---|---|---|---|
-| Master brief Section 7.4; reference architecture Section 14 | Three barriers on every table; `SET LOCAL` under PgBouncer | A pooled connection cannot read the previous tenant | `TC-DATA-001`, `TC-DATA-002`, `TC-DATA-003` |
-| Master brief Section 19, DbContext and model | Pooled context with per-lease accessor; named filters | A context leased without a tenant throws on first query; `IgnoreQueryFilters()` fails the build | `TC-DATA-004` |
-| Master brief Section 19, PostgreSQL | Partition by month; `tenant_id` first; partial indexes | Every partitioned table has next-three-months partitions and a detach job | `TC-DATA-005` |
-| Master brief Section 19, Data integrity and reconciliation | Nightly reference-copy reconciliation | A deliberately corrupted copy is repaired and reported within one run | `TC-DATA-006` |
+| Master brief Section 7.4; reference architecture Section 14 | Three barriers on every table; `SET LOCAL` under PgBouncer | A pooled connection cannot read the previous tenant | `TC-DATA-643`, `TC-DATA-644`, `TC-DATA-645` |
+| Master brief Section 19, DbContext and model | Pooled context with per-lease accessor; named filters | A context leased without a tenant throws on first query; `IgnoreQueryFilters()` fails the build | `TC-DATA-640` |
+| Master brief Section 19, PostgreSQL | Partition by month; `tenant_id` first; partial indexes | Every partitioned table has next-three-months partitions and a detach job | `TC-DATA-641` |
+| Master brief Section 19, Data integrity and reconciliation | Nightly reference-copy reconciliation | A deliberately corrupted copy is repaired and reported within one run | `TC-DATA-642` |
 | Master brief Section 7.3; reference architecture Section 8, table 8.0 | Slim read-only copies from events only | No copy holds a Sensitive or level S column, asserted by the classification test | `TC-DATA-007` |
 | Reference architecture Section 14, tier migration | Shared to dedicated and back without data loss | Zero lost writes, zero cross-tenant rows, read-only window under 5 minutes | `TC-DATA-010` |
 | Master brief Section 31; reference architecture Section 8 | Projections fresh within 60 s, rebuildable | Rebuild reproduces the same row counts as the live projection; lag metric under 60 s at load | `TC-DATA-011`, `TC-DATA-012` |
@@ -638,13 +650,25 @@ The requirements catalog is written in parallel; this table cites the brief dire
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every table has `tenant_id`, the policy, the audit columns, the soft-delete columns and a classification | `PersistenceConventions` architecture tests over every service model, plus the migration lint that parses generated SQL for the policy template | Every pull request |
-| A pooled connection cannot read the previous tenant | `TC-DATA-001` to `TC-DATA-003` in `TenantIsolation.Tests` against PostgreSQL and PgBouncer through Testcontainers | Every pull request touching persistence; nightly for all services |
+| A pooled connection cannot read the previous tenant | `TC-DATA-643` to `TC-DATA-645` in `TenantIsolation.Tests` against PostgreSQL and PgBouncer through Testcontainers | Every pull request touching persistence; nightly for all services |
 | Copies never hold a sensitive field | `TC-DATA-007`: the classification attribute of every `ref_` column is at most Confidential | Every pull request |
-| Reconciliation repairs and reports | `TC-DATA-006`: corrupt a copy, run the job, assert the repair and the `reporting.data-quality.issue-detected.v1` message | Nightly |
-| Partitions are created ahead and detached on schedule | `TC-DATA-005` with a fake clock advanced across a month boundary and across the retention boundary; the 24-hour soak asserts detachment of expected partitions only | Nightly, weekly soak |
+| Reconciliation repairs and reports | `TC-DATA-642`: corrupt a copy, run the job, assert the repair and the `reporting.data-quality.issue-detected.v1` message | Nightly |
+| Partitions are created ahead and detached on schedule | `TC-DATA-641` with a fake clock advanced across a month boundary and across the retention boundary; the 24-hour soak asserts detachment of expected partitions only | Nightly, weekly soak |
 | Projections are fresh and rebuildable | `TC-DATA-011` measures `nibras_reporting_projection_lag_seconds` under the N-01 load; `TC-DATA-012` rebuilds and compares row counts and checksums | Nightly |
 | Replica lag routing | `TC-DATA-013` pauses replay on the replica and asserts primary routing and the alert | Nightly |
 | Every retention row has a job | `TC-DATA-014` enumerates Section 8, asserts a registered Quartz job per row, and runs each with a fake clock against seeded rows on both sides of the boundary; legal hold cases from `TC-PRV-902` | Nightly |
 | Single-tenant restore | `TC-DATA-020`, the quarterly drill from WF-INF-03, with the ordering in Section 9 scripted in `tools/restore-tenant/` and its timings recorded in `docs/runbooks/` | Quarterly |
 | Tier migration | `TC-DATA-010` on the load tier | Before each general-availability release |
 | This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, event names and Mermaid types; `/lint-plan` for consistency with `05-service-catalog.md`, the service sheets and `11-messaging-architecture.md` | Every change under `docs/` |
+
+### Test cases
+
+The brief-sources table above defines `TC-DATA-640` (a context leased without a tenant throws), `TC-DATA-641` (partitions created ahead and detached on schedule), `TC-DATA-642` (reference-copy reconciliation) and `TC-DATA-020`; `TC-DATA-643` to `TC-DATA-006` are the WF-DATA-01 transitions of Appendix R. This document also defines:
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-DATA-014 | Given every row of the Section 8 retention schedule and a fake clock, when the retention jobs run against seeded rows on both sides of each boundary, then each row has a registered Quartz job, only the partitions past their retention are detached, and a partition covered by a legal hold is skipped and reported to the Data Quality Center | REQ-PRV-002, REQ-PRV-012 |
+| TC-DATA-644 | Given a pool of one connection that served tenant A, when tenant B's command runs `ExecuteUpdateAsync` inside the pipeline transaction, then only tenant B's rows change and tenant A's row count and checksum are unchanged | REQ-DATA-004 |
+| TC-DATA-645 | Given a consumed message whose envelope carries tenant B and whose payload names tenant A's identifiers, when the handler runs, then nothing is written to tenant A and the message is rejected to the dead-letter queue with the tenant mismatch recorded | REQ-DATA-005 |
+| TC-DATA-302 | Given a 10,000-row import from the Excel template whose dry run reported 12 row errors, when the 12 rows are fixed and the import is committed, then the commit completes in under 5 minutes with a summary of created and updated records | REQ-DOC-011, WF-DATA-01 |
+| TC-DATA-303 | Given a committed import, when its dry run is re-read and the import is rolled back inside the window, then the dry run wrote nothing, a checksum of the affected tables equals the pre-import checksum excluding reported conflicts, and the rollback is audited | REQ-DOC-012, WF-DATA-01 |

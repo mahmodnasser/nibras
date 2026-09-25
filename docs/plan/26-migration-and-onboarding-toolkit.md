@@ -181,7 +181,7 @@ CREATE TABLE import_staging.import_job (
     warning_count      int         NOT NULL DEFAULT 0, -- non-blocking findings
     dry_run_at         timestamptz NULL,          -- last dry run; a commit needs one less than 24 hours old
     committed_at       timestamptz NULL,          -- set on Committed
-    rollback_until     timestamptz NULL,          -- committed_at plus 7 days, the WF-DATA-01 window
+    rollback_until     timestamptz NULL,          -- committed_at plus 7 days, the WF-DATA-01 import rollback window (§5.3)
     created_by         uuid        NOT NULL,      -- the administrator who uploaded
     created_at         timestamptz NOT NULL       -- upload time
 );
@@ -395,15 +395,17 @@ Produced automatically at `Committed`, before anyone is told the import is done.
 
 A failed check marks the import `Committed` with a reconciliation warning and opens a Data Quality Center issue through `reporting.data-quality.issue-detected.v1`; the go-live checklist of §10 refuses to proceed while one is open.
 
-#### 5.3 Rollback within the cooling-off window
+#### 5.3 Rollback within the import rollback window
+
+Two windows exist in this kit and they are different things. The **import rollback window** below is 7 days and belongs to one import job. The **tenant deletion cooling-off** is 30 days, belongs to a whole tenant, and is owned by master brief Section 32, BR-PLT-003 and WF-PLT-03, and this document neither sets nor restates it. Neither number is derived from the other, and "cooling-off" on its own always means the 30-day tenant one.
 
 | Rule | Mechanism | Test |
 |---|---|---|
-| Window | 7 days after `Committed` (WF-DATA-01); after it the job is `Sealed` and before images are purged | `TC-DATA-006` |
+| Window | 7 days after `Committed` (WF-DATA-01, which owns the value); after it the job is `Sealed` and before images are purged | `TC-DATA-006` (Appendix R) |
 | Permission | `documents.imports.rollback` (elevated) | Appendix B |
 | Order | Reverse of §1.1: results, balances, fee plans, timetable, guardians, students, staff, subjects, sections | `ImportRollbackOrderTests` |
-| Inserted rows | Deleted by `import_id` in each target service | `TC-DATA-006` |
-| Updated rows | Restored from `import_before_image` when `row_version` still matches | `TC-DATA-006` |
+| Inserted rows | Deleted by `import_id` in each target service | `TC-DATA-006` (Appendix R) |
+| Updated rows | Restored from `import_before_image` when `row_version` still matches | `TC-DATA-006` (Appendix R) |
 | Rows touched after the import | Reported as conflicts and left alone | WF-DATA-01 compensation |
 | Finance | Opening documents are reversed by a credit note, never deleted, because posted documents are immutable (master brief Section 36) | `ImportRollbackFinanceTests` |
 | Invitations | Unaccepted invitations revoked; accepted accounts reported as conflicts | `ImportRollbackIdentityTests` |
@@ -465,12 +467,12 @@ Provisioning is WF-PLT-01 and Saga 1 of `13-workflows-and-sagas.md`; its steps, 
 
 | Point | Rule | Test |
 |---|---|---|
-| Tenant region fixed at `Validated` | Residency never changes afterwards (`PLATFORM_RESIDENCY_VIOLATION`) | `TC-PLT-001` |
-| Routes answer `PLATFORM_PROVISIONING_IN_PROGRESS` until `Provisioned` | The wizard shows provisioning progress instead | `TC-PLT-002` |
+| Tenant region fixed at `Validated` | Residency never changes afterwards (`PLATFORM_RESIDENCY_VIOLATION`) | `TC-PLT-101` (Platform sheet) |
+| Routes answer `PLATFORM_PROVISIONING_IN_PROGRESS` until `Provisioned` | The wizard shows provisioning progress instead | `TC-GW-014` (Gateway sheet) |
 | First administrator invitation | Sent as `identity.user.invited.v1` to the owner contact on `Provisioned`; single use, 7-day expiry, bound to the tenant; accepting it runs WF-IDN-01 and requires a second factor | `TC-PLT-003`, `TC-IDN-006` |
-| The seeded `admin` account | Platform scope only (ADR-0003); never the school's administrator and never used for onboarding; safeguards in `12-security-privacy-safety.md` §8 | `TC-PLT-006` |
+| The seeded `admin` account | Platform scope only (ADR-0003); never the school's administrator and never used for onboarding; safeguards in `12-security-privacy-safety.md` §8 | `TC-SEC-360` (document 12) |
 | Failure | A compensated saga leaves no schema, queue or identity; the operator sees the failed step verbatim | `TC-PLT-004`, `TC-PLT-005` |
-| `Onboarding` to `Live` | Academic year, campus and the owner account present; the seeded password changed | `TC-PLT-006` |
+| `Onboarding` to `Live` | Academic year, campus and the owner account present; the seeded password changed | `TC-PLT-006` (Appendix R) |
 | Demo data | Optional at signup; a tenant with demo data must reset it before the first real import, and the import centre refuses a commit into a tenant still holding demo rows | `ImportDemoGuardTests` |
 
 ### 9. Super-user certification
@@ -536,7 +538,7 @@ When every blocking check passes, the tenant moves `Onboarding` to `Live` (WF-PL
 | Decision | Source | Default if unanswered | Impact if wrong |
 |---|---|---|---|
 | Two-stage staging: Documents validates, each target service re-validates and writes its own data | This document §2; master brief Section 7 | As stated | A single stage in Documents would write another service's database |
-| Rollback window is 7 days and is the cooling-off window for imports | WF-DATA-01 | 7 days | A shorter window strands a school that notices a mistake in week two |
+| The import rollback window is 7 days after `Committed`, and is not the 30-day tenant deletion cooling-off | WF-DATA-01 for the 7 days; master brief Section 32 and BR-PLT-003 for the 30 days | As stated | One number used for both strands a school that notices an import mistake in week two, or promises a tenant four weeks of import rollback that no before image survives |
 | Dates are day first; a year from 1300 to 1500 is Hijri | This document §3.5 | As stated | A `mm/dd` guess corrupts every birth date with a day under 13 |
 | Opening balances post as documents and roll back by credit note | This document §1.8, §5.3; master brief Section 36 | As stated | Editing posted documents breaks the audit and e-invoicing chain |
 | Sensitive and level S columns never pass through import staging | This document §1.2, §1.4; Appendix J | As stated | Wellbeing or salary data sits in an unencrypted staging table |

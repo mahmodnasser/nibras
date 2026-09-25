@@ -269,8 +269,8 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 | POST | `/api/v1/wellbeing/clinic-visits/{id}/return-to-class` | `wellbeing.clinic-visits.edit` | `{ note }` | 200 `ReturnedToClass`; publishes `wellbeing.clinic-visit.recorded.v1` | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/clinic-visits/{id}/send-home` | `wellbeing.clinic-visits.send-home` | `{ reasonCategory }` | 200 `SendHomeRecommended`; guardian contact list read live from School | `WELLBEING_DEPENDENCY_UNAVAILABLE` (School directory down: the nurse phones from the paper list) | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/clinic-visits/{id}/guardian-contacts` | `wellbeing.clinic-visits.notify-guardian` | `{ guardianId, channel, outcome, consentToSendHome }` | 200; `GuardianContacted` when reached; publishes `wellbeing.clinic-visit.recorded.v1` with `guardianNotified` | `WELLBEING_VALIDATION_FAILED` (consent from a guardian without pickup rights) | Yes, Key required |
-| POST | `/api/v1/wellbeing/clinic-visits/{id}/collection` | `wellbeing.clinic-visits.send-home` | `{ pickupPersonId }` | 200 `CollectionArranged` with a hand-off link to Attendance's gate-pass issue for this student and collector | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
-| POST | `/api/v1/wellbeing/clinic-visits/{id}/release` | `wellbeing.clinic-visits.send-home` | `{ gatePassId }` recorded after Attendance verified the handover (Open point 5) | 200 `Released` | `WELLBEING_VALIDATION_FAILED` (no verified pass) | Yes, state-guarded |
+| POST | `/api/v1/wellbeing/clinic-visits/{id}/collection` | `wellbeing.clinic-visits.send-home` | `{ pickupPersonId }` | 200 `CollectionArranged`, publishes `wellbeing.clinic-visit.collection-arranged.v1` with a hand-off link to Attendance's gate-pass issue for this student and collector | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
+| POST | `/api/v1/wellbeing/clinic-visits/{id}/release` | `wellbeing.clinic-visits.send-home` | `{ gatePassId }` recorded after Attendance verified the handover, or set automatically by `DismissalProcessedConsumer` | 200 `Released` | `WELLBEING_VALIDATION_FAILED` (no verified pass) | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/clinic-visits/{id}/emergency` | `wellbeing.clinic-visits.send-home` | `{ ambulanceCalledAt }` | 200 `EmergencyEscalated`; guardian and principal notified urgently | none beyond K.1 | Yes, state-guarded |
 | GET | `/api/v1/wellbeing/students/{id}/clinic-visits?cursor=` | `wellbeing.clinic-visits.view` | cursor on `(visited_at, id)` | Visits for one student (hot query 3) | `WELLBEING_ACCESS_DENIED` | Safe; logged |
 | GET | `/api/v1/wellbeing/students/{id}/medical-alert` | `school.students.view` for a staff member assigned to the student, audience `TeachingStaffSummary` (Open point 3); `wellbeing.clinic-visits.view` for the nurse | none | Badge with substance, severity and action; read live, logged (hot query 1, TC-WEL-203) | `WELLBEING_ALLERGY_ALERT_UNAVAILABLE` (503), `WELLBEING_ACCESS_DENIED` | Safe; logged |
@@ -398,30 +398,34 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 | Routing key | Partition key | Raised by | Consumers (Appendix E) |
 |---|---|---|---|
 | `wellbeing.referral.created.v1` | `studentId` | `CreateReferralHandler`, `ReferFromCheckInFlagHandler` | Notification, Reporting |
-| `wellbeing.intervention.opened.v1` | `studentId` | `OpenInterventionHandler` | Reporting, Notification |
-| `wellbeing.intervention.closed.v1` | `studentId` | `CloseInterventionHandler` | Reporting |
+| `wellbeing.intervention.opened.v1` | `studentId` | `OpenInterventionHandler` | Reporting, Notification, Attendance |
+| `wellbeing.intervention.closed.v1` | `studentId` | `CloseInterventionHandler` | Reporting, Attendance |
 | `wellbeing.clinic-visit.recorded.v1` | `studentId` | Clinic handlers on return to class, guardian notification or release, once per visit | Notification |
+| `wellbeing.clinic-visit.collection-arranged.v1` | `studentId` | `ArrangeCollectionHandler` on `SendHomeRecommended → CollectionArranged` | Attendance |
 | `wellbeing.medication.administered.v1` | `studentId` | `AdministerMedicationHandler` | Notification |
 | `wellbeing.safeguarding.concern-raised.v1` | `studentId` | `RaiseConcernHandler`, `AnonymousConcernConsumer`, `MessageReportedConsumer` | Notification (safeguarding officer only) |
 | `wellbeing.audit.recorded.v1` | `tenantId` | Every read (from `access_log`), every write and every transition; `before` and `after` carry field and state names only, never values, so no level-S value reaches Audit | Audit |
 | `wellbeing.usage.recorded.v1` | `tenantId` | `WellbeingUsageMeterJob`: counts of visits, cases and check-ins, no identifiers | Platform |
 
+Three of these keys drive Attendance (Appendix E, Wellbeing paragraph): the two intervention keys move a student's attendance case to `InterventionOpened` and `InterventionClosed`, and `wellbeing.clinic-visit.collection-arranged.v1` prepares the gate pass. None of them carries a category, a symptom or a reason. `wellbeing.intervention.opened.v1` carries the optional `sourceRuleId`, which is the Attendance threshold rule that led to the intervention or null, and Attendance discards an intervention event whose `sourceRuleId` is null. `wellbeing.intervention.closed.v1` carries `studentId` so its payload matches its partition key.
+
 Wellbeing sends `RequestNotification` (`notification.commands.request-notification.v1`) for the messages Appendix C does not trigger from its events: the missed-dose alert, the consent request, the medical-alert update to teachers and cafeteria staff, the check-in flag to the homeroom teacher, the break-glass alert, and the escalations (Open point 4). Each carries a template code and identifiers, never clinical text; the templates say what happened without saying what is wrong (BR-WEL-003 edge case).
 
 ### 6.2 Consumed
 
-Queues are those of `11-messaging-architecture.md` §2.5 for Wellbeing, plus `wellbeing.tenant-lifecycle` of §2.3. Keys marked \* in document 11 are bindings that Appendix E's consumer column does not yet name (Open point 9).
+Queues are those of `11-messaging-architecture.md` §2.5 for Wellbeing, plus `wellbeing.tenant-lifecycle` of §2.3. Appendix E (v9.1) names Wellbeing in the consumer column of every key below, so document 11's bindings and the catalog now agree and no binding is starred.
 
 | Routing key or command | Queue | Handler | What it changes | Idempotent on |
 |---|---|---|---|---|
 | `school.student.status-changed.v1` | `wellbeing.reference-copies` | `StudentStatusChangedConsumer` | Updates the copy only for a student with a record; a leaver starts the retention clock | `studentId` plus `effectiveOn` |
 | `school.student.profile-updated.v1` | `wellbeing.reference-copies` | `StudentProfileUpdatedConsumer` | Refreshes names and section through `StudentDirectory` for students with a record; ignored otherwise and nothing stored | `studentId` plus `occurredAt` |
-| `school.guardian.updated.v1`\*, `identity.guardian-link.created.v1`\* | `wellbeing.reference-copies` | `GuardianLinkConsumer` | Guardian relationship and preferred language for students with a record | `guardianId` or `studentId` plus `occurredAt` |
-| `school.section.created.v1`\*, `school.section.changed.v1`\* | `wellbeing.reference-copies` | `SectionConsumer` | `ref_sections` for scoping the homeroom flag | `sectionId` plus `occurredAt` |
+| `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | `wellbeing.reference-copies` | `GuardianLinkConsumer` | Guardian relationship and preferred language for students with a record | `guardianId` or `studentId` plus `occurredAt` |
+| `school.section.created.v1`, `school.section.changed.v1` | `wellbeing.reference-copies` | `SectionConsumer` | `ref_sections` for scoping the homeroom flag | `sectionId` plus `occurredAt` |
 | `communication.message.reported.v1` | `wellbeing.events.urgent` | `MessageReportedConsumer` | Opens a safeguarding concern with `source = MessageReport` and the message reference, no content | `messageId` |
 | `communication.concern.reported-anonymously.v1` | `wellbeing.events.urgent` | `AnonymousConcernConsumer` | Opens a concern in `ReportedAnonymously` with no reporter identity (TC-WEL-032); the text is fetched by the lead from Communication under their own permission | `concernId` |
 | `identity.break-glass.used.v1` | `wellbeing.events.urgent` | `OperatorBreakGlassConsumer` | Records that an operator was elevated; alerts the safeguarding officer; every request carrying that grant is refused (BR-IDN-009) | `userId` plus `occurredAt` |
 | `attendance.threshold.reached.v1` | `wellbeing.events` | `AttendanceThresholdConsumer` | Creates a `Suggested` intervention with the attendance playbook (WF-ATT-01 `ThresholdReached → InterventionOpened`) | `studentId` plus rule and rung |
+| `attendance.dismissal.processed.v1` | `wellbeing.events` | `DismissalProcessedConsumer` | Moves a clinic visit in `CollectionArranged` to `Released` when Attendance reports the verified handover of that student, recording the gate-pass id; ignored for any student with no open visit | `gatePassId` |
 | `attendance.student.absent.v1` | `wellbeing.events` | `StudentAbsentConsumer` | Adds an absence count to an open intervention or plan that watches attendance; ignored and not stored for any other student | `studentId` plus date |
 | `behavior.incident.recorded.v1` | `wellbeing.events` | `BehaviorIncidentConsumer` | For high or critical severity or a restricted incident, creates a `Suggested` intervention for the pastoral lead; stores the incident id only | `incidentId` |
 | `reporting.early-warning.flag-raised.v1` | `wellbeing.events` | `EarlyWarningFlagConsumer` | Creates a `Suggested` intervention from the flag with its factor codes as the stated reasons | `studentId` plus `indicatorCode` |
@@ -521,7 +525,7 @@ Quartz.NET jobs in the Api host (Appendix L lists no wellbeing-worker image), cl
 
 ### 10.1 Permissions (Appendix B)
 
-Every Wellbeing read is logged and no role template inherits `wellbeing.*` (Appendix I rule 7); each grant is explicit.
+Every Wellbeing read is logged and no role template inherits `wellbeing.*` (Appendix I rule 7); each grant is explicit. Appendix I (v9.1) also marks the Nurse's G20 online only, with clinic entry, the medication round and the allergy lookup available only while connected, and lists `ai.*` as a must-not for the Nurse, the Counselor, the Special-Needs Coordinator and the Safeguarding Officer, because the Ai index refuses Sensitive and level-S data. Permission groups now run G01 to G26.
 
 | Permission | Risk | Default holders (Appendix I) | Scope used |
 |---|---|---|---|
@@ -543,6 +547,8 @@ Every Wellbeing read is logged and no role template inherits `wellbeing.*` (Appe
 | Clinic visit or medication given | `wellbeing.clinic-visit.recorded.v1`, `wellbeing.medication.administered.v1` | Guardians | U |
 | Safeguarding concern raised | `wellbeing.safeguarding.concern-raised.v1` | Safeguarding officer | U |
 | Intervention review due | `wellbeing.intervention.opened.v1` plus its review date | Owner | N |
+
+Appendix C deduplicates on the same template, recipient and subject within five minutes (BR-NOT-004); the two urgent rows above are never deduplicated.
 
 The rows Appendix C triggers from other services that concern Wellbeing's work, "Anonymous concern reported" and "Message reported", are Communication's triggers; "Break-glass access used" is Identity's for the operator path, and Wellbeing's tenant path uses `RequestNotification` (Open point 4).
 
@@ -678,6 +684,7 @@ src/Services/Wellbeing/                                               Student We
 │   │   ├── InterventionOpened.cs                                     becomes wellbeing.intervention.opened.v1
 │   │   ├── InterventionClosed.cs                                     becomes wellbeing.intervention.closed.v1
 │   │   ├── ClinicVisitRecorded.cs                                    becomes wellbeing.clinic-visit.recorded.v1
+│   │   ├── ClinicVisitCollectionArranged.cs                          becomes wellbeing.clinic-visit.collection-arranged.v1
 │   │   ├── MedicationAdministered.cs                                 becomes wellbeing.medication.administered.v1
 │   │   └── SafeguardingConcernRaised.cs                              becomes wellbeing.safeguarding.concern-raised.v1
 │   ├── References/                                                   read-only copies for students with a record
@@ -793,6 +800,7 @@ src/Services/Wellbeing/                                               Student We
 │   │   ├── OperatorBreakGlassConsumer.cs                             identity.break-glass.used.v1, operator refused and logged
 │   │   ├── AttendanceThresholdConsumer.cs                            attendance.threshold.reached.v1 suggests an intervention
 │   │   ├── StudentAbsentConsumer.cs                                  attendance.student.absent.v1 for watched students only
+│   │   ├── DismissalProcessedConsumer.cs                             attendance.dismissal.processed.v1 releases a collected visit
 │   │   ├── BehaviorIncidentConsumer.cs                               behavior.incident.recorded.v1 for serious or restricted incidents
 │   │   ├── EarlyWarningFlagConsumer.cs                               reporting.early-warning.flag-raised.v1 suggests an intervention
 │   │   ├── EarlyWarningClearedConsumer.cs                            reporting.early-warning.flag-cleared.v1 withdraws a suggestion
@@ -935,7 +943,7 @@ src/Services/Wellbeing/                                               Student We
 
 ## 14. Test plan
 
-Existing identifiers are reused; new ones are minted in `TC-WEL-310` to `TC-WEL-360`, a range no document in the kit uses (checked with a search of `docs/` and `.claude/` on 2026-09-21: existing WEL identifiers are 001 to 006, 011 to 016, 021 to 026, 031 to 036, 041 to 046, 101, 201 to 203, 701 to 707).
+Existing identifiers are reused; new ones are minted from `TC-WEL-310` upward (310 to 360 reserved), a range no document in the kit uses (checked with a search of `docs/` and `.claude/` on 2026-09-21: existing WEL identifiers are 001 to 006, 011 to 016, 021 to 026, 031 to 036, 041 to 046, 101, 201 to 203, 701 to 707).
 
 | Test case | Level | What it proves |
 |---|---|---|
@@ -949,6 +957,8 @@ Existing identifiers are reused; new ones are minted in `TC-WEL-310` to `TC-WEL-
 | TC-WEL-202 | UAT | A teacher reading a counselling case is refused and existence is not confirmed |
 | TC-WEL-203 | UAT | Allergy alert shown live with substance, severity and action before a trip |
 | TC-WEL-701 to TC-WEL-707 | UAT | Counsellor home, referral acceptance, logged session note, absence from search and Student 360, playbook, clinic record refused to the counsellor, closure audited |
+| TC-WEL-704 | UAT | Given a counselling case open for a student, when a teacher signs in on another device and searches for that student, then the case appears in none of general search, Student 360 or any report, and a direct request for it returns 404 `WELLBEING_ACCESS_DENIED` with a body identical to a record that does not exist (REQ-WEL-012, BR-WEL-001) |
+| TC-WEL-707 | UAT | Given an open counselling case with a linked flag, when the counsellor closes it with an outcome code, then the case reads `Closed`, the flag clears, exactly one closure audit entry is written, and a second close returns `WELLBEING_CASE_ALREADY_CLOSED` (REQ-WEL-016, WF-WEL-04) |
 | TC-SEC-101, TC-SEC-280 to TC-SEC-286 | Security | T-WEL-01 to T-WEL-08 |
 | TC-WEL-310 | Unit | `WellbeingVisibilityRulesTests`: every BR-WEL-001 example and edge case |
 | TC-WEL-311 | Unit | `BreakGlassRulesTests`: BR-WEL-002 window of 30 minutes, 08:41 refused with `WELLBEING_BREAK_GLASS_EXPIRED`, review stored |
@@ -1043,18 +1053,18 @@ Existing identifiers are reused; new ones are minted in `TC-WEL-310` to `TC-WEL-
 
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
-| 1. Appendix R names events Appendix E lacks: `wellbeing.accommodation-plan.published.v1`, `wellbeing.medication-authorization.approved.v1`, `wellbeing.medication.missed.v1`, `wellbeing.safeguarding-concern.raised.v1` (Appendix E has `wellbeing.safeguarding.concern-raised.v1`), `wellbeing.check-in.recorded.v1`, `wellbeing.check-in.flagged.v1`, `assessment.exam-accommodation.applied.v1`, `audit.action.recorded.v1` | Publish only catalogued keys; the other facts go through `RequestNotification` and `wellbeing.audit.recorded.v1` | Appendix E and R owners | A version bump adds or renames the keys |
-| 2. Table 8.0 lists no service with a synchronous dependency on Wellbeing, but `10-data-architecture.md` has Reporting call `Counts`, and document 22 names `AllergyAlerts` | Expose both; record Reporting (job only) and Operations (trip and cafeteria screens) in table 8.0 under an ADR | Architect | Without the ADR the table and this sheet disagree |
+| 1. Appendix R names events Appendix E lacks: `wellbeing.accommodation-plan.published.v1`, `wellbeing.medication-authorization.approved.v1`, `wellbeing.medication.missed.v1`, `wellbeing.safeguarding-concern.raised.v1` (Appendix E has `wellbeing.safeguarding.concern-raised.v1`), `wellbeing.check-in.recorded.v1`, `wellbeing.check-in.flagged.v1`, `assessment.exam-accommodation.applied.v1`, `audit.action.recorded.v1` | Section 6.1 publishes only catalogued keys; the other facts go through `RequestNotification` and `wellbeing.audit.recorded.v1` | Appendix E and R owners | Resolved 2026-09-22 (ADR-0019): Appendix R was corrected to this sheet's default. WF-WEL-01, WF-WEL-03 and WF-WEL-05 now record those facts as `wellbeing.audit.recorded.v1`, WF-WEL-04 uses `wellbeing.safeguarding.concern-raised.v1`, the exam arrangement reaches Assessment through the Requests exam-accommodation effect, and the shared audit key is gone: the audit entry is always the publishing service's own `<service>.audit.recorded.v1` |
+| 2. Table 8.0 lists no service with a synchronous dependency on Wellbeing, but `10-data-architecture.md` has Reporting call `Counts`, and document 22 names `AllergyAlerts` | Expose both; Reporting's call is job only under the definition Section 8.0 now carries, and Operations reads the allergy alert on the trip and cafeteria screens | Architect | Still open. ADR-0019 scoped its Section 8.0 edit to seven services and its change list records that the Wellbeing `Counts` and `AllergyAlerts` rows still need adding, so the table and this sheet still disagree |
 | 3. The allergy badge must reach teachers (BR-WEL-001 "teaching staff summary"), but no `wellbeing.*` permission is held by teachers | `school.students.view` for staff assigned to the student, plus the record's `TeachingStaffSummary` audience, logged on every read | Appendix B owner | A `wellbeing.medical-alerts.view` permission would replace it |
-| 4. Appendix C has no row for the missed-dose alert, consent request, medical-alert update, check-in flag, the tenant break-glass alert or the escalations | `RequestNotification` with template codes that say what happened without saying what is wrong | Appendix C owner | Catalogued rows would move them to event triggers |
-| 5. Appendix E routes no Attendance event to Wellbeing, so the gate-pass use that ends WF-WEL-02 is not observable here | The nurse records the release with the verified pass id after Attendance's handover | Appendix E owner, Attendance lead | A binding of `attendance.dismissal.processed.v1` would automate `Released` |
+| 4. Appendix C has no row for the missed-dose alert, consent request, medical-alert update, check-in flag, the tenant break-glass alert or the escalations | `RequestNotification` with template codes that say what happened without saying what is wrong | Appendix C owner | Still open. ADR-0019 added thirteen Appendix C rows, none of them Wellbeing's, so catalogued rows would still be the way to move these to event triggers |
+| 5. Appendix E routes no Attendance event to Wellbeing, so the gate-pass use that ends WF-WEL-02 is not observable here | `DismissalProcessedConsumer` binds `attendance.dismissal.processed.v1` and moves the visit from `CollectionArranged` to `Released` on the verified handover; the nurse can still record the pass id by hand | Appendix E owner, Attendance lead | Resolved 2026-09-22 (ADR-0019): Appendix E added Wellbeing to the consumers of `attendance.dismissal.processed.v1`, and added `wellbeing.clinic-visit.collection-arranged.v1` with Attendance as its consumer, so the hand-off is observable in both directions with no clinical field |
 | 6. Guardians hold no `wellbeing.*` permission, yet WF-WEL-01 needs their consent | A single-use consent token for the signed-in guardian of that child, for that one action | Appendix B owner | A consent request type in Requests would be the alternative |
 | 7. Students answering the check-in and homeroom teachers seeing a flag have no Appendix B permission | Students act for `self` when the stage has check-ins enabled; homeroom teachers get `wellbeing.interventions.view` in `own-homeroom` for flags only when the tenant enables check-ins | Appendix B owner | New `wellbeing.check-ins.*` actions would replace both |
-| 8. Appendix R marks WF-WEL-05 offline, while Appendix M and REQ-WEL-002 say Wellbeing data never reaches a device | The student's own answer code may wait in the encrypted outbox until sync, write-only and never readable back; no note offline | Privacy officer | Offline check-in disabled; TC-WEL-046 would change |
-| 9. Document 11 binds `school.guardian.updated.v1`, `identity.guardian-link.created.v1`, `school.section.created.v1` and `school.section.changed.v1` for Wellbeing, which Appendix E's consumer columns do not name | Bind them after Appendix E adds Wellbeing | Appendix E owner | Guardian relationships would be read live only |
+| 8. Appendix R marks WF-WEL-05 offline, while Appendix M and REQ-WEL-002 say Wellbeing data never reaches a device | The student's own answer code may wait in the encrypted outbox until sync, write-only and never readable back; no note offline | Privacy officer | Still open. ADR-0019 tightened Appendix M and I around the nurse (clinic entry, medication round and allergy lookup are online only, and M.1 gains "Record a medication administration: No") and left WF-WEL-05 alone as an open decision, so the write-only outbox exception still waits on the privacy officer |
+| 9. Document 11 binds `school.guardian.updated.v1`, `identity.guardian-link.created.v1`, `school.section.created.v1` and `school.section.changed.v1` for Wellbeing, which Appendix E's consumer columns do not name | The four keys are bound on `wellbeing.reference-copies` as section 6.2 lists them, with no star | Appendix E owner | Resolved 2026-09-22 (ADR-0019): Appendix E added Wellbeing to the consumers of `school.guardian.updated.v1`, `identity.guardian-link.created.v1` and `school.section.created.v1`, and `school.section.changed.v1` keeps the created key's consumer set |
 | 10. Appendix G has no row for check-in thresholds and windows, triage deadlines, first-aid protocols or the safeguarding framework | Appendix R values as defaults, held as Platform settings under `scope = wellbeing` | Appendix G owner | Values hard-coded until then |
 | 11. Referral packs and signed administration records are rendered by Documents, which holds Confidential data, not level S | Documents renders them with a Sensitive owner class, per-tenant encryption, no share link, no OCR, and deletes the merge values after render; `documents.commands` must bind `nibras.wellbeing` | Architect, Documents lead | Rendering inside Wellbeing would need its own renderer |
-| 12. WF-WEL-02 uses the permission `wellbeing.clinic-visit.record`, which Appendix B does not have | `wellbeing.clinic-visits.create` and `.edit` | Appendix R owner | A renamed guard in Appendix R |
+| 12. WF-WEL-02 uses the permission `wellbeing.clinic-visit.record`, which Appendix B does not have | `wellbeing.clinic-visits.create` and `.edit`, as section 5 already uses | Appendix R owner | Resolved 2026-09-22 (ADR-0019): Appendix R WF-WEL-02 `Arrived → Assessed` (TC-WEL-011) now names `wellbeing.clinic-visits.create`, the Appendix B name |
 | 13. `identity.break-glass.used.v1` is Identity's key, yet `06-services/identity.md` says both paths publish it | Wellbeing never publishes on `nibras.identity`; its tenant path alerts through `RequestNotification` and records `wellbeing.audit.recorded.v1` | Architect | A `wellbeing` break-glass key in Appendix E would replace the command |
 | 14. Knowing that an exam sitting is 5 working days away needs exam sessions, which Wellbeing does not copy | Readiness is checked when the exams officer's accommodation request is approved; no daily readiness job | Assessment lead | Late arrangements would be caught only by the exams officer |
 

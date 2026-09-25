@@ -300,7 +300,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 | GET | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/marks` | `assessment.marks.view` (own-sections for teachers) | none | `MarkGrid`: roster rows with score, code, state, row version | none beyond K.1 | Safe; never cached (REQ-ASM-007) |
 | PUT | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/marks` | `assessment.marks.enter` (own-sections) | `EnterMarksRequest`: changed cells with row versions, pasted blocks allowed | 200 per-cell results | per cell: `ASSESSMENT_MARK_OUT_OF_RANGE`, `ASSESSMENT_MARKS_LOCKED`, `ASSESSMENT_CONCURRENCY_CONFLICT` | Yes, Key required |
 | POST | `/api/v1/assessment/marks/sync` | `assessment.marks.enter` | Up to 500 queued drafts with `idempotencyKey`, `occurredAt`, `entityVersion` (via Bff.Mobile) | 200 per-action results: accepted, returned-as-grade-change | per action: `ASSESSMENT_MARKS_LOCKED`, `ASSESSMENT_MARK_OUT_OF_RANGE` | Yes, per action key |
-| POST | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/submit` | `assessment.marks.enter` | `{}` | 200 component `Validated`; publishes `assessment.marks.entered.v1` | `ASSESSMENT_VALIDATION_FAILED` listing students without a mark, absence or exemption | Yes, state-guarded |
+| POST | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/submit` | `assessment.marks.enter` | `{}` | 200 component `Validated`; publishes `assessment.marks.entered.v1` | `ASSESSMENT_MARK_GRID_INCOMPLETE` listing students without a mark, absence or exemption | Yes, state-guarded |
 | GET | `/api/v1/assessment/marks/{id}/history` | `assessment.marks.view` | none | Change history with both values | none beyond K.1 | Safe |
 | GET | `/api/v1/assessment/sections/{sectionId}/mark-status?gradingPeriodId=` | `assessment.marks.view` | query | Entry state per component, overdue flags | none beyond K.1 | Safe |
 | GET | `/api/v1/assessment/marks/export?gradingPeriodId=&sectionId=` | `assessment.marks.export` | query | Streamed CSV; audited | none beyond K.1 | Safe |
@@ -364,7 +364,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
-| POST | `/api/v1/assessment/grade-changes` | `assessment.grade-changes.create` | `{ kind, studentId, componentId, reasonCode, rationale, proposedScore }` | 201 `Submitted` | `ASSESSMENT_VALIDATION_FAILED` (outside the appeal window, `params.windowEndsOn`) | Yes, Key required |
+| POST | `/api/v1/assessment/grade-changes` | `assessment.grade-changes.create` | `{ kind, studentId, componentId, reasonCode, rationale, proposedScore }` | 201 `Submitted` | `ASSESSMENT_APPEAL_WINDOW_CLOSED` (`params.windowEndsOn`) | Yes, Key required |
 | GET | `/api/v1/assessment/grade-changes?status=&departmentId=` | `assessment.grade-changes.view` | query, cursor | Requests without rationale text | none beyond K.1 | Safe |
 | GET | `/api/v1/assessment/grade-changes/{id}` | `assessment.grade-changes.view` | none | Request with rationale (access logged) | none beyond K.1 | Safe |
 | POST | `/api/v1/assessment/grade-changes/{id}/start-review` | `assessment.marks.moderate` (department) | `{}` | 200 `UnderReview` with the original marks retrieved | `ASSESSMENT_CONCURRENCY_CONFLICT` | Yes, state-guarded |
@@ -392,11 +392,11 @@ A direct write to a locked mark from the grid returns `ASSESSMENT_POST_LOCK_CHAN
 | POST | `/api/v1/assessment/exams/{id}/paper/assign` | `assessment.exams.edit` | `{ setterId, deadlineOn }` | 200 `Assigned` or `Reassigned` | none beyond K.1 | Yes, state-guarded |
 | PUT | `/api/v1/assessment/exams/{id}/paper` | `assessment.exams.edit` (the named setter only) | `{ paperFileId, markingSchemeFileId }` | 200 `Drafted` | `ASSESSMENT_PERMISSION_DENIED` | Yes, by `If-Match` |
 | GET | `/api/v1/assessment/exams/{id}/paper` | `assessment.exams.view` (setter or reviewer until release) | none | Short-lived link; every open logged | `ASSESSMENT_PERMISSION_DENIED` (audited and alerted, TC-ASM-026) | Safe; `no-store` |
-| POST | `/api/v1/assessment/exams/{id}/paper/review` | `assessment.exams.approve-paper` | `{ decision: open \| revise \| approve, comments }` | 200 `UnderReview`, `RevisionRequested` or `Approved` | `ASSESSMENT_PERMISSION_DENIED` (reviewer is the setter), `ASSESSMENT_VALIDATION_FAILED` (scheme total differs) | Yes, state-guarded |
-| POST | `/api/v1/assessment/exams/{id}/paper/print-request` | `assessment.exams.approve-paper` (Open point 5) | `{ spares }` | 200 `PrintRequested` with the fixed copy count | none beyond K.1 | Yes, state-guarded |
+| POST | `/api/v1/assessment/exams/{id}/paper/review` | `assessment.exams.approve-paper` | `{ decision: open \| revise \| approve, comments }` | 200 `UnderReview`, `RevisionRequested` or `Approved`; on `Approved` publishes `assessment.exam-paper.approved.v1` | `ASSESSMENT_PERMISSION_DENIED` (reviewer is the setter), `ASSESSMENT_VALIDATION_FAILED` (scheme total differs) | Yes, state-guarded |
+| POST | `/api/v1/assessment/exams/{id}/paper/print-request` | `assessment.exams.print-paper` | `{ spares }` | 200 `PrintRequested` with the fixed copy count | none beyond K.1 | Yes, state-guarded |
 | POST | `/api/v1/assessment/exams/{id}/paper/printed` | `assessment.exams.edit` | `{ printedCount }` | 200 `Printed` | `ASSESSMENT_VALIDATION_FAILED` (count differs) | Yes, state-guarded |
 | POST | `/api/v1/assessment/exams/{id}/paper/seal` | `assessment.exams.edit` | `{}` | 200 `Sealed` | none beyond K.1 | Yes, state-guarded |
-| POST | `/api/v1/assessment/exams/{id}/paper/release` | `assessment.exams.edit` | `{ invigilatorId }` | 200 `Released` on exam day | `ASSESSMENT_VALIDATION_FAILED` (before exam day) | Yes, state-guarded |
+| POST | `/api/v1/assessment/exams/{id}/paper/release` | `assessment.exams.edit` | `{ invigilatorId }` | 200 `Released` on exam day; publishes `assessment.exam-paper.released.v1` | `ASSESSMENT_VALIDATION_FAILED` (before exam day) | Yes, state-guarded |
 
 **Endpoint count: 80** across 9 resource groups. Commands from other services' sagas are messages, listed in section 6.
 
@@ -408,7 +408,7 @@ A direct write to a locked mark from the grid returns `ASSESSMENT_POST_LOCK_CHAN
 |---|---|---|---|---|---|
 | Exposed | none | none | No service names Assessment as a synchronous dependency; School's Saga 4 and 5 use commands (`ConfirmYearResultsLocked`, `ComputePromotionDecisions`, `IssueTranscript`) | not applicable | not applicable |
 | Consumed | `nibras.school.v1` `StudentDirectory` | `GetStudent`, `ListStudentsBySection` | Roster gaps before the copy catches up; enrolment date for BR-ASM-006 | 2 s, 5 s page | Local `StudentReference`; a missing enrolment date blocks the result as `Incomplete` rather than guessing |
-| Consumed | `nibras.school.v1` grading-period lookup | proposed `ListGradingPeriods` (Open point 2) | Grading periods on `school.term.started.v1`, because no grading-period event exists (`10-data-architecture.md` part 6) | 5 s | Previous copy; a missing period blocks structure publication |
+| Consumed | `nibras.school.v1` `StructureDirectory` | `ListGradingPeriods(term_id)` | Grading periods on `school.term.started.v1` and on `school.grading-period.changed.v1`, for fields the event does not carry (`10-data-architecture.md` part 6) | 5 s | Previous copy; a missing period blocks structure publication |
 | Consumed | `nibras.school.v1` `Directory` | `StudentChecksum`, `SectionChecksum`, `StaffChecksum` | Nightly reconciliation | 30 s | Next night, then a data-quality issue |
 
 ---
@@ -423,12 +423,15 @@ Payload fields are owned by Appendix E.
 |---|---|---|---|
 | `assessment.marks.entered.v1` | `componentId` | Component submit (`MarkEntry → Validated`) | Reporting |
 | `assessment.marks.approved.v1` | `componentId` | Approval per component | Reporting, Notification |
-| `assessment.marks.overdue.v1` | `sectionId` | `MarksOverdueCheckJob` | Notification |
+| `assessment.marks.overdue.v1` | `sectionId` | `MarksOverdueCheckJob` | Notification, Reporting |
 | `assessment.marks.awaiting-approval.v1` | `sectionId` | Moderation release | Notification |
 | `assessment.grades.locked.v1` | `gradingPeriodId` | Lock | Academics, Documents, Reporting |
 | `assessment.report-cards.generation-requested.v1` | `studentId` | Saga 7 step 4, one per student and language; also reissue | Documents |
-| `assessment.report-cards.published.v1` | `gradingPeriodId` | Saga 7 step 5 and each reissue | Communication, Notification, Reporting |
-| `assessment.grade-change.approved.v1` | `studentId` | WF-ASM-02 `ChangeApproved → Applied` | Documents, Notification, Audit |
+| `assessment.report-cards.published.v1` | `gradingPeriodId` | Saga 7 step 5 and each reissue | Communication, Notification, Reporting, Ai |
+| `assessment.report-card.generated.v1` | `studentId` | One per card rendered, on the Documents outcome of Saga 7 step 4 | Reporting |
+| `assessment.grade-change.approved.v1` | `studentId` | WF-ASM-02 `ChangeApproved → Applied` | Documents, Notification, Audit, Requests |
+| `assessment.exam-paper.approved.v1` | `examId` | WF-ASM-03 `UnderReview → Approved`; the payload never carries paper content | Notification, Reporting |
+| `assessment.exam-paper.released.v1` | `examId` | WF-ASM-03 `Sealed → Released` on exam day; the payload never carries paper content | Notification, Reporting |
 | `assessment.audit.recorded.v1` | `tenantId` | Every write, transition and sensitive read | Audit |
 | `assessment.usage.recorded.v1` | `tenantId` | Daily meter of cards rendered and marks entered | Platform |
 
@@ -511,7 +514,7 @@ Timeouts per Appendix R: a review open 5 working days reminds the head of depart
 |---|---|---|---|---|---|
 | Student | `student_refs`, `student_section_intervals` | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.student.promoted.v1`, `school.student.profile-updated.v1` | `student_id`, `student_number`, `name_en`, `name_ar`, `section_id`, `grade_level_id`, `campus_id`, `status`, `enrolled_on` | Nightly 02:00 band time, `Directory/StudentChecksum` | Seconds; the grid asks `StudentDirectory` for a missing student |
 | Section, term, academic year | `section_refs`, `term_refs` | `school.section.created.v1`, `school.section.changed.v1`, `school.term.started.v1`, `school.academic-year.*` | as School publishes | Nightly, `Directory/SectionChecksum` | Minutes |
-| Grading period | `grading_period_refs` | Fetched over gRPC when `school.term.started.v1` arrives | `grading_period_id`, `term_id`, `starts_on`, `ends_on`, `lock_at` | Nightly against School | Hours; see Open point 2 |
+| Grading period | `grading_period_refs` | `school.grading-period.changed.v1`; fetched over gRPC when `school.term.started.v1` arrives and for fields the event does not carry | `grading_period_id`, `term_id`, `starts_on`, `ends_on`, `lock_at` | Nightly against School | Seconds for a change, the gRPC fetch otherwise |
 | Staff and teaching assignments | `staff_refs`, `teaching_assignment_refs` | `academics.teaching-assignment.changed.v1`; staff names through `StaffDirectory` | `staff_id`, `section_id`, `subject_id`, `effective_on` | Nightly against School and Academics | Minutes |
 | Finance restriction | `account_restriction_refs` | `finance.account.restricted.v1`, `finance.account.cleared.v1` | `student_id`, `restrictions`, `policy_id`, `cleared_at` | Not reconciled; each restriction event carries the full state | Seconds; a card is withheld until the clear arrives |
 | Exam sessions | `exam_session_refs` | `scheduling.exam-timetable.published.v1` | `exam_session_id`, `grade_level_ids`, `starts_on` | Not reconciled; republished on change | Minutes |
@@ -565,6 +568,7 @@ The nightly `ReferenceCopyReconciliationJob` compares checksums, replays on a di
 | `assessment.grade-changes.approve`, `.reject` | elevated | Principal | campus |
 | `assessment.exams.view`, `.create`, `.edit`, `.delete`, `.seat`, `.assign-invigilators` | normal | Academic Coordinator, exams officer role | campus |
 | `assessment.exams.approve-paper` | elevated | Reviewer named per paper, Academic Coordinator | department |
+| `assessment.exams.print-paper` | elevated | Academic Coordinator (G09); grantable to a print-only role without `approve-paper` | department, campus |
 
 ### 10.2 Notifications triggered (Appendix C)
 
@@ -599,6 +603,8 @@ The nightly `ReferenceCopyReconciliationJob` compares checksums, replays on a di
 | `ASSESSMENT_REPORT_CARD_BATCH_RUNNING` | 409 | Batch start, reissue |
 | `ASSESSMENT_REPORT_CARD_TEMPLATE_INVALID` | 400 | Template save, validate, batch start |
 | `ASSESSMENT_POST_LOCK_CHANGE_REFUSED` | 403 | Locked-mark write or grade-change approval without the high-risk permission; unlock after publication |
+| `ASSESSMENT_APPEAL_WINDOW_CLOSED` | 409, parent-safe | A grade change or appeal raised after the appeal window; `params.windowEndsOn` carries the date |
+| `ASSESSMENT_MARK_GRID_INCOMPLETE` | 400 | Component submit with students who have no mark, absence or exemption; `params` lists them |
 | `ASSESSMENT_TRANSCRIPT_NOT_REPRODUCIBLE` | 500 | Transcript issue, reproducibility job |
 | `ASSESSMENT_VALIDATION_FAILED`, `ASSESSMENT_PERMISSION_DENIED`, `ASSESSMENT_TENANT_MISMATCH`, `ASSESSMENT_NOT_FOUND`, `ASSESSMENT_CONCURRENCY_CONFLICT`, `ASSESSMENT_IDEMPOTENCY_REPLAY`, `ASSESSMENT_RATE_LIMITED`, `ASSESSMENT_DEPENDENCY_UNAVAILABLE` | per K.1 | Shared problem-details middleware |
 
@@ -1027,22 +1033,22 @@ src/Services/Assessment/                                          Assessment and
 
 ## 14. Test plan
 
-Existing identifiers are reused; new ones are minted in `TC-ASM-301` to `TC-ASM-350`, a range no document in the kit uses (searched on 2026-09-21).
+Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in the 301 to 350 block, a range no document in the kit uses (searched on 2026-09-21).
 
 | Test case | Level | What it proves |
 |---|---|---|
-| TC-ASM-001 | Workflow | `MarkEntry → Validated` only when every student has a mark, absence or exemption |
-| TC-ASM-002 | Workflow | Mark above the maximum refused with the cell highlighted |
-| TC-ASM-003 | Workflow | `Validated → Moderated` stores the original and the reason |
-| TC-ASM-004 | Workflow | `Approved → Locked`: edits refused, grade change offered |
-| TC-ASM-005 | Saga, load | 800 cards inside the batch budget with progress (N-02) |
-| TC-ASM-006 | Saga, chaos | Worker crash after 500 cards resumes with no duplicates |
-| TC-ASM-011 | Workflow | Appeal inside the window creates the review |
-| TC-ASM-012 | Workflow | Appeal after the window refused with the dates |
-| TC-ASM-013 | Workflow, security | Approver differs from the proposer (T-ASM-01) |
-| TC-ASM-014 | Workflow | Change applied under lock and recalculated |
-| TC-ASM-015 | Workflow | Superseding card rendered, previous retained |
-| TC-ASM-016 | Workflow | GPA and rank recalculated and republished |
+| `TC-ASM-001` (Appendix R) | Workflow | `MarkEntry → Validated` only when every student has a mark, absence or exemption |
+| `TC-ASM-002` (Appendix R) | Workflow | Mark above the maximum refused with the cell highlighted |
+| `TC-ASM-003` (Appendix R) | Workflow | `Validated → Moderated` stores the original and the reason |
+| `TC-ASM-004` (Appendix R) | Workflow | `Approved → Locked`: edits refused, grade change offered |
+| `TC-ASM-005` (Appendix R) | Saga, load | 800 cards inside the batch budget with progress (N-02) |
+| `TC-ASM-006` (Appendix R) | Saga, chaos | Worker crash after 500 cards resumes with no duplicates |
+| `TC-ASM-011` (Appendix R) | Workflow | Appeal inside the window creates the review |
+| `TC-ASM-012` (Appendix R) | Workflow | Appeal after the window refused with the dates |
+| `TC-ASM-013` (Appendix R) | Workflow, security | Approver differs from the proposer (T-ASM-01) |
+| `TC-ASM-014` (Appendix R) | Workflow | Change applied under lock and recalculated |
+| `TC-ASM-015` (Appendix R) | Workflow | Superseding card rendered, previous retained |
+| `TC-ASM-016` (Appendix R) | Workflow | GPA and rank recalculated and republished |
 | TC-ASM-021 to TC-ASM-026 | Workflow | WF-ASM-03 rows: encrypted draft, reviewer not setter, blueprint total, copy count, release, refused open audited |
 | TC-ASM-101 | UAT | Locked mark change refused with `ASSESSMENT_POST_LOCK_CHANGE_REFUSED` and the appeal offered |
 | TC-ASM-201 | UAT, security | A teacher cannot approve their own marks |
@@ -1085,7 +1091,7 @@ Existing identifiers are reused; new ones are minted in `TC-ASM-301` to `TC-ASM-
 | TC-ASM-336 | Contract | Every V1 record matches its schema; no rationale or comment text in a payload |
 | TC-ASM-337 | Contract | Provider pacts for Bff.Web and Bff.Mobile |
 | TC-SEC-160 to TC-SEC-164, TC-SEC-201 | Security | T-ASM-01 to T-ASM-06 |
-| TC-WEL-003 | Integration | Accommodation applied per sitting (REQ-ASM-009) |
+| `TC-WEL-003` (Appendix R) | Integration | Accommodation applied per sitting (REQ-ASM-009) |
 
 ---
 
@@ -1138,11 +1144,11 @@ Existing identifiers are reused; new ones are minted in `TC-ASM-301` to `TC-ASM-
 
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
-| 1. Appendix R names `assessment.report-card.generated.v1`, `assessment.exam-paper.approved.v1` and `assessment.exam-paper.released.v1`, and `audit.action.recorded.v1`; none is in Appendix E | Not published; the per-card outcome is `documents.document.generated.v1`, paper transitions emit `assessment.audit.recorded.v1` | Appendix E owner | Appendix E gains the keys under a version bump if a consumer needs them |
-| 2. No grading-period event exists and `school.proto` has no named grading-period method (`10-data-architecture.md` open point 1) | Propose `ListGradingPeriods` on `nibras.school.v1` and `school.grading-period.changed.v1` in Appendix E | School lead | Structures cannot be published for a period the copy lacks |
+| 1. Closed by ADR-0019. Appendix E now carries `assessment.report-card.generated.v1` (consumer Reporting) and `assessment.exam-paper.approved.v1` and `assessment.exam-paper.released.v1` (consumers Notification and Reporting, partition key `examId`, payload never carrying paper content). Appendix E also states that there is no shared audit routing key and that an audit entry named in Appendix R is the publishing service's own `<service>.audit.recorded.v1`, so WF-ASM-01 to WF-ASM-03 now name `assessment.audit.recorded.v1` and `audit.action.recorded.v1` is gone | Section 6.1 publishes all three keys; `documents.document.generated.v1` stays the Documents outcome and `assessment.audit.recorded.v1` still records every transition | Closed | None |
+| 2. Closed by ADR-0019. Appendix E now carries `school.grading-period.changed.v1` with Assessment as its consumer, the name this sheet and the School sheet both proposed, and the School sheet's section 6.1 names `StructureDirectory.ListGradingPeriods(term_id)` for the first load | Section 5 consumes the event and calls `ListGradingPeriods` only for a field the event does not carry | Closed | None; structures can be published as soon as the period changes |
 | 3. BR-ASM-012 needs the year attendance percentage and BR-ASM-013 a conduct flag; report cards carry attendance and behavior sections; no Attendance or Behavior event reaches Assessment and table 8.0 allows no gRPC to them | The attendance condition and conduct flag are reported "not evaluated" and the card sections render "not available" until an ADR adds either a summary event consumed by Assessment or a read of the Reporting `student_360` model | Architect | Promotion proposals need manual review for the attendance condition |
-| 4. Appendix K has no code for an appeal outside its window, for an incomplete grid at submit, or for an exam-paper open refused | `ASSESSMENT_VALIDATION_FAILED` with `params` (window dates, missing students) and `ASSESSMENT_PERMISSION_DENIED` | Appendix K owner | Clients show a generic message instead of the window dates |
-| 5. Appendix R guards `Approved → PrintRequested` with `assessment.exam-paper.print`, which Appendix B does not define | `assessment.exams.approve-paper` | Appendix B owner | A print-only role cannot be granted separately |
+| 4. Closed by ADR-0019 for two of the three: Appendix K.7 now defines `ASSESSMENT_APPEAL_WINDOW_CLOSED` (409, parent-safe) and `ASSESSMENT_MARK_GRID_INCOMPLETE` (400). Still open: an exam-paper open refused has no code of its own | Both codes are raised in section 4.3 and section 4.8; a refused paper open stays `ASSESSMENT_PERMISSION_DENIED`, audited and alerted, which is the right shape for a refusal nobody should see the detail of. No open question owns the third; it was not in the defect log | Appendix K owner | None for the first two; a refused paper open reads as a generic permission refusal |
+| 5. Closed by ADR-0019, but not with this sheet's default. Appendix B kept its existing `assessment.exams` resource and gained a `print-paper` action beside `approve-paper`, rather than a new `assessment.exam-paper` resource, and Appendix R WF-ASM-03 now guards `Approved → PrintRequested` with `assessment.exams.print-paper` | The print-request endpoint of section 4.9 checks `assessment.exams.print-paper`; the `approve-paper` workaround is withdrawn. Appendix I gives the Academic Coordinator G09 including `print-paper` | Closed | None; a print-only role can now be granted separately |
 | 6. Document 11 binds `requests.request.approved.v1` to `assessment.events`, but every Assessment effect arrives as a command | The consumer acknowledges and discards | Messaging owner | Unbinding removes a queue with no behaviour |
 | 7. Appendix B puts `seat` under `assessment.exams` while Scheduling owns `SeatingPlan` | Per-candidate seat override only (Decisions in force) | Architect | A full seating generator here would duplicate Scheduling's |
 

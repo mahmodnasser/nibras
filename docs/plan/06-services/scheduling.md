@@ -274,16 +274,16 @@ Base path `/api/v1/scheduling`. Conventions from `22-api-conventions-and-error-c
 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
-| GET | `/constraints` | `scheduling.timetable.view` | filter `academicYearId`, `staffId`, `kind`, `hardness` | keyset `ConstraintDto` | none | safe |
-| POST | `/constraints` | `scheduling.timetable.edit` | `CreateConstraintRequest` | 201 | `SCHEDULING_VALIDATION_FAILED` (soft without weight, hard with weight) | `Idempotency-Key` |
-| PUT | `/constraints/{id}` | `scheduling.timetable.edit` | `UpdateConstraintRequest` | 200 | `SCHEDULING_CONCURRENCY_CONFLICT` | `If-Match` |
-| DELETE | `/constraints/{id}` | `scheduling.timetable.edit` | none | 204 | `SCHEDULING_NOT_FOUND` | by id |
+| GET | `/constraints` | `scheduling.constraints.view` | filter `academicYearId`, `staffId`, `kind`, `hardness` | keyset `ConstraintDto` | none | safe |
+| POST | `/constraints` | `scheduling.constraints.create` | `CreateConstraintRequest` | 201 | `SCHEDULING_VALIDATION_FAILED` (soft without weight, hard with weight) | `Idempotency-Key` |
+| PUT | `/constraints/{id}` | `scheduling.constraints.edit` | `UpdateConstraintRequest` | 200 | `SCHEDULING_CONCURRENCY_CONFLICT` | `If-Match` |
+| DELETE | `/constraints/{id}` | `scheduling.constraints.delete` | none | 204 | `SCHEDULING_NOT_FOUND` | by id |
 | GET | `/campus-travel-times` | `scheduling.timetable.view` | none | `CampusTravelTimeDto[]` | none | safe |
 | PUT | `/campus-travel-times` | `scheduling.timetable.edit` | `SetCampusTravelTimesRequest` (ordered pairs) | 200 | `SCHEDULING_VALIDATION_FAILED` (same campus) | `If-Match` |
 | GET | `/lesson-requirements` | `scheduling.timetable.view` | filter `academicYearId`, `sectionId`, `staffId` | keyset `LessonRequirementDto` | none | safe |
 | PUT | `/lesson-requirements/{id}` | `scheduling.timetable.edit` | `UpdateLessonRequirementRequest` (periods per week, doubles, room kind) | 200 | `SCHEDULING_VALIDATION_FAILED` (weekly load exceeded) | `If-Match` |
 
-Constraints and travel times have no resource in Appendix B and use `scheduling.timetable.*` (open point 1).
+Constraints are their own Appendix B resource, `scheduling.constraints` with view, create, edit and delete, added under ADR-0019, so constraint editing can be delegated without granting timetable editing. Travel times and lesson requirements still have no resource of their own and stay under `scheduling.timetable.*` (open point 1).
 
 ### 5.3 Timetable versions, generation, refinement, publication
 
@@ -295,7 +295,7 @@ Constraints and travel times have no resource in Appendix B and use `scheduling.
 | POST | `/timetable-versions/{id}/copies` | `scheduling.timetable.edit` | `CreateWhatIfCopyRequest` (label) | 201 what-if copy (REQ-SCD-009) | `SCHEDULING_NOT_FOUND` | `Idempotency-Key` |
 | DELETE | `/timetable-versions/{id}` | `scheduling.timetable.edit` | none | 204 for draft or what-if only | `SCHEDULING_PUBLISHED_TIMETABLE_IMMUTABLE` | by id |
 | GET | `/timetable-versions/{id}/comparison` | `scheduling.timetable.view` | `otherVersionId` | `VersionComparisonDto` (moved entries, score delta) | `SCHEDULING_NOT_FOUND` | safe |
-| POST | `/timetable-versions/{id}/generate` | `scheduling.timetable.generate` | `GenerateTimetableRequest` (timeBudgetSeconds, keepLocked) | 202 job; `solve-timetable` command to the worker | `SCHEDULING_CONCURRENCY_CONFLICT` with `params.runningJobId` (a solve already running for the tenant, open point 4), `SCHEDULING_PUBLISHED_TIMETABLE_IMMUTABLE` | `Idempotency-Key` required |
+| POST | `/timetable-versions/{id}/generate` | `scheduling.timetable.generate` | `GenerateTimetableRequest` (timeBudgetSeconds, keepLocked) | 202 job; `solve-timetable` command to the worker | `SCHEDULING_SOLVER_RUNNING` with `params.runningJobId` (a solve already running for the tenant), `SCHEDULING_PUBLISHED_TIMETABLE_IMMUTABLE` | `Idempotency-Key` required |
 | GET | `/timetable-versions/{id}/infeasibility` | `scheduling.timetable.view` | none | `InfeasibilityDto` (smallest conflicting constraint set) | `SCHEDULING_NOT_FOUND` | safe |
 | GET | `/timetable-versions/{id}/entries` | `scheduling.timetable.view` | filter `sectionId`, `staffId`, `roomId`, `dayOfWeek` | `TimetableEntryDto[]` | `SCHEDULING_NOT_FOUND` | safe |
 | POST | `/timetable-versions/{id}/entries` | `scheduling.timetable.edit` | `PlaceEntryRequest` | 201 with live conflicts in the body | `SCHEDULING_TIMETABLE_CONFLICT` (hard, when `strict=true`), `SCHEDULING_PERIOD_OUTSIDE_BELL_SCHEDULE`, `SCHEDULING_ROOM_UNSUITABLE`, `SCHEDULING_PUBLISHED_TIMETABLE_IMMUTABLE` | `Idempotency-Key` |
@@ -371,7 +371,7 @@ Constraints and travel times have no resource in Appendix B and use `scheduling.
 | POST | `/exam-sessions` | `scheduling.exam-timetable.edit` | `CreateExamSessionRequest` | 201 | `SCHEDULING_EXAM_CLASH` | `Idempotency-Key` |
 | PUT | `/exam-sessions/{id}` | `scheduling.exam-timetable.edit` | `UpdateExamSessionRequest` | 200 | `SCHEDULING_EXAM_CLASH`, `SCHEDULING_CONCURRENCY_CONFLICT` | `If-Match` |
 | DELETE | `/exam-sessions/{id}` | `scheduling.exam-timetable.edit` | none | 204 before publish | `SCHEDULING_VALIDATION_FAILED` (published) | by id |
-| POST | `/exam-timetables/generate` | `scheduling.exam-timetable.generate` | `GenerateExamTimetableRequest` (term, grade levels, windows) | 202 job on the worker (`problemKind = exam-timetable`) | `SCHEDULING_CONCURRENCY_CONFLICT` (solve running) | `Idempotency-Key` required |
+| POST | `/exam-timetables/generate` | `scheduling.exam-timetable.generate` | `GenerateExamTimetableRequest` (term, grade levels, windows) | 202 job on the worker (`problemKind = exam-timetable`) | `SCHEDULING_SOLVER_RUNNING` (solve running) | `Idempotency-Key` required |
 | POST | `/exam-timetables/{id}/publish` | `scheduling.exam-timetable.publish` | none | 200; publishes `scheduling.exam-timetable.published.v1` per session | `SCHEDULING_EXAM_CLASH`, `SCHEDULING_VALIDATION_FAILED` (room without invigilator) | state check |
 | POST | `/exam-sessions/{id}/seating-plans` | `scheduling.exam-timetable.generate` | `GenerateSeatingRequest` | 202 job (`problemKind = seating`) | `SCHEDULING_VALIDATION_FAILED` (capacity below candidates) | `Idempotency-Key` required |
 | GET | `/exam-sessions/{id}/seating-plans` | `scheduling.exam-timetable.view` | `roomId` | `SeatingPlanDto` (hot query 8) | `SCHEDULING_NOT_FOUND` | safe |
@@ -391,7 +391,7 @@ Constraints and travel times have no resource in Appendix B and use `scheduling.
 
 ### 6.1 Exposed: `nibras.scheduling.v1`
 
-`10-data-architecture.md` section 6 has Academics, Attendance and Operations fetch timetable entries on publish and reconcile nightly against Scheduling; these methods serve them. Reference architecture table 8.0 does not yet list Scheduling as their synchronous dependency (open point 3).
+`10-data-architecture.md` section 6 has Academics, Attendance and Operations fetch timetable entries on publish and reconcile nightly against Scheduling; these methods serve them. Reference architecture table 8.0 (v9.1, ADR-0019) now lists Scheduling `Timetables` on the Academics and Attendance rows and `Timetables.Checksum` as a job-only call on the Operations row.
 
 | Service | Method | Returns | Deadline | Callers | Budget |
 |---|---|---|---|---|---|
@@ -405,8 +405,8 @@ Constraints and travel times have no resource in Appendix B and use `scheduling.
 | Target | Method | Why | Deadline | Fallback |
 |---|---|---|---|---|
 | School `StaffDirectory` | `GetStaff`, `ListStaff` | Names for a staff copy created from `school.staff.created.v1`, which carries none | 2 s | Show the employee number; retry on the next read |
-| School `StructureDirectory` | `ListRooms`, `ListCalendarDays`, `GetSection` | Room and holiday copies (no change event exists), section names | 5 s | Keep the last snapshot; flag `reconciled_at` stale |
-| School `StudentDirectory` | `ListStudentsBySection` | Exam seating candidates | 5 s | Refuse the seating job with `SCHEDULING_DEPENDENCY_UNAVAILABLE` (open point 3) |
+| School `StructureDirectory` | `ListRooms`, `ListCalendarDays`, `GetSection` | First load and repair of the room and holiday copies; section names. Day-to-day changes now arrive as `school.room.changed.v1` and `school.calendar-day.changed.v1` (Appendix E, ADR-0019) | 5 s | Keep the last snapshot; flag `reconciled_at` stale |
+| School `StudentDirectory` | `ListStudentsBySection` | Exam seating candidates | 5 s | Refuse the seating job with `SCHEDULING_DEPENDENCY_UNAVAILABLE` |
 | School `ReferenceReconciliation` | `Checksum`, `ListSnapshotPage` | Nightly reconciliation of staff, section, term, year, room, calendar-day copies | 30 s, 5 s | Retry next night; data-quality issue after two failures |
 | Academics reconciliation | `TeachingAssignments/Checksum` (Academics sheet section 6.1) | Nightly reconciliation of the teaching-assignment copy | 30 s | As above |
 | Hr | `nibras.hr.v1.Leave/Checksum` (`10-data-architecture.md` section 6) | Nightly reconciliation of the staff-leave copy | 30 s | As above |
@@ -422,10 +422,10 @@ Payload fields are owned by Appendix E, Scheduling section; they are cited, not 
 | Routing key | Partition key | Published when, by which handler | Consumers |
 |---|---|---|---|
 | `scheduling.timetable.published.v1` | `timetableVersionId` | `PublishTimetableHandler`; the rollover skeleton is never published by Saga 4 (Appendix R's side-effect list is corrected in open point 7) | Academics, Attendance, Operations, Notification |
-| `scheduling.timetable.changed.v1` | `timetableVersionId` | `PublishChangeSetHandler`, `AssignSubstitutionHandler`, `ReleaseSubstitutionHandler`, special-schedule assignment | Academics, Attendance, Notification |
-| `scheduling.substitution.assigned.v1` | `staffId` | `AssignSubstitutionHandler` and the `AssignSubstitution` effect command | Attendance, Notification, Hr |
+| `scheduling.timetable.changed.v1` | `timetableVersionId` | `PublishChangeSetHandler`, `AssignSubstitutionHandler`, `ReleaseSubstitutionHandler`, special-schedule assignment | Academics, Attendance, Notification, Requests |
+| `scheduling.substitution.assigned.v1` | `staffId` | `AssignSubstitutionHandler` and the `AssignSubstitution` effect command | Attendance, Notification, Hr, Requests, Reporting |
 | `scheduling.event.published.v1` | `tenantId` | `PublishCalendarEventHandler` | Communication, Notification |
-| `scheduling.room-booking.approved.v1` | `roomId` | `ApproveRoomBookingHandler` and the `ApproveRoomBooking` effect command | Operations, Notification |
+| `scheduling.room-booking.approved.v1` | `roomId` | `ApproveRoomBookingHandler` and the `ApproveRoomBooking` effect command | Operations, Notification, Requests |
 | `scheduling.exam-timetable.published.v1` | `tenantId` | `PublishExamTimetableHandler`, one per session | Assessment, Notification |
 | `scheduling.usage.recorded.v1` | `tenantId` | Hourly: solver CPU seconds, active iCal subscriptions | Platform |
 | `scheduling.audit.recorded.v1` | `tenantId` | Every write and every override, including the broken constraint and reason (BR-SCD-001) | Audit |
@@ -483,7 +483,7 @@ All in schema `scheduling`, named `ref_<entity>`, with `tenant_id`, `source_vers
 | `ref_staff` | `school.staff.created.v1`, `school.staff.left.v1` | `staff_id`, `employee_number`, `department_id`, `campus_ids`, `active`, `last_working_day`, `name_en`, `name_ar` (fetched over gRPC) | Nightly against School `ReferenceReconciliation.Checksum(staff)` |
 | `ref_section` | `school.section.created.v1`, `school.section.changed.v1` | `section_id`, `grade_level_id`, `campus_id`, `capacity`, `code`, `name_en`, `name_ar` | Nightly against School |
 | `ref_term`, `ref_academic_year` | `school.term.started.v1`, `school.academic-year.opened.v1`, `school.academic-year.closed.v1` | ids, dates, status | Nightly against School |
-| `ref_room` | No event exists; `StructureDirectory.ListRooms` on year opening and nightly | `room_id`, `building_id`, `campus_id`, `capacity`, `kind`, `facilities`, `turnaround_minutes` | Nightly snapshot replaces the copy (`10-data-architecture.md` open point 1) |
+| `ref_room` | `school.room.changed.v1`; `StructureDirectory.ListRooms` on year opening and nightly | `room_id`, `building_id`, `campus_id`, `capacity`, `kind`, `facilities`, `turnaround_minutes` | The change event keeps the copy current within seconds; the nightly snapshot repairs it |
 | `ref_calendar_day` | No event exists; `StructureDirectory.ListCalendarDays` nightly | `campus_id`, `date`, `kind` | Nightly snapshot |
 | `ref_teaching_assignment` | `academics.teaching-assignment.changed.v1` | `staff_id`, `section_id`, `subject_id`, `effective_on` | Nightly against Academics |
 | `ref_staff_leave` | `hr.leave.approved.v1`, `hr.leave.cancelled.v1` | `leave_id`, `staff_id`, `from_date`, `to_date`, `leave_type_code`, `cancelled` | Nightly against Hr `nibras.hr.v1.Leave/Checksum` |
@@ -500,7 +500,7 @@ The nightly `ReferenceCopyReconciliationJob` compares checksums, repairs by repl
 |---|---|
 | Start | `POST /timetable-versions/{id}/generate` (or `/exam-timetables/generate`, `/exam-sessions/{id}/seating-plans`) validates, creates `SolverRun` and the job in `IJobStore`, sets the version to `Generating`, publishes `scheduling.commands.solve-timetable.v1` through the outbox and answers 202 with the job `Location` |
 | Queue | `scheduling-worker.solve.bulk`, bulk lane, prefetch 1, retry profile B 2 (a solve is minutes of CPU), dead letter `.dlq` and `.parking` (`11-messaging-architecture.md` section 2.5) |
-| Concurrency | One non-terminal `SolverRun` per tenant, enforced by a partial unique index and by the per-tenant job limit; one solve per replica; a second request answers 409 with `params.runningJobId` |
+| Concurrency | One non-terminal `SolverRun` per tenant, enforced by a partial unique index and by the per-tenant job limit; one solve per replica; a second request answers `SCHEDULING_SOLVER_RUNNING` (409) with `params.runningJobId` |
 | Engine | OR-Tools CP-SAT (`Google.OrTools` NuGet, Apache-2.0, licence unverified until `Directory.Packages.props` pins the version and the licence scan confirms it) behind the `ITimetableSolver` port in Application, implemented by `OrToolsTimetableSolver` in Infrastructure |
 | Model | One Boolean per (lesson requirement unit, period slot, candidate room); hard constraints of BR-SCD-001 to BR-SCD-004 as model constraints; locked entries as fixed assignments; soft constraints as weighted penalty terms minimised by the objective; the quality score is `100 − normalised penalty` and is stored on the version |
 | Phases and progress | `loading` (hot query 7, 5 commands) → `building` (constraints added, `done` = constraints built of `total`) → `solving` (`done` = elapsed seconds, `total` = time budget, `messageParams` = solutions found and best objective, from the solution callback) → `persisting` (`done` = entries written with binary `COPY` into a staging table then one `INSERT ... SELECT`). `IJobProgress.ReportAsync` is coalesced to one update per second and pushed on `/hubs/jobs`, group `tenant:{tenantId}:job:{jobId}` |
@@ -518,7 +518,7 @@ Quartz.NET jobs are hosted in `Scheduling.Worker`, so the Api image carries no s
 | Job | Schedule or trigger | What it does | Publishes | Progress |
 |---|---|---|---|---|
 | `DailyCoverPlanningJob` | 05:30 on school days, per campus time zone | Materialises today's absences from `ref_staff_leave`, computes ranked suggestions (BR-SCD-005), lists uncovered periods | none | Short |
-| `UncoveredPeriodEscalationJob` | Every 5 minutes from 06:00 to the last period on school days | A period starting within 30 minutes with no cover alerts the principal by name (REQ-SCD-017, TC-HR-004) | `RequestNotification` once Scheduling is an allowed sender (open point 9) | Short |
+| `UncoveredPeriodEscalationJob` | Every 5 minutes from 06:00 to the last period on school days | A period starting within 30 minutes with no cover alerts the principal by name (REQ-SCD-017, TC-HR-004) | `RequestNotification` (Appendix C row "Period still uncovered 30 minutes before it starts"), once document 11 lists `nibras.scheduling` as a sender (open point 9) | Short |
 | `SkeletonCopyJob` | `CopyTimetableSkeleton` command | Copies entries onto next-year sections, unpublished, then replies `TimetableSkeletonCreated` | reply only | Long: progress per section |
 | `SeatingPlanJob` and `ExamTimetableJob` | Their REST starts | Run on the worker as `problemKind` seating or exam-timetable | none until publish | As the solver |
 | `ReferenceCopyReconciliationJob` | Nightly, staggered 01:00 to 04:00 tenant time | Checksums and repairs every copy of section 9 | `reporting.data-quality.issue-detected.v1` on mismatch | Long: per copy |
@@ -535,6 +535,7 @@ Quartz.NET jobs are hosted in `Scheduling.Worker`, so the Api image carries no s
 | Permission | Default holders | Scope |
 |---|---|---|
 | `scheduling.periods.view`, `.create`, `.edit`, `.delete` | Principal, vice principal (G10) | campus |
+| `scheduling.constraints.view`, `.create`, `.edit`, `.delete` | Principal, vice principal (G10); delegable to a timetable officer without timetable editing | campus |
 | `scheduling.bell-schedules.view`, `.create`, `.edit`, `.delete`, `scheduling.bell-schedules.activate` | Principal, vice principal | campus |
 | `scheduling.timetable.view` | Every staff role with G10 view; students and parents scoped | `own-sections`, `own-children`, `self` |
 | `scheduling.timetable.edit`, `scheduling.timetable.generate`, `scheduling.timetable.lock-slot`, `scheduling.timetable.publish`, `scheduling.timetable.export` | Principal, vice principal | campus |
@@ -553,6 +554,7 @@ Quartz.NET jobs are hosted in `Scheduling.Worker`, so the Api image carries no s
 | Exam timetable published | `scheduling.exam-timetable.published.v1` | Students, guardians | N, push, email |
 | Substitution assigned | `scheduling.substitution.assigned.v1` | Substitute teacher | U, push |
 | Room booking approved | `scheduling.room-booking.approved.v1` | Requester | N, in-app |
+| Period still uncovered 30 minutes before it starts | `UncoveredPeriodEscalationJob` → `RequestNotification` | Principal by name | U, push (REQ-SCD-017, TC-HR-004) |
 
 **Settings (Appendix G) read by Scheduling.**
 
@@ -574,6 +576,7 @@ Quartz.NET jobs are hosted in `Scheduling.Worker`, so the Api image carries no s
 | `SCHEDULING_SUBSTITUTE_UNAVAILABLE` | 409 | No ranked candidate is free; invigilator not free |
 | `SCHEDULING_PUBLISHED_TIMETABLE_IMMUTABLE` | 409 | Direct edit of a published version |
 | `SCHEDULING_EXAM_CLASH` | 409 | A candidate with two exams in one slot |
+| `SCHEDULING_SOLVER_RUNNING` | 409 | A second solve, seating or exam-timetable start while one is running for the same version; `params.runningJobId` names it |
 | `SCHEDULING_BOOKING_OUTSIDE_WINDOW` | 409 | Not raised by Scheduling today: it describes a parent meeting booking, which Communication owns (open point 10) |
 | `SCHEDULING_VALIDATION_FAILED`, `SCHEDULING_PERMISSION_DENIED`, `SCHEDULING_TENANT_MISMATCH`, `SCHEDULING_NOT_FOUND`, `SCHEDULING_CONCURRENCY_CONFLICT`, `SCHEDULING_IDEMPOTENCY_REPLAY`, `SCHEDULING_RATE_LIMITED`, `SCHEDULING_DEPENDENCY_UNAVAILABLE` | K.1 | Every endpoint and gRPC method |
 
@@ -897,7 +900,7 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 
 | Test case | Proves | Level |
 |---|---|---|
-| TC-SCD-001 | Drag and drop shows conflicts live (REQ-SCD-008) | End-to-end |
+| `TC-SCD-001` (Appendix W) | Drag and drop shows conflicts live (REQ-SCD-008) | End-to-end |
 | TC-SCD-801 | Accepting the top suggestion assigns cover, notifies urgently, updates the timetable (Appendix Q) | End-to-end |
 | TC-HR-003 to TC-HR-006 | The Scheduling transitions of WF-HR-01: ranked suggestions, uncovered alert, publish before the period, cancellation restores | Integration, `StaffLeaveToSubstitutionWorkflowTests` on the Scheduling side |
 | TC-SEC-170 to TC-SEC-173 | T-SCD-01 to T-SCD-04 | Security suite |
@@ -963,7 +966,7 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 |---|---|---|---|
 | Quartz.NET scheduled jobs run in `Scheduling.Worker`, not the Api | Appendix L lists the worker image; the Api stays free of CPU work | As stated | Jobs move to the Api with no contract change |
 | One worker command key for three problem kinds | `11-messaging-architecture.md` section 2.5 declares only `scheduling.commands.solve-timetable.v1` | `problemKind` field in the command | A separate key per kind is a new binding, not a new queue |
-| Constraints use `scheduling.timetable.*` permissions | Appendix B has no constraint resource | As stated (open point 1) | Constraint editing cannot be delegated separately from timetable editing |
+| Constraints use `scheduling.constraints.*`; travel times and lesson requirements use `scheduling.timetable.*` | Appendix B (ADR-0019) has `scheduling.constraints` and no resource for the other two | As stated (open point 1) | Travel-time editing cannot be delegated separately from timetable editing |
 | A published version is never edited; changes create a version | Appendix K `SCHEDULING_PUBLISHED_TIMETABLE_IMMUTABLE`, BR-SCD-006 | As stated | History would be rewritten |
 
 ## Dependencies on other documents
@@ -984,15 +987,15 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix B has no resource for constraints, travel times, lesson requirements or staff absences | `scheduling.timetable.*` for the first three, `scheduling.substitutions.*` for absences | Product owner, Appendix B amendment | No separate delegation of constraint editing |
+| 1 | Closed by ADR-0019 for constraints: Appendix B now carries `scheduling.constraints` with view, create, edit and delete, and section 5.2 uses it. Travel times and lesson requirements still have no resource, and staff absences still have none | Travel times and lesson requirements stay under `scheduling.timetable.*`, absences under `scheduling.substitutions.*`. No open question owns the remainder; it was not in the defect log and needs its own ADR | Product owner, Appendix B amendment | Travel-time editing cannot be delegated apart from timetable editing |
 | 2 | Weekly periods per subject belong to Academics (REQ-ACA-001) but no event carries them; `academics.teaching-assignment.changed.v1` has staff, section, subject and date only | `LessonRequirement.periods_per_week` is entered in Scheduling; propose an optional `periodsPerWeek` field on the Academics event (additive, not breaking) | Architect | Two places to maintain weekly periods |
-| 3 | Reference architecture table 8.0 lists only the School staff directory as Scheduling's synchronous dependency, yet the design needs School structure and student directories (rooms, holidays, seating candidates) and nightly checksums against Academics and Hr; and no service lists Scheduling's `Timetables` gRPC as its dependency, though `10-data-architecture.md` section 6 has Academics, Attendance and Operations call it | Use the calls in section 6 as stated; amend table 8.0 under an ADR | Architect | A reviewer applying table 8.0 literally would refuse the seating job and the timetable fetch |
-| 4 | Appendix K has no "solve already running" code, although `22-api-conventions-and-error-catalog.md` section 6.1 asks for a service-specific one | `SCHEDULING_CONCURRENCY_CONFLICT` with `params.runningJobId`; propose `SCHEDULING_SOLVER_RUNNING` | Architect | Clients cannot tell a stale edit from a running solve |
+| 3 | Closed by ADR-0019. Reference architecture table 8.0 (v9.1) gives Scheduling the School staff, structure and student directories and, job only, Academics `TeachingAssignments.Checksum` and Hr `Leave.Checksum`; it adds Scheduling `Timetables` to the Academics and Attendance rows and `Timetables.Checksum`, job only, to the Operations row. Table 8.0 also now defines "job only" and states the one-hop rule once | Section 6 stands as written and matches the table | Closed | None; a reviewer applying table 8.0 literally now allows the seating job and the timetable fetch |
+| 4 | Closed by ADR-0019. Appendix K.8 now defines `SCHEDULING_SOLVER_RUNNING` (409), the name this sheet proposed | Sections 5.3, 5.8 and 10.1 raise it with `params.runningJobId`; the `SCHEDULING_CONCURRENCY_CONFLICT` workaround is withdrawn | Closed | None; a client can tell a stale edit from a running solve |
 | 5 | Print and PDF of timetables (REQ-SCD-012): `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a sender of `GenerateDocument` | Browser print stylesheet for print; PDF through Documents once the binding is added | Architect | No server-side PDF until then |
 | 6 | Invigilator assignment exists both as `assessment.exams.assign-invigilators` and here | Scheduling places invigilators on sessions under `scheduling.exam-timetable.edit`; Assessment's permission governs paper duties | Product owner | Two screens for one roster |
 | 7 | Appendix R WF-SCH-02 lists `scheduling.timetable.published.v1` for the skeleton, while Saga 4 says the skeleton is unpublished | Unpublished; the reply `TimetableSkeletonCreated` is the outcome | Architect, Appendix R correction | Consumers would build registers from a draft |
 | 8 | Timetable publication, substitution and room booking are state machines with no WF identifier in Appendix R | Internal state enums with transition tests; propose WF-SCD entries | Architect | Transition tests cannot carry Appendix R TC identifiers |
-| 9 | The uncovered-period alert (REQ-SCD-017) and a booking cancellation notice (BR-SCD-007) have no Appendix E event or Appendix C row, and `nibras.scheduling` is not an allowed sender of `RequestNotification` | Add Scheduling as a `RequestNotification` sender in document 11 and rows in Appendix C; until then the alert is on the principal's Today dashboard | Architect, product owner | The 30-minute principal alert of TC-HR-004 is not delivered by push |
+| 9 | Half closed by ADR-0019. Appendix C now has the row "Period still uncovered 30 minutes before it starts" and Appendix E's job table now lists `UncoveredPeriodEscalationJob` (Scheduling, every 5 minutes from 06:00 to the last period on school days). Still open: `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a `RequestNotification` sender, and the booking cancellation notice of BR-SCD-007 still has no Appendix C row | Until document 11 gains the sender, the alert is on the principal's Today dashboard and the cancellation notice is in-app. No open question owns either; the change list records the sender as plan-level work outside the brief | Architect, document 11 owner | The 30-minute principal alert of TC-HR-004 is not delivered by push |
 | 10 | `SCHEDULING_BOOKING_OUTSIDE_WINDOW` describes a parent meeting booking, which Communication owns | Not raised here; Appendix K amendment moves or renames it | Architect | None |
 
 ## Review record

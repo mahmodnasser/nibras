@@ -29,8 +29,9 @@
 | 0017 | Kit tooling is one Node implementation with PowerShell and bash wrappers | Proposed | Every tool is one Node script with `.ps1` and `.sh` wrappers, hooks invoke `node` by relative path, and the kit lint runs on a Windows and a Linux runner | No open question; corrects the v8 bash-only tooling | `PLAT` (REQ-PLAT-004) |
 | 0018 | Work is broken down into slices of one to three days | Proposed | Phase, capability (`CAP-<AREA>-<NN>`) and slice (`SL-<AREA>-<NNN>`) are the only three levels; slices split by use case, estimate in day ranges, and every requirement must be reachable from a slice | No open question; refines master brief Section 26 and Section 28; adds document 34 to `docs/plan/PLAN_SPEC.md` | `PLAT` (REQ-PLAT-005), `TST` |
 | 0019 | The brief is corrected to v9.1 from the defects the plan found | Accepted | Every logged brief defect applied with the service sheets' names; all three briefs bumped to v9.1; cooling-off 30 days, invitations 14 days with a day-7 reminder, deduplication 5 minutes, feature 39 moved to engineering capabilities; full list in `docs/project/KIT_V9_1_CHANGES.md` |
+| 0020 | Every test case is defined in exactly one document | Proposed | One definition per `TC-` identifier, cited everywhere else with its owner named; owner by precedence (Appendix R, W, the area's sheet, the area's document); kit-lint R20 enforces it and `16-annex-test-case-registry.md` is generated from the same code; Appendix W's twelve colliding demo tests move to the 810 range; brief v9.2 |
 
-**Counts, quoted.** Nineteen records: eighteen Proposed, one Accepted (0019). Five carry the default for an open question (0001, 0002, 0004, 0008, 0016). Six settle a v8 question and appear in the settled table of `docs/project/OPEN_QUESTIONS.md` (0002, 0003, 0009, 0010, 0011, 0012); 0002 does both. Eight change or refine a brief section with no open question behind them (0005, 0006, 0007, 0013, 0014, 0015, 0017, 0018).
+**Counts, quoted.** Twenty records: nineteen Proposed, one Accepted (0019). Five carry the default for an open question (0001, 0002, 0004, 0008, 0016). Six settle a v8 question and appear in the settled table of `docs/project/OPEN_QUESTIONS.md` (0002, 0003, 0009, 0010, 0011, 0012); 0002 does both. Eight change or refine a brief section with no open question behind them (0005, 0006, 0007, 0013, 0014, 0015, 0017, 0018).
 
 ### Which open questions have a record, and which do not
 
@@ -161,7 +162,7 @@ Groups C to F are expected to raise these. Each has a default so nothing blocks;
 
 | Claim | Proof |
 |---|---|
-| Every file in `docs/project/DECISIONS/` from 0001 to 0019 has one row in the table, with the same title and status as the file | `/lint-plan` lists the folder and compares titles and status lines to this index; a record without a row, or a row without a record, is a defect in this document |
+| Every file in `docs/project/DECISIONS/` from 0001 to 0020 has one row in the table, with the same title and status as the file | `/lint-plan` lists the folder and compares titles and status lines to this index; a record without a row, or a row without a record, is a defect in this document |
 | Every record's "Closes or changes" column agrees with the settled table and the open-question rows in `docs/project/OPEN_QUESTIONS.md` | `/lint-plan` cross-checks ADR numbers cited in `OPEN_QUESTIONS.md` against this index |
 | Every requirement area in the table is a code from Appendix L | `kit-lint` cannot check area codes in this document directly; `/lint-plan` checks `REQ-` identifiers against the registry and the traceability matrix in document 20 lists every one |
 | Every record follows the template: two alternatives, consequences with what got harder, a revisit trigger | `/review-architecture` reads the folder against `.claude/skills/adr/SKILL.md`; a record missing a section is returned to Proposed with a note |

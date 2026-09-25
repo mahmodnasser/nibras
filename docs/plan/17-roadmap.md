@@ -22,14 +22,16 @@ The durations below are ranges for a small, experienced team, per Section 28 and
 | Phase | Goal | Services | Range | Capabilities | Workflows | Service requirements | Demo at the end |
 |---|---|---|---|---|---|---|---|
 | **0 Plan** | The documents in `docs/plan/`, approved group by group | none | 3 to 5 weeks | none | none | none | The plan, scored at 4 or better on every axis |
-| **1 Foundation** | Everything every later service stands on | Gateway, Bff.Web, Identity, Platform, Notification, Audit, and the Documents rendering pipeline | 14 to 22 weeks | 19 | 16 | 156 plus the cross-cutting obligations | A tenant is provisioned live, its administrator signs in with a second factor, a notification arrives, the audit entry is visible |
+| **1 Foundation** | Everything every later service stands on | Gateway, Bff.Web, Identity, Platform, Notification, Audit, and the Documents rendering pipeline | 14 to 22 weeks | 19 | 14 | 153 plus the cross-cutting obligations | A tenant is provisioned live, its administrator signs in with a second factor, a notification arrives, the audit entry is visible |
 | **2 School year loop** | A class is taught, attended, graded and reported, in both languages, on web and phone | School, Scheduling, Attendance, Academics, Assessment, Bff.Mobile | 14 to 21 weeks | 19 | 10 | 177 | Acts one and two of Appendix O. **The MVP cut line** |
-| **3 Money and paperwork** | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate verifies | Finance, Requests, Communication, Documents | 11 to 17 weeks | 14 | 9 | 101 | Act three of Appendix O |
-| **4 Growth** | An applicant becomes a student; dashboards answer Appendix D; mobile reaches parity | Admissions, Behavior, Reporting | 7 to 11 weeks | 8 | 3 | 60 | The full Appendix O script on a fresh tenant with one-click reset |
-| **5 Extended** | Wellbeing, human resources, operations and assistance, each to the definition of done | Wellbeing, Hr, Operations, Ai | 9 to 14 weeks | 11 | 14 | 67 | A clinic visit, a substitution from leave, a library loan, and a reviewed draft comment |
-| **6 Hardening and launch** | Evidence that every gate in Section 24 holds at scale | all | 6 to 8 weeks | 6 | 0 new | the phase 6 obligations below | Restore drill, penetration-test close-out, and the scale-tier load run, each with its record |
+| **3 Money and paperwork** | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate verifies | Finance, Requests, Communication, Documents | 11 to 17 weeks | 14 | 9 | 103 | Act three of Appendix O |
+| **4 Growth** | An applicant becomes a student; dashboards answer Appendix D; mobile reaches parity | Admissions, Behavior, Reporting | 7 to 11 weeks | 9 | 3 | 61 | The full Appendix O script on a fresh tenant with one-click reset |
+| **5 Extended** | Wellbeing, human resources, operations and assistance, each to the definition of done | Wellbeing, Hr, Operations, Ai | 9 to 14 weeks | 12 | 14 | 67 | A clinic visit, a substitution from leave, a library loan, and a reviewed draft comment |
+| **6 Hardening and launch** | Evidence that every gate in Section 24 holds at scale | all | 6 to 8 weeks | 6 | 2 | the phase 6 obligations below | Restore drill, penetration-test close-out, and the scale-tier load run, each with its record |
 
-The service requirement counts are computed from `03-requirements-catalog.md` by the owning service's build phase in `05-service-catalog.md`. They add to 561. The remaining 299 requirements are cross-cutting and are covered in Section 3.
+The capability and workflow columns are counted from the Section 4 tables: 79 capabilities, and 52 distinct `WF-` identifiers, which is every workflow in `31-business-rules-and-workflows.md`. A workflow is counted once, in the phase of the capability that builds it, which is why WF-INF-01 and WF-INF-03 count in phase 6 and not in phase 1 with the rest of Platform's.
+
+The service requirement counts are computed from `03-requirements-catalog.md` by the owning service's build phase in `05-service-catalog.md` and by the phase column of `20-traceability-matrix.md` where a requirement is scheduled away from its service's phase. They add to 561. The remaining 299 requirements are cross-cutting and are covered in Section 3.
 
 **Total from start of phase 1 to launch: 61 to 93 weeks** for the team in master brief Section 29. The honest reading is "about eighteen months, plus or minus four": the low end needs eight engineers building from the first week, the high end is five. The biggest lever on it is the MVP cut line in Section 5, not working faster.
 
@@ -55,7 +57,7 @@ Computed from document 03. A requirement belongs to the phase in which its ownin
 | 1 | IDN | 47 | REQ-IDN-001 to 047 |
 | 1 | PLT | 39 | REQ-PLT-001 to 039 |
 | 1 | NOT | 19 | REQ-NOT-001 to 019 |
-| 1 | INT | 17 | REQ-INT-001 to 017 |
+| 1 | INT | 14 | REQ-INT-001 to 013, REQ-INT-017 |
 | 1 | GW | 9 | REQ-GW-001 to 009 |
 | 1 | AUD | 9 | REQ-AUD-001 to 009 |
 | 1 | PRV | 7 | REQ-PRV-002, 010, 012, 014, 017, 018, 021 |
@@ -73,10 +75,12 @@ Computed from document 03. A requirement belongs to the phase in which its ownin
 | 3 | COM | 17 | REQ-COM-001 to 017 |
 | 3 | DOC | 17 | REQ-DOC-001 to 017 |
 | 3 | PRV, PLAT, TST | 4 | REQ-PRV-007, 008; REQ-PLAT-020; REQ-TST-015 |
+| 3 | INT | 2 | REQ-INT-014, REQ-INT-015 |
 | 4 | ADM | 26 | REQ-ADM-001 to 026 |
 | 4 | RPT | 18 | REQ-RPT-001 to 018 |
 | 4 | BEH | 11 | REQ-BEH-001 to 011 |
 | 4 | DATA, PRV | 5 | REQ-DATA-023 to 026; REQ-PRV-005 |
+| 4 | INT | 1 | REQ-INT-016, counted once in the phase where it starts; LTI 1.3 in phase 4 and QTI 3, Open Badges 3.0 and CASE in phase 5, as document 20's phase column says |
 | 5 | AI | 19 | REQ-AI-001 to 019 |
 | 5 | OPS | 18 | REQ-OPS-001 to 018 |
 | 5 | WEL | 17 | REQ-WEL-001 to 017 |
@@ -195,8 +199,9 @@ Identifiers are `CAP-<AREA>-<NN>` with area codes from Appendix L. Each is named
 | CAP-RPT-03 | Early warning leads to a plan with an owner, and data-quality problems surface themselves | Reporting | none | 2 |
 | CAP-MOB-03 | The mobile app reaches the parity matrix in document 09 | Bff.Mobile, Mobile | none | 2 to 3 |
 | CAP-ACA-03 | Nursery and kindergarten families receive the daily sheet | Academics | none | 1 to 2 |
+| CAP-INT-02 | A teacher launches a registered external learning tool from a section, and the tool reads only the roster its privacy setting allows | Platform | none | 1 |
 
-**Exit criteria.** The full Appendix O script passes on a freshly provisioned tenant with one-click reset; the principal-dashboard scenario from Appendix N passes.
+**Exit criteria.** The full Appendix O script passes on a freshly provisioned tenant with one-click reset; the principal-dashboard scenario from Appendix N passes; an LTI 1.3 launch with deep linking and names and roles passes on the demo tenant.
 
 #### Phase 5: Extended
 
@@ -213,8 +218,11 @@ Identifiers are `CAP-<AREA>-<NN>` with area codes from Appendix L. Each is named
 | CAP-OPS-03 | Facilities, front desk, complaints and drills are managed | Operations | WF-OPS-04, WF-OPS-05 | 2 |
 | CAP-AI-01 | A teacher gets a reviewed draft, a translation or an answer, and the school can switch it all off | Ai | none | 3 |
 | CAP-AI-02 | Every automated decision explains itself and can be overridden | Ai, Reporting | none | 1 |
+| CAP-INT-03 | A school exchanges question banks, curriculum standards and badge credentials with other systems through the 1EdTech formats | Academics, Behavior | none | 1 to 2 |
 
-**Exit criteria.** Each Tier 2 module meets the definition of done in master brief Section 26; the product is fully usable with every assist rung above 1 switched off.
+**Exit criteria.** Each Tier 2 module meets the definition of done in master brief Section 26; the product is fully usable with every assist rung above 1 switched off; the standards checklist of REQ-INT-016 passes a QTI 3 round trip, an Open Badges 3.0 credential verified by an independent verifier, and a CASE import.
+
+CAP-INT-02 and CAP-INT-03 carry the REQ-INT-016 standards work that the Platform service sheet and the requirement itself time to phases 4 and 5. `34-work-breakdown.md` wrote those slices before this section named a capability for them, so SL-INT-411 sits today at the end of CAP-ACA-03 and SL-INT-600 to SL-INT-602 at the end of CAP-AI-01. They move under these two capabilities when document 34 is next regenerated; their days, services and dependencies do not change, so the phase ranges in Section 1 are unaffected.
 
 #### Phase 6: Hardening and launch
 
@@ -258,7 +266,7 @@ With the team in master brief Section 29, work runs in four streams. A stream is
 | Stream | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
 |---|---|---|---|---|---|
 | Platform backend | CAP-INF-01, CAP-DATA-01, CAP-MSG-01, CAP-PERF-01, CAP-GW-01 | CAP-SCH-01 to 04 | CAP-RQS-01, 02 | CAP-RPT-01 to 03 | CAP-AI-01, 02 |
-| Domain backend | CAP-IDN-01 to 04, CAP-PLT-01, 02, CAP-AUD-01, CAP-PRV-01 | CAP-SCD-01 to 03, CAP-ATT-01 to 04, CAP-ACA-01, 02, CAP-ASM-01 to 04 | CAP-FIN-01 to 06, CAP-COM-01 to 03, CAP-DOC-02, 03, CAP-INT-01 | CAP-ADM-01, 02, CAP-BEH-01 | CAP-WEL-01 to 03, CAP-HR-01 to 03, CAP-OPS-01 to 03 |
+| Domain backend | CAP-IDN-01 to 04, CAP-PLT-01, 02, CAP-AUD-01, CAP-PRV-01 | CAP-SCD-01 to 03, CAP-ATT-01 to 04, CAP-ACA-01, 02, CAP-ASM-01 to 04 | CAP-FIN-01 to 06, CAP-COM-01 to 03, CAP-DOC-02, 03, CAP-INT-01 | CAP-ADM-01, 02, CAP-BEH-01, CAP-INT-02 | CAP-WEL-01 to 03, CAP-HR-01 to 03, CAP-OPS-01 to 03, CAP-INT-03 |
 | Web | CAP-UX-01, CAP-BFF-01 | screens for every phase 2 capability | screens for every phase 3 capability | screens and dashboards | screens |
 | Mobile and delivery | CAP-INF-02, CAP-INF-03, CAP-NOT-01, CAP-DOC-01 | CAP-MOB-01, 02 | mobile screens for phase 3 | CAP-MOB-03, CAP-ACA-03 | mobile screens |
 
@@ -320,7 +328,7 @@ flowchart LR
 
 | Point | Default | Owner |
 |---|---|---|
-| Whether a read-only public API, OneRoster export and iCal move to Tier 1, per document 02 | Stays in phase 3 as CAP-INT-01, except iCal which is already in phase 2 through CAP-SCD-03 | Product owner, then an ADR |
+| Whether a read-only public API, OneRoster export and iCal move to Tier 1, per document 02 | Stays in phase 3 as CAP-INT-01, where document 34 builds it, except iCal which is already in phase 2 through CAP-SCD-03. This is the current default, not a decision | Product owner, Open Question 28, then an ADR |
 | Whether Finance is needed by the first customer in term one | No; it is outside the MVP | Product owner, Open Question 25 |
 | Team size and shape | Master brief Section 29, five to eight builders. A different team changes the builders input of `schedule-34.mjs` and the ranges are recomputed | Product owner, Open Question 24 |
 
@@ -330,6 +338,7 @@ flowchart LR
 |---|---|---|
 | 2026-09-21 | Plan build | Written from Section 28 and computed from documents 03, 05 and 31 |
 | 2026-09-22 | Scorecard remediation, theme 2 | Ranges re-derived from document 34: phase 1 from 8 to 10 to 14 to 22 weeks, total from 58 to 74 to 61 to 93 weeks, MVP from about 38 capabilities and 30 to 36 weeks to 42 and 33 to 50 |
+| 2026-09-22 | Scorecard remediation, theme 4 | CAP-INT-02 (phase 4) and CAP-INT-03 (phase 5) added for the REQ-INT-016 standards work; capability and workflow columns in Section 1 recounted from the Section 4 tables (phase 1 workflows 16 to 14, phase 6 "0 new" to 2); the Section 2 INT rows split across phases 1, 3 and 4 to match document 20's phase column, which moves the phase totals to 153, 103 and 61 with 561 unchanged |
 
 ## How this document is verified
 
@@ -337,7 +346,7 @@ flowchart LR
 |---|---|
 | Every service requirement is in exactly one phase | The Section 2 table is computed from document 03 by service phase; its counts add to 561, and with the 299 cross-cutting requirements to the 860 in document 03 |
 | Every workflow has a capability | Every `WF-` identifier in document 31 appears in a capability row in Section 4; `/lint-plan` checks it once document 34 exists |
-| Every capability is broken into slices | Document 34 lists slices under every `CAP-` identifier here; a capability with no slices fails `/lint-plan` |
+| Every capability is broken into slices | Document 34 lists slices under every `CAP-` identifier here; a capability with no slices fails `/lint-plan`. CAP-INT-02 and CAP-INT-03 are the open case: their slices exist as SL-INT-411 and SL-INT-600 to SL-INT-602 but sit under CAP-ACA-03 and CAP-AI-01 until document 34 is regenerated, which is a finding in document 34, not a missing slice |
 | Every requirement reaches a slice | Document 34 and document 20 together; a requirement with no slice is scope nobody will build |
 | The ranges match the work | `node tools/plan-build/schedule-34.mjs` prints the Section 1 ranges and the MVP figure from document 34; a mismatch with this document is a defect |
 | The ranges stay honest | Re-computed at the end of each phase from the slices actually delivered and the team actually present, and recorded in the review record |

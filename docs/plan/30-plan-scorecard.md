@@ -14,6 +14,8 @@ This document records how good the plan is, group by group, against the seven-ax
 
 ## Content
 
+**Status of this scorecard.** The scores and the quoted evidence are as of the scoring date in the review record. Remediation is under way: the themes closed so far are marked in `docs/project/PROJECT_STATE.md`, and some quoted lines have since been corrected, which is the point of them. Each group is re-scored, and this document regenerated, when the themes that touch it are closed.
+
 ### 1. Method
 
 Each group was scored by an independent reviewer instructed to be adversarial, to quote the document with file and line for every score, and to reserve 5 for work that needs no change. Every reviewer was given the same established facts: `kit-lint` is clean including rule R19 (every cited identifier exists in its catalog); document 03 holds 860 requirements; document 34 builds 858 of them in 718 slices and explains the other 2; document 20 gives every requirement a test identifier. The reviewers were then asked to find what tooling cannot: contradictions of meaning, thin sections, unowned unknowns, claims with no test. The four most consequential findings were re-checked by hand before this document was written (Section 4).

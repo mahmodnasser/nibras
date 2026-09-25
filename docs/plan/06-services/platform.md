@@ -18,7 +18,7 @@ Platform is the SaaS operator's service and the tenant's configuration service. 
 | Build phase | 1; the Integrations capability arrives by phase: public API and iCal 3, OneRoster and LTI 4 (master brief Section 35) | `05-service-catalog.md`, master brief Section 28 |
 | Service level class | Gateway class: 99.9% monthly availability | Reference architecture Section 8.0, master brief Section 31 |
 | Sensitivity | Confidential; webhook signing secrets and provider keys encrypted per deployment | `05-service-catalog.md`, `10-data-architecture.md` §1 |
-| Synchronous dependencies | none in reference architecture Section 8.0; this sheet records the calls documents 10 and 23 add (Identity `ApiKeyAdministration`, every service's usage recount) and adds School's directory for OneRoster, see section 6 and Open points | Reference architecture Section 8.0 |
+| Synchronous dependencies | Identity `ApiKeyAdministration` and `PermissionLookup.GetRoleRisk`; School's student and staff directory for OneRoster; from jobs only, every service's `Usage.Recount` (section 6) | Reference architecture Section 8.0 |
 | Local copies | Usage counters from every service; OneRoster roster copies for tenants that enable OneRoster (phase 4) | Reference architecture Section 8.0, section 9 |
 | Scaling profile | Low traffic, read-heavy and cached everywhere; administrative rather than transactional load; bursts on usage events and webhook fan-out | `05-service-catalog.md` |
 | Why the boundary exists | Team: the platform operator's console and the commercial model change independently of any school-facing feature | `05-service-catalog.md` |
@@ -304,7 +304,7 @@ Conventions from `22-api-conventions-and-error-catalog.md` §1 to §8. Routes wh
 | POST | `/api/v1/platform/tenants/{tenantId}/onboarding/completion` | `platform.settings.edit` in the tenant | none | `Onboarding` to `Live` when academic year, campus and owner account exist (TC-PLT-006) | `PLATFORM_VALIDATION_FAILED` (`minimumSetupIncomplete`) | yes |
 | POST | `/api/v1/platform/tenants/{tenantId}/suspend` | `platform.tenants.suspend` | reason (`non-payment`, `policy-breach`), note | `Suspended`; `platform.tenant.suspended.v1` | none | yes |
 | POST | `/api/v1/platform/tenants/{tenantId}/reactivate` | `platform.tenants.reactivate` | reason | `Active`; `platform.tenant.reactivated.v1` | `PLATFORM_VALIDATION_FAILED` (`deletionExecuted`) | yes |
-| POST | `/api/v1/platform/tenant/exports` | `platform.tenants.view` in the tenant, or in the platform tenant with `tenantId` | none | 202 job; the Documents export with a manifest (BR-PLT-006), never plan-gated | none | `Idempotency-Key` required |
+| POST | `/api/v1/platform/tenant/exports` | `platform.tenants.export` (high, reason required) in the tenant, or in the platform tenant with `tenantId` | reason | 202 job; the Documents export with a manifest (BR-PLT-006), never plan-gated | none | `Idempotency-Key` required |
 | POST | `/api/v1/platform/tenants/{tenantId}/deletion-requests` | `platform.tenants.delete` | reason | 202; Saga 2 from `ReadOnly` to `ExportRequested` | `PLATFORM_VALIDATION_FAILED` (`legalHoldActive`) | `Idempotency-Key` required |
 | GET | `/api/v1/platform/tenants/{tenantId}/deletion-requests/{requestId}` | `platform.tenants.view` | none | Saga 2 state, countdown, signer | none | safe |
 | POST | `/api/v1/platform/tenants/{tenantId}/deletion-requests/{requestId}/confirmation` | `platform.tenants.delete`, signed by the tenant owner | owner's signed confirmation (re-authentication with second factor) | `DeletionScheduled`; `platform.tenant.deletion-requested.v1` (TC-PLT-024) | `PLATFORM_VALIDATION_FAILED` (`exportNotReady`, `notOwner`) | yes |
@@ -373,8 +373,8 @@ Conventions from `22-api-conventions-and-error-catalog.md` §1 to §8. Routes wh
 | GET | `/api/v1/platform/feature-flags` | `platform.feature-flags.view` | `tenantId` optional for operators | flags with source and rollout | none | safe |
 | PUT | `/api/v1/platform/feature-flags/{flag}` | `platform.feature-flags.edit` | scope (`plan`, `tenant`), target, enabled | flag; `platform.feature-flag.changed.v1` | none | yes |
 | POST | `/api/v1/platform/feature-flags/{flag}/rollout` | `platform.feature-flags.rollout` | percent, staged schedule | rollout record; stable per tenant | `PLATFORM_VALIDATION_FAILED` (`percentOutOfRange`) | yes |
-| GET | `/api/v1/platform/modules` | `platform.settings.view` | none | modules with included, add-on, enabled | none | safe |
-| PUT | `/api/v1/platform/modules/{moduleCode}` | `platform.settings.edit` | enabled | module state; `platform.feature-flag.changed.v1`; screens hidden and endpoints refused for the tenant (REQ-PLT-035) | `PLATFORM_FEATURE_DISABLED` when the plan lacks the module | yes |
+| GET | `/api/v1/platform/modules` | `platform.modules.view` | none | modules with included, add-on, enabled | none | safe |
+| PUT | `/api/v1/platform/modules/{moduleCode}` | `platform.modules.enable` to turn one on, `platform.modules.disable` to turn it off (both elevated) | enabled | module state; `platform.feature-flag.changed.v1`; screens hidden and endpoints refused for the tenant (REQ-PLT-035) | `PLATFORM_FEATURE_DISABLED` when the plan lacks the module | yes |
 
 ### 5.6 Settings, terminology, custom fields, configuration as code
 
@@ -400,12 +400,12 @@ Conventions from `22-api-conventions-and-error-catalog.md` §1 to §8. Routes wh
 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
-| GET | `/api/v1/platform/template-library` | `platform.settings.view` | kind, owning service, `q` | `GlobalTemplateSummary[]` | none | safe |
-| GET | `/api/v1/platform/template-library/{templateId}/package` | `platform.settings.view` | version | the versioned package the owning service imports | none | safe, `ETag` |
-| POST | `/api/v1/platform/template-library` | `platform.settings.edit` in the platform tenant | package, attribution | 201 draft | `PLATFORM_VALIDATION_FAILED` (`packageSchemaInvalid`) | `Idempotency-Key` optional |
-| POST | `/api/v1/platform/template-library/{templateId}/publish` | `platform.settings.edit` in the platform tenant | none | published | none | yes |
-| POST | `/api/v1/platform/template-exchange/submissions` | `platform.settings.edit`, Tier 2 | package from the tenant, attribution consent | 201 in review (TC-PLT-004 per Appendix W) | `PLATFORM_FEATURE_DISABLED` | `Idempotency-Key` required |
-| POST | `/api/v1/platform/template-exchange/submissions/{submissionId}/review` | `platform.settings.edit` in the platform tenant, Tier 2 | decision, note | accepted into the library or returned | none | yes |
+| GET | `/api/v1/platform/template-library` | `platform.template-library.view` | kind, owning service, `q` | `GlobalTemplateSummary[]` | none | safe |
+| GET | `/api/v1/platform/template-library/{templateId}/package` | `platform.template-library.view` | version | the versioned package the owning service imports | none | safe, `ETag` |
+| POST | `/api/v1/platform/template-library` | `platform.template-library.create` in the platform tenant | package, attribution | 201 draft | `PLATFORM_VALIDATION_FAILED` (`packageSchemaInvalid`) | `Idempotency-Key` optional |
+| POST | `/api/v1/platform/template-library/{templateId}/publish` | `platform.template-library.publish` in the platform tenant | none | published | none | yes |
+| POST | `/api/v1/platform/template-exchange/submissions` | `platform.template-library.import`, Tier 2 | package from the tenant, attribution consent | 201 in review (TC-PLT-803 per Appendix W) | `PLATFORM_FEATURE_DISABLED` | `Idempotency-Key` required |
+| POST | `/api/v1/platform/template-exchange/submissions/{submissionId}/review` | `platform.template-library.publish` in the platform tenant, Tier 2 | decision, note | accepted into the library or returned | none | yes |
 
 ### 5.8 Announcements, maintenance and release notes
 
@@ -481,7 +481,7 @@ Conventions from `22-api-conventions-and-error-catalog.md` §1 to §8. Routes wh
 | GET | `/api/v1/platform/jobs` | `platform.jobs.view` | filter `state`, `type` | Platform's own jobs (the long-running-operation contract) | none | safe |
 | GET | `/api/v1/platform/jobs/{jobId}` | `platform.jobs.view`, or the requester | none | job resource | none | safe |
 | POST | `/api/v1/platform/jobs/{jobId}/cancel` | `platform.jobs.cancel` | none | `cancelRequested` | none | yes |
-| POST | `/api/v1/platform/jobs/{jobId}/replay` | `platform.jobs.retry` | reason | restarted from checkpoint | `PLATFORM_JOB_REPLAY_REFUSED` | `Idempotency-Key` required |
+| POST | `/api/v1/platform/jobs/{jobId}/replay` | `platform.jobs.replay` | reason | restarted from checkpoint | `PLATFORM_JOB_REPLAY_REFUSED` | `Idempotency-Key` required |
 | GET | `/api/v1/platform/sagas` | `platform.jobs.view` | filter saga type, state, `stuck` first | process monitor rows of Sagas 1, 2 and 10 | none | safe |
 | GET | `/api/v1/platform/sagas/{sagaId}` | `platform.jobs.view` | none | persisted state, grid, journal | none | safe |
 | POST | `/api/v1/platform/sagas/{sagaId}/steps/{stepKey}/retry` | `platform.jobs.retry` | none | step re-sent | `PLATFORM_JOB_REPLAY_REFUSED` | yes |
@@ -595,7 +595,7 @@ Payload fields are owned by Appendix E. Tenant lifecycle events are platform-sco
 | Routing key | Partition key | Published when | Consumers (Appendix E) |
 |---|---|---|---|
 | `platform.tenant.provisioning-requested.v1` | `tenantId` | Saga 1 step 2 fan-out | every service |
-| `platform.tenant.provisioned.v1` | `tenantId` | Saga 1 step 7 | Identity, School, Notification, Reporting |
+| `platform.tenant.provisioned.v1` | `tenantId` | Saga 1 step 7 | Identity, School, Notification, Reporting, Documents |
 | `platform.tenant.suspended.v1` | `tenantId` | Suspension for non-payment or policy, Saga 2 step 1, Saga 10 step 4, trial expiry | every service |
 | `platform.tenant.reactivated.v1` | `tenantId` | Reactivation, cancellation inside cooling-off, Saga 10 step 7 | every service |
 | `platform.tenant.deletion-requested.v1` | `tenantId` | Owner signs the deletion confirmation | every service |
@@ -610,7 +610,8 @@ Payload fields are owned by Appendix E. Tenant lifecycle events are platform-sco
 | `platform.invoice.due.v1` | `tenantId` | Invoice issued, and at 7, 14 and 30 days past due | Notification |
 | `platform.webhook.delivery-failed.v1` | `tenantId` | Endpoint enters `failing`, at most once per endpoint per 24 hours | Notification |
 | `platform.usage.recorded.v1` | `tenantId` | `api-calls` batches and daily webhook deliveries | Platform (its own consumer) |
-| `platform.audit.recorded.v1` | `tenantId` | Every write, transition, operator bypass, reveal, replay | Audit |
+| `platform.upgrade.started.v1` | `tenantId` | WF-INF-01 enters the upgrade window, carrying `readOnlyFrom` and `windowEndsAt` | Notification, Reporting |
+| `platform.audit.recorded.v1` | `tenantId` | Every write, transition, operator bypass, reveal, replay; the completion, rollback, release, drill and failover steps of WF-INF-01 to WF-INF-03, which have no event key | Audit |
 
 Commands sent (`11-messaging-architecture.md` §2.4), each carrying `sagaId` and `stepKey`: `DeprovisionTenant`, `DeleteTenantData`, `ProvisionDedicatedDatabase`, `DropDedicatedDatabase`, `CopyTenantRows`, `ReconcileTenantCopy`, `PurgeSourceRows`, `ReplayParkedMessages`, `DiscardParkedMessages` to every data-owning service; `InviteTenantOwner`, `RevokeInvitation`, `RevokeTenantAccess` to Identity; `OpenFirstAcademicYear` to School; `ApplyTenantBranding`, `DeleteTenantBranding`, `ExportTenant`, `DeleteTenantFiles`, `GenerateDocument` to Documents; `InitialiseProjections` to Reporting; `DetachTenantAuditPartition` to Audit; `RequestNotification` to Notification.
 
@@ -697,7 +698,7 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 | `FailedMessageIndexJob` | every minute | Refreshes `FailedMessageIndex` from every `.parking` queue through the `nibras-console` broker user | none | none |
 | `FailedMessageAutoReplayJob` | every 5 minutes | Replays parked messages classified transient whose target dependency is healthy again (REQ-PLT-037); each message at most three automatic replays | `ReplayParkedMessages` commands | none |
 | `SagaDeadlineJob` | every minute | Alerts on sagas beyond their deadline and on `Stuck` sagas (`13-workflows-and-sagas.md` §2) | `platform.audit.recorded.v1` with `action = saga.stuck`, `RequestNotification` to the operator group | none |
-| `DeletionCoolingOffReminderJob` | daily 09:00 per tenant time zone | Daily reminder to the owner during cooling-off with the cancel path | `RequestNotification` | none |
+| `DeletionCoolingOffReminderJob` | daily 09:00 per tenant time zone | Daily reminder to the owner through the 30-day cooling-off, with the cancel path and the export link | `RequestNotification` | none |
 | `OneRosterReconciliationJob` | nightly 01:45 per tenant time zone, OneRoster tenants only | Checksums the roster copies against School and repairs by snapshot | none; mismatches recorded in `platform.audit.recorded.v1` | job resource |
 
 ---
@@ -711,6 +712,7 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 | `platform.tenants.view`, `.create`, `.edit` | normal | 5.1, 5.12 |
 | `platform.tenants.provision`, `.suspend`, `.reactivate` | elevated | 5.1 |
 | `platform.tenants.delete` | high | 5.1, Saga 2 and Saga 10 purge |
+| `platform.tenants.export` | high, reason required, never plan-gated | 5.1 tenant export (BR-PLT-006) |
 | `platform.plans.view`, `.create`, `.edit`, `.assign` | normal | 5.3 |
 | `platform.subscriptions.view`, `.edit`, `.change-plan` | normal | 5.3, 5.4 |
 | `platform.subscriptions.waive-charge` | elevated | 5.3 |
@@ -724,7 +726,9 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 | `platform.integrations.rotate-secret`, `.replay-webhook` | elevated | 5.13 |
 | `platform.api-keys.view`, `.create`, `.delete` | elevated | 5.4, 5.13 |
 | `platform.api-keys.reveal-once` | high | 5.13 |
-| `platform.jobs.view`, `.cancel`, `.retry` | elevated | 5.1, 5.11, 5.12 |
+| `platform.jobs.view`, `.cancel`, `.retry`, `.replay` | elevated | 5.1, 5.11, 5.12; `replay` on the job replay route |
+| `platform.modules.view`, `.edit`, `.enable`, `.disable` | elevated for `enable` and `disable` | 5.5 modules |
+| `platform.template-library.view`, `.create`, `.edit`, `.publish`, `.import` | normal | 5.7 library and template exchange |
 | `platform.failed-messages.view`, `.replay`, `.discard` | elevated | 5.11 |
 | `platform.recycle-bin.view`, `.restore`, `.purge` | high for purge | 5.10 here; `restore` and `purge` are declared by every owning service's recycle-bin routes |
 | `platform.retention.view`, `.edit` | normal | 5.10 |
@@ -740,8 +744,13 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 |---|---|---|---|
 | Webhook endpoint failing | `platform.webhook.delivery-failed.v1` | School administrator, integration owner | N; email, in-app |
 | Plan limit approaching, trial ending, tenant invoice due | `platform.limit.approaching.v1`, `platform.trial.ending.v1`, `platform.invoice.due.v1` (job: plan limit and trial check) | School administrator | N; email, in-app |
+| Signup confirmed, tenant provisioned and welcome pack | `platform.tenant.provisioned.v1`; the signup confirmation as `RequestNotification` | Tenant owner, school administrator | N; email |
+| Tenant deletion cooling-off reminder | `platform.tenant.deletion-requested.v1`, then `RequestNotification` from `DeletionCoolingOffReminderJob`, daily through the 30-day cooling-off | Tenant owner | N; email, in-app |
+| API key expiring, sandbox inactive | `RequestNotification` from `ApiKeyExpiryReminderJob` (14 and 3 days) and `SandboxLifecycleJob` (60 and 83 days without a call) | Key owner, integration owner | N; email |
+| Support ticket SLA escalated | `RequestNotification` from `SupportSlaJob` | Next support level, service owner | N; email, in-app |
+| Data subject request acknowledged, deadline approaching | `RequestNotification` on receipt and from `SubjectRequestDeadlineJob` | Requester; data protection officer | N; email |
 
-Signup confirmation, provisioning welcome pack, cooling-off reminders, key expiry reminders, sandbox notices, SLA escalations and subject-request acknowledgments travel as `RequestNotification` commands; Appendix C carries no rows for them (Open point 1).
+The five rows above are Appendix C rows. They still travel as `RequestNotification` commands, because none of them has an event key of its own; the catalogue now fixes their recipients, urgency and channels.
 
 ### 11.3 Settings (Appendix G; Platform stores every group)
 
@@ -1050,7 +1059,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   │   ├── RequestTenantExportCommand.cs           immutable command record: the only input type of the use case
 │   │   │   │   ├── RequestTenantExportHandler.cs           sends ExportTenant; TenantExportRule
 │   │   │   │   ├── RequestTenantExportValidator.cs         FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── RequestTenantExportEndpoint.cs          POST /api/v1/platform/tenant/exports, platform.tenants.view, Idempotency-Key required
+│   │   │   │   └── RequestTenantExportEndpoint.cs          POST /api/v1/platform/tenant/exports, platform.tenants.export, reason required, Idempotency-Key required
 │   │   │   ├── RequestTenantDeletion/                      transition ReadOnly to ExportRequested
 │   │   │   │   ├── RequestTenantDeletionCommand.cs         immutable command record: the only input type of the use case
 │   │   │   │   ├── RequestTenantDeletionHandler.cs         refused under a legal hold; starts Saga 2
@@ -1297,12 +1306,12 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   │   ├── ListModulesQuery.cs                     immutable query record: route and filter parameters only
 │   │   │   │   ├── ListModulesHandler.cs                   included, add-on, enabled
 │   │   │   │   ├── ListModulesValidator.cs                 FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── ListModulesEndpoint.cs                  GET /api/v1/platform/modules, platform.settings.view
+│   │   │   │   └── ListModulesEndpoint.cs                  GET /api/v1/platform/modules, platform.modules.view
 │   │   │   └── SetModule/                                  module on or off
 │   │   │       ├── SetModuleCommand.cs                     immutable command record: the only input type of the use case
 │   │   │       ├── SetModuleHandler.cs                     refused when the plan lacks it; publishes platform.feature-flag.changed.v1
 │   │   │       ├── SetModuleValidator.cs                   FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │       └── SetModuleEndpoint.cs                    PUT /api/v1/platform/modules/{moduleCode}, platform.settings.edit
+│   │   │       └── SetModuleEndpoint.cs                    PUT /api/v1/platform/modules/{moduleCode}, platform.modules.enable or platform.modules.disable
 │   │   ├── Settings/                                       settings catalog and values (section 5.6)
 │   │   │   ├── GetSettingsCatalog/                         the Appendix G catalog
 │   │   │   │   ├── GetSettingsCatalogQuery.cs              immutable query record: route and filter parameters only
@@ -1387,32 +1396,32 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   │   ├── ListTemplateLibraryQuery.cs             immutable query record: route and filter parameters only
 │   │   │   │   ├── ListTemplateLibraryHandler.cs           by kind and owning service
 │   │   │   │   ├── ListTemplateLibraryValidator.cs         FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── ListTemplateLibraryEndpoint.cs          GET /api/v1/platform/template-library, platform.settings.view
+│   │   │   │   └── ListTemplateLibraryEndpoint.cs          GET /api/v1/platform/template-library, platform.template-library.view
 │   │   │   ├── GetTemplatePackage/                         package for import
 │   │   │   │   ├── GetTemplatePackageQuery.cs              immutable query record: route and filter parameters only
 │   │   │   │   ├── GetTemplatePackageHandler.cs            versioned JSON with ETag
 │   │   │   │   ├── GetTemplatePackageValidator.cs          FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── GetTemplatePackageEndpoint.cs           GET /api/v1/platform/template-library/{templateId}/package, platform.settings.view
+│   │   │   │   └── GetTemplatePackageEndpoint.cs           GET /api/v1/platform/template-library/{templateId}/package, platform.template-library.view
 │   │   │   ├── CreateLibraryTemplate/                      curate an entry
 │   │   │   │   ├── CreateLibraryTemplateCommand.cs         immutable command record: the only input type of the use case
 │   │   │   │   ├── CreateLibraryTemplateHandler.cs         package schema validation
 │   │   │   │   ├── CreateLibraryTemplateValidator.cs       FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── CreateLibraryTemplateEndpoint.cs        POST /api/v1/platform/template-library, platform.settings.edit in the platform tenant
+│   │   │   │   └── CreateLibraryTemplateEndpoint.cs        POST /api/v1/platform/template-library, platform.template-library.create in the platform tenant
 │   │   │   ├── PublishLibraryTemplate/                     publish an entry
 │   │   │   │   ├── PublishLibraryTemplateCommand.cs        immutable command record: the only input type of the use case
 │   │   │   │   ├── PublishLibraryTemplateHandler.cs        visible to tenants
 │   │   │   │   ├── PublishLibraryTemplateValidator.cs      FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── PublishLibraryTemplateEndpoint.cs       POST /api/v1/platform/template-library/{templateId}/publish, platform.settings.edit in the platform tenant
+│   │   │   │   └── PublishLibraryTemplateEndpoint.cs       POST /api/v1/platform/template-library/{templateId}/publish, platform.template-library.publish in the platform tenant
 │   │   │   ├── SubmitToExchange/                           Tier 2 submission
 │   │   │   │   ├── SubmitToExchangeCommand.cs              immutable command record: the only input type of the use case
 │   │   │   │   ├── SubmitToExchangeHandler.cs              attribution consent required
 │   │   │   │   ├── SubmitToExchangeValidator.cs            FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── SubmitToExchangeEndpoint.cs             POST /api/v1/platform/template-exchange/submissions, platform.settings.edit
+│   │   │   │   └── SubmitToExchangeEndpoint.cs             POST /api/v1/platform/template-exchange/submissions, platform.template-library.import
 │   │   │   └── ReviewExchangeSubmission/                   Tier 2 review
 │   │   │       ├── ReviewExchangeSubmissionCommand.cs      immutable command record: the only input type of the use case
 │   │   │       ├── ReviewExchangeSubmissionHandler.cs      accept into the library or return
 │   │   │       ├── ReviewExchangeSubmissionValidator.cs    FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │       └── ReviewExchangeSubmissionEndpoint.cs     POST /api/v1/platform/template-exchange/submissions/{submissionId}/review, platform.settings.edit in the platform tenant
+│   │   │       └── ReviewExchangeSubmissionEndpoint.cs     POST /api/v1/platform/template-exchange/submissions/{submissionId}/review, platform.template-library.publish in the platform tenant
 │   │   ├── Announcements/                                  announcements, maintenance, release notes (section 5.8)
 │   │   │   ├── ListAnnouncements/                          announcements
 │   │   │   │   ├── ListAnnouncementsQuery.cs               immutable query record: route and filter parameters only
@@ -1706,7 +1715,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   │   ├── ReplayJobCommand.cs                     immutable command record: the only input type of the use case
 │   │   │   │   ├── ReplayJobHandler.cs                     PLATFORM_JOB_REPLAY_REFUSED outside failed
 │   │   │   │   ├── ReplayJobValidator.cs                   FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── ReplayJobEndpoint.cs                    POST /api/v1/platform/jobs/{jobId}/replay, platform.jobs.retry, Idempotency-Key required
+│   │   │   │   └── ReplayJobEndpoint.cs                    POST /api/v1/platform/jobs/{jobId}/replay, platform.jobs.replay, Idempotency-Key required
 │   │   │   ├── ListSagas/                                  process monitor
 │   │   │   │   ├── ListSagasQuery.cs                       immutable query record: route and filter parameters only
 │   │   │   │   ├── ListSagasHandler.cs                     stuck first
@@ -2217,17 +2226,17 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | TC-PRV-001 to TC-PRV-006 | Every transition of WF-PRV-01 | Integration |
 | TC-PRV-901, TC-PRV-902 | Tenant deletion with certificate; legal hold blocks purge and notifies both parties | UAT, integration |
 | TC-INF-001 to TC-INF-006, TC-INF-011 to TC-INF-016, TC-INF-021 to TC-INF-026 | Transitions of WF-INF-01, WF-INF-02, WF-INF-03 as recorded by the release records | Integration with the pipeline fake |
-| TC-DATA-010 | Tier migration shared to dedicated and back, zero lost writes, window under 5 minutes | Load tier |
+| `TC-DATA-010` (document 10) | Tier migration shared to dedicated and back, zero lost writes, window under 5 minutes | Load tier |
 | TC-MSG-901 | A replayed failed message applies once, a second replay changes nothing (REQ-MSG-024) | Integration |
-| TC-INT-001 | Only tagged operations accept keys and tokens | Generated suite |
+| `TC-INT-660` (Gateway sheet) | Only tagged operations accept keys and tokens | Generated suite |
 | TC-INT-005, TC-INT-006, TC-INT-007 | Revocation within 5 s across services; no secret stored or logged; daily API meter | Integration |
 | TC-INT-010 to TC-INT-016 | Webhook challenge, replay window, signature vector, retry schedule, endpoint states, rotation overlap, eligibility | Integration |
 | TC-INT-031, TC-INT-032 | OneRoster 1.2 schema validation; LTI 1.3 launch | Integration, phase 4 |
-| TC-INT-002 | Plug-in kit conformance with the sample | Pipeline |
+| `TC-INT-002` (Appendix W) | Plug-in kit conformance with the sample | Pipeline |
 | TC-SEC-120 to TC-SEC-125 | T-PLT-03 to T-PLT-08 controls | Integration |
 | TC-SEC-055, TC-SEC-056 | Generated permission matrix and tenant-isolation attack suites over every Platform endpoint, gRPC method and consumer | Generated suites |
-| TC-PERF-003 | Settings, flags, plan, terminology and branding invalidation per scope | Integration |
-| TC-PLT-002, TC-PLT-003, TC-PLT-004, TC-PLT-005 (Appendix W meaning) | Demo reset, smart defaults, template exchange, configuration as code | End to end (Open point 6 on the collision) |
+| `TC-PERF-003` (document 21) | Settings, flags, plan, terminology and branding invalidation per scope | Integration |
+| `TC-PLT-801`, `TC-PLT-802`, `TC-PLT-803`, `TC-PLT-804` (Appendix W) | Demo reset, smart defaults, template exchange, configuration as code | End to end |
 | TC-PLT-101 | Region change refused with `PLATFORM_RESIDENCY_VIOLATION`; every storage location of a tenant in its region (BR-PLT-004) | Integration |
 | TC-PLT-102 | Upgrade prorates by day and applies at once; downgrade waits for renewal and deletes nothing (REQ-PLT-010) | Integration |
 | TC-PLT-103 | Active-student billing count with a day-16 joiner counts 0.5; a leaver counts for the month (REQ-PLT-009) | Unit and integration |
@@ -2282,7 +2291,7 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | Decision | Source | Default if unanswered | Impact if wrong |
 |---|---|---|---|
 | Operator features read across tenants through an audited `app.platform_operator` flag accepted by the `platform` schema policy | REQ-SEC-013, `10-data-architecture.md` §2.2 | As stated, pending ADR | Without it every operator list would iterate tenants one query at a time |
-| Tenant invoices are Platform's own billing; no Finance involvement | Master brief Sections 22 and 36; Appendix F lists `TenantInvoice` under Platform | As stated | Appendix R WF-PLT-02 names `finance.invoice.issued.v1` and WF-FIN-02 for tenant billing, which would mix school fees with platform billing (Open point 3) |
+| Tenant invoices are Platform's own billing; no Finance involvement | Master brief Sections 22 and 36; Appendix F lists `TenantInvoice` under Platform | As stated | Appendix R WF-PLT-02 names `finance.invoice.issued.v1` and WF-FIN-02 for tenant billing, which would mix school fees with platform billing (Open point 1) |
 | Template copy is an import by the owning service from Platform's package, composed by Bff.Web | Appendix L.5 ownership; no command exists for it | As stated | A Platform-driven copy would need a command per owning service |
 | The recycle bin lives in every owning service through the persistence building block; Platform owns the namespace, the purge policy and the composed view | `22-api-conventions-and-error-catalog.md` §1.2 (`DELETE` moves to the recycle bin) | As stated | Central storage of deleted rows would copy every service's data into Platform |
 | Retention "run now" for another service calls that service's `/jobs` route, which declares `platform.retention.run-now` | `22-api-conventions-and-error-catalog.md` §6.1 | As stated | A command per service would need a catalog entry in document 11 |
@@ -2310,20 +2319,17 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Five points are answered by the brief and one is narrowed. Appendix C now carries the five platform lifecycle rows: signup confirmed with the welcome pack, the deletion cooling-off reminder, API key expiry and sandbox notices, the support SLA escalation and the subject-request acknowledgment, so section 11.2 lists them with their urgency and channels. Appendix E now carries `platform.upgrade.started.v1` (consumers Notification and Reporting) and Appendix R records the other upgrade, release, drill and failover steps as `platform.audit.recorded.v1`, which is what section 7.1 publishes. Appendix R's WF-PLT-02 guard now reads `platform.subscriptions.change-plan`, the Appendix B string this sheet already used. The product owner settled the tenant-deletion cooling-off at **30 days** with the export available throughout, so `DeletionCoolingOffReminderJob` and the Appendix C row say 30 days and Appendix R agrees with REQ-PLT-007, BR-PLT-003 and Appendix J. Appendix B gained `platform.tenants.export` (high, reason required, never plan-gated), the `platform.modules` and `platform.template-library` resources and `platform.jobs.replay`, so sections 5.1, 5.5, 5.7, 5.11, 11.1 and the folder tree declare those instead of borrowing `platform.tenants.view`, `platform.settings.*` and `platform.jobs.retry`. Reference architecture Section 8.0 now lists Platform's calls, including Identity `ApiKeyAdministration` and `PermissionLookup.GetRoleRisk`, School's directory for OneRoster and the job-only `Usage.Recount` of every service. Point 1 is what is left of the tenant-billing point; the rest are renumbered.
+
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix C has no rows for signup confirmation, the welcome pack, cooling-off reminders, key expiry reminders, sandbox notices, SLA escalations or subject-request acknowledgments | Sent through `RequestNotification` at normal urgency with templates in Notification | Product owner, ADR on Appendix C | Templates exist without a catalogued urgency and channel |
-| 2 | Appendix R names events Appendix E does not catalog: platform.subject-request.received.v1, platform.subject-request.completed.v1, platform.upgrade.started.v1, platform.upgrade.completed.v1, platform.upgrade.rolled-back.v1, platform.backup.verified.v1, platform.release.deployed.v1, platform.release.rolled-back.v1, platform.restore-drill.completed.v1, platform.failover.executed.v1, and audit.action.recorded.v1 for every transition | Only Appendix E keys are published; transitions are recorded through `platform.audit.recorded.v1` and notifications through `RequestNotification` | Architect, ADR on Appendices E and R | Reporting cannot project release and drill history until the events exist |
-| 3 | Appendix R WF-PLT-02 names `finance.invoice.issued.v1` and WF-FIN-02 for platform billing; WF-PLT-02's guard names platform.plan.change, which Appendix B lacks (`platform.subscriptions.change-plan`) | Platform's own `TenantInvoice`; Appendix B string used | Architect, ADR on Appendix R | None at runtime; the appendix text is wrong |
-| 4 | Tenant deletion cooling-off is 7 days in Appendix R and `13-workflows-and-sagas.md`, 30 days in REQ-PLT-007, BR-PLT-003's example, Appendix J and `10-data-architecture.md` §8 | 7 days as `13-workflows-and-sagas.md` decided, configurable under Security → retention periods | Product owner | A school expecting 30 days loses 23 days of recovery window |
-| 5 | Appendix B has no export action on `platform.tenants`, no template-library resource, no module resource and no job-replay action (`22-api-conventions-and-error-catalog.md` §6.1 names platform.jobs.replay) | Tenant export under `platform.tenants.view`; library under `platform.settings.*`; modules under `platform.settings.edit`; replay under `platform.jobs.retry` | Architect, ADR on Appendix B | A school owner who may view the tenant may also export it, which BR-PLT-006 intends anyway |
-| 6 | TC-PLT-002 to TC-PLT-005 mean one thing in Appendix R (WF-PLT-01 transitions) and another in Appendix W (demo reset, smart defaults, template exchange, configuration as code) | Both meanings kept and both rows appear in the test plan, labelled by source | Test lead, ADR renumbering Appendix W | Traceability counts double until renumbered |
-| 7 | Reference architecture Section 8.0 lists no synchronous dependency for Platform and nobody depending on Platform; documents 10 and 23 add Identity `ApiKeyAdministration`, every service's `Usage/Recount` and every service's calls to `Tenants`, `Settings` and `Retention`; this sheet adds School's directory for OneRoster | As stated in section 6, each query-only, none nested | Architect, ADR and an update to Section 8.0 | Without them connection overrides, settings on a cache miss and holds could not be read |
-| 8 | Subject-request collection needs a per-subject export; document 11 catalogs only the tenant-wide `ExportTenant` | `ExportTenant` with an additive optional `subjectId` filter, collected by Documents from each service | Documents sheet owner, document 11 | Without it WF-PRV-01 could only answer from a whole-tenant archive |
-| 9 | LTI Assignment and Grade Services scores must land in Assessment and deep-linked items in Academics, but no command exists for either | Phase 4 ships launch, deep-linking return to the picker and the roster from Platform's copies; score passback waits for a catalogued command | Academics and Assessment sheet owners | Teachers enter tool scores by hand until the command exists |
-| 10 | The webhook campus filter resolves events without a `campusId` "through Platform's slim reference copy" (document 23 §4.9), which reference architecture Section 8.0 does not list | Filter only on a payload `campusId`; events without one go to every subscribed endpoint of the tenant | Architect | A campus-scoped integrator receives other campuses' events that carry no campus |
-| 11 | The OneRoster `users` resource for guardians needs guardian names that no event Platform consumes carries | Guardians excluded until `school.guardian.updated.v1` is added to the OneRoster copy with a directory lookup | Product owner | Rostering tools that expect parent users see none |
-| 12 | Three localization rules (BR-L10N-001, BR-L10N-002, BR-L10N-006) are assigned to Platform's Domain while `Nibras.BuildingBlocks.Localization` implements the same technical behaviour for every service | Platform's rule classes are the tested reference; the building block runs the same Appendix S tables through a shared test data source | Architect | Two implementations can drift if the shared tables are not used |
+| 1 | Appendix R WF-PLT-02 still names `finance.invoice.issued.v1` and WF-FIN-02 for platform billing, although tenant invoices are Platform's own | Platform's own `TenantInvoice`; Finance is not involved in tenant billing | Architect, ADR on Appendix R | None at runtime; the appendix text mixes school fees with platform billing |
+| 2 | TC-PLT-002 to TC-PLT-005 mean one thing in Appendix R (WF-PLT-01 transitions) and another in Appendix W (demo reset, smart defaults, template exchange, configuration as code) | Both meanings kept and both rows appear in the test plan, labelled by source | Test lead, ADR renumbering Appendix W | Closed by ADR-0019 and ADR-0020: Appendix W's demo tests moved to TC-PLT-801 to TC-PLT-804, Appendix R keeps TC-PLT-002 to TC-PLT-005, and kit-lint rule R20 refuses a second definition |
+| 3 | Subject-request collection needs a per-subject export; document 11 catalogs only the tenant-wide `ExportTenant` | `ExportTenant` with an additive optional `subjectId` filter, collected by Documents from each service | Documents sheet owner, document 11 | Without it WF-PRV-01 could only answer from a whole-tenant archive |
+| 4 | LTI Assignment and Grade Services scores must land in Assessment and deep-linked items in Academics, but no command exists for either | Phase 4 ships launch, deep-linking return to the picker and the roster from Platform's copies; score passback waits for a catalogued command | Academics and Assessment sheet owners | Teachers enter tool scores by hand until the command exists |
+| 5 | The webhook campus filter resolves events without a `campusId` "through Platform's slim reference copy" (document 23 §4.9), which reference architecture Section 8.0 does not list | Filter only on a payload `campusId`; events without one go to every subscribed endpoint of the tenant | Architect | A campus-scoped integrator receives other campuses' events that carry no campus |
+| 6 | The OneRoster `users` resource for guardians needs guardian names that no event Platform consumes carries | Guardians excluded until `school.guardian.updated.v1` is added to the OneRoster copy with a directory lookup | Product owner | Rostering tools that expect parent users see none |
+| 7 | Three localization rules (BR-L10N-001, BR-L10N-002, BR-L10N-006) are assigned to Platform's Domain while `Nibras.BuildingBlocks.Localization` implements the same technical behaviour for every service | Platform's rule classes are the tested reference; the building block runs the same Appendix S tables through a shared test data source | Architect | Two implementations can drift if the shared tables are not used |
 
 ## Review record
 

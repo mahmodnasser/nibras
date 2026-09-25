@@ -630,6 +630,106 @@ rule('R19-plan-identifiers', 'Every identifier a plan document cites exists in t
   return out;
 });
 
+/* ---------------------------------------------------------------- R20 */
+
+/**
+ * Test-case identifiers (ADR-0014) are proof, so each one must mean one thing.
+ * A test is *defined* where a table cell holds that identifier and nothing else,
+ * in the first column or in a column headed as a test (Appendix W's "Demo"
+ * column included). Everywhere else the identifier is *cited*. A cell that
+ * names an owner, such as "`TC-ATT-003` (Appendix R)", is a citation by design.
+ *
+ * Errors: a test defined in more than one document; a test cited but defined
+ * nowhere; a derived acceptance test (950 to 999, document 20) whose
+ * requirement does not exist. Documents that only report, review or generate
+ * (documents 02, 03, 20, 30, 34, the registry annex of 16, Appendices O, P, Q,
+ * V, and docs/project) never define, and the stale citations in docs/project
+ * and document 30 are history, not defects.
+ */
+const TC_RE = /TC-[A-Z0-9]+-\d{3}/g;
+const TC_LONE = /^`?(TC-[A-Z0-9]+-\d{3})`?$/;
+const TC_TEST_HEADER = /^(test case|test|tc|identifier|test case id|test id|demo)$/i;
+const TC_CITE_ONLY = /^docs\/(project\/|plan\/(02|03|20|30|34)-|plan\/16-annex-|brief\/02-appendices\/appendix-[opqv]-)/;
+const TC_HISTORY = /^docs\/(project\/|plan\/30-)/;
+const TC_SCOPE = /^docs\/(brief|plan|project)\//;
+
+export function testCaseOwnership(ctx) {
+  const defs = new Map();
+  const cites = new Map();
+  const add = (m, id, x) => { if (!m.has(id)) m.set(id, []); m.get(id).push(x); };
+  for (const f of ctx.md) {
+    if (!TC_SCOPE.test(f.rel)) continue;
+    const citeOnly = TC_CITE_ONLY.test(f.rel);
+    let header = null;
+    let fenced = false;
+    let section = '';
+    f.lines.forEach((line, i) => {
+      if (/^\s*```/.test(line)) { fenced = !fenced; return; }
+      // A heading that opens with an identifier, "### TC-DATA-001 A pooled ...", defines that test,
+      // including inside a fenced Given, When, Then block, which is how some documents write one out.
+      const head = /^#{2,6}\s+`?(TC-[A-Z0-9]+-\d{3})`?\s+(.*)$/.exec(line);
+      if (head && !citeOnly) { header = null; add(defs, head[1], { file: f.rel, line: i + 1, section, exempt: false, text: head[2].trim() }); return; }
+      if (fenced) return;
+      const h2 = /^##\s+(.*)$/.exec(line);
+      if (h2) section = h2[1].trim();
+      // Only the Open points and Review record sections are exempt: a test's own assertion often says
+      // something is absent, so the phrasing exemption of R19 would hide real citations here.
+      const where = { file: f.rel, line: i + 1, section, exempt: /^(open points|review record)/i.test(section) };
+      if (!/^\s*\|.*\|\s*$/.test(line)) {
+        header = null;
+        for (const m of line.match(TC_RE) || []) add(cites, m, { ...where, text: line.trim().slice(0, 200) });
+        return;
+      }
+      const cells = line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+      if (/^:?-{2,}:?$/.test(cells[0] || '')) return;
+      const next = f.lines[i + 1] || '';
+      if (header === null && /^\s*\|\s*:?-{2,}/.test(next)) { header = cells; return; }
+      cells.forEach((cell, ci) => {
+        const ids = cell.match(TC_RE) || [];
+        if (!ids.length) return;
+        const lone = TC_LONE.exec(cell);
+        const defining = !citeOnly && lone && (ci === 0 || TC_TEST_HEADER.test(((header && header[ci]) || '').replace(/`/g, '')));
+        const text = cells.filter((_, k) => k !== ci).join(' | ').replace(/\s+/g, ' ').trim();
+        for (const id of ids) add(defining ? defs : cites, id, { ...where, text });
+      });
+    });
+  }
+  const derivedReq = (id) => {
+    const [, area, num] = id.split('-');
+    const n = Number(num);
+    return n >= 950 && n <= 999 ? 'REQ-' + area + '-' + String(n - 950).padStart(3, '0') : null;
+  };
+  const collisions = [...defs].filter(([, v]) => new Set(v.map((x) => x.file)).size > 1).map(([id, v]) => ({ id, defs: v }));
+  const undefinedIds = [...cites.keys()].filter((id) => !defs.has(id) && !derivedReq(id));
+  return { defs, cites, collisions, undefinedIds, derivedReq };
+}
+
+rule('R20-test-case-identifiers', 'Every test-case identifier is defined in exactly one document', (ctx) => {
+  const out = [];
+  const own = testCaseOwnership(ctx);
+  const reqs = buildCatalogs(ctx).reqs;
+  for (const c of own.collisions) {
+    const files = [...new Set(c.defs.map((d) => d.file))];
+    const first = c.defs[0];
+    out.push(finding('R20-test-case-identifiers', 'error', first.file, first.line, c.id + ' is defined in ' + files.length + ' documents: ' + files.join(', ') + '. Keep one definition and cite it elsewhere, or renumber one'));
+  }
+  for (const id of own.undefinedIds) {
+    const live = own.cites.get(id).filter((c) => !c.exempt && !TC_HISTORY.test(c.file));
+    if (live.length) out.push(finding('R20-test-case-identifiers', 'error', live[0].file, live[0].line, id + ' is cited but defined in no document'));
+  }
+  if (reqs.size) {
+    const seen = new Set();
+    for (const [id, list] of [...own.cites, ...own.defs]) {
+      const req = own.derivedReq(id);
+      if (!req || reqs.has(req) || seen.has(id)) continue;
+      seen.add(id);
+      const live = list.filter((c) => !c.exempt && !TC_HISTORY.test(c.file));
+      if (live.length) out.push(finding('R20-test-case-identifiers', 'error', live[0].file, live[0].line, id + ' is a derived acceptance test, but ' + req + ' does not exist'));
+    }
+  }
+  return out;
+});
+
 /* ---------------------------------------------------------------------- run */
 
 export function lint(root, only) {

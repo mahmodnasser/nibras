@@ -99,6 +99,7 @@ An engineer opening this document must be able to answer three questions without
 | State persistence | Saga state is a row in the orchestrator's own database, written in the same transaction as the outbox (saga-design skill rule 5), with `xmin` concurrency | `Nibras.BuildingBlocks.Messaging` saga persistence |
 | Commands | A command is a message type in `Nibras.Contracts.<TargetService>/Commands/V1/`, sent to the target service's command queue on its own exchange. Every command carries `sagaId`, `stepKey`, `tenantId`, `correlationId` and `causationId` from the Appendix E envelope | `11-messaging-architecture.md` catalogs every command and reply |
 | Outcomes | The expected outcome is the catalogued Appendix E event where one exists. Where the target service publishes no catalogued event for that step, it sends a **saga reply** (`<Step>Completed` or `<Step>Failed`) to the orchestrator's reply queue; replies are private to the saga and are catalogued beside the command in `11-messaging-architecture.md` | Contract tests |
+| Notifying a person | A saga never publishes `notification.notification.requested.v1`: that key is Notification's own (Appendix E; `11-messaging-architecture.md` §1.4 lets a service publish only on its own exchange). A step that must reach a person sends the `RequestNotification` command (`notification.commands.request-notification.v1`) on the orchestrator's exchange, and Notification's Api publishes the catalogued event with the lane header | `11-messaging-architecture.md` §2.4, command catalog |
 | Idempotency | Every command handler is idempotent on `(sagaId, stepKey)` through the inbox table; every reply is ignored when the step is already terminal; every compensation is idempotent too and is tested by running it twice | Deliver-twice tests per step |
 | Timeouts | Every waiting step has a timeout. Timing out moves the saga to `TimedOut`, which retries the step up to the configured attempts and then enters `Compensating`. A human wait state has an escalation instead | Timeout test per saga |
 | Compensation | Runs in reverse order, one command per completed step. Compensation is a correction, never a deletion of a posted fact (BR-FIN-014 for money, Appendix J retention for records). A step with no compensation is ordered last | Compensation tests per saga |
@@ -121,7 +122,7 @@ An engineer opening this document must be able to answer three questions without
 | 5 | Copy branding and the global template library into the tenant | `ApplyTenantBranding` | Documents | reply `TenantBrandingApplied` | 60 s, 3 retries | `DeleteTenantBranding` |
 | 6 | Build the tenant's empty projections | `InitialiseProjections` | Reporting | `reporting.projection.rebuild-completed.v1` | 120 s, 3 retries | Covered by step 2 |
 | 7 | Publish the tenant routing entry (domain or subdomain) that Gateway reads, and the per-tenant rate-limit bucket | none, local | Platform | `platform.tenant.provisioned.v1` | none | Remove the routing entry; Gateway answers `PLATFORM_PROVISIONING_IN_PROGRESS` again |
-| 8 | Send the welcome pack to the owner | `notification.notification.requested.v1` | Notification | `notification.notification.delivered.v1` | none, fire and forget | None. Ordered last because it cannot be unsent |
+| 8 | Send the welcome pack to the owner | `RequestNotification` | Notification | `notification.notification.delivered.v1` | none, fire and forget | None. Ordered last because it cannot be unsent |
 
 Steps 2 to 6 run under a 10-minute saga deadline (Appendix R); exceeding it alerts the platform operator without stopping retries.
 
@@ -174,12 +175,12 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Happy path, all 19 services acknowledge | Owner invited, year opened, `platform.tenant.provisioned.v1` published once | TC-PLT-003 |
-| One service times out after three retries | Saga halts, no later step attempted, operator alerted with the service named | TC-PLT-004 |
-| Step 3 fails | Fan-out deprovisioned, no invitation exists, no welcome sent | TC-PLT-005 |
-| Step 4 fails | Invitation revoked, schemas dropped, tenant row in `Compensated` | TC-PLT-005 |
-| Step 5 or 6 fails | Steps 2 to 4 reversed in order, journal complete | TC-PLT-005 |
-| Deadline passed while retrying | Alert raised, retries continue, state visible as `TimedOut` | TC-PLT-004 |
+| Happy path, all 19 services acknowledge | Owner invited, year opened, `platform.tenant.provisioned.v1` published once | `TC-PLT-003` (Appendix R) |
+| One service times out after three retries | Saga halts, no later step attempted, operator alerted with the service named | `TC-PLT-004` (Appendix R) |
+| Step 3 fails | Fan-out deprovisioned, no invitation exists, no welcome sent | `TC-PLT-005` (Appendix R) |
+| Step 4 fails | Invitation revoked, schemas dropped, tenant row in `Compensated` | `TC-PLT-005` (Appendix R) |
+| Step 5 or 6 fails | Steps 2 to 4 reversed in order, journal complete | `TC-PLT-005` (Appendix R) |
+| Deadline passed while retrying | Alert raised, retries continue, state visible as `TimedOut` | TC-PLT-550 |
 | `TenantProvisioned` reply delivered twice | Second reply ignored, step count unchanged | `ProvisionTenantReply_DeliveredTwice_Ignored` |
 | Compensation runs twice | Second run is a no-op on every service | `Compensation_RunTwice_NoSecondEffect` |
 | Platform Api killed after 9 of 19 replies | On restart the saga resumes from persisted `Steps`; no service provisions twice | `WorkerKilledMidFanOut_Resumes_NoDuplicates` |
@@ -195,7 +196,7 @@ This saga has two halves. Everything up to the end of the cooling-off period is 
 | 1 | Confirm read-only mode across services (BR-PLT-002) | none; `platform.tenant.suspended.v1` with `readOnlyFrom` | Platform | every service's consumer refuses writes with `PLATFORM_TENANT_SUSPENDED` | none | `platform.tenant.reactivated.v1` |
 | 2 | Build the full export with a manifest (BR-PLT-006) | `ExportTenant` | Documents | `documents.export.completed.v1` with `rowCount` per service in the manifest | 24 h, then alert; retried until complete | None needed: an export changes nothing. An incomplete export blocks the saga, it never proceeds from a partial archive |
 | 3 | Owner signs the deletion confirmation | none, human | Platform | `platform.tenant.deletion-requested.v1` with `coolingOffEndsAt` | Download link 30 days; unsigned after that the saga returns to `ReadOnly` | Cancellation inside the window returns to `ReadOnly` |
-| 4 | Cooling-off timer (Security → retention periods; Appendix R default 7 days) with a daily reminder | `notification.notification.requested.v1` daily | Notification | reminders delivered | ends at `coolingOffEndsAt` | Cancellation by the owner at any moment inside the window |
+| 4 | Cooling-off timer (Security → retention periods; Appendix R default 30 days, ADR-0019) with a daily reminder from `DeletionCoolingOffReminderJob` | `RequestNotification` daily | Notification | reminders delivered | ends at `coolingOffEndsAt` | Cancellation by the owner at any moment inside the window |
 | 5 | Revoke every session and sign-in for the tenant | `RevokeTenantAccess` | Identity | reply `TenantAccessRevoked` | 5 min, 3 retries | None from here on. The saga only moves forward |
 | 6 | Delete tenant data in every data-owning service except Audit, in dependency order: Reporting and Ai first, School last | `DeleteTenantData` | 18 services | reply `TenantDataDeleted` with `rowCount` per table; Wellbeing additionally destroys the tenant's encryption key | 30 min per service, unlimited retries with backoff; `Stuck` after 24 h | None |
 | 7 | Delete files and generated documents, keep the export archive until its link expires | `DeleteTenantFiles` | Documents | reply `TenantFilesDeleted` | 60 min | None |
@@ -236,14 +237,14 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Owner cancels on the last day of cooling-off | Nothing deleted, tenant back in `ReadOnly`, sessions untouched | TC-PLT-025 |
-| Export fails for one service | No manifest, no signature possible, service named | TC-PLT-023 |
-| Full path | Certificate lists every service with counts, `platform.tenant.deleted.v1` once | TC-PLT-026 |
+| Owner cancels on the last day of cooling-off | Nothing deleted, tenant back in `ReadOnly`, sessions untouched | `TC-PLT-025` (Appendix R) |
+| Export fails for one service | No manifest, no signature possible, service named | TC-PLT-551 |
+| Full path | Certificate lists every service with counts, `platform.tenant.deleted.v1` once | `TC-PLT-026` (Appendix R) |
 | Step 6: one service never confirms | Saga in `Stuck` after 24 h, certificate withheld, operator alerted | `DeleteTenantData_ServiceSilent_Stuck_NoCertificate` |
 | Step 8 fails | Retried; certificate withheld until the partition is detached | `DetachAuditPartition_Fails_Retried` |
 | `DeleteTenantData` delivered twice | Second delivery replies the stored counts, deletes nothing further | `DeleteTenantData_DeliveredTwice_StableCounts` |
 | Platform Api killed during step 6 | Resume continues with the unconfirmed services only | `WorkerKilledMidDeletion_Resumes_NoDoubleCount` |
-| Export requested while suspended | Completes (BR-PLT-006, second example) | TC-PLT-022 |
+| Export requested while suspended | Completes (BR-PLT-006, second example) | TC-PLT-552 |
 
 #### Saga 3. Enrolment from an accepted offer (WF-ADM-01, `DepositPaid → Enrolled`)
 
@@ -259,7 +260,7 @@ Appendix R fixes the failure outcome: the application returns to `DepositPaid`, 
 | 4 | Invite the guardians and link them to the student | `ProvisionGuardianAccess` | Identity | `identity.guardian-link.created.v1` per guardian, `identity.user.invited.v1` for new accounts | 15 min, 3 retries | `RevokeGuardianAccess`: links removed, new accounts deactivated (`identity.user.deactivated.v1`), never deleted |
 | 5 | Render the enrolment letter with its QR verification code | `GenerateDocument` | Documents | `documents.document.generated.v1` | 15 min, 3 retries | `RevokeDocument` → `documents.certificate.revoked.v1` |
 | 6 | Mark the application `Enrolled` | none, local | Admissions | `admissions.application.stage-changed.v1` | none | Return to `DepositPaid` |
-| 7 | Send the welcome pack | `notification.notification.requested.v1` | Notification | `notification.notification.delivered.v1` | none | None; last |
+| 7 | Send the welcome pack | `RequestNotification` | Notification | `notification.notification.delivered.v1` | none | None; last |
 
 ```mermaid
 stateDiagram-v2
@@ -297,8 +298,8 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Happy path | Student, guardian accounts and fee plan created together; welcome sent once | TC-ADM-005 |
-| Step 4 (Identity) fails | Fee plan voided, enrolment withdrawn, seat still held, officer sees "Guardians" as the failed step, no welcome sent | TC-ADM-006 |
+| Happy path | Student, guardian accounts and fee plan created together; welcome sent once | `TC-ADM-005` (Appendix R) |
+| Step 4 (Identity) fails | Fee plan voided, enrolment withdrawn, seat still held, officer sees "Guardians" as the failed step, no welcome sent | `TC-ADM-006` (Appendix R) |
 | Step 2 fails | Nothing else attempted; application in `DepositPaid` | `EnrolStudent_Fails_NothingElseSent` |
 | Step 3 fails | Enrolment withdrawn; no fee plan; no invitations | `AssignFeePlan_Fails_EnrolmentWithdrawn` |
 | Step 5 fails | Steps 4, 3, 2 reversed; accounts deactivated not deleted | `GenerateLetter_Fails_AccountsDeactivatedNotDeleted` |
@@ -361,15 +362,15 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Every section locked, decisions approved | Students enrolled next year, graduates given alumni status | TC-SCH-014 |
-| One section unlocked | Saga aborted, late entry refused, sections listed | TC-SCH-011 |
-| Principal overrides a retention | Override stored with reason and approver | TC-SCH-013 |
-| Worker crashes after 300 of 800 | Resume continues at 301, no duplicate enrolment | TC-SCH-015 |
-| Fee structures exist for the new year | Skeleton timetable and fee plans created, not published | TC-SCH-016 |
+| Every section locked, decisions approved | Students enrolled next year, graduates given alumni status | `TC-SCH-014` (Appendix R) |
+| One section unlocked | Saga aborted, late entry refused, sections listed | TC-SCH-550 |
+| Principal overrides a retention | Override stored with reason and approver | `TC-SCH-013` (Appendix R) |
+| Worker crashes after 300 of 800 | Resume continues at 301, no duplicate enrolment | `TC-SCH-015` (Appendix R) |
+| Fee structures exist for the new year | Skeleton timetable and fee plans created, not published | `TC-SCH-016` (Appendix R) |
 | Step 6 fails | Next-year enrolments and structure removed; closing year untouched; `Aborted` | `AssignNextYearFeePlans_Fails_NextYearRowsRemoved` |
 | Step 7 fails | Fee plans voided, structure removed | `CopyTimetableSkeleton_Fails_FeePlansVoided` |
 | Assessment silent on step 2 | Retried, then `Aborted` with the registrar told | `ComputeDecisions_Timeout_Aborted` |
-| Decisions undrafted for 14 days | Principal escalated daily | TC-SCH-012 |
+| Decisions undrafted for 14 days | Principal escalated daily | TC-SCH-551 |
 
 #### Saga 5. Withdrawal clearance (WF-SCH-01)
 
@@ -385,7 +386,7 @@ Clearance is parallel and all-of: Finance and Operations each hold an item, and 
 | 4 | Render the transfer certificate with its QR code | `GenerateDocument` | Documents | `documents.document.generated.v1` | 15 min, 3 retries | `RevokeDocument` → `documents.certificate.revoked.v1` |
 | 5 | Change the status to withdrawn on the leaving date and release the seat | none, local | School | `school.student.status-changed.v1` (`toStatus = Withdrawn`) | none | Reversal inside the same term is a new transition `Withdrawn → Enrolled` that reissues the section placement; it is not a compensation |
 | 6 | Deactivate the student account; guardians keep access to other children | `DeactivateStudentAccount` | Identity | `identity.user.deactivated.v1` | 15 min | Reinstatement is a separately audited Identity action |
-| 7 | Send the leaving pack to the guardian | `notification.notification.requested.v1` | Notification | delivered | none | None; last |
+| 7 | Send the leaving pack to the guardian | `RequestNotification` | Notification | delivered | none | None; last |
 | 8 | Archive the record under the retention policy | none, local job | School | `school.audit.recorded.v1` | after the retention delay | None |
 
 ```mermaid
@@ -420,12 +421,12 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Items raised for finance, library and assets | Both commands sent, both items visible | TC-SCH-001 |
-| Outstanding balance | `ClearanceBlocked` with the exact amount shown | TC-SCH-002 |
-| All departments sign off | Leaving documents queued | TC-SCH-003 |
-| Transcript data complete | Documents carry a QR code | TC-SCH-004 |
-| Registrar confirms the leaving date | Access revoked, seat released, history retained | TC-SCH-005 |
-| Retention applied | Record read-only and out of active rosters | TC-SCH-006 |
+| Items raised for finance, library and assets | Both commands sent, both items visible | `TC-SCH-001` (Appendix R) |
+| Outstanding balance | `ClearanceBlocked` with the exact amount shown | `TC-SCH-002` (Appendix R) |
+| All departments sign off | Leaving documents queued | `TC-SCH-003` (Appendix R) |
+| Transcript data complete | Documents carry a QR code | `TC-SCH-004` (Appendix R) |
+| Registrar confirms the leaving date | Access revoked, seat released, history retained | `TC-SCH-005` (Appendix R) |
+| Retention applied | Record read-only and out of active rosters | `TC-SCH-006` (Appendix R) |
 | Step 4 fails | Transcript revoked, student still enrolled, timetable still valid | `GenerateCertificate_Fails_StudentStaysEnrolled` |
 | Step 6 fails | Retried; withdrawal stands; operator alerted at 3 attempts | `DeactivateAccount_Fails_WithdrawalStands` |
 | Blocked for 60 days | `Cancelled`, must be raised again | `ClearanceBlocked_60Days_Cancelled` |
@@ -443,7 +444,7 @@ The saga is generic: the request type carries an ordered effect list, and each e
 | 1 | Post the request fee, when the type has one (Requests → fees) | `PostRequestFee` | Finance | `finance.invoice.issued.v1` | 15 min, 3 retries | `ReverseRequestFee` → `finance.credit-note.issued.v1` (BR-FIN-014, never a deletion) |
 | 2..n | The effect commands from section 4, in the type's order | per section 4 | the owning service | per section 4 | 15 min, 3 retries each | per section 4, reverse order |
 | n+1 | Render the output document, when the type names a template | `GenerateDocument` | Documents | `documents.document.generated.v1` | 15 min, 3 retries | `RevokeDocument` → `documents.certificate.revoked.v1` |
-| n+2 | Deliver the document and the completion notice | `notification.notification.requested.v1` | Notification | delivered | none | None; last |
+| n+2 | Deliver the document and the completion notice | `RequestNotification` | Notification | delivered | none | None; last |
 | n+3 | Mark completed and open the satisfaction rating | none, local | Requests | `requests.request.completed.v1` | none | None |
 
 ```mermaid
@@ -484,8 +485,8 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Chain completed | Saga started with a correlation identifier | TC-RQS-002 |
-| Target service refuses the effect | Earlier steps compensated, failing step named to the requester | TC-RQS-004 |
+| Chain completed | Saga started with a correlation identifier | `TC-RQS-002` (Appendix R) |
+| Target service refuses the effect | Earlier steps compensated, failing step named to the requester | `TC-RQS-004` (Appendix R) |
 | Transfer-certificate type: certificate fails after 3 retries | Fee reversed by credit note, status unchanged, request shows "effects failed" | `RequestEffectSagaRulesTests` (BR-RQS-006, first example) |
 | Same request retried after the fix | Fee posts once, certificate once, status changes once | `RequestEffectSagaRulesTests` (second example) |
 | Effect message delivered twice | No second fee | `RequestEffectSagaRulesTests` (third example) |
@@ -542,9 +543,9 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| 800 cards in one batch | All rendered inside the batch budget with progress shown | TC-ASM-005 |
-| Worker crashes after 500 cards | Resume produces the remaining 300 with no duplicates | TC-ASM-006 |
-| Principal approval recorded | Further edits refused, grade change workflow offered | TC-ASM-004 |
+| 800 cards in one batch | All rendered inside the batch budget with progress shown | `TC-ASM-005` (Appendix R) |
+| Worker crashes after 500 cards | Resume produces the remaining 300 with no duplicates | `TC-ASM-006` (Appendix R) |
+| Principal approval recorded | Further edits refused, grade change workflow offered | `TC-ASM-004` (Appendix R) |
 | One card fails 3 times | Batch in `GenerationFailed`, the other 799 rendered, officer told | `RenderCard_FailsThrice_BatchHalts` |
 | Restricted account | Card withheld, released on `finance.account.cleared.v1` | `RestrictedAccount_CardWithheld_ReleasedOnClear` |
 | No progress 10 minutes | Alert raised, resume from per-student status | `Batch_Stalled_AlertAndResume` |
@@ -562,7 +563,7 @@ The money steps are local and immutable once posted (BR-FIN-014). The cross-serv
 | 1 | Create the run with `expectedCount` from the fee plans in scope | none, local | Finance | `finance.invoice-run.requested.v1` (Documents, Reporting) | none | Delete the run row while nothing is issued |
 | 2 | Per student: compute installments and discounts, allocate the gapless number and post the invoice in one transaction, checkpoint per student | none, local batch | Finance.Worker | `finance.invoice.issued.v1` per invoice | no progress 10 min → alert | An issued invoice is never deleted. Cancelling a run after issuing reverses each issued invoice by credit note (`finance.credit-note.issued.v1`) through WF-FIN-02 |
 | 3 | Render the invoice PDF | `GenerateDocument` per invoice | Documents.Worker | `documents.document.generated.v1` | 5 min per document, 3 retries | None needed: the PDF is a rendering of a posted document and is simply regenerated |
-| 4 | Notify the payer on the bulk lane, honouring quiet hours (BR-NOT-001) | `notification.notification.requested.v1` | Notification | delivered or deferred, never dropped | none | None; last |
+| 4 | Notify the payer on the bulk lane, honouring quiet hours (BR-NOT-001) | `RequestNotification` | Notification | delivered or deferred, never dropped | none | None; last |
 | 5 | Close the run with the issued count and total | none, local | Finance | `finance.audit.recorded.v1` | none | None |
 
 ```mermaid
@@ -596,14 +597,14 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| 5,000 students in one run | All invoices numbered in sequence with no gap, inside the batch budget | TC-FIN-001 |
-| Run repeated for the same period | No duplicate invoice | TC-FIN-002 |
+| 5,000 students in one run | All invoices numbered in sequence with no gap, inside the batch budget | `TC-FIN-001` (Appendix R) |
+| Run repeated for the same period | No duplicate invoice | `TC-FIN-002` (Appendix R) |
 | Finance.Worker killed after 3,240 invoices | Resume posts the remaining 1,760, sequence unbroken | `WorkerKilledMidRun_Resumes_NoGapNoDuplicate` |
 | Killed between number allocation and commit | The number is not lost: the transaction rolled back with it | `KilledBeforeCommit_NoGap` |
 | Step 3 fails for one invoice | Invoice stays issued, PDF retried, run continues | `RenderInvoice_Fails_InvoiceStandsPdfRetried` |
 | Officer cancels after 1,000 issued | 1,000 credit notes, invoices untouched, run in `Reversed` | `CancelMidRun_CreditNotesNotDeletes` |
 | No progress 10 minutes | Alert, resume from checkpoint | `Run_Stalled_AlertAndResume` |
-| Quiet hours at notification time | Deferred, not dropped | TC-FIN-004 |
+| Quiet hours at notification time | Deferred, not dropped | TC-FIN-550 |
 
 #### Saga 9. Legacy import (WF-DATA-01)
 
@@ -657,12 +658,12 @@ stateDiagram-v2
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
-| Known template | Columns mapped, unknown columns reported | TC-DATA-001 |
-| Required field empty | Row-level error report, nothing written | TC-DATA-002 |
-| 10,000 rows | Preview inside the budget | TC-DATA-003 |
-| Dry run under 24 h old | Batched commit starts with an import identifier | TC-DATA-004 |
-| A batch fails mid-import | Import reversed as a unit, no partial data | TC-DATA-005 |
-| Rollback inside the window | Created rows removed, updated rows restored, conflicts reported | TC-DATA-006 |
+| Known template | Columns mapped, unknown columns reported | `TC-DATA-001` (Appendix R) |
+| Required field empty | Row-level error report, nothing written | `TC-DATA-002` (Appendix R) |
+| 10,000 rows | Preview inside the budget | `TC-DATA-003` (Appendix R) |
+| Dry run under 24 h old | Batched commit starts with an import identifier | `TC-DATA-004` (Appendix R) |
+| A batch fails mid-import | Import reversed as a unit, no partial data | `TC-DATA-005` (Appendix R) |
+| Rollback inside the window | Created rows removed, updated rows restored, conflicts reported | `TC-DATA-006` (Appendix R) |
 | Documents.Worker killed after batch 7 of 20 | Resume commits 8 to 20 once; row count exact | `WorkerKilledMidCommit_Resumes_ExactRowCount` |
 | Target service silent on step 3 | Retried, then administrator told | `DryRun_Timeout_Reported` |
 | `CommitImportBatch` delivered twice | Second delivery replies the stored result, writes nothing | `CommitBatch_DeliveredTwice_NoDuplicateRows` |
@@ -791,7 +792,7 @@ Master brief Section 11 names five effects executed automatically on approval; A
 | Commands are message types in `Nibras.Contracts.<Service>/Commands/V1/`, replies are private to the saga and catalogued in document 11 | Reference architecture Section 3 and Section 10 | As stated | If commands were routed as public events, every service would see every other service's commands and the event catalog would double |
 | Tier migration is a saga without a workflow identifier | Reference architecture Section 14 has the procedure; Appendix R has no entry | As stated, entered from WF-PLT-02 | If a WF identifier is wanted, the proposed WF-PLT-04 is added to Appendix R under a version bump and this saga is renamed; nothing else moves |
 | `Stuck` is operator-only and non-terminal | Saga-design skill rule 6 | As stated | A self-resolving `Stuck` would hide failed compensations |
-| The tenant-deletion cooling-off default is the Appendix R value of 7 days, configurable under Security → retention periods | Appendix R WF-PLT-03; BR-PLT-003 parameter | 7 days | A longer default delays deletion; a shorter one shortens the owner's recovery window |
+| The tenant-deletion cooling-off default is the Appendix R value of 30 days, configurable under Security → retention periods | Appendix R WF-PLT-03 (ADR-0019); BR-PLT-003 parameter; master brief Section 32 | 30 days | A longer default delays deletion; a shorter one shortens the owner's recovery window |
 | A saga step whose target service is not yet deployed is skipped by tier configuration | Appendix L merge option | As stated | Without it, no saga could be complete before phase 5 |
 
 ## Dependencies on other documents

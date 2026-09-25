@@ -272,8 +272,8 @@ All REST paths are under `/api/v1/communication/`. Every endpoint may also retur
 | GET | `/api/v1/communication/oversight/conversations/{id}/messages` | `communication.messages.oversee-messages` | `reason` required | messages; one access-log entry per read (T-COM-02) | `COMMUNICATION_OVERSIGHT_REASON_REQUIRED` | yes |
 | POST | `/api/v1/communication/safeguarding-exports` | `communication.messages.export-for-safeguarding` | `{ studentId, conversationIds, reason }` | 202 job; one access-log entry per thread (REQ-COM-012) | `COMMUNICATION_OVERSIGHT_REASON_REQUIRED` | by `Idempotency-Key` |
 | GET | `/api/v1/communication/safeguarding-exports/{id}` | `communication.messages.export-for-safeguarding` | none | job result and a 5-minute signed link | `COMMUNICATION_NOT_FOUND` | yes |
-| POST | `/api/v1/communication/anonymous-concerns` | `communication.messages.create`, with the caller's identity discarded before persistence (open point 4) | `{ campusId, category, body }` | 202; `communication.concern.reported-anonymously.v1` (REQ-COM-017) | `COMMUNICATION_RATE_LIMITED` | yes, by a client token held only in `redis-state` for 24 hours |
-| GET | `/api/v1/communication/anonymous-concerns/{id}` | `communication.messages.oversee-messages` | `reason` required | the concern body for the safeguarding officer; read logged | `COMMUNICATION_OVERSIGHT_REASON_REQUIRED` | yes |
+| POST | `/api/v1/communication/anonymous-concerns` | `communication.concerns.create`, which never records the reporter, so the caller's identity is discarded before persistence | `{ campusId, category, body }` | 202; `communication.concern.reported-anonymously.v1` (REQ-COM-017) | `COMMUNICATION_RATE_LIMITED` | yes, by a client token held only in `redis-state` for 24 hours |
+| GET | `/api/v1/communication/anonymous-concerns/{id}` | `communication.concerns.view` | `reason` required | the concern body for the safeguarding officer; read logged | `COMMUNICATION_OVERSIGHT_REASON_REQUIRED` | yes |
 
 ### 5.5 Meetings
 
@@ -355,13 +355,13 @@ Reconciliation only (`10-data-architecture.md` sections 6 and 7.3); never on a r
 
 | Routing key | Raised by | Partition key | Consumers (Appendix E) |
 |---|---|---|---|
-| `communication.announcement.published.v1` | Publish, including a scheduled publish reaching its time | `tenantId` | Notification, Reporting |
+| `communication.announcement.published.v1` | Publish, including a scheduled publish reaching its time | `tenantId` | Notification, Reporting, Ai |
 | `communication.acknowledgment.recorded.v1` | First acknowledgment of a recipient | `announcementId` | Reporting |
 | `communication.acknowledgment.overdue.v1` | Acknowledgment chase job, per pending recipient | `announcementId` | Notification |
 | `communication.message.sent.v1` | A message released to recipients | `threadId` | Reporting |
 | `communication.message.reported.v1` | A participant's report; a keyword flag with `reportedBy` null and reason `keyword` | `threadId` | Wellbeing, Notification, Audit |
-| `communication.meeting.booked.v1` | Booking created, including by the Saga 6 `BookMeeting` command | `staffId` | Notification, Scheduling; Requests as a saga outcome |
-| `communication.meeting.changed.v1` | Booking moved or cancelled, including `CancelMeeting` | `staffId` | Notification; Requests as a saga outcome |
+| `communication.meeting.booked.v1` | Booking created, including by the Saga 6 `BookMeeting` command | `staffId` | Notification, Scheduling, Requests |
+| `communication.meeting.changed.v1` | Booking moved or cancelled, including `CancelMeeting` | `staffId` | Notification, Requests |
 | `communication.concern.reported-anonymously.v1` | Anonymous concern received | `campusId` | Wellbeing, Notification |
 | `communication.usage.recorded.v1` | Monthly messages and announcements | `tenantId` | Platform |
 | `communication.audit.recorded.v1` | Every oversight read, moderation decision, safeguarding export per thread, publish, withdraw, policy change | `tenantId` | Audit |
@@ -375,11 +375,12 @@ Queues are document 11 section 2.5's Communication table plus the two common que
 | The section 2.3 tenant-lifecycle set, including `identity.role.changed.v1` and `identity.permissions.changed.v1` in order per tenant | `communication.tenant-lifecycle` | `TenantLifecycleConsumer`, `PermissionRefreshRelay` | Tenant rows, read-only mode; policy recompiled on `platform.settings.changed.v1`; `permissions.changed` pushed to affected connections, a lower `permissionVersion` than one already pushed is dropped (document 11 section 2.5); settings and terminology pushed on `/hubs/session` |
 | `school.student.enrolled.v1`, `school.student.status-changed.v1`, `school.student.profile-updated.v1` | `communication.reference-copies` | `StudentReferenceConsumer` | `ref_students`; a profile update marks media consent for refresh; a withdrawn student leaves audiences |
 | `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | `communication.reference-copies` | `GuardianLinkConsumer` | `ref_guardian_links`; a restriction removes that guardian from the student's audiences and conversations |
-| `school.staff.created.v1`, `school.staff.left.v1`, `school.section.created.v1`, `school.section.changed.v1` (starred bindings, document 11 section 2.6) | `communication.reference-copies` | `StaffReferenceConsumer`, `SectionReferenceConsumer` | `ref_staff`, `ref_sections`; a leaver's open conversations close and their slots are cancelled with notice |
+| `school.staff.created.v1`, `school.staff.changed.v1`, `school.staff.left.v1`, `school.section.created.v1`, `school.section.changed.v1` | `communication.reference-copies` | `StaffReferenceConsumer`, `SectionReferenceConsumer` | `ref_staff`, `ref_sections`; the staff keys carry `namesEnAr` and the section keys `nameEn` and `nameAr`, so the audience builder needs no name lookup; a leaver's open conversations close and their slots are cancelled with notice |
 | `assessment.report-cards.published.v1` | `communication.events` | `ReportCardsPublishedConsumer` | A feed item for the grading period's guardians linking to the report card, keyed on `gradingPeriodId` |
 | `scheduling.event.published.v1` | `communication.events` | `SchoolEventPublishedConsumer` | A news-feed item for the school event, keyed on the event |
 | `requests.request.approved.v1` | `communication.events` | `RequestApprovedConsumer` | Shows "approved, being applied" beside a meeting request |
 | `attendance.emergency.broadcast-started.v1` | `communication.events.urgent` | `EmergencyBannerConsumer` | Pushes `emergency.banner` to connected clients of the campus; records nothing |
+| `identity.impersonation.started.v1` | `communication.events.urgent` | `ImpersonationBannerConsumer` | Pushes the web shell's impersonation banner to the target user's connected clients until the event's `until`; records nothing. Appendix E has no ended key, so the banner clears at `until` or when the shell's session ends |
 | `communication.commands.book-meeting.v1` and `communication.commands.cancel-meeting.v1` (`BookMeeting`, `CancelMeeting`) on `nibras.requests` | `communication.commands` | `MeetingEffectHandler` | Saga 6 effect keyed on `requestId`; outcome `communication.meeting.booked.v1` or `communication.meeting.changed.v1` |
 | tenant-lifecycle commands on `nibras.platform` | `communication.commands` | `TenantLifecycleCommandHandler` | Provision, delete tenant data, tier migration |
 
@@ -418,7 +419,7 @@ stateDiagram-v2
 |---|---|---|---|---|
 | `ref_students` | `school.student.enrolled.v1`, `school.student.status-changed.v1`, `school.student.profile-updated.v1` | names, section, grade, campus, status, media consent, profile version | Nightly against School `Checksum` for `student`; immediate snapshot fetch after a profile update | Minutes; publishing waits for a fresh consent |
 | `ref_guardian_links` | `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | guardian user, student, relationship, rights, restricted | Nightly against School `Checksum` for `guardian-link` | Minutes; a restriction is applied on the event |
-| `ref_staff`, `ref_sections` | `school.staff.created.v1`, `school.staff.left.v1`, `school.section.created.v1`, `school.section.changed.v1` | names, department, campuses, section grade, campus, homeroom | Nightly against School | Minutes |
+| `ref_staff`, `ref_sections` | `school.staff.created.v1`, `school.staff.changed.v1`, `school.staff.left.v1`, `school.section.created.v1`, `school.section.changed.v1` | names, department, campuses, section name, grade, campus, homeroom | Nightly against School | Minutes |
 | `ref_teaching` | open point 3 | staff to section | Nightly | Hours |
 | `ref_tenant_state`, `ref_settings` | tenant-lifecycle keys | status, flags, the *Communication* settings | Nightly against Platform | Minutes |
 
@@ -458,6 +459,8 @@ All run in the Api host under Quartz.NET.
 | `communication.messages.moderate` | Safeguarding Officer, Principal | elevated in practice; reads logged |
 | `communication.messages.oversee-messages` | Safeguarding Officer (four-eyes grant) | high; reason required; every read logged |
 | `communication.messages.export-for-safeguarding` | Safeguarding Officer (four-eyes grant) | high |
+| `communication.concerns.create` | Every tenant role template, in `self` (Appendix I rule 8) | normal; the reporter is never recorded |
+| `communication.concerns.view` | Safeguarding Officer only; the Principal is explicitly must-not | high; reason required; every read logged |
 | `communication.meetings.view`, `.create`, `.edit`, `.delete`, `.open-slots`, `.book-on-behalf` | Teachers open slots; guardians create; Registrar books on behalf | normal |
 | `communication.surveys.view`, `.create`, `.edit`, `.delete`, `.export`, `.publish`, `.close` | Principal, Vice Principal | normal |
 | `communication.policies.view`, `.create`, `.edit`, `.publish`, `.chase-acknowledgment` | Principal | normal |
@@ -474,6 +477,8 @@ All run in the Api host under Quartz.NET.
 | Anonymous concern reported | `communication.concern.reported-anonymously.v1` | Safeguarding officer | U; push, email |
 | Meeting booked | `communication.meeting.booked.v1` | Participants | N; push, email, calendar invite |
 | Meeting changed or reminder | `communication.meeting.changed.v1` | Participants | N; push, email |
+
+Appendix C deduplicates on the same template, recipient and subject within five minutes (BR-NOT-004); the reported-message and anonymous-concern rows are urgent and are never deduplicated.
 
 ### 11.3 Settings (Appendix G, owned by Platform)
 
@@ -728,12 +733,13 @@ src/Services/Communication/                                                   Co
 │   │   ├── TenantLifecycleConsumer.cs                                        the tenant-lifecycle set and the policy recompilation
 │   │   ├── StudentReferenceConsumer.cs                                       school.student.enrolled.v1, status-changed.v1, profile-updated.v1
 │   │   ├── GuardianLinkConsumer.cs                                           school.guardian.updated.v1 and identity.guardian-link.created.v1
-│   │   ├── StaffReferenceConsumer.cs                                         school.staff.created.v1 and school.staff.left.v1
+│   │   ├── StaffReferenceConsumer.cs                                         school.staff.created.v1, .changed.v1 and .left.v1
 │   │   ├── SectionReferenceConsumer.cs                                       school.section.created.v1 and school.section.changed.v1
 │   │   ├── ReportCardsPublishedConsumer.cs                                   assessment.report-cards.published.v1 feed item
 │   │   ├── SchoolEventPublishedConsumer.cs                                   scheduling.event.published.v1 feed item
 │   │   ├── RequestApprovedConsumer.cs                                        requests.request.approved.v1 status display
-│   │   └── EmergencyBannerConsumer.cs                                        attendance.emergency.broadcast-started.v1 on the urgent queue
+│   │   ├── EmergencyBannerConsumer.cs                                        attendance.emergency.broadcast-started.v1 on the urgent queue
+│   │   └── ImpersonationBannerConsumer.cs                                    identity.impersonation.started.v1 on the urgent queue, banner until `until`
 │   ├── Realtime/                                                             relays that feed the hubs
 │   │   ├── PermissionRefreshRelay.cs                                         permissions.changed to affected connections, version-ordered
 │   │   ├── SessionEventsRelay.cs                                             settings and terminology changes to tenant groups
@@ -865,14 +871,14 @@ Existing identifiers are reused; new ones are minted from `TC-COM-701` upward, a
 
 | Test case | Proves | Level |
 |---|---|---|
-| TC-COM-001 | Tagging a student without media consent blocks publishing (Appendix W, REQ-COM-004) | Integration |
-| TC-COM-002 | A policy is published, acknowledged with a recorded signature, and the unacknowledged are chased (REQ-COM-016) | Integration |
+| `TC-COM-001` (Appendix W) | Tagging a student without media consent blocks publishing (Appendix W, REQ-COM-004) | Integration |
+| `TC-COM-002` (Appendix W) | A policy is published, acknowledged with a recorded signature, and the unacknowledged are chased (REQ-COM-016) | Integration |
 | TC-COM-201 | A teacher reads a parent message and replies; the receipt shows and quiet hours are respected (Appendix Q) | End-to-end |
 | TC-COM-601 | A student messaging another student is blocked by default with a plain explanation (Appendix Q, REQ-COM-006) | End-to-end |
 | TC-COM-602 | A reported message reaches the safeguarding officer and the thread locks (Appendix Q, REQ-COM-008) | End-to-end |
 | TC-L10N-501 | Message translation with the original one tap away (REQ-COM-011) | End-to-end |
 | TC-SEC-210 to TC-SEC-213, TC-SEC-240 | T-COM-01 to T-COM-05 controls | Security suite |
-| TC-SEC-053 | Hub token on connect and revalidation on permission version | Security suite |
+| `TC-SEC-053` (document 12) | Hub token on connect and revalidation on permission version | Security suite |
 | TC-SEC-055, TC-SEC-056 | Generated permission-matrix and tenant-isolation suites, including hub group joins | Generated |
 | TC-TST-202, TC-TST-203 | Cache-entry tests; deliver-twice for every consumer | Generated |
 | TC-COM-701 | An announcement for Grade 5 sections A and B scheduled for 07:00 reaches only those families after 07:00 (REQ-COM-001) | Integration |
@@ -930,6 +936,7 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 | A keyword flag is published as `communication.message.reported.v1` with a null reporter and reason `keyword` | Appendix E has no flag event | As stated | Wellbeing and Notification need no second binding |
 | Permission and settings refresh ride `communication.tenant-lifecycle` | Document 11 section 2.5 | As stated; document 08's `communication.permission-refresh` queue name is aligned to it | None |
 | The roll-call view is not a hub group; the emergency banner is | `06-services/attendance.md` decisions | As stated | None |
+| Anonymous concerns run under `communication.concerns.create` and `.view`, not under the messaging permissions | Appendix B (v9.1); ADR-0019 | As stated | A guardian without messaging rights could not report |
 
 ## Dependencies on other documents
 
@@ -951,11 +958,11 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix E has no event for a news post, survey or policy publication, a moderation decision or a keyword flag | Catalogued events only; publications write `communication.audit.recorded.v1`; a keyword flag reuses `communication.message.reported.v1` | Architect, Appendix E amendment | Reporting cannot count surveys or policies as events |
+| 1 | Appendix E has no event for a news post, survey or policy publication, a moderation decision or a keyword flag | Catalogued events only; publications write `communication.audit.recorded.v1`, which ADR-0019 confirms as the only audit form; a keyword flag reuses `communication.message.reported.v1` | Architect, Appendix E amendment | Still open. ADR-0019 added no Communication event, so Reporting still cannot count surveys or policies as events |
 | 2 | Media consent lives in School and `school.student.profile-updated.v1` carries only changed field names | Communication's student copy keeps `media_consent`, refreshed by an immediate snapshot fetch when a profile update arrives; publishing waits for the refresh | Architect, with the School owner | A consent withdrawn minutes before publishing is honoured only after the fetch |
-| 3 | The relation rule "teacher of the student" needs teaching assignments, which Academics owns and Appendix E routes only to Assessment, Scheduling and Identity | Bind `academics.teaching-assignment.changed.v1` into `communication.reference-copies` as a starred binding; until then the rule uses the section homeroom and Identity's scope check | Architect | Subject teachers cannot message guardians until the binding exists |
-| 4 | Appendix B has no permission for anonymous concern reporting | Any signed-in member of the tenant with `communication.messages.create`; the caller's identity is discarded before persistence | Product owner | Guardians without messaging rights cannot report |
-| 5 | Appendix C maps meeting reminders to `communication.meeting.changed.v1`, which is a change event, and has no rows for the policy chase, survey invitations or auto-replies | Reminders and chases use `RequestNotification`; auto-replies are messages | Product owner | kit-lint R12 cannot check these messages |
+| 3 | The relation rule "teacher of the student" needs teaching assignments, which Academics owns and Appendix E routes only to Assessment, Scheduling and Identity | Bind `academics.teaching-assignment.changed.v1` into `communication.reference-copies` as a starred binding; until then the rule uses the section homeroom and Identity's scope check | Architect | Still open. ADR-0019 added Communication to `school.section.created.v1` and the staff keys but not to the teaching-assignment key, so subject teachers still cannot message guardians until the binding exists |
+| 4 | Appendix B has no permission for anonymous concern reporting | `communication.concerns.create` guards the report and never records the reporter; `communication.concerns.view` guards the safeguarding officer's read, with a reason and an access-log entry | Product owner | Resolved 2026-09-22 (ADR-0019): Appendix B carries `communication.concerns` with `create` and the high-risk `view`, Appendix B rule 5 logs every `concerns.view` read, Appendix I rule 8 gives `communication.concerns.create` to every tenant template, and only the Safeguarding Officer holds `view`, with the Principal listed as must-not |
+| 5 | Appendix C maps meeting reminders to `communication.meeting.changed.v1`, which is a change event, and has no rows for the policy chase, survey invitations or auto-replies | Reminders and chases use `RequestNotification`; auto-replies are messages | Product owner | Still open. ADR-0019 added thirteen Appendix C rows, none of them Communication's, so kit-lint R12 still cannot check these messages |
 | 6 | No machine-translation provider is licensed in the approved stack, and Ai is reached only through the backends-for-frontends | Translation is off until a provider is configured under *Integrations*; the endpoints return `COMMUNICATION_TRANSLATION_UNAVAILABLE` | Product owner, with the licence review | REQ-COM-011 and TC-L10N-501 cannot pass until a provider is chosen |
 | 7 | `communication.message.reported.v1` payload lacks the conversation's student subject, which Wellbeing needs to open a case | Wellbeing receives `messageId` and asks the safeguarding officer to link the student in its own case screen | Architect, with Wellbeing | One manual step per case |
 

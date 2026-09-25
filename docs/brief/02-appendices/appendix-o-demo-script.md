@@ -19,7 +19,7 @@ Master brief Section 4 says a school owner watching a fifteen-minute demo must i
 | Min | Persona | What happens | Feature | Test | Phase |
 |---|---|---|---|---|---|
 | 1 | Principal, phone | Opens the app to the **morning brief**: six approvals, two unmarked classes, one attendance flag, yesterday's collections. Clears all six approvals with one tap each | 25, 1 | TC-RPT-006 | 4 (Reporting). Earlier: substitution |
-| 2 | Teacher, phone | Opens **five-minute mode**. The register for 4B is already three-quarters filled from the gate scan and two approved leaves. Confirms four exceptions. Total elapsed on screen: under twenty seconds | 26, 34, 3 | TC-ATT-003 | 2, at the MVP cut line, whose request subset supplies the approved leaves |
+| 2 | Teacher, phone | Opens **five-minute mode**. The register for 4B is already three-quarters filled from the gate scan and two approved leaves. Confirms four exceptions. Total elapsed on screen: under twenty seconds | 26, 34, 3 | TC-ATT-812 | 2, at the MVP cut line, whose request subset supplies the approved leaves |
 | 3 | Teacher, phone, **network off** | Marks the next class with airplane mode on. The pending badge appears. Network comes back; the queue drains; the register updates. Nothing was lost and nothing was claimed complete while queued | 12 | TC-MOB-001 | 2 |
 | 4 | Parent, phone, **in Arabic, right to left** | Opens to the **calm screen** with the data-saver profile on, and the presenter says so: one card per child. For the older child, "nothing needs your attention today". For the younger, one absence notice with a one-tap excuse submission | 35, 7, 44 | TC-MOB-004, TC-MOB-005 | 2; the data-saver profile from 4 |
 | 5 | Principal, web | An attendance flag opens the **because panel**: the three inputs, the rule that fired, and an override with a reason. Then the **intervention playbook** opens in the same side panel with an owner and a review date | 28, 30, 4 | TC-RPT-008 | 4 (Reporting). Earlier: substitution |
@@ -29,8 +29,8 @@ Master brief Section 4 says a school owner watching a fifteen-minute demo must i
 | Min | Persona | What happens | Feature | Test | Phase |
 |---|---|---|---|---|---|
 | 6 | Coordinator, web | Opens the timetable, drags one period, sees the conflict highlight in real time, resolves it, publishes. Already-recorded attendance for the week is untouched, and the screen says so | 5 | TC-SCD-001 | 2 |
-| 7 | Teacher, web | Mark entry grid: types a column of marks with the keyboard only, pastes a block from a spreadsheet, hits a validation error on an out-of-range mark, fixes it, submits for moderation | 6 | TC-ASM-001 | 2 |
-| 8 | Principal, web | Approves the grading period, locks it, and starts the report card batch for a grade. The progress counter runs live over the real-time channel; a report card appears with its QR code | 6 | TC-ASM-001 | 2 |
+| 7 | Teacher, web | Mark entry grid: types a column of marks with the keyboard only, pastes a block from a spreadsheet, hits a validation error on an out-of-range mark, fixes it, submits for moderation | 6 | TC-ASM-810 | 2 |
+| 8 | Principal, web | Approves the grading period, locks it, and starts the report card batch for a grade. The progress counter runs live over the real-time channel; a report card appears with its QR code | 6 | TC-ASM-810 | 2 |
 | 9 | Anyone, public page | Scans the QR code on the printed report card. The public verification page confirms it, in both languages, without a login. Then a revoked certificate is scanned and correctly refuses | 6, 14 | TC-DOC-002 | 2 for the report card; the revoked certificate at the MVP cut line |
 | 10 | Accountant, web | Approves an invoice batch previewed before the meeting, shows one parent's **split payer** with a company sponsor, and prints a receipt with the amount in words in Arabic. Recording a payment is reserve step R-15 | 1, 10 | TC-FIN-001 | 3 (Finance). Earlier: substitution |
 
@@ -39,8 +39,8 @@ Master brief Section 4 says a school owner watching a fifteen-minute demo must i
 | Min | Persona | What happens | Feature | Test | Phase |
 |---|---|---|---|---|---|
 | 11 | Parent, web, **in Arabic** | Opens **guardian transparency**: which roles read their child's sensitive records and when, the consents they have given, and the retention clock. Requests their child's full data export, sees it accepted with its progress, and opens an export prepared at the start of the meeting | 31, 14 | TC-AUD-002 | 2 |
-| 12 | Teacher, web, **permission boundary** | Uses the **command palette** to reach another teacher's class, then tries to open the wellbeing record of a student they do not support. Both refuse with a clear message, and both attempts appear in the audit viewer seconds later | 14, 11 | TC-SEC-001, TC-WEB-001 | 5 (Wellbeing). Earlier: substitution |
-| 13 | Security officer, tablet | Triggers **emergency mode**. The staff app switches to roll call by location, acknowledgements stream in, the "not yet accounted for" list shrinks, and the minute ends on reunification verifying one pickup | 32, 8 | TC-ATT-004 | 2 |
+| 12 | Teacher, web, **permission boundary** | Uses the **command palette** to reach another teacher's class, then tries to open the wellbeing record of a student they do not support. Both refuse with a clear message, and both attempts appear in the audit viewer seconds later | 14, 11 | TC-SEC-530, TC-WEB-001 | 5 (Wellbeing). Earlier: substitution |
+| 13 | Security officer, tablet | Triggers **emergency mode**. The staff app switches to roll call by location, acknowledgements stream in, the "not yet accounted for" list shrinks, and the minute ends on reunification verifying one pickup | 32, 8 | TC-ATT-813 | 2 |
 | 14 | School owner, web | Opens the cross-campus dashboard: enrolment against capacity, collections against target, attendance, and the risk list. Clicks a number and uses **explain this number** to drill to the records behind it | 27, 1 | TC-RPT-007 | 4 (Reporting). Earlier: substitution |
 | 15 | Platform operator, web | Provisions a brand-new tenant live. The provisioning saga reports its first steps, then the presenter switches to a tenant provisioned at the start of the meeting. The **smart defaults engine** shows what it inferred from country and school type, the new school's report-card template is started from the **template exchange**, and the first administrator invitation is sent, valid for 14 days with a reminder at day 7 | 29, 15, 37 | TC-PLT-802, TC-PLT-803, TC-PLT-003 | 1 |
 
@@ -57,7 +57,7 @@ Five minutes need capabilities that land after the phase demos of `docs/plan/17-
 | 1 | Phase 4 | The morning brief and the dashboard cards (Reporting) | At the MVP cut line and in phase 3: the principal clears the pending attendance and document requests from the phone. No morning brief is shown | TC-RQS-002 |
 | 5 | Phase 4 | The because panel and the playbook library (Reporting); the general panel contract for every automated action follows in phase 5 | Phases 2 and 3: the attendance threshold flag shows its rule identifier and inputs and opens an intervention with an owner. No playbook library and no early-warning model | TC-RPT-008, run against the threshold rule |
 | 10 | Phase 3 | Invoicing, payments and sponsors (Finance) | Phase 2 and the MVP cut line: the bilingual-documents minute, an Arabic right-to-left class list and a transfer certificate in Arabic with its QR code | TC-L10N-202, TC-L10N-301 |
-| 12 | Phase 5 | The wellbeing record (Wellbeing) | Phases 2 to 4: the second refusal uses a custody-restricted student record in place of a wellbeing record | TC-SEC-001 |
+| 12 | Phase 5 | The wellbeing record (Wellbeing) | Phases 2 to 4: the second refusal uses a custody-restricted student record in place of a wellbeing record | TC-SEC-530 |
 | 14 | Phase 4 | The cross-campus dashboard and explain this number (Reporting) | Phases 2 and 3: reserve step R-01, Arabic-aware search | TC-L10N-311 |
 
 ---
@@ -74,20 +74,20 @@ Every signature feature without a minute has a sixty-second reserve step. A pres
 | R-04 | Registrar, web | Two guardians with the same national identifier surface with the rule that found them and a merge link | 13 | TC-RPT-004 | 4 |
 | R-05 | Parent, two phones | Two schools' branded apps side by side, from one build. Presented as parity, not as a difference | 16 | TC-MOB-002 | 4 |
 | R-06 | Teacher, web | A class photo with one child lacking media consent is blocked at publishing | 17 | TC-COM-001 | 3 |
-| R-07 | Teacher, web, then parent, phone | A recognition added by the teacher appears in the student's portfolio and in the family export | 18 | TC-BEH-001 | 4 |
-| R-08 | Kindergarten teacher, tablet, then parent, phone | Five taps on the tablet produce the daily sheet on the parent's phone | 19 | TC-ACA-001 | 4 |
-| R-09 | Coordinator, web | One pass forms four balanced sections; one drag shows the balance change live | 20 | TC-SCH-001 | 2 |
+| R-07 | Teacher, web, then parent, phone | A recognition added by the teacher appears in the student's portfolio and in the family export | 18 | TC-BEH-810 | 4 |
+| R-08 | Kindergarten teacher, tablet, then parent, phone | Five taps on the tablet produce the daily sheet on the parent's phone | 19 | TC-ACA-810 | 4 |
+| R-09 | Coordinator, web | One pass forms four balanced sections; one drag shows the balance change live | 20 | TC-SCH-810 | 2 |
 | R-10 | Principal, web | The evidence folder for one inspection criterion, already filled from the term's records | 21 | TC-RPT-005 | 4 |
 | R-11 | Principal, web | A handbook is sent to staff; the missing acknowledgments are listed and chased | 22 | TC-COM-002 | 3 |
 | R-12 | IT lead, web | A webhook fires to a request inspector when attendance is marked, and a staff calendar updates by iCal | 24 | TC-INT-001 | 3; the iCal half from 2 |
-| R-13 | Administrator, web | The campus floor plan shows free rooms for period 3, and one is booked | 33 | TC-OPS-001 | 5 |
+| R-13 | Administrator, web | The campus floor plan shows free rooms for period 3, and one is booked | 33 | TC-OPS-810 | 5 |
 | R-14 | Principal, web | The yearbook draft for a grade, built from consented media only | 36 | TC-DOC-801 | 4 |
-| R-15 | Accountant, web | A payment is recorded and allocated across two invoices, and the receipt is printed | 10 | TC-FIN-001 | 3 |
+| R-15 | Accountant, web | A payment is recorded and allocated across two invoices, and the receipt is printed | 10 | TC-FIN-551 | 3 |
 | R-16 | IT lead, web | A sample ministry-export plug-in is installed and run on the demo tenant | 38 | TC-INT-002 | 3 |
 | R-17 | IT lead, web | A worker is stopped, the queue backs up, the replay runs inside the replay policy, and the operator note appears | 40 | TC-INF-801 | 6 |
 | R-18 | IT lead, web | A settings export, a one-line diff, review, and apply | 41 | TC-PLT-804 | 1 |
-| R-19 | Teacher, web | The standards heatmap for a class, with the rung 2 suggestion switched off to show the fallback | 42 | TC-ASM-002 | 2 for the heatmap; the suggestion from 5 |
-| R-20 | Coordinator, web | A cover request shows the least-loaded eligible teacher and the load totals behind it | 43 | TC-HR-001 | 5 |
+| R-19 | Teacher, web | The standards heatmap for a class, with the rung 2 suggestion switched off to show the fallback | 42 | TC-ASM-811 | 2 for the heatmap; the suggestion from 5 |
+| R-20 | Coordinator, web | A cover request shows the least-loaded eligible teacher and the load totals behind it | 43 | TC-HR-810 | 5 |
 
 R-16, R-17 and R-18 are shown to an IT lead only. Feature 15 (demo mode with one-click reset) is exercised before every run by the reset in the setup above and is tested by TC-PLT-801.
 

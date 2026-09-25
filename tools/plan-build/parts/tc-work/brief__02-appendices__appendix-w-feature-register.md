@@ -1,0 +1,28 @@
+# Test-case work for `docs/brief/02-appendices/appendix-w-feature-register.md`
+
+## Collisions to resolve here (the owner keeps the identifier)
+
+- **TC-SCH-001** at line 38: "20 | Balanced class formation | "Fair classes in one pass, then adjusted by hand" | 1 | 1 surfaces | 2 | School"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 541: "Requested to ClearancePending | Requester is a linked guardian or a registrar | Clearance items raised for finance, library, and assets"
+- **TC-ACA-001** at line 37: "19 | Kindergarten daily sheet | "I know how the day went" | 1 | 1 surfaces | 2 | Academics"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 770: "Draft to Published | Homework load for that day under the section limit | Published, students and guardians notified"
+- **TC-ASM-001** at line 24: "6 | Report Card Studio with QR verification | "Eight hundred report cards, verified" | 1, comments at 3 | 3 drafts | 1 | Assessment"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 812: "MarkEntry to Validated | Every enrolled student has a mark, an absence, or an exemption | Entry accepted for moderation"
+- **TC-ASM-002** at line 60: "42 | Mastery and next step | "I saw the gap and what to teach next" | 2, degrades to the raw heatmap | 2 suggests | 2 | Assessment"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 813: "MarkEntry to Validated | A mark exceeds the maximum for the component | Rejected at entry with the offending cell highlighted"
+- **TC-ATT-001** at line 21: "3 | Sixty-second attendance | "Done before the bell stopped" | 1 | 1 surfaces | 1 | Attendance"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 928: "Open to Marked | Teacher holds a teaching assignment for that session | Register saved, absent students queued for alerting"
+- **TC-ATT-002** at line 26: "8 | Safety and dismissal with gate passes | "I know who collected the child" | 1 | 1 surfaces | 1 | Attendance"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 929: "Open to NotMarked | Grace period passed with no submission | Escalation raised, session still markable with a reason"
+- **TC-ATT-003** at line 44: "26 | Exception-only attendance | "The register was already half filled" | 1 | 4 acts, the pre-fill only | 1 | Attendance"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 930: "Marked to AbsenceAlerted | Guardian has a verified channel and quiet hours allow it | Alert delivered or deferred, never silently dropped"
+- **TC-ATT-004** at line 50: "32 | Emergency mode with reunification | "Every child accounted for in four minutes" | 1 | 1 surfaces | 1 | Attendance"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 931: "ExcuseSubmitted to ExcuseApproved | Submitted within the excuse window by a linked guardian | Day changed to excused, counters recalculated"
+- **TC-BEH-001** at line 36: "18 | Student portfolio and recognition | "Everything they achieved, theirs to keep" | 1 | 1 surfaces | 2 | Behavior"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1279: "Recorded to UnderReview | Recorder taught or supervised the student that day | Case routed to the head of year for that section"
+- **TC-WEL-001** at line 48: "30 | Intervention playbooks | "A flag became a plan with an owner" | 1 | 3 drafts | 1 | Wellbeing"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1318: "PlanDrafted to ConsentPending | Guardian holds parental access and is not restricted | Consent request sent with the accommodation list"
+- **TC-HR-001** at line 61: "43 | Workload balance for staff | "Someone noticed before I burned out" | 2, degrades to load totals | 2 suggests | 2 | Hr"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1516: "Requested to UnderReview | Leave balance covers the request for that leave type | Conflicts with exams and duties listed for the manager"
+- **TC-OPS-001** at line 51: "33 | Campus digital twin | "I saw the empty rooms at a glance" | 1 | 1 surfaces | 2 | Operations"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1675: "Submitted to BudgetChecked | Budget line exists for the current financial period | Remaining balance evaluated against the requested total"

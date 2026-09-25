@@ -98,6 +98,8 @@ ASP.NET Core Identity and SignalR ship in the .NET 10 shared framework (MIT, `ht
 | NSubstitute | Test doubles | 6.2.0 | BSD-3-Clause | https://www.nuget.org/packages/NSubstitute/6.2.0 | 2026-09-22 | Tool | allowed |
 | Shouldly | Assertions | 4.3.0 | BSD-3-Clause | https://www.nuget.org/packages/Shouldly/4.3.0 | 2026-09-22 | Tool | allowed |
 | AwesomeAssertions | Assertions (alternative) | 9.6.0 | Apache-2.0 | https://www.nuget.org/packages/AwesomeAssertions/9.6.0 | 2026-09-22 | Tool | allowed |
+| FsCheck | Property-based tests for the arithmetic rules (Appendix V; `16-test-strategy.md` §6.2 makes it the default). Not in Section 6.2's Testing list, so the choice needs an ADR: open point 7 | 3.4.0 | BSD-3-Clause (`<license type="expression">` in the nuspec) | https://www.nuget.org/packages/FsCheck/3.4.0 | 2026-09-22 | Tool (test projects) | allowed |
+| FsCheck.Xunit | xUnit integration for the above; pins `FsCheck` to the same version | 3.4.0 | BSD-3-Clause (`<license type="expression">` in the nuspec) | https://www.nuget.org/packages/FsCheck.Xunit/3.4.0 | 2026-09-22 | Tool (test projects) | allowed |
 | Bogus | Test data | 35.6.5 | MIT (nuspec carries a licence file; text read at https://github.com/bchavez/Bogus/blob/master/LICENSE) | https://www.nuget.org/packages/Bogus/35.6.5 | 2026-09-22 | Tool | allowed |
 | Testcontainers | Integration tests | 4.15.0 | MIT | https://www.nuget.org/packages/Testcontainers/4.15.0 | 2026-09-22 | Tool | allowed |
 | Testcontainers.PostgreSql | Integration tests (PostgreSQL module; RabbitMQ and Redis modules share the version) | 4.15.0 | MIT | https://www.nuget.org/packages/Testcontainers.PostgreSql/4.15.0 | 2026-09-22 | Tool | allowed |
@@ -221,14 +223,14 @@ Section 6.2 names the SIL Open Font License for fonts, so OFL-1.1 fonts are `all
 | Gitleaks | Secret scan | 8.30.1 | MIT | https://github.com/gitleaks/gitleaks/blob/master/LICENSE | 2026-09-22 | Tool | allowed |
 | OWASP ZAP | Dynamic security scan | 2.17.0 | Apache-2.0 | https://github.com/zaproxy/zaproxy/blob/main/LICENSE | 2026-09-22 | Tool | allowed |
 | SonarQube Community | Static analysis | 26.9.0.129388 | LGPL-3.0 | https://github.com/SonarSource/sonarqube/blob/master/LICENSE.txt | 2026-09-22 | Standalone (never linked) | allowed-standalone (LGPL run as a server; Section 6.4 covers GPL and AGPL only, but the scanner still needs an exception entry if its image is ever scanned) |
-| k6 | Load tests (Section 6.2, Testing paragraph) | 2.3.0 | AGPL-3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | 2026-09-22 | Tool | not-allowed until a Section 6.4 row and ADR exist (open point 1) |
+| k6 | Load tests (Section 6.2, Testing paragraph; Section 6.4 row since brief v9.1) | 2.3.0 | AGPL-3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | 2026-09-22 | Tool (load-test binary in CI and test environments, never linked, never shipped) | allowed-standalone by master brief Section 6.4; the `allow.json` entry and its ADR are still outstanding (open point 1) |
 | oasdiff | Breaking-change detection | 1.32.1 | Apache-2.0 | https://github.com/oasdiff/oasdiff/blob/main/LICENSE | 2026-09-22 | Tool | allowed |
 | buf | gRPC lint and breaking checks | 1.73.0 | Apache-2.0 | https://github.com/bufbuild/buf/blob/main/LICENSE | 2026-09-22 | Tool | allowed |
 | Forgejo | Self-hosted forge (alternative to GitHub) | 16.0.5 | GPL-3.0-or-later (since v9.0) | https://codeberg.org/forgejo/forgejo/src/branch/forgejo/LICENSE ; https://forgejo.org/2024-08-gpl/ | 2026-09-22 | Standalone | not-allowed until a Section 6.4 row and ADR exist (open point 1) |
 | Woodpecker CI | Self-hosted CI (alternative) | 3.18.1 | Apache-2.0 | https://github.com/woodpecker-ci/woodpecker/blob/main/LICENSE | 2026-09-22 | Standalone | allowed |
 | GitHub Actions | CI (free tier) | Hosted service | Free tier of a hosted service, not a licence | n/a | 2026-09-22 | Service | named by Section 6.2; see open point 5 |
 
-**Count.** 147 rows across §2 to §8. 142 are verified for both version and licence from the source for that version. 5 rows carry `unverified` in part: the IBM Plex Sans Arabic upstream family version, Tesseract trained data, Meilisearch (edition split), PostHog (edition and server version), and the Podman version. The native Skia and ImageMagick components bundled by SkiaSharp and Magick.NET are also unverified (§2 note). Nothing is guessed.
+**Count.** 149 rows across §2 to §8. 144 are verified for both version and licence from the source for that version. 5 rows carry `unverified` in part: the IBM Plex Sans Arabic upstream family version, Tesseract trained data, Meilisearch (edition split), PostHog (edition and server version), and the Podman version. The native Skia and ImageMagick components bundled by SkiaSharp and Magick.NET are also unverified (§2 note). Nothing is guessed.
 
 ---
 
@@ -238,11 +240,11 @@ Section 6.2 names the SIL Open Font License for fonts, so OFL-1.1 fonts are `all
 
 | Item | What Section 6.2 or 6.4 says | What the source says on 2026-09-22 | Version where it changed | Source | Consequence |
 |---|---|---|---|---|---|
-| k6 | Named in the Testing paragraph with no licence | AGPL-3.0 | Current 2.3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | A GPL-family tool used in CI with no Section 6.4 row and no `allow.json` entry. Open point 1 |
+| k6 | Named in the Testing paragraph with no licence; brief v9.1 added the Section 6.4 row under ADR-0019 (load, soak and performance-budget tests; a standalone binary in CI and test environments only) | AGPL-3.0 | Current 2.3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | The Section 6.4 row now exists; the `allow.json` entry and its ADR do not, so the first load-test job still fails the scan. Open point 1 |
 | Forgejo | Named in the CI row with no licence | GPL-3.0-or-later | 9.0 (older releases MIT) | https://forgejo.org/2024-08-gpl/ | Same as k6 if Forgejo is chosen. Open point 1 |
 | Matomo | Named for staff analytics, "verify the license" | GPL-3.0 | Current 5.13.0 | https://github.com/matomo-org/matomo/blob/5.x-dev/LICENSE | Same as k6 if Matomo is chosen. Open point 1 |
 | SonarQube Community | Named in the CI row with no licence | LGPL-3.0 | Current 26.9.0.129388 | https://github.com/SonarSource/sonarqube/blob/master/LICENSE.txt | Standalone use is fine; recorded so nobody links its libraries |
-| Valkey | Reference architecture Section 16 pins "Valkey 8" | Latest stable is 9.1.2, still BSD-3-Clause | 9.x major | https://github.com/valkey-io/valkey | Major-version drift from the pinned table, not a licence change. Open point 4 |
+| Valkey | Reference architecture Section 16 pins Valkey 9.1 since v9.1 (ADR-0019), and never Redis below 8.0 | Current is 9.1.2, still BSD-3-Clause | 9.x minor | https://github.com/valkey-io/valkey | Major-version drift from the pinned table, not a licence change. Open point 4 |
 | Redis | 6.4 row: Redis 8, AGPLv3 option | Tri-licence RSALv2 OR SSPLv1 OR AGPLv3 from 8.0; 7.2 and earlier BSD-3-Clause; the 7.4 line has no AGPL option | 7.4 (RSALv2 or SSPLv1 only), 8.0 (AGPLv3 added) | https://github.com/redis/redis/blob/unstable/LICENSE.txt | Never pin a 7.4.x image. `TC-SEC-394` below |
 | Shouldly | Named with no licence | BSD-3-Clause | 4.3.0 (4.0.0 to 4.2.x were BSD-2-Clause) | https://www.nuget.org/packages/Shouldly/4.3.0 | Both allowed; recorded because the licence changed |
 | CsvHelper | MIT / Apache-2.0 | `MS-PL OR Apache-2.0` | Current 33.1.0 | https://www.nuget.org/packages/CsvHelper/33.1.0 | Allowed by electing Apache-2.0; the scanner must understand `OR` (§11.3) |
@@ -305,13 +307,15 @@ The last-acceptable versions for MassTransit, MediatR, AutoMapper and FluentAsse
 
 The file's own note reads: "Nothing linked into product code may appear here."
 
+Seven entries, quoted as the file stands on 2026-09-22. Master brief Section 6.4 gained a k6 row in brief v9.1 under ADR-0019; the matching `allow.json` entry does not exist yet, which is open point 1. This table is not edited ahead of the file.
+
 ### 11.2 The four-field rule
 
 Master brief Section 6.4: every entry names the tool, the licence, the Section 6.4 row that justifies it, and the ADR. `run.mjs` enforces it by checking `name`, `license`, `justification` and `adr` on every entry and failing the scan when any is empty. Adding an entry is a reviewed change, and the licence auditor re-verifies the whole list at every release.
 
 ### 11.3 Scanner cases found here, and how they were fixed
 
-The first version of `tools/license-scan/run.mjs` compared a licence string against fixed sets, which would have failed four legitimate package shapes. All four were fixed on 2026-09-22 and each has a test in `tools/license-scan/run.test.mjs` (11 tests, passing).
+The first version of `tools/license-scan/run.mjs` compared a licence string against fixed sets, which would have failed four legitimate package shapes. All four were fixed on 2026-09-22 and each has a test in `tools/license-scan/run.test.mjs` (12 tests, passing).
 
 | Case | Packages affected | Fix now in the scanner | Test |
 |---|---|---|---|
@@ -319,7 +323,7 @@ The first version of `tools/license-scan/run.mjs` compared a licence string agai
 | OFL-1.1 | `@fontsource/*` fonts | An asset rule: OFL-1.1 and the Creative Commons asset licences pass for `kind: "asset"` and are refused for linked code, per master brief Section 6.2 | "font licences are allowed as assets and refused as linked code" |
 | Licence carried as a file | Bogus, dotnet-stryker, NetArchTest.Rules | Refused with a message naming the fix: record the SPDX identifier under `overrides` in `tools/license-scan/allow.json`, keyed `<package>@<exact version>`. An override whose licence is itself not allowed fails the scan | "a licence shipped as a file is refused until an override records its SPDX identifier" |
 | `-only` and `-or-later` spellings | renovate (`AGPL-3.0-only`), LGPL packages | Suffixes are normalised before comparison, so the policy judges the licence, not its spelling | "the -only and -or-later suffixes are judged on the licence they spell" |
-| Tools not yet listed | k6, and Forgejo or Matomo if chosen | Correctly refused until listed in master brief Section 6.4 and `allow.json` | Open point 1 |
+| Tools not yet listed | k6 until its `allow.json` entry lands; Forgejo or Matomo if chosen | Correctly refused until listed in master brief Section 6.4 **and** `allow.json`; k6 has the Section 6.4 row since brief v9.1 and still needs the entry | Open point 1 |
 
 ---
 
@@ -357,6 +361,8 @@ The first version of `tools/license-scan/run.mjs` compared a licence string agai
 | GPL and AGPL only as standalone tools, each listed in Section 6.4 with an `allow.json` entry and an ADR | Master brief Section 6.4; ADR `0005-redis-agpl-standalone-valkey-fallback` | In force | Keeps copyleft at arm's length and visible |
 | OFL-1.1 is allowed for fonts only | Master brief Section 6.2 | In force; the scanner applies it as an asset rule (§11.3) | Fonts are assets, not code |
 | Where a package offers `A OR B`, the allowed alternative is elected and recorded | This document §9.1 | Proposed | CsvHelper and RabbitMQ.Client would otherwise block the scan |
+| k6 runs as a standalone load-test tool in CI and test environments, never linked and never shipped | Master brief Section 6.4, row added in brief v9.1 under ADR-0019 | In force in the brief; the `allow.json` entry is outstanding (open point 1) | Every load gate in documents 15, 16 and 17 runs on it |
+| FsCheck is the property-based library for the arithmetic rules, pinned at 3.4.0 | `16-test-strategy.md` §6.2; this document §3 | Proposed, pending the ADR in open point 7 | Appendix V requires a property-based test and Section 6.2 names no library |
 | Redis is never pinned below 8.0 | This document §9.1 | Proposed | 7.4 has no AGPL option |
 | Capped packages carry a Renovate `allowedVersions` rule | This document §12 | Proposed | An automated update must never cross a licence change |
 
@@ -368,6 +374,7 @@ The first version of `tools/license-scan/run.mjs` compared a licence string agai
 | Pinned majors | Reference architecture Section 16 | Group E review |
 | Supply-chain controls and the 48-hour critical rule | Reference architecture Section 11; master brief Section 20 | Group E review |
 | Lock-file enforcement `TC-SEC-380` and the flutter secure storage pin | `12-security-privacy-safety.md` | Group E review |
+| Which property-based library the arithmetic rules use, and which load tool the gates use | `16-test-strategy.md` §6.2 and part 10 | Group E review |
 | The generator, Scalar, Spectral, `oasdiff` and buf usage | `08-web-structure.md`; `22-api-conventions-and-error-catalog.md` | Group D review |
 | The pub packages used by the app | `09-mobile-structure.md` | Group B review |
 | Model licences for Ollama and vLLM | `25-ai-and-assist-ladder.md` | Group D review |
@@ -378,12 +385,14 @@ The first version of `tools/license-scan/run.mjs` compared a licence string agai
 
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
-| 1. k6 (AGPL-3.0) is named in Section 6.2 but has no Section 6.4 row or `allow.json` entry; Forgejo (GPL-3.0 since 9.0) and Matomo (GPL-3.0) would need the same if chosen | Add k6 to Section 6.4 by ADR as a CI tool, never shipped, with an `allow.json` entry. Choose GitHub Actions over Forgejo and PostHog's MIT edition over Matomo only if the PostHog edition verifies; otherwise list Matomo by ADR as standalone. No replacement is forced: the policy allows these tools once listed | Architect, with the licence auditor | Without the row the first load-test job fails the scan, or the tool runs unlisted and breaks Section 6.4 |
+| 1. Closed: k6 (AGPL-3.0) has its Section 6.4 row since brief v9.1 (ADR-0019) and its `allow.json` entry with the four fields. Forgejo (GPL-3.0 since 9.0) and Matomo (GPL-3.0) would need both if chosen | Both are recorded; the licence scan passes with the entry in place | Architect, with the licence auditor | Without the entry the first load-test job fails the scan, and every load gate in documents 15, 16 and 17 waits on it |
 | 2. The scanner mishandled `OR` expressions, OFL-1.1, file-carried licences and the `-only` suffix (§11.3) | **Resolved 2026-09-22.** All four fixed in `tools/license-scan/run.mjs`; overrides live in `allow.json` and each must record `spdx`, `source` and `checked`, and cannot launder a banned licence. 12 tests in `run.test.mjs` pass | Tech lead | Closed |
 | 3. NetArchTest.Rules has had no release since 2021-05-23 and publishes no licence metadata | Keep it; add an override entry. If it breaks on .NET 10, replace it with TngTech.ArchUnitNET 0.13.4 (Apache-2.0), which is not named in Section 6.2 and needs an ADR | Tech lead | Architecture rules stop running, which removes a guard on service boundaries |
-| 4. Valkey's current major is 9 while reference architecture Section 16 pins Valkey 8 | Run the fallback suite against Valkey 9.1.2 and amend Section 16 by ADR if it passes | Architect | The fallback silently drifts from the version the integration suite proves |
+| 4. Closed by ADR-0019: reference architecture Section 16 pins Valkey 9.1 (current 9.1.2). The fallback suite runs against it | Run the fallback suite against Valkey 9.1.2 and amend Section 16 by ADR if it passes | Architect | The fallback silently drifts from the version the integration suite proves |
 | 5. GitHub Actions is a free tier of a hosted service, which Section 6.1 lists as not allowed, while Section 6.2 names it | Keep it as named; Woodpecker CI (Apache-2.0) is the replacement if the free tier changes | Product owner | A pricing change on the free tier stops delivery |
 | 6. Meilisearch and PostHog editions, Tesseract trained data, native ImageMagick and Skia, the IBM Plex Sans Arabic family version and the Podman version are `unverified` | Verify each at the source before first use; nothing in phase 1 depends on them except the fonts and native image libraries, which are verified before the first release | Licence auditor | An unverified component reaches a release |
+
+| 7. FsCheck is the default property-based library in `16-test-strategy.md` §6.2 and is named by `13-workflows-and-sagas.md`, but master brief Section 6.2's Testing list names no property-based library | Pin FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 (§3, both BSD-3-Clause) and record the choice by ADR, as TngTech.ArchUnitNET's row would need. CsCheck and Hedgehog stay named alternatives with no row until one is chosen | Tech lead | A test-only dependency enters the build without the ADR that Section 6.2 additions require |
 
 No verified item forces a replacement today. Every banned item in §9.2 already has its Section 6.2 replacement in the stack.
 
@@ -392,6 +401,7 @@ No verified item forces a replacement today. Every banned item in §9.2 already 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
 | 2026-09-22 | Group E review pending | Draft | none recorded yet |
+| 2026-09-22 | Scorecard remediation, theme 4 | Amended: FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 added to §3 from each nuspec (row count 147 to 149); k6 re-verdicted `allowed-standalone` on the Section 6.4 row brief v9.1 added under ADR-0019; the §11.3 scanner test count corrected from 11 to 12 | The k6 `allow.json` entry, open point 1 |
 
 ## How this document is verified
 

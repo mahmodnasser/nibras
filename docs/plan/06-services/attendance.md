@@ -174,7 +174,7 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 | `decision_reason_code` | text(32) | yes | Required on reject |
 | `client_token` | uuid | yes | Offline submission key; duplicates within 5 minutes for the same student and dates collapse (Appendix M.3) |
 
-**`medical_excuse_details`**, range-partitioned by month on `created_at`, column-encrypted, Sensitive: `excuse_id uuid`, `detail_ciphertext bytea`, `key_id text`. No endpoint returns it in v1 (Open point 4).
+**`medical_excuse_details`**, range-partitioned by month on `created_at`, column-encrypted, Sensitive: `excuse_id uuid`, `detail_ciphertext bytea`, `key_id text`. It is read only through the Appendix B action `attendance.excuses.view-medical-detail` (high risk, every read logged), which Appendix I grants to the nurse under a four-eyes grant and denies to the homeroom teacher and the principal.
 
 **Invariants (Excuse)**
 
@@ -298,7 +298,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1 and the endpoint file
 | POST | `/api/v1/attendance/sessions/{id}/edit-after-lock` | `attendance.student-attendance.edit-after-lock` | `EditAfterLockRequest`: `changes[]` (studentId, code), `reasonCode`, `reasonText` | 200 updated register rows | `ATTENDANCE_STUDENT_NOT_IN_SECTION`, `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, Key required; `If-Match` on the session |
 | POST | `/api/v1/attendance/sessions/bulk` | `attendance.student-attendance.bulk-mark` | Bulk envelope (§7 of document 22), up to 500 items, each a session with marks | 200 per-item results | per item: `ATTENDANCE_SESSION_LOCKED`, `ATTENDANCE_SESSION_NOT_SCHEDULED`, `ATTENDANCE_STUDENT_NOT_IN_SECTION` | Yes, Key required on the request |
 | GET | `/api/v1/attendance/sessions/unmarked?campusId=&date=` | `attendance.student-attendance.view` (campus) | query | `UnmarkedSessionRow[]`: section, period, teacher, minutes past cut-off | none beyond K.1 | Safe |
-| POST | `/api/v1/attendance/sessions/{id}/nudge` | `attendance.student-attendance.view` (campus); see Open point 6 | `{}` | 202; republishes `attendance.attendance.not-marked.v1` with `escalateTo` = the teacher | `ATTENDANCE_RATE_LIMITED` (one nudge per session per 10 minutes) | Yes, per session per 10-minute window |
+| POST | `/api/v1/attendance/sessions/{id}/nudge` | `attendance.student-attendance.nudge` (campus) | `{}` | 202; republishes `attendance.attendance.not-marked.v1` with `escalateTo` = the teacher | `ATTENDANCE_RATE_LIMITED` (one nudge per session per 10 minutes) | Yes, per session per 10-minute window |
 | POST | `/api/v1/attendance/sessions/sync` | `attendance.student-attendance.mark` | `SyncOfflineMarksRequest`: up to 500 actions or 5 MB, each with `idempotencyKey`, `occurredAt`, `entityVersion`, `sessionRef`, marks | 200 per-action results: `accepted`, `merged`, `review-created`, `rejected` with Appendix K code | per action: `ATTENDANCE_DUPLICATE_MARK` (200), `ATTENDANCE_OFFLINE_CONFLICT`, `ATTENDANCE_SESSION_NOT_SCHEDULED`, `ATTENDANCE_STUDENT_NOT_IN_SECTION` | Yes, per action key (Appendix M.2) |
 | GET | `/api/v1/attendance/sessions/changes?checkpoint=&limit=` | `attendance.student-attendance.view` | checkpoint from the previous page (Bff.Mobile wraps it in the delta token) | `AttendanceChangesPage`: upserted sessions and records in the caller's scope, discarded values, `nextCheckpoint`, `hasMore`; at most 500 changes and 256 KB | `ATTENDANCE_VALIDATION_FAILED` on an unknown or expired checkpoint | Safe |
 
@@ -315,9 +315,9 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1 and the endpoint file
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
 | GET | `/api/v1/attendance/offline-reviews?status=&mine=` | `attendance.student-attendance.view` | query | `OfflineMarkReviewRow[]` with both values and times | none beyond K.1 | Safe |
-| POST | `/api/v1/attendance/offline-reviews/{id}/submit` | `attendance.student-attendance.mark` | `{ reasonCode }` | 200 review in `Submitted` | `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, state-guarded (a second submit is a no-op) |
+| POST | `/api/v1/attendance/offline-reviews/{id}/submit` | `attendance.student-attendance.mark` | `{ reasonCode }` | 200 review in `Submitted`; publishes `attendance.mark-review.requested.v1` | `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, state-guarded (a second submit is a no-op) |
 | POST | `/api/v1/attendance/offline-reviews/{id}/resolve` | `attendance.student-attendance.mark` before lock; `attendance.student-attendance.edit-after-lock` after | `{ keep: device \| server }` | 200 resolved review and record | `ATTENDANCE_SESSION_LOCKED`, `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, first decision wins |
-| POST | `/api/v1/attendance/offline-reviews/{id}/apply` | `attendance.student-attendance.edit-after-lock` | `{ decision: apply \| refuse, reasonCode }` | 200 review `Applied` or `Refused` | `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, first decision wins |
+| POST | `/api/v1/attendance/offline-reviews/{id}/apply` | `attendance.student-attendance.edit-after-lock` | `{ decision: apply \| refuse, reasonCode }` | 200 review `Applied` or `Refused`; publishes `attendance.mark-review.resolved.v1` | `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, first decision wins |
 
 ### 4.4 Check-ins and presence signals (`CheckInEndpoints.cs`, extension)
 
@@ -352,7 +352,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1 and the endpoint file
 |---|---|---|---|---|---|---|
 | POST | `/api/v1/attendance/excuses` | `attendance.excuses.create` (own-children for guardians) | `SubmitExcuseRequest`: studentId, dates, periodIds, code, reasonCategory, reasonText, `evidenceFileId` | 201 `Excuse` | `ATTENDANCE_EXCUSE_EVIDENCE_REQUIRED`, `ATTENDANCE_EXCUSE_WINDOW_PASSED` | Yes, Key required; duplicate within 5 minutes collapses to the first |
 | GET | `/api/v1/attendance/excuses?status=&sectionId=` | `attendance.excuses.view` | query, cursor | `ExcuseRow[]`: student, dates, code, reason category, evidence present, scan status | none beyond K.1 | Safe |
-| GET | `/api/v1/attendance/excuses/{id}` | `attendance.excuses.view` | none | `Excuse` with a 5-minute evidence link issued by Documents; no medical detail | none beyond K.1 | Safe |
+| GET | `/api/v1/attendance/excuses/{id}` | `attendance.excuses.view` | none | `Excuse` with a 5-minute evidence link issued by Documents; the medical detail only when the caller also holds `attendance.excuses.view-medical-detail`, and the read is logged | `ATTENDANCE_PERMISSION_DENIED` when the detail is requested without it | Safe |
 | POST | `/api/v1/attendance/excuses/{id}/approve` | `attendance.excuses.approve` | `{ note }` | 200 `Excuse`; publishes `attendance.excuse.approved.v1` | `ATTENDANCE_CONCURRENCY_CONFLICT` (first decision wins), `ATTENDANCE_VALIDATION_FAILED` when the evidence scan is not clean | Yes, state-guarded |
 | POST | `/api/v1/attendance/excuses/{id}/reject` | `attendance.excuses.reject` | `{ reasonCode }` | 200 `Excuse` | `ATTENDANCE_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 
@@ -429,8 +429,8 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1 and the endpoint file
 | Exposed | none | none | No service names Attendance as a synchronous dependency (reference architecture Section 8, table 8.0), so `Api/Grpc/` is not generated | not applicable | not applicable |
 | Consumed | `nibras.school.v1` `StudentDirectory` | `GetStudent`, `ListStudentsBySection` | Roster gaps before the reference copy has caught up, the pickup-eligibility flag of a guardian (Open point 2) | 2 s lookup, 5 s page (document 22 §10.2) | Local `StudentReference`; the pickup-eligibility check refuses rather than falls back (never release on stale custody) |
 | Consumed | `nibras.school.v1` `Directory` | `StudentChecksum`, `SectionChecksum`, `StaffChecksum` | Nightly reference-copy reconciliation | 30 s | Job retries next night and raises a data-quality issue after two misses |
-| Consumed | `nibras.scheduling.v1` `Timetables` | `GetVersion` and its checksum | Fetch timetable entries on `scheduling.timetable.published.v1`; nightly check (`10-data-architecture.md` part 6) | 5 s page, 30 s checksum | Keep the previous `TimetableOfDay`; see Open point 1 |
-| Consumed | `nibras.hr.v1` `Leave` | `Checksum` | Nightly reconciliation of the staff-leave copy | 30 s | Next night |
+| Consumed | `nibras.scheduling.v1` `Timetables` | `GetVersion` and its checksum | Fetch timetable entries on `scheduling.timetable.published.v1`; nightly check (`10-data-architecture.md` part 6). Table 8.0 (v9.1) lists this call on the Attendance row | 5 s page, 30 s checksum | Keep the previous `TimetableOfDay` |
+| Consumed | `nibras.hr.v1` `Leave` | `Checksum` | Nightly reconciliation of the staff-leave copy; table 8.0 (v9.1) lists it job only | 30 s | Next night |
 
 Every call carries the metadata of document 22 §10.3 and runs through `SchoolDirectoryClient` (retry with jitter, circuit breaker, cached fallback). No call is made from inside an inbound gRPC call, so the one-hop rule holds.
 
@@ -444,13 +444,15 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 
 | Routing key | Partition key | Raised by | Consumers (Appendix E) |
 |---|---|---|---|
-| `attendance.attendance.marked.v1` | `sectionId` | MarkAttendance, BulkMarkAttendance, SyncOfflineMarks, EditAfterLock, dismissal release (early leave), `RecordLateArrival`, `RestorePreviousMarks` | Reporting; Requests saga outcomes |
+| `attendance.attendance.marked.v1` | `sectionId` | MarkAttendance, BulkMarkAttendance, SyncOfflineMarks, EditAfterLock, dismissal release (early leave), `RecordLateArrival`, `RestorePreviousMarks` | Reporting, Requests, Ai |
 | `attendance.student.absent.v1` | `studentId` | Each absent record in a mark transaction, one per student | Notification, Wellbeing, Reporting |
-| `attendance.excuse.approved.v1` | `studentId` | ApproveExcuse, `ApplyExcusedLeave` | Reporting, Notification; Requests saga outcomes |
+| `attendance.excuse.approved.v1` | `studentId` | ApproveExcuse, `ApplyExcusedLeave` | Reporting, Notification, Requests |
 | `attendance.threshold.reached.v1` | `studentId` | Threshold evaluation in the mark transaction and ThresholdEvaluationJob | Wellbeing, Notification, Reporting |
-| `attendance.attendance.not-marked.v1` | `sectionId` | UnmarkedClassReminderJob, nudge | Notification |
-| `attendance.dismissal.processed.v1` | `studentId` | Dismissal release, late pickup, reunification | Notification, Reporting |
-| `attendance.gate-pass.issued.v1` | `studentId` | IssueGatePass endpoint and `IssueGatePass` command | Notification; Requests saga outcomes |
+| `attendance.attendance.not-marked.v1` | `sectionId` | UnmarkedClassReminderJob, nudge | Notification, Reporting |
+| `attendance.dismissal.processed.v1` | `studentId` | Dismissal release, late pickup, reunification | Notification, Reporting, Wellbeing |
+| `attendance.gate-pass.issued.v1` | `studentId` | IssueGatePass endpoint and `IssueGatePass` command | Notification, Requests |
+| `attendance.mark-review.requested.v1` | `studentId` | A mark review is raised: `POST /offline-reviews/{id}/submit` (section 4.3), which is the pending edit-after-lock request of Appendix M.3 | Requests |
+| `attendance.mark-review.resolved.v1` | `studentId` | `POST /offline-reviews/{id}/apply`, on `Applied` or `Refused` | Requests |
 | `attendance.gate-pass.used.v1` | `studentId` | Gate-pass verification | Notification, Audit |
 | `attendance.visitor.checked-in.v1` | `campusId` | Visitor check-in | Notification, Reporting |
 | `attendance.emergency.broadcast-started.v1` | `campusId` | Start broadcast | Notification, Communication, Reporting |
@@ -478,6 +480,9 @@ Queues are the three of `11-messaging-architecture.md` for Attendance: `attendan
 | `scheduling.timetable.published.v1`, `scheduling.timetable.changed.v1` | reference-copies | `TimetablePublishedConsumer` | Rebuilds `TimetableOfDay` from `effectiveFrom`; cancelled entries mark sessions `Cancelled`; recorded attendance never changes (BR-SCD-006) | `timetableVersionId` plus `changedEntryIds` |
 | `scheduling.substitution.assigned.v1` | reference-copies | `SubstitutionAssignedConsumer` | Changes `staff_id` on the affected sessions; the cover teacher receives the reminder (BR-ATT-011) | `substitutionId` |
 | `hr.leave.approved.v1`, `hr.leave.cancelled.v1` | reference-copies | `LeaveApprovedConsumer` | Updates `StaffLeaveReference`; pre-fills or restores `staff_attendance_days` | `leaveId` |
+| `wellbeing.intervention.opened.v1` | events | `InterventionOpenedConsumer` | Sets `InterventionOpened` on the threshold hit named by `sourceRuleId`; an event without `sourceRuleId` is discarded | `interventionId` |
+| `wellbeing.intervention.closed.v1` | events | `InterventionClosedConsumer` | Sets `InterventionClosed` for `studentId`; carries no clinical field | `interventionId` |
+| `wellbeing.clinic-visit.collection-arranged.v1` | events | `CollectionArrangedConsumer` | Raises the send-home gate pass for the student, with no reason stored | `clinicVisitId` |
 | `operations.transport.boarding-recorded.v1` | events | `TransportBoardingRecordedConsumer` | Writes a `presence_signals` row that pre-fills bus presence | `studentId` plus `at` |
 | `requests.request.approved.v1` | events | `RequestApprovedConsumer` | For the early-dismissal effect only: creates the `Dismissal` in `Approved`; other effects wait for their command | `requestId` |
 | `ApplyExcusedLeave` | commands | `ApplyExcusedLeaveHandler` | Creates an approved excuse from the request, sets excused codes past the lock (BR-ATT-003) | `(sagaId, stepKey)` and `requestId` |
@@ -508,10 +513,10 @@ Attendance orchestrates no saga (`07-solution-structure.md` part 3; master brief
 | Saga 6 Request fulfilment (WF-RQS-01) | Participant | Saga | The six commands of section 6.2 with their compensations (document 13 section 4) | none local; per-step inbox |
 | WF-SCH-04 Mid-year campus transfer | Participant | Single | Reacts to `school.student.section-changed.v1`; split by date (BR-ATT-009) | none local |
 | WF-HR-01 Staff leave to substitution | Participant | Effect | Consumes `hr.leave.*` and `scheduling.substitution.assigned.v1` | none local |
-| WF-WEL-02 Clinic visit to sent home | Participant | Single | A gate pass for the sent-home student; see Open point 3 | none local |
+| WF-WEL-02 Clinic visit to sent home | Participant | Single | A gate pass for the sent-home student, raised on `wellbeing.clinic-visit.collection-arranged.v1`, which carries no clinical field | none local |
 | Sagas 1, 2 and 10 | Participant | Saga | Tenant lifecycle commands | none local |
 
-**WF-ATT-01 transitions and where they run.** `Open → Marked`: `MarkAttendanceHandler`. `Open → NotMarked`: `UnmarkedClassReminderJob` at start plus the grace period. `NotMarked → Marked`: `MarkAttendanceHandler` with a reason. `Marked → AbsenceAlerted`: set on the record when `attendance.student.absent.v1` is committed to the outbox; delivery is Notification's (Open point 5). `AbsenceAlerted → ExcuseSubmitted`: `SubmitExcuseHandler`. `ExcuseSubmitted → ExcuseApproved → Excused`: `ApproveExcuseHandler` in one transaction. `ExcuseSubmitted → ExcuseRejected`: `RejectExcuseHandler`. `Marked → ThresholdReached`: `ThresholdEvaluator` inside the mark transaction. `ThresholdReached → InterventionOpened → InterventionClosed`: Wellbeing's, not observable here (Open point 3). `Marked → Marked` offline conflict: `SyncOfflineMarksHandler` with `OfflineConflictRule`.
+**WF-ATT-01 transitions and where they run.** `Open → Marked`: `MarkAttendanceHandler`. `Open → NotMarked`: `UnmarkedClassReminderJob` at start plus the grace period. `NotMarked → Marked`: `MarkAttendanceHandler` with a reason. `Marked → AbsenceAlerted`: set on the record when `attendance.student.absent.v1` is committed to the outbox; delivery is Notification's (Open point 5). `AbsenceAlerted → ExcuseSubmitted`: `SubmitExcuseHandler`. `ExcuseSubmitted → ExcuseApproved → Excused`: `ApproveExcuseHandler` in one transaction. `ExcuseSubmitted → ExcuseRejected`: `RejectExcuseHandler`. `Marked → ThresholdReached`: `ThresholdEvaluator` inside the mark transaction. `ThresholdReached → InterventionOpened → InterventionClosed`: Wellbeing owns the decision; Attendance sets the two states from `wellbeing.intervention.opened.v1` and `wellbeing.intervention.closed.v1`, which Appendix E routes here under ADR-0019. Neither payload carries a category, symptom or reason, and an intervention event without `sourceRuleId` is discarded because it did not come from an attendance threshold. `Marked → Marked` offline conflict: `SyncOfflineMarksHandler` with `OfflineConflictRule`.
 
 **WF-ATT-02 as Attendance implements it**
 
@@ -543,7 +548,7 @@ Every transition runs through the transition pipeline of `13-workflows-and-sagas
 | Student | `student_refs` plus `student_section_intervals` | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.student.profile-updated.v1` | `student_id`, `student_number`, `name_en`, `name_ar`, `section_id`, `campus_id`, `status`, `photo_file_id`, `enrolled_on`, `withdrawn_on` | Nightly 02:00 band time, `Directory/StudentChecksum` | Seconds; a mark for a student not yet in the copy asks `StudentDirectory` once |
 | Section and term | `section_refs`, `term_refs` | `school.section.created.v1`, `school.section.changed.v1`, `school.term.started.v1`, `school.academic-year.*` | section: `grade_level_id`, `campus_id`, `name`; term: `starts_on`, `ends_on`, `academic_year_id` | Nightly, `Directory/SectionChecksum` | Minutes |
 | Timetable of the day | `timetable_of_day` | `scheduling.timetable.published.v1`, `scheduling.timetable.changed.v1`, `scheduling.substitution.assigned.v1`; entries fetched over `Timetables/GetVersion` on publish | `timetable_version_id`, `entry_id`, `section_id`, `period_id`, `staff_id`, `room_id`, `day_of_week`, `starts_at`, `ends_at`, `effective_from`, `cancelled` | Nightly against Scheduling; `AttendanceAgainstTimetableJob` is the second check | Minutes; a publish rebuilds from `effectiveFrom` only |
-| Staff | `staff_refs` | Staff ids arrive with timetable entries; names through `StaffDirectory` on first sight (Open point 1) | `staff_id`, `name_en`, `name_ar`, `campus_ids` | Nightly, `Directory/StaffChecksum` | Hours |
+| Staff | `staff_refs` | Staff ids arrive with timetable entries; names through `StaffDirectory` on first sight, because Appendix E routes no `school.staff.*` event to Attendance (Open point 1) | `staff_id`, `name_en`, `name_ar`, `campus_ids` | Nightly, `Directory/StaffChecksum` | Hours |
 | Approved staff leave | `staff_leave_refs` | `hr.leave.approved.v1`, `hr.leave.cancelled.v1` | `leave_id`, `staff_id`, `from_date`, `to_date`, `leave_type_code`, `cancelled` | Nightly against `nibras.hr.v1` `Leave/Checksum` | Minutes |
 | Transport boarding | `presence_signals` | `operations.transport.boarding-recorded.v1` | `student_id`, `route_id`, `direction`, `at` | Not reconciled; expires after 7 days | Not applicable |
 
@@ -583,11 +588,13 @@ No job here runs long enough to need the job resource of document 22 §6.
 | `attendance.student-attendance.mark` | normal | G11 | own-sections |
 | `attendance.student-attendance.bulk-mark` | normal | Principal, Vice Principal, Registrar | campus |
 | `attendance.student-attendance.edit-after-lock` | elevated | G12: Principal, Vice Principal, Homeroom Teacher (own homeroom); never Teacher | own-homeroom, campus |
+| `attendance.student-attendance.nudge` | normal | Principal, Vice Principal, Academic Coordinator | campus |
 | `attendance.student-attendance.export` | normal | Principal, Registrar | campus |
 | `attendance.staff-attendance.view`, `.mark`, `.export` | normal | Principal, Vice Principal, HR Officer | campus |
 | `attendance.staff-attendance.edit-after-lock` | elevated | Principal | campus |
 | `attendance.excuses.view`, `attendance.excuses.create` | normal | Parent (own children), Homeroom Teacher, Principal | own-children, own-homeroom |
 | `attendance.excuses.approve`, `attendance.excuses.reject` | normal | G12: Homeroom Teacher, Principal, Vice Principal | own-homeroom, campus |
+| `attendance.excuses.view-medical-detail` | high, every read logged | Nurse only, four-eyes grant (G20, online only under Appendix M); must-not for the Homeroom Teacher and the Principal | campus |
 | `attendance.thresholds.view`, `.create`, `.edit`, `.delete` | normal | G12 (`edit`), Principal | all-tenant |
 | `attendance.safety.pickup-persons.view`, `.create`, `.edit`, `.delete`, `.verify` | elevated | G13: Receptionist / Security, Principal; Parent for `view` and `create` (own children) | campus, own-children |
 | `attendance.safety.gate-passes.view`, `.issue`, `.verify`, `.revoke` | elevated | G13; Parent for `view` (own children) | campus, own-children |
@@ -1107,24 +1114,27 @@ src/Services/Attendance/                                          Attendance and
 
 ## 14. Test plan
 
-Existing identifiers are reused; new ones are minted in `TC-ATT-301` to `TC-ATT-360`, a range no document in the kit uses (checked with a search of `docs/` on 2026-09-21).
+Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in the 301 to 360 block, a range no document in the kit uses (checked with a search of `docs/` on 2026-09-21).
 
 | Test case | Level | What it proves |
 |---|---|---|
-| TC-ATT-001 | Workflow | `Open → Marked`: a teacher holding the assignment saves the register; absentees queued for alerting |
-| TC-ATT-002 | Workflow, job | `Open → NotMarked`: grace passed, escalation raised, still markable with a reason (BR-ATT-011) |
-| TC-ATT-003 | Workflow, end to end | `Marked → AbsenceAlerted` and the pre-filled register from gate and leave; alert enqueued within 30 s |
-| TC-ATT-004 | Workflow | `ExcuseSubmitted → ExcuseApproved`: day excused, counters recalculated |
-| TC-ATT-005 | Workflow | `Marked → ThresholdReached`: flag raised with its reasons |
-| TC-ATT-006 | Workflow | `Marked → Marked` offline conflict: both values shown, no silent overwrite |
-| TC-ATT-011 | Workflow (with the Requests stub) | `Requested → UnderReview`: review task raised for the homeroom teacher |
-| TC-ATT-012 | Workflow | `UnderReview → Approved`: dismissal created in `Approved` from `requests.request.approved.v1` |
-| TC-ATT-013 | Workflow | `Approved → PassIssued`: collector on the list, code issued with photo |
-| TC-ATT-014 | Workflow | `PassIssued → Verified`: unused code inside the window shows photo and identity |
-| TC-ATT-015 | Workflow, security | `PassIssued → PassIssued`: second presentation refused and logged (T-ATT-01) |
-| TC-ATT-016 | Workflow | `Verified → Released`: early-leave attendance written, guardian notified |
+| `TC-ATT-001` (Appendix R) | Workflow | `Open → Marked`: a teacher holding the assignment saves the register; absentees queued for alerting |
+| `TC-ATT-002` (Appendix R) | Workflow, job | `Open → NotMarked`: grace passed, escalation raised, still markable with a reason (BR-ATT-011) |
+| `TC-ATT-003` (Appendix R) | Workflow, end to end | `Marked → AbsenceAlerted` and the pre-filled register from gate and leave; alert enqueued within 30 s |
+| `TC-ATT-004` (Appendix R) | Workflow | `ExcuseSubmitted → ExcuseApproved`: day excused, counters recalculated |
+| `TC-ATT-005` (Appendix R) | Workflow | `Marked → ThresholdReached`: flag raised with its reasons |
+| `TC-ATT-006` (Appendix R) | Workflow | `Marked → Marked` offline conflict: both values shown, no silent overwrite |
+| `TC-ATT-011` (Appendix R) | Workflow (with the Requests stub) | `Requested → UnderReview`: review task raised for the homeroom teacher |
+| `TC-ATT-012` (Appendix R) | Workflow | `UnderReview → Approved`: dismissal created in `Approved` from `requests.request.approved.v1` |
+| `TC-ATT-013` (Appendix R) | Workflow | `Approved → PassIssued`: collector on the list, code issued with photo |
+| `TC-ATT-014` (Appendix R) | Workflow | `PassIssued → Verified`: unused code inside the window shows photo and identity |
+| `TC-ATT-015` (Appendix R) | Workflow, security | `PassIssued → PassIssued`: second presentation refused and logged (T-ATT-01) |
+| `TC-ATT-016` (Appendix R) | Workflow | `Verified → Released`: early-leave attendance written, guardian notified |
 | TC-ATT-101, TC-ATT-102 | UAT | Principal unmarked drill-down with nudge; emergency mode drill |
-| TC-ATT-201 to TC-ATT-207 | UAT, end to end | All-present marking, 60-second class, offline badge, two-device conflict, timeline, excuse review with closed medical detail, approval audit |
+| `TC-ATT-201`, `TC-ATT-202`, `TC-ATT-205`, `TC-ATT-206` (document 08) | UAT, end to end | All-present marking, 60-second class, timeline, excuse review with closed medical detail (Appendix Q) |
+| TC-ATT-203 | UAT, end to end | Given a teacher whose device is in airplane mode, when they mark the second class of the day, then marking works with a clear offline badge and a visible queue count, and after reconnecting each mark syncs to the server exactly once (REQ-ATT-006, WF-ATT-01) |
+| TC-ATT-204 | UAT, end to end | Given a colleague who marked one of the same students differently from another device, when the teacher's device syncs, then both values are shown with their times and the teacher chooses, and nothing is resolved silently (REQ-ATT-007, WF-ATT-01) |
+| TC-ATT-207 | UAT, end to end | Given a homeroom teacher reviewing a submitted excuse, when they approve it, then the register updates to excused, the guardian is notified, and the audit entry names the approving teacher (REQ-ATT-016, WF-ATT-01) |
 | TC-ATT-501 | UAT | Parent sees the one-time QR with its window |
 | TC-ATT-301 | Unit | `AttendanceDerivationRulesTests`: every BR-ATT-001 example and edge case |
 | TC-ATT-302 | Unit | `AttendanceLockWindowRulesTests`: BR-ATT-002 at 09:39 and 09:41, Riyadh and Dubai |
@@ -1160,7 +1170,7 @@ Existing identifiers are reused; new ones are minted in `TC-ATT-301` to `TC-ATT-
 | TC-ATT-332 | Integration | Staff day on approved leave reads on-leave with no late arrival (REQ-ATT-023) |
 | TC-ATT-333 | Integration | QR scan at 07:40 pre-fills present with the time; a duplicate within 1 minute ignored (REQ-ATT-012, REQ-ATT-013) |
 | TC-ATT-334 | Integration, job | Timetable change orphaning 2 sessions produces 2 findings the same day (REQ-ATT-036) |
-| TC-ATT-335 | Integration, job | Partition created three months ahead; 7-year detach under a legal hold skipped (REQ-PRV-004, with TC-DATA-005) |
+| TC-ATT-335 | Integration, job | Partition created three months ahead; 7-year detach under a legal hold skipped (REQ-PRV-004, with TC-DATA-641) |
 | TC-ATT-336 | Integration | Redis stopped for 2 minutes: marking succeeds and the breaker closes afterwards (REQ-PERF-026) |
 | TC-ATT-337 | Integration | Cache invalidation by the real event for every §1.8 entry |
 | TC-ATT-338 | Integration | Reference-copy reconciliation repairs a planted difference and raises one finding |
@@ -1229,14 +1239,14 @@ Existing identifiers are reused; new ones are minted in `TC-ATT-301` to `TC-ATT-
 
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
-| 1. Table 8.0 gives Attendance one gRPC dependency (School), but `10-data-architecture.md` part 6 fetches timetable entries from Scheduling and reconciles leave against Hr over gRPC, and no `school.staff.*` event reaches Attendance for staff names | Keep the Scheduling and Hr calls as consumer-side reads outside any request path and add them to table 8.0 under an ADR; staff names through `StaffDirectory` | Architect | Without the ADR the one-hop table and this sheet disagree; the alternative is a richer `scheduling.timetable.published.v1` payload |
+| 1. Closed by ADR-0019 for the gRPC half: table 8.0 (v9.1) now gives the Attendance row Scheduling `Timetables` (campus day, published version) and, job only, Hr `Leave.Checksum`, and defines "job only" and the one-hop rule in the same section. Still open: Appendix E routes no `school.staff.*` event to Attendance, so staff names arrive only by gRPC | Staff names through `StaffDirectory` on first sight, as section 8 states. No open question owns this; it was not in the defect log and needs its own Appendix E amendment | Architect, Appendix E owner | A staff rename shows late in the register until the name is re-fetched |
 | 2. `school.proto` must expose a pickup-eligibility flag per guardian without custody text | `StudentDirectory.GetStudent` returns `guardians[].pickup_allowed` | School lead | Without it REQ-ATT-024 cannot be enforced server-side |
-| 3. Appendix E routes no `wellbeing.*` event to Attendance, so `InterventionOpened` and `InterventionClosed` of WF-ATT-01 and the WF-WEL-02 send-home pass cannot be driven here | Attendance stops at `ThresholdReached`; the intervention states are shown from Reporting; the send-home pass is issued by the nurse through the gate-pass endpoint | Architect, Appendix E owner | A consumer and a routing entry are needed if Attendance must show the intervention state itself |
-| 4. No Appendix B permission reads medical excuse detail | No endpoint returns it in v1; it is stored for audit, export under WF-PRV-02 and retention only | Privacy officer | A clinic-side reader would need a new permission under an ADR |
-| 5. Appendix R says the absence alert fires 30 minutes after the register closes; REQ-ATT-017 and Appendix C say urgent within 30 seconds of the mark | Publish at mark (REQ-ATT-017); Notification owns any deferral | Product owner | Guardians alerted 30 minutes later than the requirement states |
-| 6. No permission covers the principal's nudge | `attendance.student-attendance.view` in campus scope, rate-limited | Product owner | A dedicated `nudge` action in Appendix B would replace it |
-| 7. `Cancelled` for a compensated dismissal is not a WF-ATT-02 state, and `audit.action.recorded.v1` in WF-ATT-02's side effects is not an Appendix E key | Keep `Cancelled`; emit `attendance.audit.recorded.v1` | Appendix R owner | Appendix R gains the state and corrects the key under a version bump |
-| 8. The pending edit-after-lock request "appears in their tasks" (Appendix M.3), but no `attendance.*` key reaches Requests (the edge noted in `05-service-catalog.md` part 3) | The review queue is served here and counted on the teacher's home payload | Architect | A routing key to Requests would move it into the unified inbox |
+| 3. Closed by ADR-0019. Appendix E now routes three Wellbeing events to Attendance: `wellbeing.intervention.opened.v1` with the optional `sourceRuleId`, `wellbeing.intervention.closed.v1` with `studentId` added so the payload matches its partition key, and the new `wellbeing.clinic-visit.collection-arranged.v1`. Appendix E states that all three carry no category, symptom or reason, and that Attendance discards an intervention event with no `sourceRuleId` | Section 6.2 binds the three consumers and section 7 drives `InterventionOpened`, `InterventionClosed` and the WF-WEL-02 send-home pass from them; the Reporting workaround is withdrawn | Closed | None; the clinical fields stay in Wellbeing as Section 20 requires |
+| 4. Closed by ADR-0019. Appendix B adds `attendance.excuses.view-medical-detail` (high risk, every read logged) and raises the `attendance.excuses` row to high risk; Appendix B rule 5 lists it among the read-logged actions. Appendix I gives it to the nurse under a four-eyes grant, online only under Appendix M, and adds it to the must-not list of the homeroom teacher and the principal | `GET /excuses/{id}` returns the detail only to a holder and logs the read; the "no endpoint in v1" workaround is withdrawn | Closed | None; the clinic-side reader now has a named permission |
+| 5. Still open, and deliberately not decided by ADR-0019: Open Question 27 owns it. Appendix R says the absence alert fires 30 minutes after the register closes; REQ-ATT-017 and Appendix C say urgent within 30 seconds of the mark | Publish at mark (REQ-ATT-017); Notification owns any deferral | Product owner (Open Question 27) | Guardians alerted 30 minutes later than the requirement states; WF-ATT-01 and the notification lane change with the answer |
+| 6. Closed by ADR-0019. Appendix B adds the `nudge` action to `attendance.student-attendance`, the name this sheet proposed | `POST /sessions/{id}/nudge` checks `attendance.student-attendance.nudge` in campus scope and keeps the one-per-10-minutes rate limit; the `.view` workaround is withdrawn | Closed | None |
+| 7. Half closed by ADR-0019: Appendix E states that `<service>.audit.recorded.v1` is the only audit form and Appendix R's side effects were changed to the owning service's key throughout, so WF-ATT-02 now names `attendance.audit.recorded.v1`. Still open: `Cancelled` for a compensated dismissal is not a WF-ATT-02 state in Appendix R | Keep `Cancelled` as this sheet's state for the Saga 6 `CancelGatePass` compensation. No open question owns it; it was not in the defect log | Appendix R owner | Transition tests for the compensated path have no Appendix R identifier |
+| 8. Closed by ADR-0019. Appendix E defines a mark review and adds `attendance.mark-review.requested.v1` and `attendance.mark-review.resolved.v1`, both consumed by Requests | They are published in section 4.3 on submit and on apply, so the pending edit-after-lock request reaches the unified inbox as Appendix M.3 says; the review queue stays served here as well | Closed | None |
 | 9. Staff attendance partitions are not listed in `10-data-architecture.md` part 5 | Monthly on `attendance_date`, per Appendix J "delete by partition" | Data architect | A non-partitioned table would need a delete job instead |
 | 10. Document 16's test tree names `LockWindowRulesTests` and folders `Rules/`, `Aggregates/`, `Handlers/` | Appendix S test class names and document 07 folders, extended as section 13 shows | Test lead | Document 16 is corrected in its Group E review |
 

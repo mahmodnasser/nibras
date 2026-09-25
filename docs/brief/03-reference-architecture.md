@@ -1,4 +1,4 @@
-# Nibras Reference Architecture (v9.1)
+# Nibras Reference Architecture (v9.2)
 
 **Status: normative baseline.** This file fixes the shape of the solution so that the plan and the code are consistent from the first day. You may improve on it, but every deviation needs an Architecture Decision Record that states what changed and why. Read it together with Sections 7, 8, and 19 of the master brief.
 

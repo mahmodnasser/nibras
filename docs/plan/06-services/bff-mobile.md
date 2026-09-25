@@ -108,7 +108,7 @@ All routes are under `/bff/mobile/v1/` on the tenant host, reached through the G
 | PATCH | `/bff/mobile/v1/uploads/{attachmentId}` | signed in (own session) | chunk with `Content-Range` | 204 with bytes received | none beyond K.1; Documents codes passed through | Yes, by range |
 | HEAD | `/bff/mobile/v1/uploads/{attachmentId}` | signed in (own session) | none | `bytes_uploaded` header for resumption | `BFF_NOT_FOUND` | Safe |
 | GET | `/bff/mobile/v1/students/{studentId}/360` | `school.students.view` | `tab` | Student 360 for principals and homeroom teachers, read live, never cached on the device beyond the screen | `BFF_NOT_FOUND` (outside scope, no hint) | Safe |
-| GET | `/bff/mobile/v1/students/{studentId}/transparency` | `audit.access-log.view` (own-children) | none | Reads by role and time, consents, retention clocks; read live | `BFF_NOT_FOUND` | Safe; never cached |
+| GET | `/bff/mobile/v1/students/{studentId}/transparency` | `audit.access-transparency.view` (own-children) | none | Reads by role and time, consents, retention clocks; read live | `BFF_NOT_FOUND` | Safe; never cached |
 | GET | `/bff/mobile/v1/hubs/{hub}` | signed in | WebSocket upgrade | Forwarded SignalR connection to Communication's hub (`messaging`, `notifications`, `jobs`, `permissions`) | `BFF_VALIDATION_FAILED` (unknown hub) | not applicable |
 | ANY | `/bff/mobile/v1/api/{service}/{**path}` | the forwarded operation's own Appendix B permission | The owning service's request, unchanged | The owning service's response, with data-saver shaping applied to images and sparse fields | `BFF_NOT_FOUND` for an operation not on the mobile allow-list; upstream codes passed through | As the upstream operation |
 
@@ -128,7 +128,7 @@ Attendance and Assessment paths are quoted from their sheets; other services' re
 | `home/student` | Scheduling → today's timetable; Academics → due soon and new feedback | |
 | `home/parent` and `children/{id}` | School → linked children; per child in parallel: Reporting → today's status from `student_360`; Attendance → `GET /api/v1/attendance/students/{id}/summary` and today's gate pass from `GET /api/v1/attendance/safety/gate-passes?date=`; Academics → due items; Finance → balance due; Requests → open requests; Communication → unread | Urgent items (absence today, gate pass issued, emergency) break through the calm state |
 | `home/principal` | Requests → approvals; Attendance → `GET /api/v1/attendance/sessions/unmarked`, `GET /api/v1/attendance/safety/visitors?status=CheckedIn`; Scheduling → staff absences and cover; Behavior → incidents today; Reporting → at-risk students and overdue grading | N-05 shape |
-| `modes/gate/today` | Attendance → `GET /api/v1/attendance/safety/gate-passes?campusId=&date=&status=Issued`, `GET /api/v1/attendance/safety/pickup-persons` for the campus's students, `GET /api/v1/attendance/safety/gate-passes/keys`, `GET /api/v1/attendance/safety/visitors?status=CheckedIn` | Watchlist never included (Open point 4) |
+| `modes/gate/today` | Attendance → `GET /api/v1/attendance/safety/gate-passes?campusId=&date=&status=Issued`, `GET /api/v1/attendance/safety/pickup-persons` for the campus's students, `GET /api/v1/attendance/safety/gate-passes/keys`, `GET /api/v1/attendance/safety/visitors?status=CheckedIn` | Watchlist never included (Open point 3) |
 | `modes/bus/today` | Operations → today's route and roster (Tier 2) | Boarding taps upload through `sync/batch` as attendance actions with source `bus` |
 | `students/{id}/360`, `transparency` | as Bff.Web section 4.2 | read live |
 | `uploads` | Documents → resumable upload session create, chunk, status | Streamed, never buffered in memory beyond one chunk |
@@ -281,6 +281,7 @@ None. Silent-push triggers, digest schedules and the pre-peak warm-up belong to 
 | `BFF_IDEMPOTENCY_REPLAY` | 200 | Not raised by the host itself; upstream replays pass through per action |
 | `BFF_RATE_LIMITED` | 429 | Per-user limits on pass-through and home routes; never on `sync/batch` |
 | `BFF_DEPENDENCY_UNAVAILABLE` | 503 | Only for bootstrap without Identity; sync actions defer instead |
+| `BFF_APP_VERSION_BELOW_MINIMUM` | 403 | Never raised here: master brief Section 37 forbids refusing a request because of the app's version. Appendix K.23 defines it with the client action this sheet's `block` outcome already produces, an upgrade screen that keeps the outbox; the policy travels in `config/version` and the two response headers instead |
 
 ---
 
@@ -469,18 +470,18 @@ src/Bff.Mobile/                                                   mobile backend
 
 ## 14. Test plan
 
-New identifiers are minted in `TC-BFF-101` to `TC-BFF-160` (Bff.Web uses `TC-BFF-001` to `TC-BFF-060`); no document in the kit used a `TC-BFF-` identifier before these sheets (searched on 2026-09-21).
+New identifiers are minted from `TC-BFF-101` upward, numbers 101 to 160 (Bff.Web uses numbers 001 to 060); no document in the kit used a `TC-BFF-` identifier before these sheets (searched on 2026-09-21).
 
 | Test case | Level | What it proves |
 |---|---|---|
-| TC-MOB-003 | End to end | Teacher five-minute home shows attendance, a quick note, a quick grade, the cover alert and nothing else (REQ-BFF-007) |
-| TC-MOB-004 | End to end | Parent calm screen with one card per child and the designed empty state (REQ-BFF-008) |
-| TC-MOB-005 | End to end | Low-bandwidth mode (REQ-BFF-009) |
+| `TC-MOB-003` (Appendix W) | End to end | Teacher five-minute home shows attendance, a quick note, a quick grade, the cover alert and nothing else (REQ-BFF-007) |
+| `TC-MOB-004` (Appendix W) | End to end | Parent calm screen with one card per child and the designed empty state (REQ-BFF-008) |
+| `TC-MOB-005` (Appendix W) | End to end | Low-bandwidth mode (REQ-BFF-009) |
 | TC-MOB-101 | UAT | Last synced morning brief with its as-of time offline |
 | TC-MOB-502 | UAT | Report card opens from the local copy offline |
 | TC-MOB-701 to TC-MOB-710 | Integration through this host | The Appendix M.5 tests end to end: replay, conflict banner, two devices, after lock, 45-day token, clock skew, interrupted upload, full day offline |
-| TC-MOB-713 | Integration | Version policy blocks, nags and preserves the outbox |
-| TC-MOB-714 | Integration | Sign-out unregisters the push token and revokes the delta tokens |
+| `TC-MOB-713` (document 09) | Integration | Version policy blocks, nags and preserves the outbox |
+| `TC-MOB-714` (document 09) | Integration | Sign-out unregisters the push token and revokes the delta tokens |
 | TC-MOB-715 | Integration | A school day of teacher use under 2 MB |
 | TC-SEC-044 to TC-SEC-047 | Security | Pinning rotation, lock-screen, logs, permission version on mobile |
 | TC-BFF-101 | Integration | A token from 10 minutes ago returns only changes since; a tampered token returns 400 `BFF_VALIDATION_FAILED` (REQ-BFF-004) |
@@ -556,13 +557,14 @@ New identifiers are minted in `TC-BFF-101` to `TC-BFF-160` (Bff.Web uses `TC-BFF
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Appendix K.23 now carries `BFF_APP_VERSION_BELOW_MINIMUM` (403, parent-safe), so the missing code this sheet reported exists. The sheet's behaviour does not change: master brief Section 37 still forbids refusing a request because of the app's version, so section 11.4 lists the code as one Bff.Mobile never raises, and the `block` outcome keeps travelling in `config/version` and the response headers. The remaining points are renumbered.
+
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
 | 1. `09-mobile-structure.md` §5.2 uses `apiBaseUrl .../api/mobile` and `/config/version`; Appendix N and `15-deployment-and-operations.md` write `/bff-mobile/home/principal` and `/bff-mobile/sync/batch`; document 22 requires `/bff/mobile/v1/` | `/bff/mobile/v1/` everywhere; the flavor file's `apiBaseUrl` becomes `https://<host>/bff/mobile/v1` and `minimumVersionPolicyUrl` becomes `/bff/mobile/v1/config/version` | Mobile lead | The Gateway route and the app's base URL disagree on the first build |
 | 2. Only Attendance names a change feed for its entity group; the other sources (Scheduling, School, Communication, Requests, Behavior, Identity) do not yet name one | Each source exposes `GET .../changes?checkpoint=` in its sheet; until it does, its group is served as a snapshot with `ETag`, which is correct but costs data | Tech lead, per service sheet | Teacher data usage rises towards the 2 MB budget (TC-MOB-715) |
-| 3. Appendix K has no code for "app version below the minimum" | No refusal code: policy in the version route and headers | Appendix K owner | If a hard refusal is ever wanted, it needs a new code and conflicts with master brief Section 37 |
-| 4. `09-mobile-structure.md` §2.7 matches visitors against "the cached list" in gate mode; the Attendance sheet never sends the watchlist to a device | Offline check-ins queue and are matched on the server at sync; gate mode shows "watchlist not checked offline" on the pending row | Security owner with the mobile lead | A device-held watchlist would put names and instructions on a device that can be lost |
-| 5. Bus attendant mode needs an Operations transport read permission that Appendix B lists only as `operations.transport.view` without a mode scope | `operations.transport.view` scoped to the attendant's route through the device session | Operations lead | An attendant could read other routes' rosters |
+| 3. `09-mobile-structure.md` §2.7 matches visitors against "the cached list" in gate mode; the Attendance sheet never sends the watchlist to a device | Offline check-ins queue and are matched on the server at sync; gate mode shows "watchlist not checked offline" on the pending row | Security owner with the mobile lead | A device-held watchlist would put names and instructions on a device that can be lost |
+| 4. Bus attendant mode needs an Operations transport read permission that Appendix B lists only as `operations.transport.view` without a mode scope | `operations.transport.view` scoped to the attendant's route through the device session | Operations lead | An attendant could read other routes' rosters |
 
 ## Review record
 

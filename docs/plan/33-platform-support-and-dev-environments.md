@@ -258,3 +258,11 @@ Three further cases the plan adds, because they surfaced while writing the setup
 | The appliance path works on real Windows hosts | The nested-virtualisation build in `release.yml` and the quarterly drill on Hyper-V, recorded in the runbook |
 | Every edge case has a test | The `TC-PLAT-` identifiers above appear in document 16 and in the Platform column of document 20; `/lint-plan` refuses an identifier listed here that appears in neither |
 | Every Section and Appendix reference resolves, and no placeholder exists | `kit-lint` rules R01, R02 and R05 |
+
+### Test cases
+
+Tests this document defines beyond the edge cases of part 9. Document 03, document 07 and document 20 cite them.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-PLAT-102 | Given every tool entry point under `tools/`, each with a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook in `.claude/settings.json`, when `ci-kit.yml` runs each entry point through its `.ps1` wrapper on the windows runner and its `.sh` wrapper on the ubuntu runner, then on both of the 2 runners each wrapper exits with the same code and prints the same output, and every hook invokes `node` with a relative path, so an entry point with one wrapper missing, a second implementation, or an absolute hook path fails the job | REQ-PLAT-022 |

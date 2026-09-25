@@ -1,0 +1,28 @@
+# Test-case work for `docs/plan/27-compliance-and-legal.md`
+
+## Collisions to resolve here (the owner keeps the identifier)
+
+- **TC-PLT-022** at line 232: "Read-only at 30 days past due | Available | Read-only blocks writes, never exports"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 502: "Suspended to ReadOnly | Grace period passed | All writes refused, reads and exports still allowed"
+- **TC-PLT-023** at line 230: "Active | Available | WF-PLT-03 export rung; configuration as code for settings"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 503: "ExportRequested to ExportReady | Archive complete and checksum verified | Owner receives a time-limited download link"
+- **TC-PRV-068** at line 79: "Attendance records | 7 years | Delete by partition | Suspends deletion | `PartitionMaintenanceJob`, Attendance"
+  - owner `docs/plan/12-security-privacy-safety.md` line 695: "Attendance, notifications, messages, audit | `PartitionMaintenanceJob` monthly | Each owning service's worker or job host | Detach the month partition; audit partitions go to cold storage with a hash | Data Quality Cente"
+- **TC-PRV-068** at line 85: "Audit entries | 7 years | Detach partition to cold storage | Suspends deletion | `PartitionMaintenanceJob`, Audit; publishes `audit.retention.partition-detached.v1`"
+  - owner `docs/plan/12-security-privacy-safety.md` line 695: "Attendance, notifications, messages, audit | `PartitionMaintenanceJob` monthly | Each owning service's worker or job host | Detach the month partition; audit partitions go to cold storage with a hash | Data Quality Cente"
+- **TC-PRV-063** at line 198: "Arabic and English are equal | Both bodies are published together; neither is a translation of record unless the country's law requires one, in which case the country plug-in names it"
+  - owner `docs/plan/12-security-privacy-safety.md` line 673: "Privacy notices inside the product | Arabic and English, per tenant, per country plug-in; shown at first sign-in and on change | Platform"
+- **TC-PRV-071** at line 80: "Behavior incidents | Until leaving, plus 3 years | Anonymize | Suspends deletion | `LeaverRetentionJob`, Behavior"
+  - owner `docs/plan/12-security-privacy-safety.md` line 698: "Behavior incidents | `LeaverRetentionJob` monthly | Behavior | Anonymize at leaving plus 3 years | Data Quality Center"
+- **TC-PRV-072** at line 82: "Financial documents (invoices, payments, credit notes) | 10 years | Archive read-only | Suspends deletion | `FinanceArchiveJob`, Finance"
+  - owner `docs/plan/12-security-privacy-safety.md` line 699: "Financial documents | `FinanceArchiveJob` yearly | Finance | Archive read-only at 10 years, never delete a posted document | Data Quality Center"
+- **TC-PRV-073** at line 84: "Notification delivery log | 90 days | Delete | no | `PartitionMaintenanceJob`, Notification"
+  - owner `docs/plan/12-security-privacy-safety.md` line 700: "Notification delivery log, logs, traces, metrics | Platform retention settings drive the observability stack | Platform | 90 days, 30 days, 7 days, 13 months | Platform console"
+- **TC-PRV-073** at line 86: "Application logs | 30 days | Delete | no | Log store retention policy, observability stack"
+  - owner `docs/plan/12-security-privacy-safety.md` line 700: "Notification delivery log, logs, traces, metrics | Platform retention settings drive the observability stack | Platform | 90 days, 30 days, 7 days, 13 months | Platform console"
+- **TC-PRV-073** at line 87: "Metrics | 13 months downsampled | Delete | no | Metrics store retention, observability stack"
+  - owner `docs/plan/12-security-privacy-safety.md` line 700: "Notification delivery log, logs, traces, metrics | Platform retention settings drive the observability stack | Platform | 90 days, 30 days, 7 days, 13 months | Platform console"
+- **TC-PRV-073** at line 88: "Traces | 7 days | Delete | no | Trace store retention, observability stack"
+  - owner `docs/plan/12-security-privacy-safety.md` line 700: "Notification delivery log, logs, traces, metrics | Platform retention settings drive the observability stack | Platform | 90 days, 30 days, 7 days, 13 months | Platform console"
+- **TC-PRV-074** at line 89: "Backups | 35 days point-in-time plus 12 monthly | Expire | A hold pins the relevant backup set | pgBackRest expiry, operations runbook"
+  - owner `docs/plan/12-security-privacy-safety.md` line 701: "Backups | Backup expiry | Platform operations | 35 days point-in-time plus 12 monthly; a hold pins the set | Restore drill WF-INF-03"

@@ -115,11 +115,11 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-PLT-020 | Support tiers Standard, Professional, and Enterprise carry the hours, first-response and Sev2 resolution ta... | 1 | Platform | none | none | 06-services/platform.md | 1, 6 | SL-PLT-020, SL-PLT-600 | TC-PLT-109 | any | Planned |
 | REQ-PLT-021 | A tenant health score from adoption metrics raises a support ticket and a churn-risk flag before the school... | 1 | Platform | none | none | 06-services/platform.md | 1, 6 | SL-PLT-021, SL-PLT-601 | TC-PLT-110 | any | Planned |
 | REQ-PLT-022 | A global template library of request types, report cards, certificates, notification templates and grading ... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-022 | TC-PLT-972 | any | Planned |
-| REQ-PLT-023 | Schools opt in to a template exchange that shares request types, report-card templates and rubrics between ... | 2 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-022 | TC-PLT-004 | any | Planned |
+| REQ-PLT-023 | Schools opt in to a template exchange that shares request types, report-card templates and rubrics between ... | 2 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-022 | TC-PLT-803 | any | Planned |
 | REQ-PLT-024 | Every tenant setting in Appendix G has a scope (platform, tenant, campus, role, user), a default, validatio... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-002 | TC-PLT-111 | any | Planned |
 | REQ-PLT-025 | Platform owns custom-field definitions per entity, and every service stores the values on its own entities | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-015, SL-IDN-037 | TC-PLT-975 | any | Planned |
 | REQ-PLT-026 | Terminology overrides per tenant (Grade or Year, Term or Semester, Section or Class, Guardian or Parent) ap... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-015, SL-IDN-037 | TC-PLT-112 | any | Planned |
-| REQ-PLT-027 | A tenant's settings, roles, request types and templates export as versioned JSON that can be reviewed, back... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-016 | TC-PLT-005 | any | Planned |
+| REQ-PLT-027 | A tenant's settings, roles, request types and templates export as versioned JSON that can be reviewed, back... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-016 | TC-PLT-804 | any | Planned |
 | REQ-PLT-028 | Demo mode provides a realistic demo school in both languages with a one-click reset and a guided tour per role | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-006 | TC-PLT-002 | any | Planned |
 | REQ-PLT-029 | The platform console shows tenants, provisioning progress, plans and limits, feature flags, service health,... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-PLT-007, SL-PLT-026 | TC-PLT-901 | any | Planned |
 | REQ-PLT-030 | A tenant is pinned to a region at provisioning and its data and backups never leave that region; moving a t... | 1 | Platform | none | BR-PLT-004 | 06-services/platform.md | 1 | SL-PLT-001 | TC-PLT-980 | any | Planned |
@@ -147,7 +147,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-SCH-013 | Guardians carry relationship, custody and access rights, communication preference, and a payer flag | 1 | School | none | none | 06-services/school.md | 2 | SL-SCH-213, SL-SCH-221 | TC-SCH-201 | any | Planned |
 | REQ-SCH-014 | A guardian restricted by a court order cannot view data, receive messages, or collect the child, and the re... | 1 | School | WF-IDN-02 | none | 06-services/school.md | 2 | SL-SCH-214, SL-SCH-221 | TC-SCH-408 | any | Planned |
 | REQ-SCH-015 | Emergency contacts are ordered by priority and reachable in that order | 1 | School | WF-WEL-02 | none | 06-services/school.md | 2 | SL-SCH-213 | TC-SCH-965 | any | Planned |
-| REQ-SCH-016 | The medical summary shows allergies, conditions, medications, and emergency instructions to permitted staff... | 1 | School | none | none | 06-services/school.md | 2 | SL-SCH-215, SL-SCH-221 | TC-WEL-203 | any | Planned |
+| REQ-SCH-016 | The medical summary shows allergies, conditions, medications, and emergency instructions to permitted staff... | 1 | School | none | none | 06-services/school.md | 2 | SL-SCH-215, SL-SCH-221 | TC-WEL-680 | any | Planned |
 | REQ-SCH-017 | Student documents carry a type and an expiry, and a weekly expiry scan notifies guardians and the registrar | 1 | School | none | none | 06-services/school.md | 2 | SL-SCH-216, SL-SCH-222 | TC-SCH-425 | any | Planned |
 | REQ-SCH-018 | Siblings, houses, clubs, transport, locker, and an ID card with a QR code are linked to each student | 1 | School | none | none | 06-services/school.md | 2 | SL-SCH-217 | TC-SCH-968 | any | Planned |
 | REQ-SCH-019 | Each student has an academic history per year and a status timeline covering applicant, enrolled, suspended... | 1 | School | WF-SCH-01 | none | 06-services/school.md | 2 | SL-SCH-209, SL-SCH-211, SL-SCH-212, SL-SCH-223, SL-SCH-224 | TC-SCH-969 | any | Planned |
@@ -348,7 +348,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-FIN-023 | A payer change to a sponsor takes effect for unissued invoices only and returns to the guardian when covera... | 1 | Finance | WF-FIN-05 | none | 06-services/finance.md | 3 | SL-FIN-438, SL-FIN-439 | TC-FIN-045 | any | Planned |
 | REQ-FIN-024 | Receipts carry a QR code and the amount in words in both languages | 1 | Finance | none | BR-L10N-004 | 06-services/finance.md | 3, 4 | SL-FIN-413, SL-FIN-419, SL-MOB-402 | TC-FIN-974 | any | Planned |
 | REQ-FIN-025 | Statements of account and payment links are available per payer | 1 | Finance | none | none | 06-services/finance.md | 3, 4 | SL-FIN-418, SL-FIN-419, SL-MOB-402 | TC-L10N-401 | any | Planned |
-| REQ-FIN-026 | Reminders follow an escalation ladder driven by a daily job, respecting quiet hours | 1 | Finance | WF-FIN-01 | none | 06-services/finance.md | 3 | SL-FIN-422, SL-FIN-426 | TC-FIN-004 | any | Planned |
+| REQ-FIN-026 | Reminders follow an escalation ladder driven by a daily job, respecting quiet hours | 1 | Finance | WF-FIN-01 | none | 06-services/finance.md | 3 | SL-FIN-422, SL-FIN-426 | TC-FIN-004, TC-FIN-550 | any | Planned |
 | REQ-FIN-027 | Service restrictions apply only through explicit, audited rules, and attendance and safeguarding screens ar... | 1 | Finance | WF-FIN-01 | BR-FIN-016 | 06-services/finance.md | 3 | SL-FIN-423, SL-FIN-424, SL-FIN-426 | TC-FIN-006 | any | Planned |
 | REQ-FIN-028 | Cashier shifts count per instrument, and a discrepancy beyond tolerance blocks the day close naming the doc... | 1 | Finance | WF-FIN-06 | none | 06-services/finance.md | 3 | SL-FIN-440, SL-FIN-447 | TC-FIN-409 | any | Planned |
 | REQ-FIN-029 | A balanced day closes to 0.00, records a deposit slip reference, and cannot be edited afterwards | 1 | Finance | WF-FIN-06 | none | 06-services/finance.md | 3 | SL-FIN-441, SL-FIN-447 | TC-FIN-410 | any | Planned |
@@ -505,7 +505,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-HR-009 | The salary section is absent entirely for users without `hr.payroll.view-salary` | 2 | Hr | none | none | 06-services/hr.md | 5 | SL-HR-619, SL-HR-623, SL-HR-624, SL-HR-625 | TC-SEC-801 | any | Planned |
 | REQ-HR-010 | Appraisals cover goals, classroom observations with a rubric, self-review, 360 feedback, and improvement plans | 2 | Hr | none | none | 06-services/hr.md | 5 | SL-HR-606, SL-HR-609, SL-HR-610 | TC-HR-619 | any | Planned |
 | REQ-HR-011 | Offboarding runs a checklist and clearance, and triggers the Identity offboarding workflow | 2 | Hr | WF-IDN-06 | none | 06-services/hr.md | 5 | SL-HR-605, SL-HR-609 | TC-HR-621 | any | Planned |
-| REQ-HR-012 | Workload balance surfaces teaching load, cover fairness and grading turnaround to coordinators as staff ana... | 2 | Hr | none | BR-SCD-005 | 06-services/hr.md | 5 | SL-HR-616, SL-HR-617 | TC-HR-001 | any | Planned |
+| REQ-HR-012 | Workload balance surfaces teaching load, cover fairness and grading turnaround to coordinators as staff ana... | 2 | Hr | none | BR-SCD-005 | 06-services/hr.md | 5 | SL-HR-616, SL-HR-617 | TC-HR-810 | any | Planned |
 | REQ-OPS-001 | Operations is one service with a schema per sub-domain so that a later split is mechanical | 2 | Operations | none | none | 06-services/operations.md | 5 | SL-OPS-600 | TC-OPS-601 | any | Planned |
 | REQ-OPS-002 | The library catalog supports ISBN lookup, copies with barcodes, lending, reservations, renewals, fines, inv... | 2 | Operations | WF-OPS-02 | none | 06-services/operations.md | 5 | SL-OPS-601, SL-OPS-602, SL-OPS-607, SL-OPS-609 | TC-OPS-603 | any | Planned |
 | REQ-OPS-003 | Transport holds vehicles, drivers and attendants with document expiry, routes and stops on OpenStreetMap, a... | 2 | Operations | WF-OPS-03 | none | 06-services/operations.md | 5 | SL-OPS-610, SL-OPS-611, SL-OPS-614, SL-OPS-616 | TC-OPS-604 | any | Planned |
@@ -772,22 +772,22 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-DATA-001 | Each data-owning service has its own database and schema, and no service ever reads another service's database | 1 | cross-cutting | none | none | 10 | 1 | SL-INF-001, SL-TST-003 | TC-DATA-951 | any | Planned |
 | REQ-DATA-002 | Each service runs under an application role without `BYPASSRLS` that owns no tables, and a separate migrati... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-002 | TC-DATA-952 | any | Planned |
 | REQ-DATA-003 | Every service enforces tenancy itself with `tenant_id` on every row, EF Core filters, and PostgreSQL row-le... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-001 | TC-DATA-953 | any | Planned |
-| REQ-DATA-004 | The row-level security policy is a plain equality on `tenant_id` against the `app.tenant_id` setting, set w... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-002 | TC-DATA-001 | any | Planned |
-| REQ-DATA-005 | The tenant id travels in the token, in gRPC metadata, and in every message envelope, and a consumed message... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-003, SL-API-006, SL-MSG-002 | TC-DATA-003 | any | Planned |
-| REQ-DATA-006 | A pooled context leased without a tenant throws on its first query | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-001 | TC-DATA-004 | any | Planned |
+| REQ-DATA-004 | The row-level security policy is a plain equality on `tenant_id` against the `app.tenant_id` setting, set w... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-002 | TC-DATA-643 | any | Planned |
+| REQ-DATA-005 | The tenant id travels in the token, in gRPC metadata, and in every message envelope, and a consumed message... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-003, SL-API-006, SL-MSG-002 | TC-DATA-645 | any | Planned |
+| REQ-DATA-006 | A pooled context leased without a tenant throws on its first query | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-001 | TC-DATA-640 | any | Planned |
 | REQ-DATA-007 | Every table uses snake_case names, UUID v7 keys generated by the owning service, audit columns `created_at/... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-001 | TC-DATA-008 | any | Planned |
 | REQ-DATA-008 | Every multi-tenant index starts with `tenant_id`, and soft-deleted tables use partial indexes on live rows | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-006 | TC-DATA-958 | any | Planned |
 | REQ-DATA-009 | Foreign keys exist only inside a service, and a reference to another service's entity is a plain `uuid` column | 1 | cross-cutting | none | none | 10 | 1 | SL-TST-003 | TC-DATA-959 | any | Planned |
 | REQ-DATA-010 | Migrations follow expand, migrate, contract so that they are safe under rolling deployment, and are never r... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-005 | TC-DATA-960 | any | Planned |
 | REQ-DATA-011 | Services with large models use a compiled EF Core model | 1 | cross-cutting | none | none | 10 | 1 | SL-PERF-005 | TC-DATA-961 | any | Planned |
 | REQ-DATA-012 | A read with more than one collection `Include` uses `AsSplitQuery()` or separate queries | 1 | cross-cutting | none | none | 10 | 1 | SL-TST-003 | TC-DATA-962 | any | Planned |
-| REQ-DATA-013 | Attendance records, notifications and deliveries, audit entries, and messages are partitioned by month from... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-006, SL-AUD-002 | TC-DATA-005 | any | Planned |
+| REQ-DATA-013 | Attendance records, notifications and deliveries, audit entries, and messages are partitioned by month from... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-006, SL-AUD-002 | TC-DATA-641 | any | Planned |
 | REQ-DATA-014 | Large text and `jsonb` live in side tables, not on hot tables | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-006 | TC-DATA-964 | any | Planned |
 | REQ-DATA-015 | GIN indexes serve full-text, trigram and `jsonb` search, with `pg_trgm` and `unaccent` where Arabic search ... | 1 | cross-cutting | none | BR-L10N-001 | 10 | 1 | SL-DATA-006 | TC-DATA-965 | any | Planned |
 | REQ-DATA-016 | `pg_stat_statements` is enabled in every database and autovacuum is tuned for the high-churn tables | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-006 | TC-DATA-966 | any | Planned |
 | REQ-DATA-017 | PgBouncer runs in transaction mode in front of every database, with pools sized from load tests rather than... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-002 | TC-DATA-967 | any | Planned |
 | REQ-DATA-018 | A service that needs another service's data keeps a slim read-only copy updated by events, and no copy hold... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-007 | TC-DATA-007 | any | Planned |
-| REQ-DATA-019 | Each copy of School data is reconciled nightly by checksum, repairs itself by replaying from the source, an... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-007 | TC-DATA-006 | any | Planned |
+| REQ-DATA-019 | Each copy of School data is reconciled nightly by checksum, repairs itself by replaying from the source, an... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-007 | TC-DATA-642 | any | Planned |
 | REQ-DATA-020 | Every aggregate in Appendix F states its invariants, and they are enforced in the domain, not only by datab... | 1 | cross-cutting | none | none | 10 | 1 | SL-TST-004 | TC-DATA-970 | any | Planned |
 | REQ-DATA-021 | Multi-service workflows run as sagas with persisted state, timeouts and compensating actions, visible in an... | 1 | cross-cutting | WF-PLT-01 | none | 10 | 1 | SL-DATA-008, SL-PLT-003 | TC-DATA-971 | any | Planned |
 | REQ-DATA-022 | There are no distributed transactions, and screens show an honest processing state while eventual consisten... | 1 | cross-cutting | none | none | 10 | 1 | SL-DATA-008, SL-UX-005 | TC-DATA-972 | any | Planned |
@@ -934,7 +934,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 
 | Date | Reviewer | Result |
 |---|---|---|
-| 2026-09-22 | Generated | 860 requirements, every one mapped to a test |
+| 2026-09-25 | Generated | 860 requirements, every one mapped to a test |
 
 ## How this document is verified
 

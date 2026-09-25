@@ -32,7 +32,7 @@ These scripts are written for the school, not for the test team. A principal, a 
 | 9 | Try to change a mark on a locked report card | Refused with `ASSESSMENT_POST_LOCK_CHANGE_REFUSED`, and the grade-appeal path is offered | `TC-ASM-101` |
 | 10 | Start emergency mode from the phone and send a drill broadcast | Roll call by location opens, the broadcast sends on push and SMS, and the "who has not confirmed" list updates live | `TC-ATT-102` |
 | 11 | Turn on airplane mode and reopen the morning brief | The last synced brief shows with a clear "as of" time; write actions are visibly disabled rather than failing silently | `TC-MOB-101` |
-| 12 | Restore the network | Queued approvals apply once each, and the counts match the server | `TC-MOB-102` |
+| 12 | Restore the network | Queued nudges and comments apply once each, approval decisions stay online as Appendix M requires, and the counts match the server | `TC-MOB-102` |
 
 ## Q.2 Teacher
 

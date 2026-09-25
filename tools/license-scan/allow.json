@@ -42,6 +42,12 @@
       "license": "AGPL-3.0",
       "justification": "Dependency update pull requests. A continuous integration tool, never shipped.",
       "adr": "0005-redis-agpl-standalone-valkey-fallback"
+    },
+    {
+      "name": "k6",
+      "license": "AGPL-3.0",
+      "justification": "Load and soak tests. A continuous integration tool run as its own binary against a deployed environment; no product code links to it and the scenarios are JavaScript in this repository. Master brief Section 6.4 carries the row since v9.1.",
+      "adr": "0019-brief-v9-1-corrections"
     }
   ],
   "overrides_note": "Packages that ship their licence as a file instead of an SPDX expression. Key: <package>@<exact version>. Value: { spdx: identifier read from the file, source: the URL it was read from, checked: ISO date }. An override missing any field, or recording a licence that is itself not allowed, fails the scan.",

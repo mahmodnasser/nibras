@@ -296,7 +296,7 @@ All paths are under `/api/v1/requests/`. Every endpoint may also return the K.1 
 | GET | `/api/v1/requests/requests/{id}` | `requests.requests.view` | none | `RequestDto`; internal notes absent for the requester | `REQUESTS_NOT_FOUND` | yes |
 | GET | `/api/v1/requests/requests/{id}/timeline` | `requests.requests.view` | none | transitions, decisions, escalations, effect steps with status and the failing step named (TC-RQS-004) | `REQUESTS_NOT_FOUND` | yes |
 | POST | `/api/v1/requests/requests/{id}/answer` | `requests.requests.create` | `{ answers, comment }` | `UnderReview`; SLA clock resumes | `REQUESTS_TRANSITION_NOT_ALLOWED` | `Idempotency-Key` required |
-| POST | `/api/v1/requests/requests/{id}/withdraw` | `requests.requests.withdraw` | `{ reason }` | `Withdrawn` (before a decision) | `REQUESTS_TRANSITION_NOT_ALLOWED`, `REQUESTS_ALREADY_DECIDED` | with `If-Match` |
+| POST | `/api/v1/requests/requests/{id}/withdraw` | `requests.requests.withdraw` | `{ reason }` | `Withdrawn`, `requests.request.withdrawn.v1` (before a decision) | `REQUESTS_TRANSITION_NOT_ALLOWED`, `REQUESTS_ALREADY_DECIDED` | with `If-Match` |
 | POST | `/api/v1/requests/requests/{id}/cancel` | `requests.requests.withdraw` | `{}` on a draft | `Cancelled` | `REQUESTS_TRANSITION_NOT_ALLOWED` | with `If-Match` |
 | POST | `/api/v1/requests/requests/{id}/rating` | `requests.requests.create` | `{ rating, comment }` | stored (TC-RQS-006) | `REQUESTS_TRANSITION_NOT_ALLOWED` before `Completed` | with `If-Match` |
 | GET | `/api/v1/requests/requests/{id}/comments` | `requests.requests.view` | none | comments; internal only for approvers | `REQUESTS_NOT_FOUND` | yes |
@@ -314,7 +314,7 @@ All paths are under `/api/v1/requests/`. Every endpoint may also return the K.1 
 | POST | `/api/v1/requests/requests/{id}/reject` | `requests.requests.reject` | `{ reason }` required | `Rejected`; a captured fee is reversed through WF-FIN-02 | `REQUESTS_ALREADY_DECIDED`, `REQUESTS_VALIDATION_FAILED` (no reason) | `Idempotency-Key` required |
 | POST | `/api/v1/requests/requests/{id}/request-information` | `requests.requests.approve` | `{ question }` | `NeedsInformation`; SLA paused; `requests.request.needs-info.v1` | `REQUESTS_TRANSITION_NOT_ALLOWED` | `Idempotency-Key` required |
 | POST | `/api/v1/requests/approvals/bulk` | `requests.requests.approve` | bulk envelope, `independent` mode, `{ requestId, decision, reason }` per item, at most 500 | per-item results (REQ-RQS-008, TC-RQS-101) | per item | `Idempotency-Key` required |
-| POST | `/api/v1/requests/requests/{id}/reassign` | `requests.requests.reassign` | `{ toUserId, reason }` | current step reassigned to an active user | `REQUESTS_APPROVER_UNAVAILABLE`, `REQUESTS_VALIDATION_FAILED` (inactive target, T-RQS-04) | with `If-Match` |
+| POST | `/api/v1/requests/requests/{id}/reassign` | `requests.requests.reassign` | `{ toUserId, reason }` | current step reassigned to an active user, `requests.request.reassigned.v1` | `REQUESTS_APPROVER_UNAVAILABLE`, `REQUESTS_VALIDATION_FAILED` (inactive target, T-RQS-04) | with `If-Match` |
 | POST | `/api/v1/requests/requests/{id}/override` | `requests.requests.override` | `{ action: approve-step, reject, skip-step, force-complete, retry-effects, cancel-effects; reason }` | the transition, audited as elevated | `REQUESTS_TRANSITION_NOT_ALLOWED` | `Idempotency-Key` required |
 | GET | `/api/v1/requests/requests/board` | `requests.requests.view` | filter `typeCode`, `status`, `campusId` | office board keyset on `(submittedAt, id)` | none specific | yes |
 | POST | `/api/v1/requests/requests/export` | `requests.requests.export` | filter, format | 202 job; sensitive answers excluded unless the caller holds the source permission | none specific | by `Idempotency-Key` |
@@ -334,8 +334,8 @@ All paths are under `/api/v1/requests/`. Every endpoint may also return the K.1 
 | POST | `/api/v1/requests/tasks/{id}/complete` | `requests.tasks.complete` | `{ occurredAt }` from the device | `TaskDto`; `requests.task.completed.v1` once; a later completion is ignored (TC-RQS-603) | `REQUESTS_TRANSITION_NOT_ALLOWED` for an approval task | `Idempotency-Key` required |
 | POST | `/api/v1/requests/tasks/{id}/reassign` | `requests.tasks.assign` | `{ toUserId }` | `TaskDto` | `REQUESTS_VALIDATION_FAILED` (inactive target) | with `If-Match` |
 | POST | `/api/v1/requests/tasks/{id}/cancel` | `requests.tasks.edit` | `{ reason }` | `cancelled` | none specific | with `If-Match` |
-| GET | `/api/v1/requests/duty-rosters` | `requests.tasks.view` | filter `kind`, `campusId`, `from` | rosters with slots | none specific | yes |
-| PUT | `/api/v1/requests/duty-rosters/{id}` | `requests.tasks.assign` | slots and staff | roster; slot tasks created (Tier 2) | `REQUESTS_VALIDATION_FAILED` (overlapping duties) | with `If-Match` |
+| GET | `/api/v1/requests/duty-rosters` | `requests.duty-rosters.view` | filter `kind`, `campusId`, `from` | rosters with slots | none specific | yes |
+| PUT | `/api/v1/requests/duty-rosters/{id}` | `requests.duty-rosters.edit` | slots and staff | roster; slot tasks created (Tier 2) | `REQUESTS_VALIDATION_FAILED` (overlapping duties) | with `If-Match` |
 
 ### 5.7 Jobs
 
@@ -371,6 +371,9 @@ All paths are under `/api/v1/requests/`. Every endpoint may also return the K.1 
 | `requests.request.rejected.v1` | `UnderReview → Rejected` | `requestId` | Notification, Reporting |
 | `requests.request.completed.v1` | `InProgress → Completed` | `requestId` | Notification, Reporting |
 | `requests.request.sla-breached.v1` | Each step breach and re-escalation (BR-RQS-005) | `requestId` | Notification, Reporting |
+| `requests.request.reassigned.v1` | A step or a task is reassigned, by a person or by the leaver inventory | `requestId` | Notification, Reporting |
+| `requests.request.withdrawn.v1` | `Submitted → Withdrawn`, before a decision | `requestId` | Notification, Reporting |
+| `requests.request.expired.v1` | `RequestExpiryJob` expires a request or lapses a `NeedsInformation` step | `requestId` | Notification, Reporting |
 | `requests.task.assigned.v1` | Approval step entered; assigned or workflow task created | `userId` | Notification, Reporting |
 | `requests.task.completed.v1` | First completion of a task | `userId` | Reporting |
 | `requests.usage.recorded.v1` | Monthly requests-submitted meter | `tenantId` | Platform |
@@ -390,10 +393,12 @@ Commands sent on `nibras.requests` (document 11 section 2.4), one per Saga 6 ste
 | `identity.user.activated.v1`, `identity.user.deactivated.v1` | `requests.reference-copies` | `UserLifecycleConsumer` | `ref_approvers.active`; a deactivated user's open steps and tasks are reassigned by delegation or escalation (TC-RQS-003) |
 | `identity.delegation.started.v1`, `identity.delegation.ended.v1` | `requests.reference-copies` | `DelegationConsumer` | `delegate_to` and `delegated_until`; the delegate sees the delegator's inbox; decisions record `acting_for_user_id` |
 | `school.student.enrolled.v1`, `school.student.status-changed.v1` | `requests.reference-copies` | `StudentReferenceConsumer` | `ref_students`; a withdrawn student's open requests are marked for review |
-| `school.staff.created.v1`, `school.staff.left.v1` | `requests.reference-copies` | `StaffReferenceConsumer` | `ref_staff`; a leaver's open approvals and tasks are inventoried and reassigned, never orphaned (TC-IDN-052, TC-RQS-003) |
+| `school.staff.created.v1`, `school.staff.changed.v1`, `school.staff.left.v1` | `requests.reference-copies` | `StaffReferenceConsumer` | `ref_staff`; a leaver's open approvals and tasks are inventoried and reassigned, never orphaned (TC-IDN-052, TC-RQS-003) |
 | `identity.join-request.submitted.v1` | `requests.events` | `JoinRequestTaskConsumer` | Workflow task for the approver with a deep link to Identity's decision screen, keyed on the join request |
 | `identity.access-review.due.v1` | `requests.events` | `AccessReviewTaskConsumer` | Workflow task per reviewer (WF-SEC-01) |
 | `school.student-document.expiring.v1`, `hr.staff-document.expiring.v1` | `requests.events` | `DocumentExpiryTaskConsumer` | Workflow task for the registrar or the HR officer, keyed on the document and expiry date |
+| `school.calendar-day.changed.v1` | `requests.reference-copies` | `CalendarDayChangedConsumer` | Adds, updates or removes the day in `sla_calendar_holidays` with `source = school-import`, and recomputes the SLA clock of open steps (BR-RQS-002, BR-RQS-003) |
+| `attendance.mark-review.requested.v1`, `attendance.mark-review.resolved.v1` | `requests.events` | `MarkReviewTaskConsumer` | Opens a workflow task for the approver scope the event names, keyed on `reviewId`, and closes it when the review resolves |
 | `operations.frontdesk.complaint-received.v1` | `requests.events` | `ComplaintReceivedConsumer` | Opens a request of the seeded complaint type with its SLA from `slaDueAt`, keyed on `complaintId` |
 | Saga 6 outcome events of document 13 section 4 (for example `finance.invoice.issued.v1`, `attendance.excuse.approved.v1`, `documents.document.generated.v1`, `hr.leave.approved.v1`) | `requests.saga-outcomes` | `FulfilmentOutcomeConsumer` | Correlated by `correlationId`; advances the saga; a message for no running saga is dropped in one indexed lookup |
 | `requests.replies.#` from the thirteen effect owners | `requests.replies` | `FulfilmentReplyConsumer` | `EffectApplied` or `EffectFailed` for steps with no catalogued outcome; compensation replies |
@@ -447,7 +452,7 @@ The `Submitted → Approved` edge for auto-approval (BR-RQS-004) and the `NeedsI
 | Copy | Source events | Fields kept | Reconciliation | Staleness tolerated |
 |---|---|---|---|---|
 | `ref_students` | `school.student.enrolled.v1`, `school.student.status-changed.v1` | id, number, names, section, campus, status | Nightly 02:00 band time zone against School `ReferenceReconciliation.Checksum` for `student`; replay from `ListSnapshotPage` | Minutes |
-| `ref_staff` | `school.staff.created.v1`, `school.staff.left.v1` | id, user id, names, department, campuses, active | Nightly against School `Checksum` for `staff` | Minutes |
+| `ref_staff` | `school.staff.created.v1`, `school.staff.changed.v1`, `school.staff.left.v1` | id, user id, names, department, campuses, active | Nightly against School `Checksum` for `staff` | Minutes |
 | `ref_approvers` | `identity.user.activated.v1`, `identity.user.deactivated.v1`, `identity.role.changed.v1`, `identity.delegation.started.v1`, `identity.delegation.ended.v1` | user, roles, scope, delegation, language, active | Nightly against Identity `nibras.identity.v1.Users/Checksum` | Seconds for role changes, because an approver who lost a role must not decide |
 | `ref_tenant_state`, `ref_settings` | tenant-lifecycle keys | status, flags, the *Requests* and *General* settings | Nightly against Platform | Minutes |
 
@@ -492,6 +497,7 @@ All run in the Api host under Quartz.NET, per tenant, with the tenant variable s
 | `requests.requests.override` | Principal | elevated, reason required |
 | `requests.requests.withdraw` | Every requester for their own requests | `self` |
 | `requests.tasks.view`, `.create`, `.edit`, `.assign`, `.complete` | Every staff role for their own tasks; managers `assign` in scope | normal |
+| `requests.duty-rosters.view`, `.create`, `.edit`, `.delete`, `.publish`, `.assign` | Principal, Vice Principal, Registrar | `campus`; normal |
 | `requests.sla.view`, `.edit` | Principal, Registrar | normal |
 | `platform.jobs.view`, `platform.jobs.cancel` | as Appendix B | job endpoints |
 
@@ -502,8 +508,9 @@ All run in the Api host under Quartz.NET, per tenant, with the tenant variable s
 | Request submitted, needs information, decided, completed | `requests.request.submitted.v1`, `requests.request.needs-info.v1`, `requests.request.approved.v1`, `requests.request.rejected.v1`, `requests.request.completed.v1` | Requester, approvers | N; push, in-app |
 | Request SLA at risk or breached | `requests.request.sla-breached.v1` | Assignee, then manager | N; push, email |
 | Task assigned | `requests.task.assigned.v1` | Assignee | N; push, in-app |
+| One-time code or password reset link | `notification.notification.requested.v1` (`RequestNotification` from Requests for public-form OTP) | The person verifying | U, never deduplicated or digested; SMS or email as the person chose, never push |
 
-The half-SLA reminder, the expiry notice, task reminders, the public-link OTP and the "submitted on your behalf" notice have no Appendix C row and go through `RequestNotification` (open point 5).
+Appendix C deduplicates on the same template, recipient and subject within five minutes (BR-NOT-004); the one-time code row is urgent and is never deduplicated. The half-SLA reminder, the expiry notice, task reminders and the "submitted on your behalf" notice still have no Appendix C row and go through `RequestNotification` (open point 5). `requests.request.withdrawn.v1`, `requests.request.expired.v1` and `requests.request.reassigned.v1` now reach Notification as catalogued triggers, so the templates behind them are Notification's.
 
 ### 11.3 Settings (Appendix G, owned by Platform)
 
@@ -787,11 +794,13 @@ src/Services/Requests/                                                        Re
 │   │   ├── UserLifecycleConsumer.cs                                          identity.user.activated.v1 and identity.user.deactivated.v1
 │   │   ├── DelegationConsumer.cs                                             identity.delegation.started.v1 and identity.delegation.ended.v1
 │   │   ├── StudentReferenceConsumer.cs                                       school.student.enrolled.v1 and school.student.status-changed.v1
-│   │   ├── StaffReferenceConsumer.cs                                         school.staff.created.v1 and school.staff.left.v1; leaver reassignment
+│   │   ├── StaffReferenceConsumer.cs                                         school.staff.created.v1, .changed.v1 and .left.v1; leaver reassignment
 │   │   ├── JoinRequestTaskConsumer.cs                                        identity.join-request.submitted.v1
 │   │   ├── AccessReviewTaskConsumer.cs                                       identity.access-review.due.v1
 │   │   ├── DocumentExpiryTaskConsumer.cs                                     school.student-document.expiring.v1 and hr.staff-document.expiring.v1
-│   │   └── ComplaintReceivedConsumer.cs                                      operations.frontdesk.complaint-received.v1
+│   │   ├── ComplaintReceivedConsumer.cs                                      operations.frontdesk.complaint-received.v1
+│   │   ├── CalendarDayChangedConsumer.cs                                     school.calendar-day.changed.v1 into sla_calendar_holidays
+│   │   └── MarkReviewTaskConsumer.cs                                         attendance.mark-review.requested.v1 and attendance.mark-review.resolved.v1
 │   ├── Sagas/                                                                process managers orchestrated by Requests
 │   │   └── RequestFulfilmentSaga/                                            Saga 6, document 13
 │   │       ├── RequestFulfilmentSaga.cs                                      step order, timeouts, compensation one at a time
@@ -977,9 +986,9 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 | Requests jobs run in the Api host | Appendix L lists no requests-worker image | As stated | A worker image under an ADR moves `Api/Jobs/` |
 | Approvers are resolved by role and Identity data scope from the approver copy, with delegation | Appendix B scopes; WF-IDN-04 | As stated | A separate reporting-line model would be needed in Hr |
 | The `Task` aggregate is stored in `request_tasks` and named `TaskItem` in code | Document 21 section 3.12; .NET naming | As stated | None |
-| SLA calendars are owned by Requests per campus, seeded from *General → work week* | BR-RQS-003 parameters | As stated; open point 3 for holidays | Holidays entered twice until a School calendar event exists |
+| SLA calendars are owned by Requests per campus, seeded from *General → work week*, and their holidays follow `school.calendar-day.changed.v1` | BR-RQS-003 parameters; Appendix E (v9.1) | As stated | Holidays entered twice if the binding is dropped |
 | Auto-approval may skip `UnderReview` | BR-RQS-004 | Open point 6 | Appendix R's diagram disagrees until aligned |
-| Only catalogued events are published; uncatalogued transitions write `requests.audit.recorded.v1` | Appendix E | Open point 1 | Consumers cannot react to withdrawn, cancelled, expired or effect-failed requests |
+| Only catalogued events are published; uncatalogued transitions write `requests.audit.recorded.v1` | Appendix E | As stated; open point 1 for cancelled and effect-failed | Consumers cannot react to a cancelled draft or a failed effect |
 
 ## Dependencies on other documents
 
@@ -1001,13 +1010,13 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | REQ-RQS-006 and master brief Section 11.1 say every transition is published as an event, but Appendix E has no event for withdrawn, cancelled, expired, in-progress or effect-failed, and Appendix R WF-IDN-06 names `requests.request.reassigned.v1`, which Appendix E lacks | Those transitions write `requests.audit.recorded.v1` and send `RequestNotification`; propose `requests.request.withdrawn.v1`, `requests.request.expired.v1`, `requests.request.effect-failed.v1` and `requests.request.reassigned.v1` | Architect, Appendix E amendment | REQ-RQS-006's acceptance holds only for the catalogued transitions |
+| 1 | REQ-RQS-006 and master brief Section 11.1 say every transition is published as an event, but Appendix E has no event for withdrawn, cancelled, expired, in-progress or effect-failed, and Appendix R WF-IDN-06 names `requests.request.reassigned.v1`, which Appendix E lacks | Section 7.1 publishes `requests.request.reassigned.v1`, `.withdrawn.v1` and `.expired.v1`. A cancelled draft, `InProgress` and a failed effect still write `requests.audit.recorded.v1` and send `RequestNotification` | Architect, Appendix E amendment | Partly resolved 2026-09-22 (ADR-0019): Appendix E carries the reassigned, withdrawn and expired keys with Notification and Reporting as consumers, and its job table lists `RequestExpiryJob` as the publisher of the expiry key. `requests.request.effect-failed.v1` and a cancelled key were deliberately not added, so REQ-RQS-006's acceptance still holds only for the catalogued transitions |
 | 2 | REQ-RQS-002 hands forms to Admissions, consent forms and surveys, but no event or synchronous dependency carries a form to them | The web client reads the published snapshot from `GET /forms/{id}/versions/{version}` and the owning service stores it with its own record; propose `requests.form.published.v1` | Architect | Admissions and Communication hold a copy that is not reconciled |
-| 3 | BR-RQS-002 and BR-RQS-003 need campus holidays, which School owns and publishes no event for (School sheet open point 2) | Holidays are maintained in `SlaCalendar` and can be imported from School through the web client; replaced by a consumer when `school.calendar-day.changed.v1` exists | Architect | Holidays maintained twice |
-| 4 | BR-RQS-004 conditions on a leave balance that Hr owns and publishes no change event for | The balance is a form field filled from Hr through the backends-for-frontends at submission; Hr re-verifies it when `ApproveLeave` runs and an insufficient balance fails the effect and compensates; propose `hr.leave-balance.changed.v1` for a reference copy | Product owner, with Hr | An auto-approved leave can fail at the effect instead of routing to a human |
-| 5 | The half-SLA reminder, expiry notice, task reminder, public-link OTP and on-behalf notice have no Appendix C row | Sent through `RequestNotification` with templates in Notification; rows proposed for Appendix C | Product owner | kit-lint R12 cannot check these messages |
+| 3 | BR-RQS-002 and BR-RQS-003 need campus holidays, which School owns and publishes no event for (School sheet open point 2) | `CalendarDayChangedConsumer` keeps `sla_calendar_holidays` from `school.calendar-day.changed.v1` with `source = school-import`; the manual rows stay for holidays a campus adds itself | Architect | Resolved 2026-09-22 (ADR-0019): Appendix E carries `school.calendar-day.changed.v1` for holidays and non-teaching days, with Scheduling, Attendance and Requests as consumers, so holidays are no longer maintained twice |
+| 4 | BR-RQS-004 conditions on a leave balance that Hr owns and publishes no change event for | The balance is a form field filled from Hr through the backends-for-frontends at submission; Hr re-verifies it when `ApproveLeave` runs and an insufficient balance fails the effect and compensates; `hr.leave-balance.changed.v1` stays proposed | Product owner, with Hr | Still open. ADR-0019 did not add the key, so an auto-approved leave can still fail at the effect instead of routing to a human |
+| 5 | The half-SLA reminder, expiry notice, task reminder, public-link OTP and on-behalf notice have no Appendix C row | The public-link OTP runs on the Appendix C row "One-time code or password reset link", which names Requests. The half-SLA reminder, the expiry notice, task reminders and the on-behalf notice still go through `RequestNotification` with templates in Notification | Product owner | Partly resolved 2026-09-22 (ADR-0019): Appendix C added the one-time code row, urgent and never deduplicated, covering Requests public-form OTP. The other four rows were not added, so kit-lint R12 still cannot check them |
 | 6 | Appendix R WF-RQS-01 has no `NeedsInformation → Expired` edge though it states the 14-day lapse, and routes auto-approval through `UnderReview` | The engine implements both edges shown in section 8; Appendix R's diagram is aligned in the next revision | Architect | Transition tests and the diagram disagree |
-| 7 | Appendix B has no permission for duty rosters (REQ-RQS-019) | Rosters under `requests.tasks.view` and `requests.tasks.assign` | Product owner | A roster editor needs task-assign rights |
+| 7 | Appendix B has no permission for duty rosters (REQ-RQS-019) | The `/duty-rosters` routes run under `requests.duty-rosters.view` and `.edit`, with `publish` and `assign` for the Tier 2 slot tasks | Product owner | Resolved 2026-09-22 (ADR-0019): Appendix B carries `requests.duty-rosters` with view, create, edit, delete and the special actions `publish` and `assign`, so a roster editor no longer needs task-assign rights |
 | 8 | Reference architecture table 8.0 lists "request-type definitions" among Requests' local copies, but they are Requests' own data | Treated as owned data | Architect | None |
 
 ## Review record

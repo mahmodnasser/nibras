@@ -35,13 +35,13 @@ Each row states the claim, who it is aimed at, and the proof that must exist bef
 | Claim | Aimed at | Proof required |
 |---|---|---|
 | **Arabic and English are equal, not translated.** An Arabic interface is parity: four of the ten products offer one. The difference is the data model: bilingual names, records and documents, Arabic-aware search, Hijri display, and amounts in words in both languages, none of which a competitor documents | Schools in the Gulf and the Levant | Four-way visual snapshots, bilingual PDF baselines, the Arabic normalization rules in Appendix S |
-| **Exception-only attendance.** Gate, bus and approved leave pre-fill the register | Teachers, every morning | TC-ATT-003, and the sixty-second measurement in the performance budgets |
+| **Exception-only attendance.** Gate, bus and approved leave pre-fill the register | Teachers, every morning | TC-ATT-812, and the sixty-second measurement in the performance budgets |
 | **Everything explains itself.** Any number drills to its records and its rule version; any automated decision shows its reasons and allows an override | School owners and auditors | TC-RPT-007, TC-RPT-008, the rule identifiers in Appendix S |
 | **Live in a day.** Smart defaults from country and school type, import with dry run and rollback | The decision maker's biggest fear | TC-PLT-802, TC-DOC-001, the 10,000-row import scenario in Appendix N |
 | **Open by default.** Webhooks, iCal, OneRoster, data export always available, and read-only access before suspension. A public API alone is parity: six of the ten products publish one | Schools that have been locked in before | TC-INT-001, and the dunning policy in master brief Section 36 |
 | **Permissively licensed, modern, multi-tenant and open source.** openSIS and Gibbon are GNU GPL open source and Fedena has an open-source basic version, so the difference is the licence family and the stack, not open source itself. No licence fee, two named non-open exceptions, every dependency verified | Owners and ministries | The dependency inventory and the licence scan |
 | **Works at rung 1.** Every intelligent feature has a deterministic fallback; the product is complete with all models off | Schools without hardware or appetite for artificial intelligence | Appendix W's rung column, and the fallback tests |
-| **Safety is a first-class module.** Gate passes, visitor watchlist, emergency mode with reunification, safeguarding with its own retention | Principals and parents | TC-ATT-004, the wellbeing isolation rules |
+| **Safety is a first-class module.** Gate passes, visitor watchlist, emergency mode with reunification, safeguarding with its own retention | Principals and parents | TC-ATT-813, the wellbeing isolation rules |
 | **Deploys three ways from one codebase.** Laptop, one server, or Kubernetes | Small schools and groups alike | The three deployment modes, and the appliance drill |
 | **A group is one tenant with campuses.** Cross-campus reporting without a cross-tenant query | School groups | The tenancy model in the reference architecture Section 14 |
 
@@ -84,11 +84,11 @@ This is the half of a gap analysis that teams skip. Each row has a recommendatio
 
 | Feature | Who else has it | Our edge | Persona moment | Proof | Risk if wrong |
 |---|---|---|---|---|---|
-| 26 Exception-only attendance | Partial: Fedena integrates biometric capture; others unverified; none found that pre-fills the register from it | Three sources merged into the register before the teacher opens it, with the conflict rules to make it safe | "The register was already half filled" | Minute 2, TC-ATT-003 | Low. The integration depth is the moat, not the idea |
+| 26 Exception-only attendance | Partial: Fedena integrates biometric capture; others unverified; none found that pre-fills the register from it | Three sources merged into the register before the teacher opens it, with the conflict rules to make it safe | "The register was already half filled" | Minute 2, TC-ATT-812 | Low. The integration depth is the moat, not the idea |
 | 27 Explain this number | Rare. Most show a number and a report | Every figure drills to records and the scheme version that produced it | "I showed the parent exactly why" | Minute 14, TC-RPT-007 | Medium. Easy to imitate shallowly, hard to imitate completely |
 | 29 Smart defaults engine | Rare. Most have a setup wizard with empty fields | Country plus school type infers eleven configuration areas and shows what it inferred | "It already knew how our year works" | Minute 15, TC-PLT-802 | Medium |
 | 31 Guardian transparency | Very rare: no product found with a guardian-visible access log; an unverified absence pending a product trial | A parent sees which roles read their child's sensitive records | "I can see who looked at my child's file" | Minute 11, TC-AUD-002 | Low. It requires an access log most products do not keep |
-| 32 Emergency mode with reunification | Partial: broadcast is built into Blackbaud; roll call and reunification unmatched | Built in, offline-capable, with acknowledgement tracking | "Every child accounted for in four minutes" | Minute 13, TC-ATT-004 | Medium |
+| 32 Emergency mode with reunification | Partial: broadcast is built into Blackbaud; roll call and reunification unmatched | Built in, offline-capable, with acknowledgement tracking | "Every child accounted for in four minutes" | Minute 13, TC-ATT-813 | Medium |
 | 44 Low-bandwidth mode | Rare: no product page mentions a data-saver mode, and Toddle requires a 3G or better connection; an unverified absence | A data-saver profile designed for the phones parents actually own | "It worked on my old phone" | Minute 4, TC-MOB-005 | Low |
 
 ## How this appendix is verified

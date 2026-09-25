@@ -435,9 +435,11 @@ Quoted from master brief Section 19: the Gateway protects the platform from traf
 | 1 Gateway, per tenant | same | `tenantId` from the token or host | Token bucket refilled per minute | By plan: 3,000 per minute (small), 12,000 (standard), 40,000 (scale); burst equal to 10 seconds of refill | 429 | `GATEWAY_RATE_LIMITED` |
 | 2 Service, per user and per endpoint | `Nibras.BuildingBlocks.Web` limiter, policy per endpoint group | `(tenantId, userId or apiKeyId, endpoint policy)` | Token bucket | `read`: 300 per minute; `write`: 120 per minute; `sensitive` (exports, sensitive reads): 20 per minute; `auth` (sign-in, code requests): 10 per 5 minutes | 429 | `<SERVICE>_RATE_LIMITED` |
 | 2 Service, per API key | same, policy from the key | `apiKeyId` | Token bucket with the key's own limit (`23-integrations-and-public-api.md` §2) | Per plan: 60, 300 or 1,000 per minute per key | 429 | `<SERVICE>_RATE_LIMITED` |
-| 3 Platform, plan quotas | Platform, checked by the service through the plan-limits cache and metered by `<service>.usage.recorded.v1` | `tenantId` and meter | Monthly or absolute counters | Jobs per hour, SMS credits, storage GiB, AI calls per month, active students, API calls per day per plan | 402 for a hard quota; a `platform.limit.approaching.v1` event at 80 percent | `PLATFORM_PLAN_LIMIT_REACHED` (402), `NOTIFICATION_SMS_CREDITS_EXHAUSTED` (402), `AI_USAGE_LIMIT_REACHED` (402) |
+| 3 Platform, plan quotas | Platform, checked by the service through the plan-limits cache and metered by `<service>.usage.recorded.v1` | `tenantId` and meter | Monthly or absolute counters | Jobs per hour, SMS credits, storage GiB, AI calls per month, active students, API calls per day per plan | 402 for a hard quota; a `platform.limit.approaching.v1` event at 80 percent | `PLATFORM_PLAN_LIMIT_REACHED` (402), `NOTIFICATION_SMS_CREDITS_EXHAUSTED` (402); `AI_USAGE_LIMIT_REACHED` at the status Appendix K.21 gives it (below) |
 
-Layer 1 and layer 2 answer "is this caller too fast"; layer 3 answers "has this school used what it paid for". A quota breach is therefore 402, not 429, and is never retried automatically.
+Layer 1 and layer 2 answer "is this caller too fast"; layer 3 answers "has this school used what it paid for". Master brief Section 19 separates them: a rate breach at the Gateway or a service is **429** with a `_RATE_LIMITED` code and `Retry-After`; a plan-quota breach is **402** with `PLATFORM_PLAN_LIMIT_REACHED`, **no** `Retry-After`, and the limit, the current usage and the upgrade action in `params`. A 402 is never retried automatically.
+
+**One exception, owned by Appendix K.21.** `AI_USAGE_LIMIT_REACHED` is not a plain 402. An assist request over the limit answers **200** and degrades to rung 1 with the code as the degradation reason (`25-ai-and-assist-ladder.md` §8 and §10); the **402** is reserved for an administrator's explicit rung 4 request while the plan's rung 4 allowance is spent. This document does not set that status; Appendix K.21 does.
 
 ### 9.2 The 429 contract
 
@@ -453,6 +455,20 @@ Layer 1 and layer 2 answer "is this caller too fast"; layer 3 answers "has this 
 | Exemptions | Health probes, the sign-out endpoint, the emergency broadcast acknowledgment endpoint (Attendance), and the Gateway maintenance page; each exemption is listed in `deploy/` configuration and reviewed in the security review |
 | Noisy neighbour proof | Appendix N scenario N-06 asserts that a large tenant at its limit does not raise the p95 of a small tenant beyond budget |
 | Redis unavailable | Layer 1 and 2 fail open with a metric and an alert (a slow product beats a locked one); layer 3 fails closed for paid meters (SMS, AI) and open for soft ones (jobs) |
+
+### 9.3 The 402 contract for a plan quota
+
+Master brief Section 19 states this shape; it is repeated here only as the wire detail an engineer needs, and no value differs.
+
+| Element | Value |
+|---|---|
+| Status | 402 |
+| Code | `PLATFORM_PLAN_LIMIT_REACHED`, or the meter's own 402 code where Appendix K defines one (`NOTIFICATION_SMS_CREDITS_EXHAUSTED`) |
+| `Retry-After` | Never sent. A quota does not refill on a timer the client can wait out, and a client that backs off and retries hammers a limit that will not reset |
+| `retryAfterSeconds` | Absent, for the same reason |
+| Body | Problem Details carrying the three things Appendix K's row promises, in the `params` names this document owns: `params.limit`, `params.usage` and `params.upgradeAction` (the console route that raises the plan or buys the meter), plus `params.meter`; a meter that resets on a clock adds `params.resetsAt`, as the daily API quota does (`23-integrations-and-public-api.md` §2.5) |
+| Client behaviour | Show the limit and the upgrade action; no automatic retry (Appendix K row `PLATFORM_PLAN_LIMIT_REACHED`) |
+| Warning before it | `platform.limit.approaching.v1` at 80 percent, so the 402 is not the first the school hears of it |
 
 ---
 
@@ -640,13 +656,13 @@ Codes are strings, so the ranges are prefixes and status classes rather than num
 
 | Prefix | Emitted by | Appendix K section | Count today |
 |---|---|---|---|
-| `IDENTITY_` | Identity | K.2 | 12 |
+| `IDENTITY_` | Identity | K.2 | 14 |
 | `PLATFORM_` | Platform | K.3 | 9 |
-| `SCHOOL_` | School | K.4 | 9 |
+| `SCHOOL_` | School | K.4 | 10 |
 | `ADMISSIONS_` | Admissions | K.5 | 9 |
-| `ACADEMICS_` | Academics | K.6 | 9 |
-| `ASSESSMENT_` | Assessment | K.7 | 9 |
-| `SCHEDULING_` | Scheduling | K.8 | 9 |
+| `ACADEMICS_` | Academics | K.6 | 10 |
+| `ASSESSMENT_` | Assessment | K.7 | 11 |
+| `SCHEDULING_` | Scheduling | K.8 | 10 |
 | `ATTENDANCE_` | Attendance | K.9 | 10 |
 | `FINANCE_` | Finance | K.10 | 10 |
 | `COMMUNICATION_` | Communication | K.11 | 9 |
@@ -660,7 +676,9 @@ Codes are strings, so the ranges are prefixes and status classes rather than num
 | `HR_` | Hr | K.19 | 9 |
 | `OPERATIONS_` | Operations | K.20 | 9 |
 | `AI_` | Ai | K.21 | 9 |
-| `GATEWAY_`, `BFF_` | Gateway, Bff.Web, Bff.Mobile | the eight cross-cutting suffixes only | 8 each |
+| `GATEWAY_`, `BFF_` | Gateway, Bff.Web, Bff.Mobile | K.1 suffixes, plus their own section K.23 | 9 each: the eight cross-cutting suffixes, plus `GATEWAY_BODY_TOO_LARGE` (413) and `BFF_APP_VERSION_BELOW_MINIMUM` (403) |
+
+Counts are read from Appendix K, which owns them; they are not maintained here. K.23 is numbered after K.22 so that every existing reference to "K.22 rule N" still resolves.
 
 The prefix is the **long service name in upper case** (Appendix K header): the Requests service emits `REQUESTS_*`, never `RQS_*`, because `RQS` is an AREA code for identifiers and not an error prefix (Appendix L).
 
@@ -671,7 +689,7 @@ Status classes a code may use, and what each means to a client:
 | 200 | informational success | The call succeeded and the client should know something (`_IDEMPOTENCY_REPLAY`, `ATTENDANCE_DUPLICATE_MARK`, `REPORTING_PROJECTION_STALE`, `AI_OUTPUT_REQUIRES_REVIEW`) | Continue, show the note |
 | 400 | input | Shape, format, required, unknown reference | Fix the form; no retry |
 | 401 | authentication | Token missing, expired, second factor pending | Refresh once, then sign in |
-| 402 | commercial | A plan quota or a provider decline | Show the limit or the decline; no retry |
+| 402 | commercial | A plan quota or a provider decline | Show the limit, the usage and the upgrade action, or the decline; no retry, no `Retry-After` (§9.3) |
 | 403 | authorization | Permission, scope, consent, policy | Hide the action; request access |
 | 404 | existence | Not found, or existence is the secret (`WELLBEING_ACCESS_DENIED`) | Return to the list |
 | 409 | state | Concurrency, workflow state, window closed, duplicate | Re-read and show the allowed actions |
@@ -725,7 +743,8 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 | A missing `If-Match` on a write is 400, not 428 | This document §4 | 400 with field `If-Match` | 428 has no catalog code; adding a status class needs an Appendix K change |
 | `Idempotency-Key` TTL is 24 hours, 7 days for payment callbacks | This document §5 | 24 h and 7 d | Shorter loses offline replays after a school trip; longer grows `redis-state` beyond a day of writes |
 | Bulk maximum is 500 items; more is an import job | This document §7 | 500 | Larger batches breach the write budget; smaller ones make the mobile outbox chatty |
-| Quota breaches are 402, rate breaches are 429 | This document §9; Appendix K | As stated | A client that retries a 402 hammers a limit that will not reset |
+| Quota breaches are 402 with the limit, the usage and the upgrade action and no `Retry-After`; rate breaches are 429 with `Retry-After` | Master brief Section 19; this document §9.2 and §9.3; Appendix K | As stated | A client that retries a 402 hammers a limit that will not reset |
+| `AI_USAGE_LIMIT_REACHED` is the one meter that is not a plain 402: 200 with a degradation to rung 1 on an assist request, 402 only on an explicit rung 4 request | Appendix K.21, which owns the status; `25-ai-and-assist-ladder.md` §8 | As stated | A school that has spent its AI allowance sees errors where the ladder promises a working rung 1 fallback |
 | The hop rule is enforced by interceptor and architecture test | This document §10.4 | Enforced | Two hops silently become three and the p95 budget is gone |
 | Spectral plus `oasdiff` gate every spec change | This document §11 | Both | A breaking change reaches a phone that cannot update |
 | Problem `type` is a URN, not a URL | This document §8 | `urn:nibras:problem:<code>` | A URL bakes a host into every mobile build |
@@ -737,7 +756,7 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 |---|---|---|
 | Service names, prefixes, permission namespaces | Appendix L, Appendix B | Every lint run |
 | The per-service code rows | Appendix K | Every lint run once `docs/api/error-codes.json` is generated |
-| The eight cross-cutting codes and the seven rules | Appendix K.1 and K.22 | Group D review |
+| The eight cross-cutting codes, the rules, and the Gateway and backend-for-frontend codes | Appendix K.1, K.22 and K.23 | Group D review |
 | Token issuance, permission version, client credentials, key rotation | `12-security-privacy-safety.md` §3 and §9 | Group D review |
 | The caching map that decides `Cache-Control` and the L1 fallback | `21-performance-engineering.md` | Group C review |
 | The outbox transaction that stores an idempotency result | `11-messaging-architecture.md` | Group C review |
@@ -779,3 +798,39 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 | Breaking changes are caught | `oasdiff` against `docs/api/released/`; a seeded breaking change in `tools/api-lint/fixtures/` proves the check itself fails when it should | Every pull request; the fixture test on every change to `tools/api-lint/` |
 | Error codes are never removed and never reused | The generator of `docs/api/error-codes.json` compares against the previous release's file; both language bundles carry every code | Every pull request touching Appendix K or the bundles |
 | This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, canonical names and Mermaid types; `/lint-plan` for consistency with `05-service-catalog.md`, `12-security-privacy-safety.md`, `23-integrations-and-public-api.md` and `24-localization-and-calendars.md` | Every change under `docs/` |
+
+### Test cases
+
+This document defines the API convention tests below; the claims above and `23-integrations-and-public-api.md` cite them. Every case runs against `Nibras.BuildingBlocks` or a real service endpoint with the clock pinned and `CultureInfo.InvariantCulture`.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-API-001 | Given a list endpoint whose declared maximum is 200, when a client requests `pageSize=1000`, then the response is 200 rather than 400 with `pageSize` 200 and the full envelope, and a request without `pageSize` returns 50 | REQ-API-007 |
+| TC-API-002 | Given 1,001 seeded rows, when a client walks a keyset list forwards and backwards at `pageSize` 50 in every declared sort, then each row appears exactly once with no gap, every page carries `items`, `pageSize`, `nextCursor`, `previousCursor`, `hasMore`, `sort` and `filterHash`, and no page carries a total count | REQ-API-006 |
+| TC-API-003 | Given a `nextCursor` issued for `sort=+lastName,+id` on the students list, when it is sent with another sort, another filter or to another endpoint, then each request is 400 `_VALIDATION_FAILED` with field `cursor` and returns no rows | REQ-API-006 |
+| TC-API-010 | Given a list endpoint that declares its filterable and sortable fields, when each of the 12 operators of §3.1 is sent and `sort=lastName` is requested, then each predicate returns exactly the expected seeded rows, `between` is inclusive at both ends, an undeclared field is 400, and the response echoes the sort as `+lastName,+id` | REQ-API-008 |
+| TC-API-011 | Given a string value holding a literal comma sent as `%2C` in `filter[name][in]`, when the grammar parses it, then it is one list member, not two, and a percent-encoded `%2E%2E` inside a `between` bound is not read as the range separator | REQ-API-008 |
+| TC-API-012 | Given the §3.1 limits, when a request carries 10 predicates, a 100-member list and a 200-character value, then it is accepted, and when any one carries 11, 101 or 201, then it is 400 `_VALIDATION_FAILED` | REQ-API-008 |
+| TC-API-013 | Given a field classified Sensitive in Appendix J, when a client sends `filter[medicalNotes][contains]=asthma`, then it is 403 `SCHOOL_PERMISSION_DENIED` and no rows are read, and every Wellbeing list refuses every filter | REQ-API-008 |
+| TC-API-014 | Given a teacher whose data scope is section 4B, when the teacher filters the students list by the section id of 5A, then the response holds 0 rows, because the scope is applied before the filter, and a filter naming a field the teacher may not see is 403 `_PERMISSION_DENIED` | REQ-API-008 |
+| TC-API-020 | Given two clients that read the same student at the same `ETag`, when both send `PATCH` with that `If-Match`, then the first is 200 and the second is 409 `_CONCURRENCY_CONFLICT` with `params.currentEtag` equal to the first write's `ETag`, and the stored row holds only the first change | REQ-API-014 |
+| TC-API-021 | Given an aggregate root, when `PUT`, `PATCH` or `DELETE` arrives without `If-Match`, then each is 400 `_VALIDATION_FAILED` with field `If-Match` and the stored row is unchanged | REQ-API-015 |
+| TC-API-022 | Given an attendance mark `POST` with an `Idempotency-Key` that succeeded, when the same key and body are sent 23 hours later, then the reply is 200 with the original body verbatim and `Idempotency-Replayed: true`, one record exists, and a payment-callback key still replays after 6 days | REQ-API-016 |
+| TC-API-023 | Given a stored `Idempotency-Key`, when the same key arrives with a different body, then it is 400 `_VALIDATION_FAILED` with field `Idempotency-Key` and `params.reason` `fingerprintMismatch`, and the original stored result is unchanged | REQ-API-016 |
+| TC-API-024 | Given a request with an `Idempotency-Key` still running, when a second request with the same key arrives, then it is 409 `_CONCURRENCY_CONFLICT` with `Retry-After: 2`, and the retry after completion receives the replay | REQ-API-016 |
+| TC-API-025 | Given `redis-state` stopped through Testcontainers, when a `POST` reaches an endpoint marked `x-nibras-idempotency: required`, then it is 503 `_DEPENDENCY_UNAVAILABLE` with `Retry-After: 5` and nothing is written, while an endpoint where the key is optional proceeds | REQ-API-016 |
+| TC-API-030 | Given the generated `docs/api/error-codes.json`, when the missing-translation report runs over the Angular and Flutter bundles, then every catalog code has `errors.<CODE>.title` and `errors.<CODE>.message` in `en` and `ar`, and deleting one Arabic message makes the report fail with an error naming the code | REQ-API-011 |
+| TC-API-031 | Given every catalog code, when the per-code snapshot test runs, then each error body is Problem Details with `type` `urn:nibras:problem:<code>`, the exact `code` and a `correlationId` equal to the response header, and a test that asserts a status without a code is flagged by the analyzer | REQ-API-009 |
+| TC-API-032 | Given a guardian surface, when each code with `parentSafe: false` is rendered, then the snapshot shows the generic message with the reference number and none of the code's own text | REQ-API-012 |
+| TC-API-033 | Given an error whose `detail` names a session identifier, when the web and mobile clients render it, then the message comes from the bundle for the code in the active language and the Playwright assertion finds 0 occurrences of the `detail` text in the DOM | REQ-API-010 |
+| TC-API-040 | Given a report-card batch of 800 cards, when it is started, then the reply is 202 with `Location` of the job resource, at most one `jobProgress` per second arrives on `/hubs/jobs`, and the job reaches `succeeded` with a result URL | REQ-API-018 |
+| TC-API-041 | Given a running job at 312 of 800 units, when `POST /jobs/{id}/cancel` is sent, then the job ends in `cancelled` with a partial summary counting the units already done, and its state never changes again | REQ-API-019 |
+| TC-API-050 | Given 500 attendance marks of which 3 are invalid, sent in `independent` mode, then the reply is 200 with a summary of 497 succeeded and 3 failed, each failed item carries its Problem Details, and the results follow request order | REQ-API-017 |
+| TC-API-051 | Given 500 items of which 1 is invalid, sent in `allOrNothing` mode, then the reply is 200 with 499 items `rolledBack` and the failing item carrying its problem, and nothing is stored | REQ-API-017 |
+| TC-API-052 | Given a bulk request of 501 items, then it is 400 `_VALIDATION_FAILED` with `params.maxItems` 500 and no item is processed | REQ-API-017 |
+| TC-API-060 | Given the Gateway limit of 600 unauthenticated requests per minute per address, when the 601st arrives inside the minute, then it is 429 `GATEWAY_RATE_LIMITED` with `Retry-After` between 1 and 60 and `RateLimit-Remaining: 0`, the tenant bucket refuses the same way, and every authenticated response before it carried `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` | REQ-API-020 |
+| TC-API-061 | Given the service `write` policy of 120 per minute per user, when the 121st write arrives, then it is 429 `<SERVICE>_RATE_LIMITED` with `params.scope` `user`, and an API key over its own per-minute limit is 429 with `params.scope` `apiKey` | REQ-API-020 |
+| TC-API-062 | Given a tenant at its plan quota, when one more metered call arrives, then it is 402 `PLATFORM_PLAN_LIMIT_REACHED` with `params.limit`, `params.usage` and `params.upgradeAction`, no `Retry-After`, and never 429 | none |
+| TC-API-070 | Given a gRPC call to School without `nibras-tenant-id` on a method that is not platform-scoped, when it arrives, then the callee refuses it before the handler runs and reads no data | REQ-API-024 |
+| TC-API-071 | Given a gRPC call whose `nibras-tenant-id` differs from the service token's tenant claim, when it arrives, then it is `PERMISSION_DENIED` with code `_TENANT_MISMATCH` and reads no data | REQ-API-024 |
+| TC-API-072 | Given an inbound gRPC call carrying `nibras-hop: 1`, when its handler opens a second gRPC call, then the call is refused with `FAILED_PRECONDITION` and `<SERVICE>_HOP_LIMIT_EXCEEDED`, and the second callee receives nothing | REQ-API-023 |

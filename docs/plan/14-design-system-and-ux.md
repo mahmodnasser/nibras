@@ -126,7 +126,7 @@ Colour is expressed as roles, not hex values, because the school supplies the pr
 | `--nb-color-disabled` and `-on-disabled` | `surface-3` and `on-surface-muted` at 60 percent alpha | `surface-3` and `on-surface-muted` at 60 percent alpha | Exempt (WCAG 1.4.3 inactive components), but never used for read-only values that carry information; those use `on-surface-muted` at full alpha | |
 | `--nb-color-chart-1` to `-6` | Series 1 is `primary`; 2 to 6 rotate hue by +150, +210, +60, +270 and +120 at L .55, chroma .12 | Same hues at L .75 | 3:1 | `surface`; and each series carries a marker shape and a line dash, so colour is never the only difference (WCAG 1.4.1) |
 
-Status colours are fixed rather than derived so that success, warning and danger mean the same thing in every school and stay distinguishable for colour-blind readers; every status is also carried by an icon and a word (`badge`, `chip`, `toast`), never by colour alone. The four status hues were chosen so that the pairs success and danger, and warning and info, remain distinct under deuteranopia and protanopia simulation, which the contrast job in §13 runs.
+Status colours are fixed rather than derived so that success, warning and danger mean the same thing in every school and stay distinguishable for colour-blind readers; every status is also carried by an icon and a word (`badge`, `chip`, `toast`), never by colour alone. The four status hues were chosen so that the pairs success and danger, and warning and info, remain distinct under deuteranopia and protanopia simulation, which the contrast job runs (`How this document is verified`).
 
 Worked values for the Nibras default primary `#1F5FA8` (hue 254.6, chroma .133), computed by the algorithm in §3 and checked with the WCAG relative-luminance formula:
 
@@ -138,7 +138,7 @@ Worked values for the Nibras default primary `#1F5FA8` (hue 254.6, chroma .133),
 | `surface` and `on-surface` | `#FDFDFE` and `#10171F` | 17.74:1 | `#0C1014` and `#E3E8EF` | 15.51:1 |
 | `surface-3` and `on-surface-muted` | `#E3E8EF` and `#515963` | 5.76:1 | `#25292F` and `#989FA8` | 5.47:1 |
 | `outline-strong` | `#78818C` | 3.94:1 on white, 3.21:1 on `surface-3` | `#6A727D` | 3.95:1 on `surface`, 3.01:1 on `surface-3` |
-| `success`, `warning`, `danger`, `info` | `#137738`, `#986600`, `#A03F3C`, `#0568A4` | 5.64, 4.96, 6.42, 5.96:1 on white | `#76CF8A`, `#E8AA4E`, `#FF958E`, `#71BFFF` | 9.04, 8.41, 8.13, 8.66:1 on `#1B1B1F` |
+| `success`, `warning`, `danger`, `info` | `#137738`, `#986600`, `#A03F3C`, `#0568A4` | 5.64, 4.96, 6.42, 5.96:1 on white | `#76CF8A`, `#E8AA4E`, `#FF958E`, `#71BFFF` | 10.06, 9.36, 9.04, 9.64:1 on the dark `surface` `#0C1014` |
 | `accent` | `#F4CA84` with ink text | 11.29:1 | | |
 
 ### 2.2 Type scale
@@ -268,7 +268,7 @@ flowchart TD
     J --> G
 ```
 
-**The contrast matrix the check runs.** Each row is a pair; the job in §13 fails on any row below threshold for any of the stored tenant palettes and the three demo palettes.
+**The contrast matrix the check runs.** Each row is a pair; the contrast job in `How this document is verified` fails on any row below threshold for any of the stored tenant palettes and the three demo palettes.
 
 | Foreground | Background | Threshold | Criterion |
 |---|---|---|---|
@@ -391,7 +391,7 @@ Every pattern names the token it uses and its reduced-motion fallback. Patterns 
 
 ## 7. Component inventory and Flutter equivalents
 
-The inventory is quoted from `08-web-structure.md` Section 6: 64 components in eight groups. This table adds the Flutter widget in `nibras_ui`, the Widgetbook use case that shows it, and the parity decision. "Web only" means the mobile parity matrix that `09-mobile-structure.md` owns lists the feature as web only, and Widgetbook carries no use case; "read-only on mobile" means the widget renders but does not edit.
+The inventory is quoted from `08-web-structure.md` Section 6: 64 components in eight groups. This table adds the Flutter widget in `nibras_ui`, the Widgetbook use case that shows it, and the parity decision. "Web only" means the mobile parity matrix that `09-mobile-structure.md` owns lists the feature as web only, and Widgetbook carries no use case; "read-only on mobile" means the widget renders but does not edit. The mobile-only widgets that follow the table are the other direction: they exist because the offline model of `09-mobile-structure.md` §3.7 has states the web has no cause to render.
 
 | Group | Web component (`nb-`) | Flutter widget (`Nb`) | Built on | Parity |
 |---|---|---|---|---|
@@ -460,7 +460,17 @@ The inventory is quoted from `08-web-structure.md` Section 6: 64 components in e
 | Charts | `sparkline` | `NbSparkline` | `fl_chart` minimal line | Full |
 | Charts | `donut-chart` | `NbDonutChart` | `fl_chart` pie | Full |
 
-Sixty-four rows; five have no Flutter widget (`command-palette`, `breadcrumb`, `pagination`, `permission-matrix` and, as an editor, `grid`), and every one of those is a desktop interaction that the mobile parity matrix records as web only with the reason. The feature composites in `libs/shared/` (`table`, `filters`, `form-kit`, `import-wizard`, `long-job` and the rest, `08-web-structure.md` Section 1.1) are compositions of these 64 and are not separately inventoried.
+Sixty-four rows; five have no Flutter widget (`command-palette`, `breadcrumb`, `pagination`, `permission-matrix` and, as an editor, `grid`), and every one of those is a desktop interaction that the mobile parity matrix records as web only with the reason. The feature composites in `libs/shared/` (`table`, `filters`, `form-kit`, `import-wizard`, `long-job` and the rest, `08-web-structure.md` Section 1.1) are compositions of these 64 and are not separately inventoried, and so are the feature-local presentational components the `08-web-structure.md` Section 7 count names.
+
+**Mobile-only widgets.** Three widgets live in the Flutter `core/design` package and have no `nb-` counterpart, because the web client has no offline outbox and therefore no state for them to render. `09-mobile-structure.md` §3.7 owns their behaviour and wording; this table is the inventory entry so that the parity check has a rule for them rather than a difference.
+
+| Group | Web component (`nb-`) | Flutter widget (file in `core/design`) | Built on | Parity |
+|---|---|---|---|---|
+| Feedback and state | none | `conflict_banner.dart` | `MaterialBanner` showing both values, which was kept and why, and the one resolving action (Appendix M banner rule) | Mobile only; the only widget allowed to render a conflict (`09-mobile-structure.md` §3.6) |
+| Feedback and state | none | `pending_row_badge.dart` | `NbBadge` bound to the outbox row state: pending, sending, awaiting attachment, rejected | Mobile only; the web has no queued action to badge |
+| Feedback and state | none | `sync_failure_banner.dart` | `MaterialBanner` with the undelivered count, the Appendix K explanation where one exists, and a retry | Mobile only; `offline-banner` covers the web case |
+
+Sixty-seven inventory rows in total: the 64 above plus these three.
 
 ---
 
@@ -814,7 +824,7 @@ The inventory is the two catalogues, not this document; a component that is not 
 
 | Living-inventory rule | Enforcement |
 |---|---|
-| The component list in §7 equals the Storybook index equals the Widgetbook index, minus the five web-only rows | `tools/design-parity` compares the three lists in `ci-web.yml` and `ci-mobile.yml` and fails on any difference |
+| The component list in §7 equals the Storybook index equals the Widgetbook index, minus the five web-only rows and plus the three mobile-only widgets | `tools/design-parity` compares the three lists in `ci-web.yml` and `ci-mobile.yml` and fails on any difference |
 | Tokens are consumed, never copied | The generators emit `tokens.css` and `nibras_tokens.dart` from the one JSON file; a literal colour, size, duration or easing fails stylelint and the Dart analyzer rule |
 | A new component starts with its seven stories | The component generator scaffolds all seven and the `Docs` file; a pull request that removes a story fails the Storybook test runner |
 | The Arabic length story uses real strings | `nbLongestString` reads the feature's `ar.json`; the Widgetbook equivalent reads the `.arb` | The story fails to build when the key set is empty |
@@ -835,5 +845,13 @@ The inventory is the two catalogues, not this document; a component that is not 
 | Mobile matches the web in tokens, states, directions and themes | Golden tests in `nibras_ui` for every widget's `States`, `Directions` and `Themes` use cases in LTR and RTL on the Linux runner, Windows kiosk goldens and iOS goldens per Appendix X; `TC-UX-012` | `ci-mobile.yml` |
 | Motion honours reduced motion and the delight budget | The `Motion` story renders both settings; the reduced-motion golden must equal the end state; stylelint forbids animated properties other than `transform` and `opacity` and forbids literal durations; a motion review item in the pull-request template asks for the pattern row in §6 | `ci-web.yml`, `ci-mobile.yml`, review |
 | The product name lives in one place | The lint step from §1.4 greps templates, string files and notification templates for the display name outside the token file and the brand assets | `ci-web.yml`, `ci-mobile.yml`, `ci-service.yml` |
-| The inventory is alive | `tools/design-parity` compares §7, the Storybook index and the Widgetbook index; the Storybook test runner fails on a missing story id | `ci-web.yml`, `ci-mobile.yml` |
+| The inventory is alive | `tools/design-parity` compares §7 (the 64 components, the five web-only rows and the three mobile-only widgets), the Storybook index and the Widgetbook index; the Storybook test runner fails on a missing story id | `ci-web.yml`, `ci-mobile.yml` |
 | References and names are canonical | `kit-lint` on section and appendix references, Mermaid types and open items; component and screen names are checked against `08-web-structure.md` by the parity script | `ci-kit.yml` |
+
+### Test cases
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-UX-010 | Given the `Accessibility` story of each of the 64 components in §7 and every screen row of `08-web-structure.md` Section 7, rendered with `dir="ltr"` and with `dir="rtl"`, when axe-core runs at the WCAG 2.2 AA tag set in `ci-web.yml`, then it reports 0 violations, and a fixture `icon-button` with no `label` fails the job on `button-name` | REQ-UX-013 |
+| TC-UX-011 | Given the Nibras default, the three demo palettes and every stored tenant palette, each in light and dark, when the contrast job computes the §3 matrix with the WCAG relative-luminance formula, then every text pair reaches 4.5:1, every large-text and non-text pair (control boundary, focus ring, chart mark) reaches 3:1, and the status pairs stay distinct under deuteranopia and protanopia; a fixture palette with one pair at 4.4:1 fails the build naming that pair | REQ-UX-002, REQ-UX-013 |
+| TC-UX-012 | Given every `nibras_ui` widget's `States`, `Directions` and `Themes` use cases built from the same token JSON as `@nibras/ui`, when `ci-mobile.yml` renders them as goldens in LTR and RTL on the Linux runner, then each golden matches its accepted baseline, a changed primary colour in the token file changes both the web snapshot and the golden, and a widget with no RTL golden fails the job naming the widget | REQ-UX-001, REQ-UX-003, REQ-TST-014 |

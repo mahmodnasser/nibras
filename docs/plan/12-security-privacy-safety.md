@@ -6,7 +6,7 @@
 
 **Cross-references.** `§N` means a section of this document; "Section N" always means the master brief unless the reference architecture is named.
 
-**Test identifiers.** `TC-SEC-001` to `TC-SEC-026`, `TC-SEC-101` to `TC-SEC-904`, `TC-PRV-001` to `TC-PRV-016` and `TC-PRV-301` to `TC-PRV-902` are quoted from Appendices Q and R. Identifiers from `TC-SEC-031` upward and `TC-PRV-020` upward are minted here and become the security and privacy test plan that `16-test-strategy.md` schedules.
+**Test identifiers.** A test this document owns is defined either by a Test cell that holds its identifier alone or by a row of the Test cases table in "How this document is verified"; together they are the security and privacy test plan that `16-test-strategy.md` schedules. A test owned by Appendix R carries "(Appendix R)" where this document relies on it, and the remaining identifiers from Appendices Q and R and the service sheets are quoted, not redefined.
 
 ---
 
@@ -84,9 +84,9 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 | T-IDN-01 | `POST /connect/token` | Spoofing | Credential stuffing against parent accounts | high | high | Lockout after the policy threshold, per-address and per-account rate limits, breached-password check at set time, new-device alert | `TC-SEC-110` |
 | T-IDN-02 | `POST /connect/token` | Spoofing | Second factor bypass by replaying a TOTP code | med | high | Codes are single-use per window; passkeys preferred for staff; 2FA enforced per role from the security policy | `TC-SEC-111` |
 | T-IDN-03 | Refresh endpoint | Spoofing | Stolen refresh token used from a second device | med | high | Rotation on every use; reuse of a rotated token revokes the whole family and raises `IDENTITY_REFRESH_TOKEN_REUSED` | `TC-SEC-037` |
-| T-IDN-04 | Role editor | Elevation of privilege | An administrator grants themselves a high-risk permission | med | high | BR-IDN-004 four-eyes; self-approval refused with `IDENTITY_SELF_APPROVAL_REFUSED` | `TC-IDN-043` |
-| T-IDN-05 | Invitation link | Spoofing | Stolen invitation used by a third party | med | med | Single use, 7-day expiry, bound to the tenant, contact channel proven in the same session | `TC-IDN-001`, `TC-IDN-006` |
-| T-IDN-06 | Join-request approval | Elevation of privilege | Approver from tenant A approves a request in tenant B | low | critical | Tenant check runs before the permission check; attempt audited | `TC-IDN-005` |
+| T-IDN-04 | Role editor | Elevation of privilege | An administrator grants themselves a high-risk permission | med | high | BR-IDN-004 four-eyes; self-approval refused with `IDENTITY_SELF_APPROVAL_REFUSED` | `TC-IDN-043` (Appendix R) |
+| T-IDN-05 | Invitation link | Spoofing | Stolen invitation used by a third party | med | med | Single use, 14-day expiry with a reminder at day 7 (master brief Section 10.4, Appendix G), bound to the tenant, contact channel proven in the same session | `TC-IDN-001`, `TC-IDN-006` |
+| T-IDN-06 | Join-request approval | Elevation of privilege | Approver from tenant A approves a request in tenant B | low | critical | Tenant check runs before the permission check; attempt audited | `TC-IDN-005` (Appendix R) |
 | T-IDN-07 | Permission cache | Tampering | Stale cached permission set honoured after a revocation | med | high | BR-IDN-008 version per subject; `identity.permissions.changed.v1` invalidates within 5 seconds | `TC-SEC-038`, `TC-IDN-044` |
 | T-IDN-08 | Break-glass CLI | Repudiation | Recovery command used without a trace | low | high | Command requires server access and an incident reference, writes an audit entry, raises a Sev1 (reference architecture Section 12) | `TC-SEC-112` |
 
@@ -109,7 +109,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 |---|---|---|---|---|---|---|---|
 | T-SCH-01 | `GET /students/{id}` | Information disclosure | A parent reaches another family's child by editing the identifier | high | critical | Data scope `own-children` in the query; refused with `SCHOOL_NOT_FOUND` so existence is not confirmed | `TC-SEC-501` |
 | T-SCH-02 | Custody and medical summary | Information disclosure | Staff without the permission read custody text or medical detail | med | critical | `school.custody.view` and `school.medical-summary.view` are high risk; every read logged in the same transaction (Appendix J rule 8) | `TC-SEC-130` |
-| T-SCH-03 | Guardian link | Elevation of privilege | A guardian restricted by a court order is linked to a child | low | critical | `school.guardians.link` checks the custody record; WF-IDN-02 refuses and surfaces the safeguarding note | `TC-IDN-015` |
+| T-SCH-03 | Guardian link | Elevation of privilege | A guardian restricted by a court order is linked to a child | low | critical | `school.guardians.link` checks the custody record; WF-IDN-02 refuses and surfaces the safeguarding note | `TC-IDN-015` (Appendix R) |
 | T-SCH-04 | Student export | Information disclosure | Bulk export of identity numbers by an insider | med | high | `school.students.export` routes through WF-PRV-02 when the column set is sensitive or bulk | `TC-PRV-301`, `TC-PRV-013` |
 | T-SCH-05 | gRPC directory | Information disclosure | A sibling service asks for a field it may not hold | low | high | The directory contract returns name, section, number only; sensitive groups are never in a contract | `TC-SEC-131` |
 | T-SCH-06 | Student merge | Tampering | Merge used to move a child into a different family's view | low | critical | `school.students.merge` is elevated with a reason; both records' guardians re-verified after merge | `TC-SEC-132` |
@@ -139,7 +139,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test |
 |---|---|---|---|---|---|---|---|
 | T-ASM-01 | Mark entry | Tampering | Grade changed after lock without a grade-change request | med | high | `assessment.marks.change-after-lock` is high risk; BR-ASM-014 creates a new version; WF-ASM-02 needs a different approver | `TC-ASM-013`, `TC-SEC-160` |
-| T-ASM-02 | Mark entry | Tampering | Teacher enters marks for a section they do not teach | med | med | `own-sections` scope on `assessment.marks.enter`; refused with `ASSESSMENT_PERMISSION_DENIED` | `TC-SEC-201` |
+| T-ASM-02 | Mark entry | Tampering | Teacher enters marks for a section they do not teach | med | med | `own-sections` scope on `assessment.marks.enter`; refused with `ASSESSMENT_PERMISSION_DENIED` | `TC-SEC-201` (below) |
 | T-ASM-03 | Report card PDF | Information disclosure | Signed URL for one child's report card shared and reused | med | high | Signed URL 5 minutes, bound to the requesting user, watermarked | `TC-SEC-161` |
 | T-ASM-04 | Result calculation worker | Tampering | A replayed `assessment.marks.entered` event double-applies a mark | low | med | Inbox idempotency per message identifier; result calculation is deterministic from stored marks | `TC-SEC-162` |
 | T-ASM-05 | Transcript verification page | Information disclosure | Verification code enumerated to read transcripts | low | med | Code is 128 bits, rate limited, and the page shows only the issuing school and validity | `TC-SEC-163` |
@@ -158,7 +158,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test |
 |---|---|---|---|---|---|---|---|
-| T-ATT-01 | Gate pass verify | Spoofing | A gate pass QR replayed by a second collector | med | critical | One-time code, hashed at rest, validity window, collector photo shown to the officer (WF-ATT-02) | `TC-ATT-015` |
+| T-ATT-01 | Gate pass verify | Spoofing | A gate pass QR replayed by a second collector | med | critical | One-time code, hashed at rest, validity window, collector photo shown to the officer (WF-ATT-02) | `TC-ATT-015` (Appendix R) |
 | T-ATT-02 | Pickup persons | Elevation of privilege | Guardian without pickup rights adds themselves as a collector | med | critical | `attendance.safety.pickup-persons.create` checks custody rights from School; `verify` needed before first use | `TC-SEC-180` |
 | T-ATT-03 | Mark after lock | Tampering | Attendance edited after the lock window to erase absences | med | med | BR-ATT-002; `edit-after-lock` is elevated with reason; BR-ATT-010 for offline marks | `TC-SEC-181` |
 | T-ATT-04 | Emergency broadcast | Denial of service | False emergency broadcast by a compromised account | low | high | `attendance.safety.emergency.broadcast` is high risk, needs 2FA step-up, is limited to campus scope | `TC-SEC-182` |
@@ -170,13 +170,13 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test |
 |---|---|---|---|---|---|---|---|
 | T-FIN-01 | Payment recording | Tampering | Cashier records a payment then reverses it and keeps the cash | med | high | Posted documents are immutable (BR-FIN-014); reversal is a credit note in its own gapless series; day close reconciles | `TC-FIN-011`, `TC-SEC-190` |
-| T-FIN-02 | Refund approval | Elevation of privilege | Accountant approves their own refund | med | high | `finance.refunds.approve` is high risk; WF-FIN-02 requires a different approver | `TC-FIN-014` |
+| T-FIN-02 | Refund approval | Elevation of privilege | Accountant approves their own refund | med | high | `finance.refunds.approve` is high risk; WF-FIN-02 requires a different approver | `TC-FIN-014` (Appendix R) |
 | T-FIN-03 | Payment gateway callback | Spoofing | Forged callback marks an invoice paid | med | high | Callback signature verified with the provider adapter; amount and reference re-read from the provider before allocation | `TC-SEC-191` |
 | T-FIN-04 | Invoice batch run | Denial of service | A runaway batch creates duplicate invoices | low | med | Batch is idempotent on plan, student and period; BR-FIN-013 gapless numbering under concurrency | `TC-SEC-192` |
 | T-FIN-05 | Payer bank details | Information disclosure | IBAN or gateway reference read outside the refund flow | med | high | Sensitive class, column-encrypted, never cached, every read logged (Appendix J) | `TC-SEC-193` |
 | T-FIN-06 | Parent invoice view | Information disclosure | Parent reads another payer's invoice by identifier | high | high | `own-children` scope on `finance.invoices.view`; per-payer cache key | `TC-SEC-194` |
 | T-FIN-07 | Write-off | Elevation of privilege | Write-off used to clear a relative's balance | low | high | `finance.write-offs.approve` is high risk with four-eyes; reported to the owner dashboard | `TC-SEC-195` |
-| T-FIN-08 | Statement export | Information disclosure | Bulk statement export by an insider | med | high | `finance.reports.export` routes bulk through WF-PRV-02 with watermark | `TC-PRV-013` |
+| T-FIN-08 | Statement export | Information disclosure | Bulk statement export by an insider | med | high | `finance.reports.export` routes bulk through WF-PRV-02 with watermark | `TC-PRV-013` (Appendix R) |
 
 ### 2.10 Communication
 
@@ -204,7 +204,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 | T-RQS-01 | Approval chain design | Elevation of privilege | A chain designed so the requester approves their own request | med | med | Chain validation rejects a step whose approver resolves to the requester; `requests.requests.override` is elevated | `TC-SEC-230` |
 | T-RQS-02 | Submit on behalf | Spoofing | Staff submits a request in a guardian's name without consent | low | med | `submit-on-behalf` records both identities; the guardian is notified and can withdraw | `TC-SEC-231` |
 | T-RQS-03 | Request attachments | Information disclosure | Attachment to a medical excuse readable by approvers who do not need it | med | high | Attachment inherits the request's field class; medical excuse detail is sensitive and read-logged | `TC-SEC-232` |
-| T-RQS-04 | Reassign | Tampering | Task reassigned to a leaver so it disappears | low | low | Reassignment target must be active; WF-IDN-06 inventories open items | `TC-IDN-052` |
+| T-RQS-04 | Reassign | Tampering | Task reassigned to a leaver so it disappears | low | low | Reassignment target must be active; WF-IDN-06 inventories open items | `TC-IDN-052` (Appendix R) |
 
 ### 2.13 Documents
 
@@ -225,7 +225,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 |---|---|---|---|---|---|---|---|
 | T-BEH-01 | Incident narrative | Information disclosure | Narrative and witnesses read by staff without the restricted permission | med | high | `behavior.incidents.view-restricted` is elevated and every use logged (Appendix J) | `TC-SEC-250` |
 | T-BEH-02 | Parent view | Information disclosure | Parent sees an incident naming another child | med | critical | Guardian projection strips other students' identifiers; `own-children` scope | `TC-SEC-251` |
-| T-BEH-03 | Points | Tampering | Points revoked to punish without a record | low | low | `behavior.points.revoke` records the reason; WF-BEH-01 dismissal path | `TC-BEH-005` |
+| T-BEH-03 | Points | Tampering | Points revoked to punish without a record | low | low | `behavior.points.revoke` records the reason; WF-BEH-01 dismissal path | `TC-BEH-005` (Appendix R) |
 | T-BEH-04 | Open Badges export | Information disclosure | Badge assertion leaks the student's identity outside the tenant | low | med | `export-open-badge` uses a hashed recipient identifier and the student's consent flag | `TC-SEC-252` |
 
 ### 2.15 Reporting
@@ -404,25 +404,30 @@ sequenceDiagram
     participant MQ as RabbitMQ
     participant ATT as Attendance
     participant R as Redis
+    participant COM as Communication (SignalR hub)
     participant Web as Bff.Web
     participant Teacher
     Admin->>IDN: revoke attendance.student-attendance.edit-after-lock from teacher T
     IDN->>IDN: bump permission version of (tenant, T) to n+1, write audit entry
     IDN->>MQ: identity.permissions.changed.v1 {permissionVersion n+1, affectedUserIds [T]}
     MQ-->>ATT: consumer invalidates cached set for T
-    MQ-->>Web: consumer pushes SignalR refresh to T's open clients
-    Web-->>Teacher: menus and guards re-rendered within 5 seconds
+    MQ-->>COM: consumer on communication.tenant-lifecycle
+    COM-->>Teacher: hub message permissions.changed to T's open clients
+    Teacher->>Web: GET /api/v1/bff-web/me/permissions
+    Web-->>Teacher: new effective set; menus and guards re-rendered within 5 seconds
     Teacher->>ATT: request with token at version n
     ATT->>R: cached set version n is stale
     ATT->>IDN: re-read effective set at n+1
     ATT-->>Teacher: ATTENDANCE_PERMISSION_DENIED
 ```
 
+The owner and the queue are not restated here: `11-messaging-architecture.md` §2.3 and §2.5 say that Communication owns the SignalR hubs and consumes `identity.permissions.changed.v1` on `communication.tenant-lifecycle`, ordered per tenant, dropping a `permissionVersion` lower than the one already pushed; `08-web-structure.md` §3.2 specifies the client side of the same fan-out.
+
 Tests: `TC-IDN-044` open sessions see the change without re-login, `TC-SEC-038` a token at an older version is authorized against the newer set (BR-IDN-008), the Appendix I rule 5 contract of 5 seconds on web and mobile is `TC-SEC-047`.
 
 ### 3.5 Break-glass path
 
-Two distinct paths share the name. WF-SEC-02 is the platform operator's incident access. BR-WEL-002 is a tenant staff member's emergency access to a wellbeing record. The diagram shows the wellbeing path, which is the one that touches a child.
+Two distinct paths share the name. WF-SEC-02 is the platform operator's incident access, and Identity owns it: `identity.break-glass.granted.v1` and `identity.break-glass.used.v1` are Identity's keys in Appendix E, published on `nibras.identity` and consumed by Notification, Audit and Wellbeing. BR-WEL-002 is a tenant staff member's emergency access to a wellbeing record; Wellbeing publishes only on `nibras.wellbeing` (`11-messaging-architecture.md` §1.4), so its alert is the `RequestNotification` command (`notification.commands.request-notification.v1`) with a template code carrying no clinical text, and the access itself is recorded as `wellbeing.audit.recorded.v1` (`06-services/wellbeing.md` §3.9). The diagram shows the wellbeing path, which is the one that touches a child.
 
 ```mermaid
 sequenceDiagram
@@ -435,8 +440,8 @@ sequenceDiagram
     alt reason empty
         WEL-->>Nurse: WELLBEING_BREAK_GLASS_REASON_REQUIRED
     end
-    WEL->>AUD: access entry with reason, in the same transaction as the read
-    WEL->>NOT: identity.break-glass.used.v1 to record owner, safeguarding lead, principal
+    WEL->>AUD: wellbeing.audit.recorded.v1 access entry with reason, same transaction as the read
+    WEL->>NOT: RequestNotification to record owner, safeguarding lead, principal
     WEL-->>Nurse: record, window of 30 minutes
     Nurse->>WEL: read after the window
     WEL-->>Nurse: WELLBEING_BREAK_GLASS_EXPIRED
@@ -506,7 +511,7 @@ Scopes on one role union; scopes across stages intersect; an empty scope means n
 
 | Aspect | How |
 |---|---|
-| Inputs | Appendix B (every permission, risk, scopes, dependencies) parsed from its tables; Appendix I (twenty-three templates, the groups G01 to G24, the `F V A S — 4` matrix); the aggregated OpenAPI from Gateway, where every operation carries an `x-nibras-permission` extension |
+| Inputs | Appendix B (every permission, risk, scopes, dependencies) parsed from its tables; Appendix I (twenty-three templates, the groups G01 to G26, the `F V A S — 4` matrices); the aggregated OpenAPI from Gateway, where every operation carries an `x-nibras-permission` extension |
 | Generator | `tools/permission-matrix-gen` emits one xUnit class per service into `tests/<Service>.Authorization.Generated/`; regenerated in `ci-service.yml` before the integration stage so drift fails the build, never a human |
 | Per role and endpoint, allowed | A request as that role with a seeded in-scope object succeeds with the documented status |
 | Per role and endpoint, forbidden | The same request as a role without the permission returns `<SERVICE>_PERMISSION_DENIED` (Wellbeing: `WELLBEING_ACCESS_DENIED` with 404) and writes no row |
@@ -542,7 +547,7 @@ Identifier: `TC-SEC-056`. The count is published in the pipeline summary and in 
 
 ## 5. Default role matrix
 
-The twenty-three built-in templates, their purpose, default scope, landing dashboard, mobile capabilities, what each holds and must never hold, the permission groups G01 to G24, and the role-by-group matrix are defined in **Appendix I** and are not restated here. This document adds only what the matrix means for the tests and the reviewer.
+The twenty-three built-in templates, their purpose, default scope, landing dashboard, mobile capabilities, what each holds and must never hold, the permission groups G01 to G26, and the role-by-group matrices are defined in **Appendix I** and are not restated here. This document adds only what the matrix means for the tests and the reviewer.
 
 | Appendix I element | What this document does with it |
 |---|---|
@@ -607,9 +612,9 @@ From master brief Section 20, each with the owning service and the proof.
 | Location tracked for vehicles, never for children | Operations | No child position field exists; parents see the vehicle | `TC-SEC-310` |
 | AI never profiles a child in ways a guardian or the school cannot see and challenge | Ai, Reporting | Every early-warning flag carries its factors and an override; guardian transparency panel lists the flag | `TC-PRV-027` |
 | Guardian custody restrictions on viewing, messaging, pickup | School (custody), Communication, Attendance | Custody record consulted on link, on message policy, on pickup authorization | `TC-IDN-015`, `TC-SEC-180`, `TC-PRV-028` |
-| Impersonation never targets a student account | Platform | Refused outright with no prompt | `TC-SEC-022` |
+| Impersonation never targets a student account | Platform | Refused outright with no prompt | `TC-SEC-022` (Appendix R) |
 | Flagged content never deleted by a routine retention job while a case is open | Communication, Wellbeing, Platform retention | Retention job skips rows under a safeguarding flag or a legal hold and reports the skip | `TC-PRV-029` |
-| Anonymous safeguarding report stores no reporter identity | Wellbeing | WF-WEL-04 | `TC-WEL-032` |
+| Anonymous safeguarding report stores no reporter identity | Wellbeing | WF-WEL-04 | `TC-WEL-032` (Appendix R) |
 | Guardian transparency panel: who read the child's sensitive records and when, consents, retention clocks | Bff.Web and Bff.Mobile composing from Audit and Platform | Master brief Section 12.1 item 31; the Appendix J retention column is the source | `TC-PRV-501`, `TC-PRV-702` |
 
 ---
@@ -674,8 +679,8 @@ Rules quoted: no secret in the repository, an image, a log or a client bundle; r
 |---|---|---|---|
 | Access, copy of data | WF-PRV-01 | Acknowledged within 5 working days, answered within 30 calendar days, through the export workflow never a manual extract | `TC-PRV-001` to `TC-PRV-005` |
 | Correction | The owning service's edit with audit before-and-after; a guardian raises it as a request type in WF-RQS-01 | Handled as a service request with its SLA | `TC-PRV-065` |
-| Erasure | WF-PRV-01 deletion branch; retention rules applied, safeguarding records retained with the reason stated | 30 calendar days | `TC-PRV-006` |
-| Export of a whole tenant | WF-PLT-03 export rung, completeness under BR-PLT-006 | Archive downloadable for 30 days | `TC-PLT-023` |
+| Erasure | WF-PRV-01 deletion branch; retention rules applied, safeguarding records retained with the reason stated | 30 calendar days | `TC-PRV-006` (Appendix R) |
+| Export of a whole tenant | WF-PLT-03 export rung, completeness under BR-PLT-006 | Archive downloadable for 30 days | `TC-PLT-023` (Appendix R) |
 | Deletion of a whole tenant | WF-PLT-03 with the cooling-off under BR-PLT-003 and a certificate of deletion | 30-day cooling-off | `TC-PLT-026`, `TC-PRV-901` |
 | Objection to a sub-processor | Disable the feature that uses it (master brief Section 33) | Immediate | `TC-PRV-066` |
 | In-app account deletion request (store compliance) | Opens WF-PRV-01 from the mobile profile | As access | `TC-PRV-060` |
@@ -694,7 +699,7 @@ Every row of master brief Section 32 and Appendix J.2 maps to a job. Job names a
 | Financial documents | `FinanceArchiveJob` yearly | Finance | Archive read-only at 10 years, never delete a posted document | Data Quality Center | `TC-PRV-072` |
 | Notification delivery log, logs, traces, metrics | Platform retention settings drive the observability stack | Platform | 90 days, 30 days, 7 days, 13 months | Platform console | `TC-PRV-073` |
 | Backups | Backup expiry | Platform operations | 35 days point-in-time plus 12 monthly; a hold pins the set | Restore drill WF-INF-03 | `TC-PRV-074` |
-| Deleted tenant | WF-PLT-03 | Platform | Purge after 30 days, certificate issued | Certificate | `TC-PLT-026` |
+| Deleted tenant | WF-PLT-03 | Platform | Purge after 30 days, certificate issued | Certificate | `TC-PLT-026` (Appendix R) |
 | Identity numbers | `LeaverRetentionJob`, first step, before archiving | School | Destroy the identifier before archiving | Data Quality Center | `TC-PRV-075` |
 | Ai embeddings | Event-driven purge | Ai | Withdrawal purges; re-index on change | Ai usage log | `TC-SEC-325` |
 
@@ -777,7 +782,7 @@ Test: `TC-PRV-080` the exported assessment reflects the modules and sub-processo
 |---|---|
 | When | Independent test before general availability; re-test annually and after any change to Identity, Gateway, Documents or Wellbeing that the security-auditor rates high |
 | Environment | Staging with anonymized data (reference architecture Section 15), two demo tenants, one user per Appendix I template |
-| In scope | Gateway, Bff.Web, Bff.Mobile, every REST surface in the aggregated OpenAPI, the public API and webhooks, the Flutter application on Android and iOS including gate, nurse, bus-attendant and kiosk modes, the OpenIddict flows in §3, file upload and download, RabbitMQ management, the Platform and School consoles |
+| In scope | Gateway, Bff.Web, Bff.Mobile, every REST surface in the aggregated OpenAPI, the public API, OneRoster and webhooks from the release that ships them (Open Question 28 is open with the product owner; the default in force is that they stay Tier 2 and arrive in phase 3 under CAP-INT-01, so the first engagement covers them only if that default changes), the Flutter application on Android and iOS including gate, nurse, bus-attendant and kiosk modes, the OpenIddict flows in §3, file upload and download, RabbitMQ management, the Platform and School consoles |
 | Explicit targets | The twelve abuse cases of §2.22; every row of impact `critical` in §2; the seeded administrator safeguards; isolation level S from all five doors |
 | Out of scope | Production tenants, denial of service against shared infrastructure, social engineering of school staff |
 | Deliverables | Findings in the `security-auditor` output format with a regression test identifier per finding; an isolation coverage table; a retest report |
@@ -815,3 +820,70 @@ Tests: `TC-SEC-390` `security.txt` served, `TC-SEC-392` a report submitted throu
 | The authentication flows behave as drawn | `TC-SEC-031` to `TC-SEC-047` | Identity integration |
 | The standards are met | The annual independent penetration test in §12 with retest `TC-SEC-391`; ZAP against every preview environment | Before general availability, then yearly |
 | Names and references are canonical | `kit-lint` (section and appendix references, Mermaid types, no open items) and the `security-auditor` and `privacy-auditor` reviews on every change to this document | `ci-kit.yml` and pull-request review |
+
+### Test cases
+
+The tests this document cites in running text, in ranges or beside another identifier are defined here, once. Tests a Test cell above holds alone are defined in that cell; tests owned by Appendix R are cited with the owner's name.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-SEC-201 | Given a teacher whose `own-sections` scope holds sections 4A and 4B, when they open 4C's register, enter a mark for 4C or post coursework to 4C, then each is refused with the service's permission error and a link to the coordinator, and each refusal is audited | REQ-ACA-003 |
+| TC-SEC-031 | Given a tenant lockout threshold of 10 failed attempts in 5 minutes, when an 11th attempt arrives with the correct password, then it is refused until the lockout expires; and a new password found on the offline breached-password list is refused when it is set | REQ-IDN-011, REQ-IDN-012 |
+| TC-SEC-032 | Given a user with TOTP enrolled, when a code already accepted in the current 30-second window is presented a second time, then the sign-in is refused and the second factor is asked for again | REQ-IDN-004 |
+| TC-SEC-033 | Given a user with 1 registered passkey, when they sign in with a valid assertion and no password, then a session is created; when the same assertion is replayed, then it is refused | REQ-IDN-005 |
+| TC-SEC-034 | Given a person with accounts in 2 tenants, when a sign-in fails the credential check, then the response lists 0 tenants and is identical to the response for an unknown user; when the check succeeds, then both tenants are listed | BR-IDN-007 |
+| TC-SEC-035 | Given a user signing in from a device fingerprint not seen before, when the session is created, then `identity.login.new-device.v1` is published once; when the same device signs in again, then nothing is published | REQ-IDN-013 |
+| TC-SEC-036 | Given a refresh token family whose current handle is H1, when H1 is redeemed, then a new handle H2 is issued, H1 is marked used, and the family holds exactly 1 current handle | REQ-IDN-003 |
+| TC-SEC-038 | Given a teacher whose permission version moves from n to n+1 when one permission is revoked, when a request needing that permission arrives with a token minted at version n, then it is evaluated against the set at n+1 and refused within 5 seconds of the revocation; and the next refresh issues a token carrying n+1 | BR-IDN-008, REQ-IDN-002 |
+| TC-SEC-050 | Given the injection corpus (SQL, script, header and JSON type-discriminator payloads), when it is sent to every string parameter of every endpoint in the aggregated OpenAPI, then 0 payloads execute, stored values come back escaped, and no response carries a stack trace | REQ-SEC-017, REQ-SEC-001 |
+| TC-SEC-051 | Given a command that passes its schema but breaks an Appendix S rule, when it is sent straight to the service without the web client, then the service refuses it with the rule's error code and writes 0 rows; and a burst past the per-tenant limit at Gateway returns 429 with `Retry-After` | REQ-SEC-017, REQ-SEC-001 |
+| TC-SEC-059 | Given a pooled connection that has just served a tenant A transaction, when PgBouncer hands it to a tenant B transaction, then a read of the same table returns 0 rows of tenant A, because the tenant setting was made with `SET LOCAL` and did not outlive the transaction | REQ-SEC-005 |
+| TC-SEC-160 | Given a mark of 72 in a locked assessment, when a teacher without `assessment.marks.change-after-lock` submits 85 outside a grade-change request, then it is refused with `ASSESSMENT_PERMISSION_DENIED` and the stored mark stays 72 with 1 version; when the change goes through WF-ASM-02 with a different approver, then a second version holding 85 is written and the first is kept | BR-ASM-014, WF-ASM-02 |
+| TC-SEC-190 | Given a posted payment receipt of 1,000, when a cashier tries to edit or delete it, then both are refused, the only reversal is a credit note of 1,000 in its own gapless series, and the day close lists the reversal against that cashier | BR-FIN-014 |
+| TC-SEC-247 | Given an HTML file stored through the upload pipeline, when it is downloaded through its signed URL, then the response carries `Content-Disposition: attachment` and `X-Content-Type-Options: nosniff`, and the object has no address under the web root | REQ-SEC-001 |
+| TC-SEC-275 | Given an unhandled exception inside a service, when the client receives the response, then it is Problem Details with an Appendix K code and a correlation id and 0 stack frames, and the exception is in the log under that correlation id | REQ-SEC-001 |
+| TC-SEC-281 | Given a nurse holding `wellbeing.break-glass.use`, when she opens a restricted record with an empty reason, then `WELLBEING_BREAK_GLASS_REASON_REQUIRED` is returned; with a reason, the record is returned, 1 access entry is written in the same transaction and the record owner, safeguarding lead and principal are notified; when she reads at minute 31, then `WELLBEING_BREAK_GLASS_EXPIRED` is returned | BR-WEL-002 |
+| TC-SEC-290 | Given a principal and an HR officer without `hr.payroll.view-salary`, when either opens a staff file, then the salary section is absent from the response body, not blanked; and a read by a holder of the permission writes 1 access entry | T-HR-01 |
+| TC-SEC-311 | Given a boarding attendant device holding 3 queued boarding records, when the attendant is offboarded through WF-IDN-06 and the device reconnects, then the 3 writes are refused, 0 boarding records are stored, and the device is signed out | WF-IDN-06 |
+| TC-SEC-340 | Given a system role template, when an administrator edits it in place, then the edit is refused; a clone records its parent template and release; and a clone that adds a high-risk permission confers nothing until a second approver signs off | BR-IDN-004 |
+| TC-SEC-361 | Given the seeded administrator at first login, when the new password equals the documented default or one of the last 5 passwords, then it is refused; and after the change the default can never be set again for that account | REQ-IDN-016 |
+| TC-SEC-364 | Given the Staging environment and a configured seed password equal to the documented default, when the host starts, then startup validation fails the host and 0 accounts are seeded; the same configuration in Development starts | REQ-IDN-018 |
+| TC-SEC-367 | Given exactly 1 active super administrator, when an operator deletes the account, deactivates it or removes its role, then each of the 3 operations is refused with `IDENTITY_LAST_SUPER_ADMIN` in the same transaction and the count stays 1 | BR-IDN-005, REQ-IDN-020 |
+| TC-SEC-370 | Given a service under steady load, when its database password is rotated by the runbook with a rolling restart, then 0 requests fail and the old password is refused afterwards | REQ-SEC-008 |
+| TC-SEC-377 | Given a release-candidate image with a planted key-shaped string, when the image scan runs, then the build fails naming the layer and the file; the same image without it passes | REQ-SEC-008 |
+| TC-SEC-378 | Given the production Angular and Flutter bundles, when they are scanned for the key shapes Gitleaks recognises, including the Nibras key prefixes, then 0 matches are found; and a planted key fails the build | REQ-SEC-008 |
+| TC-SEC-380 | Given a NuGet, npm or pub restore whose lock file is removed or out of date, when the build restores in locked mode, then the restore fails | REQ-SEC-011 |
+| TC-SEC-381 | Given a release image, when its CycloneDX SBOM is compared with the lock files of the build that produced it, then the SBOM is present and 0 packages or versions differ | REQ-SEC-011 |
+| TC-SEC-383 | Given the Test environment cluster, when an unsigned image and a signed image with a critical vulnerability are deployed, then admission refuses both, and a signed clean image is admitted | REQ-SEC-011 |
+| TC-SEC-384 | Given a dependency with a known critical vulnerability added to a service, when the build runs Trivy, then the build fails naming the package | REQ-SEC-011 |
+| TC-SEC-386 | Given a pod specification that runs as root or with a writable root file system, when it is applied, then the pod security policy denies it; the template's non-root, read-only pod starts with only `/tmp` writable | REQ-SEC-010 |
+| TC-SEC-387 | Given the default-deny network policies, when the Finance pod opens a socket to the School database, then the connection is refused, and its connection to its own database succeeds | REQ-SEC-010 |
+| TC-SEC-388 | Given the per-service database users, when `svc_finance` reads `nibras_school`, then it is refused; and when `svc_audit` updates or deletes an audit entry, then it is refused | REQ-SEC-010 |
+| TC-SEC-389 | Given an image promoted from Test to Staging to Production, when the digests are compared, then they are identical in all 3 environments and no promotion step runs a build | REQ-SEC-011 |
+| TC-SEC-391 | Given the penetration-test findings, when the retest report is read at the general-availability gate, then every critical and high finding is closed, 0 remain open, and every medium has an owner and a date in `18-risk-register.md` | REQ-SEC-018 |
+| TC-SEC-392 | Given a report submitted through the developer-portal form without an account, when it is received, then a tracked security ticket with its fix clock exists and the reporter is acknowledged within 2 working days | REQ-SEC-018 |
+| TC-SEC-393 | Given a BSL-licensed package added to a manifest and an `allow.json` entry without `adr`, when the licence scan runs, then both fail the build | REQ-SEC-012 |
+| TC-SEC-394 | Given a Helm values or compose file pinning a `redis` image tag below 8.0, when the deployment files are parsed, then the check fails naming the file; a tag of 8.0 or later passes | REQ-SEC-012 |
+| TC-SEC-395 | Given a package from the banned list of `19-dependency-and-license-inventory.md` §9.2 referenced in `Directory.Packages.props`, `package.json` or `pubspec.yaml`, when the deny-list check runs, then the build fails naming the package | REQ-SEC-012 |
+| TC-SEC-901 | Given a platform operator signed in with platform scope and no consented impersonation, when they open a student record in a tenant, then the request is refused and 0 fields of the record are returned | REQ-SEC-014 |
+| TC-SEC-903 | Given a consented impersonation capped at 30 minutes, when the agent works in the session, then the banner naming the agent and the user is on every screen, every action is audited against both identities as impersonation, and the session ends on its own at minute 30 | REQ-IDN-044, WF-SEC-03, BR-IDN-009 |
+| TC-PRV-020 | Given a school policy with quiet hours from 20:00 to 06:00 and the clock pinned to 21:00 in the tenant time zone, when a teacher sends a non-urgent message to a guardian, then it is refused with `COMMUNICATION_QUIET_HOURS` and 06:00 is offered; and a message to a recipient the policy excludes is refused with `COMMUNICATION_RECIPIENT_NOT_ALLOWED` | REQ-COM-006 |
+| TC-PRV-023 | Given a guardian who reports a message, when the report is saved, then the thread locks with `COMMUNICATION_MESSAGE_REPORTED_LOCK` and the concern reaches the safeguarding queue within 15 minutes; and after the guardian blocks the sender, the sender's next message is refused by the policy | REQ-COM-008 |
+| TC-PRV-025 | Given a safeguarding officer who reads 3 threads under oversight, when the principal opens the access log, then 3 access entries name the officer, the thread and the time | T-COM-02 |
+| TC-PRV-026 | Given a student whose media consent is withdrawn, when `school.student.profile-updated.v1` naming the consent field is consumed, then within 1 minute the student's photos leave galleries, news, badges, cached projections, search indexes and notification bodies, and exports still in Ready state are withdrawn | REQ-PRV-013, REQ-COM-004 |
+| TC-PRV-040 | Given an entity property classified Sensitive or S, when a cache registration for it is built, then the architecture test fails naming the property; a Confidential property is accepted only under a per-user key of 60 seconds or less | REQ-PRV-001 |
+| TC-PRV-042 | Given an export whose column set includes a Sensitive field, when it is requested, then it routes through WF-PRV-02 with a reason, a watermark and the principal notified; an export of Internal fields only is produced directly | WF-PRV-02 |
+| TC-PRV-043 | Given a mobile device holding Confidential rows for 2 sections, when the user loses the permission for 1 section, then that section's rows are purged from the device store on the next sync, and every row is purged on sign-out | §6.2 handling rules |
+| TC-PRV-045 | Given the projection contract per class, when Reporting consumes Wellbeing and Finance events, then S data arrives as counts only and Sensitive data as balance and count figures only, and a payload carrying any other field fails the contract test | BR-WEL-003 |
+| TC-PRV-047 | Given every notification template rendered with seeded Sensitive and S data, when the body and the push preview are read, then they contain 0 sensitive values and use the neutral category wording | BR-WEL-003 |
+| TC-PRV-048 | Given every event contract in Appendix E, when its payload schema is checked against the Appendix J classes, then 0 Sensitive or S fields are present | BR-WEL-003 |
+| TC-PRV-049 | Given the route table of every service and of both backends-for-frontends, when paths and query strings are checked, then they carry identifiers only and 0 Sensitive or S values or personal names | §6.2 handling rules |
+| TC-PRV-050 | Given a report grouping of 9 students, when it is rendered, then the aggregate is suppressed; with 10 students it is shown | §6.2 handling rules |
+| TC-PRV-051 | Given an entity property without a classification attribute, when its migration is built, then the architecture test fails naming the entity and the property | REQ-PRV-001 |
+| TC-PRV-052 | Given backups of 2 tenants, when one tenant's backup is opened with the other tenant's data key, then it does not decrypt, and it restores with its own key in the quarterly drill | REQ-SEC-009, WF-INF-03 |
+| TC-PRV-064 | Given a student session on web and on mobile, when outbound requests are captured, then 0 reach an analytics endpoint; a staff session reaches only the self-hosted analytics host; and the mobile build contains 0 third-party tracking SDKs | REQ-PRV-016 |
+| TC-PRV-070 | Given 2 closed wellbeing records of students who left 7 years and 1 day ago and 7 years less 1 day ago, when `WellbeingRetentionJob` runs, then the first is deleted and the second is kept | REQ-PRV-006 |
+| TC-PRV-076 | Given a legal hold placed on a student, when it is saved, then the hold record names who set it, when, and the subject, and 1 audit entry records the placement | REQ-PRV-012 |
+| TC-PRV-079 | Given a deployment with the SMS and payment adapters enabled and the external AI adapter disabled, when the sub-processor list is published, then it lists exactly the 2 enabled processors | REQ-PRV-018 |
+| TC-PRV-080 | Given a tenant with 12 modules and 3 sub-processors enabled on the day of export, when the impact assessment is exported, then its pre-filled sections list exactly those 12 modules and 3 sub-processors | REQ-PRV-017 |
+| TC-PRV-702 | Given a counselor who read a child's wellbeing record twice, when the guardian opens the transparency panel, then 2 entries show the counselor's role and the read times, and 0 carry note content | REQ-AUD-007 |

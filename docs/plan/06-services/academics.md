@@ -182,7 +182,7 @@ Invariants: an assignment is published only by a teacher with a live teaching as
 | Feedback | `kind` | enum | no | | overall, inline, audio (Tier 2) |
 | Feedback | `body`, `anchor`, `audio_file_id` | text, jsonb, uuid | yes | Confidential | |
 
-Invariants: one submission row per `(assignment_id, student_id)` with attempts counted on it; a submission after `closes_at` is refused with `ACADEMICS_SUBMISSION_WINDOW_CLOSED` unless a teacher records `accept-late`; a submission between `due_at` and `closes_at` is `LateSubmitted` with the penalty computed at grading (REQ-ACA-015); a resubmission after `grading_started_at` is refused with `ACADEMICS_RESUBMISSION_NOT_ALLOWED` unless the teacher requested it (REQ-ACA-014); total attachment size above the tenant limit is refused with `ACADEMICS_SUBMISSION_TOO_LARGE`; a grade whose `If-Match` version is older than the server version is a conflict for the teacher to resolve and never overwrites (REQ-ACA-021); after `grading_locked_at` a grade change is refused and routed to Assessment's grade-change workflow (open point 6); a submitted answer is immutable (T-ACA-02).
+Invariants: one submission row per `(assignment_id, student_id)` with attempts counted on it; a submission after `closes_at` is refused with `ACADEMICS_SUBMISSION_WINDOW_CLOSED` unless a teacher records `accept-late`; a submission between `due_at` and `closes_at` is `LateSubmitted` with the penalty computed at grading (REQ-ACA-015); a resubmission after `grading_started_at` is refused with `ACADEMICS_RESUBMISSION_NOT_ALLOWED` unless the teacher requested it (REQ-ACA-014); total attachment size above the tenant limit is refused with `ACADEMICS_SUBMISSION_TOO_LARGE`; a grade whose `If-Match` version is older than the server version is a conflict for the teacher to resolve and never overwrites (REQ-ACA-021); after `grading_locked_at` a grade change is refused with `ACADEMICS_GRADING_PERIOD_LOCKED` and routed to Assessment's grade-change workflow (WF-ASM-02); a submitted answer is immutable (T-ACA-02).
 
 ### 4.8 `Resource`
 
@@ -268,13 +268,13 @@ Base path `/api/v1/academics`. Conventions from `22-api-conventions-and-error-ca
 | PUT | `/teaching-assignments/{id}` | `academics.teaching-assignments.edit` | `ChangeTeachingAssignmentRequest` (new teacher, effectiveOn) | 200; old row ended, new row created, event published (REQ-ACA-004) | `ACADEMICS_CONCURRENCY_CONFLICT` | `If-Match` |
 | DELETE | `/teaching-assignments/{id}` | `academics.teaching-assignments.delete` | `EndTeachingAssignmentRequest` (endedOn) | 204; event published | `ACADEMICS_NOT_FOUND` | by id |
 | GET | `/teacher-load` | `academics.teaching-assignments.view` | `staffId`, `academicYearId` | `TeacherLoadDto` (periods, co-teaching) | none | safe |
-| GET | `/student-groups` | `academics.teaching-assignments.view` | filter `academicYearId`, `kind` | `StudentGroupDto[]` | none | safe |
-| POST | `/student-groups` | `academics.teaching-assignments.create` | `CreateStudentGroupRequest` | 201 | `ACADEMICS_VALIDATION_FAILED` | `Idempotency-Key` |
-| PUT | `/student-groups/{id}` | `academics.teaching-assignments.edit` | `UpdateStudentGroupRequest` | 200 | `ACADEMICS_CONCURRENCY_CONFLICT` | `If-Match` |
-| PUT | `/student-groups/{id}/members` | `academics.teaching-assignments.edit` | `SetGroupMembersRequest` (up to 500 student ids) | 200 | `ACADEMICS_VALIDATION_FAILED` (not enrolled in year and campus) | `If-Match` |
-| DELETE | `/student-groups/{id}` | `academics.teaching-assignments.delete` | none | 204 | `ACADEMICS_VALIDATION_FAILED` (targeted by assignments) | by id |
+| GET | `/student-groups` | `academics.student-groups.view` | filter `academicYearId`, `kind` | `StudentGroupDto[]` | none | safe |
+| POST | `/student-groups` | `academics.student-groups.create` | `CreateStudentGroupRequest` | 201 | `ACADEMICS_VALIDATION_FAILED` | `Idempotency-Key` |
+| PUT | `/student-groups/{id}` | `academics.student-groups.edit` | `UpdateStudentGroupRequest` | 200 | `ACADEMICS_CONCURRENCY_CONFLICT` | `If-Match` |
+| PUT | `/student-groups/{id}/members` | `academics.student-groups.edit` | `SetGroupMembersRequest` (up to 500 student ids) | 200 | `ACADEMICS_VALIDATION_FAILED` (not enrolled in year and campus) | `If-Match` |
+| DELETE | `/student-groups/{id}` | `academics.student-groups.delete` | none | 204 | `ACADEMICS_VALIDATION_FAILED` (targeted by assignments) | by id |
 
-Student groups have no resource in Appendix B and use `academics.teaching-assignments.*` (open point 1).
+Student groups are their own Appendix B resource, `academics.student-groups` with view, create, edit and delete, added under ADR-0019. Elective choices still have none and stay under `academics.teaching-assignments.*` (open point 1).
 
 ### 5.3 Curriculum
 
@@ -319,11 +319,12 @@ Student groups have no resource in Appendix B and use `academics.teaching-assign
 | POST | `/assignments/{id}/extend-due-date` | `academics.assignments.extend-due-date` | `ExtendDueDateRequest` (dueAt, closesAt, studentIds) | 200 | `ACADEMICS_VALIDATION_FAILED` (earlier date) | `If-Match` |
 | GET | `/homework-load` | `academics.assignments.view` | `sectionId`, `from`, `to` | `HomeworkLoadDto[]` per day with the ceiling (hot query 5) | none | safe; cached |
 | GET | `/students/{id}/work` | `academics.assignments.view` (scope `self`, `own-children`) | `from`, `to` | upcoming and overdue work (hot query 4) | `ACADEMICS_NOT_FOUND` | safe; compiled |
-| GET | `/rubrics` | `academics.assignments.view` | `ownerStaffId` | `RubricDto[]` | none | safe |
-| POST | `/rubrics` | `academics.assignments.create` | `CreateRubricRequest` | 201 | `ACADEMICS_VALIDATION_FAILED` | `Idempotency-Key` |
-| PUT | `/rubrics/{id}` | `academics.assignments.edit` | `UpdateRubricRequest` | 200 | `ACADEMICS_VALIDATION_FAILED` (used by a graded assignment) | `If-Match` |
+| GET | `/rubrics` | `academics.rubrics.view` | `ownerStaffId` | `RubricDto[]` | none | safe |
+| POST | `/rubrics` | `academics.rubrics.create` | `CreateRubricRequest` | 201 | `ACADEMICS_VALIDATION_FAILED` | `Idempotency-Key` |
+| PUT | `/rubrics/{id}` | `academics.rubrics.edit` | `UpdateRubricRequest` | 200 | `ACADEMICS_VALIDATION_FAILED` (used by a graded assignment) | `If-Match` |
+| DELETE | `/rubrics/{id}` | `academics.rubrics.delete` | none | 204 when unused | `ACADEMICS_VALIDATION_FAILED` (used by a graded assignment) | by id |
 
-Rubrics have no resource in Appendix B and use `academics.assignments.*` (open point 1).
+Rubrics are their own Appendix B resource, `academics.rubrics` with view, create, edit and delete, added under ADR-0019.
 
 ### 5.6 Submissions and grading (WF-ACA-01)
 
@@ -333,7 +334,7 @@ Rubrics have no resource in Appendix B and use `academics.assignments.*` (open p
 | GET | `/submissions/{id}` | `academics.submissions.view` (scope `self` for students, T-ACA-01) | none | `SubmissionDto` with feedback once returned | `ACADEMICS_NOT_FOUND` | safe |
 | GET | `/submissions/{id}/download-urls` | `academics.submissions.view` | none | signed URLs bound to the caller, 5 minutes | `ACADEMICS_NOT_FOUND` (file not clean) | safe |
 | POST | `/assignments/{id}/submissions` | `academics.submissions.edit` (scope `self`) | `SubmitWorkRequest` (kind, text, link, fileIds with sizes) | 200; `Submitted` or `LateSubmitted`; publishes `academics.submission.received.v1` | `ACADEMICS_SUBMISSION_WINDOW_CLOSED`, `ACADEMICS_SUBMISSION_TOO_LARGE`, `ACADEMICS_RESUBMISSION_NOT_ALLOWED` | `Idempotency-Key` (the mobile outbox key) |
-| POST | `/submissions/{id}/grade` | `academics.submissions.grade` | `GradeSubmissionRequest` (mark, rubric scores, feedback, audio file id) with `If-Match` of the device version | 200 `Graded`; publishes `academics.submission.graded.v1` | `ACADEMICS_CONCURRENCY_CONFLICT` with the server value (REQ-ACA-021, TC-ACA-006), `ACADEMICS_TEACHING_ASSIGNMENT_MISSING`, `ACADEMICS_VALIDATION_FAILED` (above max mark, grading period locked) | `If-Match` |
+| POST | `/submissions/{id}/grade` | `academics.submissions.grade` | `GradeSubmissionRequest` (mark, rubric scores, feedback, audio file id) with `If-Match` of the device version | 200 `Graded`; publishes `academics.submission.graded.v1` | `ACADEMICS_CONCURRENCY_CONFLICT` with the server value (REQ-ACA-021, TC-ACA-006), `ACADEMICS_TEACHING_ASSIGNMENT_MISSING`, `ACADEMICS_GRADING_PERIOD_LOCKED`, `ACADEMICS_VALIDATION_FAILED` (above max mark) | `If-Match` |
 | POST | `/submissions/grades/bulk` | `academics.submissions.grade` | up to 500 grades from the mobile outbox, mode `independent` | per-item results with conflicts | per item as above | `Idempotency-Key` required |
 | POST | `/submissions/{id}/request-resubmission` | `academics.submissions.grade` | `RequestResubmissionRequest` (comment) | 200 `ResubmissionRequested` | `ACADEMICS_VALIDATION_FAILED` (attempts exhausted) | state check |
 | POST | `/submissions/{id}/return` | `academics.submissions.return` | none | 200 `Returned`; feedback released | `ACADEMICS_VALIDATION_FAILED` (not graded) | state check |
@@ -402,7 +403,7 @@ Reference architecture table 8.0 lists no service that calls Academics synchrono
 | School `StudentDirectory` | `GetStudent`, `ListStudentsBySection` | A student referenced before its enrolled event arrived (`10-data-architecture.md` rule 4) | 2 s, 5 s | Local copy; the handler answers `ACADEMICS_DEPENDENCY_UNAVAILABLE` only when the copy is missing too |
 | School `StaffDirectory`, `StructureDirectory` | `GetStaff`, `GetSection` | Names absent from the School events | 2 s | Show identifiers; refetch next read |
 | School `ReferenceReconciliation` | `Checksum`, `ListSnapshotPage` | Nightly | 30 s, 5 s | Retry next night |
-| Scheduling `Timetables` | `GetVersion`, `Checksum` | Entries of a published version, and nightly reconciliation (`10-data-architecture.md` section 6) | 5 s per page, 30 s | Keep the previous version's entries; coursework is not blocked (open point 3) |
+| Scheduling `Timetables` | `GetVersion`, `Checksum` | Entries of a published version, and nightly reconciliation (`10-data-architecture.md` section 6); table 8.0 (v9.1) lists this call on the Academics row | 5 s per page, 30 s | Keep the previous version's entries; coursework is not blocked |
 
 ---
 
@@ -417,8 +418,9 @@ Payload fields are owned by Appendix E, Academics section; cited, not restated.
 | `academics.teaching-assignment.changed.v1` | `staffId` | Create, change or end of a teaching assignment | Assessment, Scheduling, Identity |
 | `academics.assignment.published.v1` | `sectionId` | `PublishAssignmentHandler`, one per target section (a group target publishes once per member section) | Notification, Reporting |
 | `academics.submission.received.v1` | `assignmentId` | `SubmitWorkHandler` on `Submitted` or `LateSubmitted` | Reporting |
+| `academics.submission.missing.v1` | `assignmentId` | `AssignmentClosingJob`, one per submission moved to `Missing` | Reporting |
 | `academics.submission.graded.v1` | `assignmentId` | `GradeSubmissionHandler`, bulk grade, quiz auto-grade on release | Assessment, Notification, Reporting |
-| `academics.lesson-plan.submitted.v1` | `staffId` | `SubmitLessonPlanHandler` | Notification, Reporting |
+| `academics.lesson-plan.submitted.v1` | `staffId` | `SubmitLessonPlanHandler` | Notification, Reporting, Ai |
 | `academics.homework-load.exceeded.v1` | `sectionId` | `PublishAssignmentHandler` when published with an override reason | Notification, Reporting |
 | `academics.syllabus-coverage.behind.v1` | `sectionId` | `SyllabusCoverageCheckJob` | Notification, Reporting |
 | `academics.usage.recorded.v1` | `tenantId` | Hourly: submissions, storage referenced | Platform |
@@ -486,7 +488,7 @@ All run in the Api host through Quartz.NET and `Nibras.BuildingBlocks.Jobs`, per
 | Job | Schedule or trigger | What it does | Publishes | Progress |
 |---|---|---|---|---|
 | `AssignmentDueReminderJob` | Daily 18:00 in each campus time zone (Appendix E jobs table: "daily, evening before") | Students with work due tomorrow and, for young grades, their guardians (REQ-ACA-029) | `RequestNotification` → `notification.notification.requested.v1`, digest-eligible | Short |
-| `AssignmentClosingJob` | Every 5 minutes | Moves `Pending` submissions past `closes_at` to `Missing` (TC-ACA-004) | `academics.audit.recorded.v1` per transition | Short |
+| `AssignmentClosingJob` | Every 5 minutes | Moves `Pending` submissions past `closes_at` to `Missing` (TC-ACA-004) | `academics.submission.missing.v1` per submission, and `academics.audit.recorded.v1` per transition | Short |
 | `UngradedEscalationJob` | Daily 07:00 campus time | Flags submissions ungraded for 10 working days on the Today list; escalates at 15 working days to the head of department | `RequestNotification` | Short |
 | `SyllabusCoverageCheckJob` | Weekly, last working day 16:00 campus time | Compares planned and delivered lessons per section and subject (REQ-ACA-009) | `academics.syllabus-coverage.behind.v1` | Short |
 | `QtiImportJob` | `POST /questions/qti-imports` | Validates the QTI 3 package, then binary COPY into staging and merge | none | Long: items done of total, error report, cancellable |
@@ -508,6 +510,8 @@ All run in the Api host through Quartz.NET and `Nibras.BuildingBlocks.Jobs`, per
 |---|---|---|
 | `academics.curriculum.view`, `.create`, `.edit`, `.delete`, `academics.curriculum.map-standards` | Coordinator, head of department | department |
 | `academics.teaching-assignments.view`, `.create`, `.edit`, `.delete` | Coordinator, principal; teachers view | campus, own-sections |
+| `academics.student-groups.view`, `.create`, `.edit`, `.delete` | Coordinator, principal; teachers view | campus, own-sections |
+| `academics.rubrics.view`, `.create`, `.edit`, `.delete` | Teachers, heads of department | own-sections, department |
 | `academics.lesson-plans.view`, `.create`, `.edit`, `.delete` | Teachers | own-sections |
 | `academics.lesson-plans.review`, `academics.lesson-plans.approve` | Head of department, coordinator | department |
 | `academics.assignments.view`, `.create`, `.edit`, `.delete`, `academics.assignments.publish`, `academics.assignments.extend-due-date` | Teachers; students and guardians view | own-sections, self, own-children |
@@ -549,6 +553,7 @@ All run in the Api host through Quartz.NET and `Nibras.BuildingBlocks.Jobs`, per
 | `ACADEMICS_ONLINE_EXAM_ALREADY_STARTED` | 409 | Edit to a live quiz |
 | `ACADEMICS_CURRICULUM_STANDARD_UNKNOWN` | 400 | Unresolvable CASE reference |
 | `ACADEMICS_RESUBMISSION_NOT_ALLOWED` | 409 | Resubmission after grading started, or attempts exhausted |
+| `ACADEMICS_GRADING_PERIOD_LOCKED` | 409 | Grading or a mark change in a grading period that Assessment has locked; the response names the WF-ASM-02 appeal path |
 | `ACADEMICS_VALIDATION_FAILED`, `ACADEMICS_PERMISSION_DENIED`, `ACADEMICS_TENANT_MISMATCH`, `ACADEMICS_NOT_FOUND`, `ACADEMICS_CONCURRENCY_CONFLICT`, `ACADEMICS_IDEMPOTENCY_REPLAY`, `ACADEMICS_RATE_LIMITED`, `ACADEMICS_DEPENDENCY_UNAVAILABLE` | K.1 | Every endpoint; `ACADEMICS_CONCURRENCY_CONFLICT` is also the offline grade conflict |
 
 ---
@@ -853,6 +858,7 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 | TC-ACA-201 | Homework load view with the ceiling (REQ-ACA-011) | End-to-end |
 | TC-ACA-202 | Grading grid by keyboard alone with immediate saves (REQ-ACA-020) | End-to-end, accessibility |
 | TC-ACA-601, TC-ACA-602 | Submit a file from the phone; resubmission refused after grading starts (Appendix Q) | End-to-end, mobile |
+| TC-ACA-602 | Given a submission the teacher has started grading, when the student resubmits from the phone, then the resubmission is refused with 409 `ACADEMICS_RESUBMISSION_NOT_ALLOWED`, the message shows the grading state, and the stored submission and its attempt count are unchanged (REQ-ACA-014, WF-ACA-01) | End-to-end, mobile |
 | TC-SEC-150 to TC-SEC-154, TC-SEC-201 | T-ACA-01 to T-ACA-05; a teacher acts only on assigned sections | Security suite |
 | TC-ACA-401 | A prerequisite-less elective choice is refused naming the prerequisite (REQ-ACA-001) | Integration |
 | TC-ACA-402 | A teaching assignment changed on 15 February leaves 2 history rows and past grades keep the original teacher (REQ-ACA-004) | Integration |
@@ -895,7 +901,7 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 | Offline grades silently overwrite newer grades | low | high | `If-Match` on every grade and the conflict path (TC-ACA-006, TC-ACA-409) | Academics and mobile teams |
 | Scope drift: a teacher keeps access after reassignment | med | med | Scope read from the cache entry invalidated by the teaching-assignment event; TC-SEC-201 | Academics team |
 | Weekly periods maintained twice (here and in Scheduling) | high | med | Open point 2 of the Scheduling sheet; propose `periodsPerWeek` on the teaching-assignment event | Architect |
-| Missing-work signal never reaches Reporting because no event carries the Missing state | high | med | Open point 2 | Architect |
+| Missing-work signal never reaches Reporting | low | med | `academics.submission.missing.v1` (Appendix E, ADR-0019), published per submission by `AssignmentClosingJob` | Architect |
 
 ---
 
@@ -905,7 +911,7 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 |---|---|---|---|
 | Jobs run in the Api host | Appendix L lists no academics-worker image | As stated | A worker image moves `Api/Jobs/` to `Nibras.Academics.Worker` |
 | WF-ACA-01 splits into assignment-level and per-student states on two aggregates, one enum | Document 31 names one state type; Appendix R's machine mixes both levels | As stated | One aggregate per student-assignment pair would multiply rows without adding safety |
-| Student groups, rubrics and electives use existing `academics.*` resources | Appendix B has no resource for them | Until Appendix B gains them (open point 1) | No separate delegation |
+| Student groups use `academics.student-groups.*` and rubrics `academics.rubrics.*`; elective choices still use `academics.teaching-assignments.*` | Appendix B (ADR-0019) has the first two and no resource for electives | As stated (open point 1) | Elective choice editing cannot be delegated separately |
 | Academics exposes gRPC for reconciliation only | `10-data-architecture.md` section 6 | As stated | Without it, Assessment and Scheduling cannot reconcile teaching assignments |
 
 ## Dependencies on other documents
@@ -926,12 +932,12 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix B has no resource for student groups, rubrics, elective choices, kindergarten daily sheets or online classes | Groups and electives use `academics.teaching-assignments.*`, rubrics `academics.assignments.*`; the Tier 2 daily sheet (REQ-ACA-028) and online classes (REQ-ACA-027) get no endpoint until Appendix B defines their permissions | Product owner, Appendix B amendment | Two Tier 2 features cannot ship without the amendment |
-| 2 | No Appendix E event carries the Missing state, so Reporting's early-warning signal (REQ-ACA-016) cannot see missing work | Reporting derives missing work from `academics.assignment.published.v1` `dueAt` and the absence of `academics.submission.received.v1`; propose `academics.submission.missing.v1` | Architect, Appendix E amendment | Early-warning counts a late-but-accepted submission as missing |
-| 3 | Reference architecture table 8.0 lists only School as Academics' synchronous dependency, while `10-data-architecture.md` section 6 fetches timetable entries from Scheduling over gRPC | Call Scheduling as stated; amend table 8.0 under an ADR | Architect | A literal reading of table 8.0 forbids the timetable copy |
+| 1 | Closed by ADR-0019 for student groups and rubrics: Appendix B now carries `academics.student-groups` and `academics.rubrics`, each with view, create, edit and delete, and sections 5.2 and 5.5 use them. Still open for elective choices, the kindergarten daily sheet (REQ-ACA-028) and online classes (REQ-ACA-027) | Elective choices stay under `academics.teaching-assignments.*`; the two Tier 2 features get no endpoint until Appendix B defines their permissions. No open question owns this; the change list records it as outside the logged defects, for a later ADR | Product owner, Appendix B amendment | Two Tier 2 features cannot ship without the amendment |
+| 2 | Closed by ADR-0019. Appendix E now carries `academics.submission.missing.v1`, the name this sheet proposed, with Reporting as its consumer, and its jobs table lists `AssignmentClosingJob` (Academics, every 5 minutes) as the publisher | Section 10's `AssignmentClosingJob` publishes one event per submission it moves to `Missing`; the derive-from-absence workaround is withdrawn | Closed | None; early warning no longer counts a late-but-accepted submission as missing |
+| 3 | Closed by ADR-0019. Reference architecture table 8.0 (v9.1) adds Scheduling `Timetables` (published version entries, nightly checksum) to the Academics row, and states the one-hop rule and the meaning of "job only" in the same section | Section 6.2 stands as written | Closed | None; the timetable copy is allowed by the table it is read against |
 | 4 | Online classes (REQ-ACA-027) capture attendance, which Attendance owns, but no event or command carries participation to Attendance | Deferred with the Tier 2 feature; propose a command to Attendance | Architect | None until Tier 2 |
 | 5 | REQ-ACA-001 prerequisites are checked against prior enrolment in an offering, not against a passing result, because results live in Assessment | Enrolment-based check | Product owner | A student who failed the prerequisite could still choose the elective |
-| 6 | Appendix K has no code for grading after the period is locked | `ACADEMICS_VALIDATION_FAILED` naming the lock; the change goes through Assessment's WF-ASM-02; propose `ACADEMICS_GRADING_PERIOD_LOCKED` | Architect | Clients show a validation message instead of the appeal path |
+| 6 | Closed by ADR-0019. Appendix K.6 now defines `ACADEMICS_GRADING_PERIOD_LOCKED` (409), the name this sheet proposed | Section 5.6 raises it on grading into a locked period and the response names the WF-ASM-02 appeal path; the `ACADEMICS_VALIDATION_FAILED` workaround is withdrawn | Closed | None; clients get the appeal path instead of a validation message |
 | 7 | `05-service-catalog.md` lists `requests.request.approved.v1` as consumed by Academics, but no request-type effect in `13-workflows-and-sagas.md` section 4 targets Academics and document 11 binds none | Not bound | Architect | None; the catalog row is corrected |
 | 8 | Appendix J has no retention row for submissions and coursework files | Files follow the academic-record clock (10 years after leaving, REQ-PRV-003) until Appendix J gains a row | Product owner with privacy counsel | Storage cost, or a retention period longer than a regulator expects |
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## v9.2 brief, 2026-09-25
+
+Every test case is defined in exactly one document (ADR-0020, proposed). Kit-lint rule R20 refuses an identifier defined twice, a citation with no definition, and a derived acceptance test without its requirement; `docs/plan/16-annex-test-case-registry.md` lists all 1,566 tests and 334 derived acceptance tests with their owner, meaning and citations, generated from the same code.
+
+**Brief.** Appendix W's twelve demo tests that reused Appendix R identifiers moved to the 810 range, with Appendices O and P following; Appendix O follows two plan-side renumberings; Appendix Q step 12 follows Appendix M on approvals.
+
+**Plan.** 206 double definitions and 163 undefined citations resolved across 38 documents: restatements now name their owner, a handful of genuinely different tests were renumbered, and missing definitions were written. Document 10's pooled-connection tests no longer reuse the import workflow's identifiers.
+
 ## v9.1 brief, 2026-09-22
 
 The brief was corrected from the defects the plan found while it was written, under ADR-0019. All three brief files are v9.1. Every change and its source is listed in `KIT_V9_1_CHANGES.md` (317 entries).

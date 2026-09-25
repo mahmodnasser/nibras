@@ -97,7 +97,7 @@ Output: a JSON file for the pipeline and a table in the pull-request summary gro
 | Step | Who | What |
 |---|---|---|
 | 1 | The engineer adding the string | Writes the key, the English value, the context note and a first Arabic value marked `draft`; never merges an empty Arabic value |
-| 2 | The Arabic language owner, a named native speaker assigned by the product owner (open point 5) | Reviews every `draft` value in the feature's pull request or in the weekly batch, corrects it against the glossary and the screen, and sets `reviewed` |
+| 2 | The Arabic language owner, a named native speaker assigned by the product owner (open point 3) | Reviews every `draft` value in the feature's pull request or in the weekly batch, corrects it against the glossary and the screen, and sets `reviewed` |
 | 3 | The product owner | Settles a disputed term; the decision becomes a glossary entry |
 | 4 | The release manager | A release branch cannot be cut while any Arabic value is `draft` (§1.4) |
 | 5 | The customer success lead | Collects wording reports from schools; each becomes a glossary change or a string fix within a release |
@@ -391,7 +391,7 @@ Master brief Section 17 asks for tolerant matching of transliterated names: a re
 | Where it is used | Duplicate detection (BR-ADM-006) and the admissions and directory search when the query script differs from the stored script; the general `q` uses folding and trigrams only (`22-api-conventions-and-error-catalog.md` open point 2) |
 | Index | A GIN trigram index on `name_translit_key`, partial on live rows, like §3.2 |
 | Never shown | The key is not a name, never displayed, never exported, and never written into a name field (BR-L10N-007) |
-| Limits | A skeleton cannot distinguish names that differ only in vowels ("Hamid" and "Hamed" are one key); و used as a long vowel keeps a `w` on the Arabic side that the Latin drops (يوسف gives `wsf`, "Yousef" gives `sf`), so that pair does not match on the key and is found only through the English name column when the school filled it (open point 3); results are ranked by similarity on the display names too, and a person confirms every merge |
+| Limits | A skeleton cannot distinguish names that differ only in vowels ("Hamid" and "Hamed" are one key). BR-L10N-001 owns the long-vowel case and states it as a rule, not a defect: the key cannot see و or ي written as a long vowel, so "يوسف" gives `wsf` and "Yousef" gives `sf`, the pair is found through the English name part when the school filled it, and a person confirms every duplicate under BR-ADM-006. Results are ranked by similarity on the display names too |
 
 ---
 
@@ -555,7 +555,7 @@ Master brief Section 17: multi-currency, configurable decimals and rounding, amo
 
 | Rule | Detail |
 |---|---|
-| Scale | The currency's minor-unit digits from the table above; Appendix G Finance → rounding mode and decimals per currency sets them, with the ISO 4217 minor unit as the default for each currency (open point 4) |
+| Scale | The ISO 4217 minor unit of the currency, which is what Appendix G Finance → "rounding mode and decimals per currency" now sets: 2 for SAR and AED, 3 for JOD. The §7.1 table restates those three values; Appendix G and the Appendix S BR-FIN money-scale rule own them, and a currency added later takes its own minor unit, never a flat 2 |
 | Mode | Half-up by default (Appendix G), applied as half away from zero so a refund rounds symmetrically: SAR 10.005 becomes 10.01 and SAR −10.005 becomes −10.01; JOD 12.3455 becomes 12.346 |
 | Implementation | `decimal.Round(value, scale, MidpointRounding.AwayFromZero)` named explicitly; the .NET default is banker's rounding, which would turn SAR 10.005 into 10.00, so an analyzer forbids `Math.Round` and `decimal.Round` without a `MidpointRounding` argument |
 | Where rounding happens | Where Finance's rules say (per line, per installment, allocation remainders); this document fixes only how a value is rounded, never when |
@@ -767,6 +767,8 @@ BR-L10N-006: every culture-sensitive operation names its culture; the invariant 
 | No computation in Hijri, ever | This document §5; BR-L10N-003 | As stated | A one-day disagreement between authorities changes an age check or a due date |
 | Time zones by IANA id per campus; no fixed offsets | This document §6.2 | As stated | The next tzdata change in the region shifts every bell by an hour |
 | Rounding is half away from zero at the currency's minor-unit scale, always named in code | This document §7.2; Appendix G | As stated | Banker's rounding silently changes receipts by one halala |
+| The scale is the ISO 4217 minor unit per currency, not a flat 2 decimals: SAR and AED 2, JOD 3 | Appendix G Finance rounding row; the Appendix S BR-FIN money-scale rule | As stated | JOD amounts lose a fils on every invoice line |
+| The cross-script consonant key cannot see و or ي as a long vowel; "يوسف" and "Yousef" are matched through the English name part, and a person confirms every duplicate | BR-L10N-001 rule and edge cases; BR-ADM-006 | As stated | Either registrars create duplicates unseen, or a looser key merges unrelated families |
 | Amounts in words are table-driven per currency and reviewed by the Arabic language owner | This document §7.4; BR-L10N-004 | As stated | A generic number-to-words function gets Arabic gender agreement wrong on every receipt |
 | Plural rules come from one generated CLDR table shared by all runtimes | This document §8 | As stated | Web, phone and SMS pick different Arabic forms for the same count |
 | A release carries only reviewed Arabic | This document §1.4 and §1.5 | As stated | Draft machine Arabic reaches a ministry-facing certificate |
@@ -793,10 +795,10 @@ BR-L10N-006: every culture-sensitive operation names its culture; the invariant 
 |---|---|---|---|
 | 1. `07-solution-structure.md` names the bilingual value object `BilingualText`; this document and `22-api-conventions-and-error-catalog.md` use `LocalizedText` | `LocalizedText` everywhere, matching the wire and the proto; document 07 is aligned in its next revision | Architect | Two names for one type in the building blocks and the contracts |
 | 2. Transliteration keys on the general `q` search | Only on duplicate detection and admissions and directory search, as `22-api-conventions-and-error-catalog.md` open point 2 | Architect, with the School service owner | Default-on gives surprising matches in a class list; default-off misses cross-script queries in the directory |
-| 3. The consonant skeleton misses pairs where و or ي is a long vowel ("Yousef" and يوسف) | Accept the miss; rely on the English name column; measure recall on the demo corpus before general availability | Arabic language owner, with the School service owner | Registrars create duplicates for a common family of names |
-| 4. Appendix G says rounding defaults to 2 decimals; JOD has 3 | Decimals default to the ISO 4217 minor unit per currency (2 for SAR and AED, 3 for JOD); Appendix G's value is read as the default for two-decimal currencies, confirmed by ADR at the next brief revision | Product owner, with the Finance service owner | JOD amounts lose a fils on every invoice line |
-| 5. Who is the Arabic language owner | A named native speaker assigned by the product owner before phase 1 ends, with a deputy | Product owner | Draft Arabic accumulates and blocks the first release branch |
-| 6. Numeral default for new tenants | `western`, the school changes it in onboarding | Product owner | A school that expects Arabic-Indic digits sees Western digits until it changes the setting |
+| 3. Who is the Arabic language owner | A named native speaker assigned by the product owner before phase 1 ends, with a deputy | Product owner | Draft Arabic accumulates and blocks the first release branch |
+| 4. Numeral default for new tenants | `western`, the school changes it in onboarding | Product owner | A school that expects Arabic-Indic digits sees Western digits until it changes the setting |
+
+Two points that stood here in v9 are settled by the v9.1 brief and now sit in Decisions in force: the currency scale (Appendix G) and the long-vowel limit of the consonant key (BR-L10N-001).
 
 ## Review record
 
@@ -822,3 +824,14 @@ BR-L10N-006: every culture-sensitive operation names its culture; the invariant 
 | The culture test inside the image | Checks G1 to G4 and G6 run inside each built service image: `ar-SA` resolves, `UmAlQuraCalendar` returns the §5.2 pairs, `Asia/Riyadh`, `Asia/Amman` and `Asia/Dubai` return the §6.2 offsets, ICU and tzdata versions equal the release manifest (TC-PLAT-004, TC-PLAT-005, TC-PLAT-006) | Every image build |
 | Ramadan bell schedules and time zones | `TC-L10N-620` (§6.4) | Nightly |
 | This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, canonical names, Mermaid types and SQL comments; `/lint-plan` for consistency with `08-web-structure.md`, `14-design-system-and-ux.md`, `22-api-conventions-and-error-catalog.md`, `23-integrations-and-public-api.md` and `33-platform-support-and-dev-environments.md` | Every change under `docs/` |
+
+### Test cases
+
+This document defines the localization tests below; the other `TC-L10N-*` cases in the table above are defined by the documents that own them.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-L10N-110 | Given a tenant that overrides "Section" to "Class" and "Guardian" to "Parent", when every screen family, a report card, a receipt and a push notification are snapshotted in English and Arabic, then every one shows the override and none shows the default term | REQ-L10N-014 |
+| TC-L10N-310 | Given the Nibras database image, when `show_trgm(nibras_ar_fold('محمد'))` runs inside it, then it returns Arabic trigrams, so a similarity search on an Arabic name can match | REQ-L10N-009, BR-L10N-001 |
+| TC-L10N-620 | Given a Ramadan bell schedule valid 2027-02-08 to 2027-03-09, when the clock reaches 2027-02-08 in `Asia/Riyadh` and in `Asia/Dubai`, then the attendance cut-off switches to the Ramadan schedule at the right local time on each campus, and back after 2027-03-09 | REQ-L10N-011, REQ-SCD-023 |
+| TC-L10N-901 | Given the operator console switched to Arabic, when every operator and administrator screen is opened, then each mirrors fully right to left and none is English-only | REQ-L10N-016 |

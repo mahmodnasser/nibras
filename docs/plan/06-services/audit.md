@@ -18,7 +18,7 @@ Audit is the evidence of record. Every data-owning service emits `<service>.audi
 | Build phase | 1 | `05-service-catalog.md` |
 | Service level class | Read-heavy for search, append-only writes | Reference architecture Section 8.0, `05-service-catalog.md` |
 | Sensitivity | Sensitive (it records who saw what); before and after values of sensitive changes are encrypted | `05-service-catalog.md`, Appendix J.3 |
-| Synchronous dependencies | none in reference architecture Section 8.0; this sheet uses Platform's `Retention` and `Settings` services from its jobs (Open point 4) | Reference architecture Section 8.0 |
+| Synchronous dependencies | Platform `Settings.GetSettings` and `Retention.ListActiveHolds`, from its jobs only, under Section 8.0's "Calls every service makes" | Reference architecture Section 8.0 |
 | Local copies | none; the audit log is the copy of record | Reference architecture Section 8.0, Appendix J.3 |
 | Scaling profile | Second-largest writer after Notification: about 40,000 entries per 1,000-student tenant per month, 20 million a month at the scale tier | `21-performance-engineering.md` §3.16 |
 | Why the boundary exists | Security level: evidence must live outside the services it describes, append-only, under its own database role | `05-service-catalog.md` |
@@ -167,7 +167,7 @@ Conventions from `22-api-conventions-and-error-catalog.md`. There is no route th
 | POST | `/api/v1/audit/login-history/exports` | `audit.login-history.export` | filter, reason | 202 job | `AUDIT_REASON_REQUIRED` | `Idempotency-Key` required |
 | GET | `/api/v1/audit/access-log` | `audit.access-log.view` | `reason` (required), `from`, `to`, `subjectType`, `readerUserId`, cursor | `AccessLogRow[]`; Wellbeing subjects by record type only | `AUDIT_REASON_REQUIRED` | safe |
 | GET | `/api/v1/audit/access-log/subjects/{subjectType}/{subjectId}` | `audit.access-log.view` | `reason` (required), cursor | who read this record, under which role and purpose | `AUDIT_REASON_REQUIRED` | safe |
-| GET | `/api/v1/audit/transparency/students/{studentId}` | `audit.access-log.view` at `own-children` scope for guardians (Open point 2) | cursor | reader roles and times per record category, never reader names, never Wellbeing content (REQ-AUD-007, TC-AUD-002) | none | safe |
+| GET | `/api/v1/audit/transparency/students/{studentId}` | `audit.access-transparency.view` at `own-children` scope for guardians | cursor | reader roles and times per record category, never reader names, never Wellbeing content (REQ-AUD-007, TC-AUD-002) | none | safe |
 | GET | `/api/v1/audit/integrity` | `audit.integrity.view` | none | per month: last verification, result, anchors, head state | none | safe |
 | POST | `/api/v1/audit/integrity/verifications` | `audit.integrity.verify` | month or sequence range | 202 job | none | `Idempotency-Key` required |
 | GET | `/api/v1/audit/integrity/verifications/{verificationId}` | `audit.integrity.view` | none | result with the first broken sequence when broken | `AUDIT_CHAIN_BROKEN` in the result body, never as a failed request | safe |
@@ -261,7 +261,8 @@ None, by design: the audit log is the copy of record and Appendix J.3 allows no 
 | `audit.entries.view` | high group G24 | search, entry detail, subject and actor histories, registers, oversight summary |
 | `audit.entries.export` | high, reason required | exports, partition restore |
 | `audit.login-history.view`, `audit.login-history.export` | elevated | login history routes |
-| `audit.access-log.view` | high, every read logged | access log routes and the guardian transparency route at `own-children` scope |
+| `audit.access-log.view` | high, every read logged | access log routes |
+| `audit.access-transparency.view` | normal, `own-children` or `self` scope only | the guardian transparency route: roles and times, never reader names |
 | `audit.integrity.view`, `audit.integrity.verify` | elevated | integrity, verifications, partitions |
 
 ### 11.2 Notifications (Appendix C rows triggered by Audit)
@@ -269,8 +270,9 @@ None, by design: the audit log is the copy of record and Appendix J.3 allows no 
 | Notification | Trigger | Recipients | Urgency, channels |
 |---|---|---|---|
 | Audit integrity check failed | `audit.integrity-check.failed.v1` (job: audit integrity verification) | Platform operators, security administrator | U; email, push |
+| Audit export performed | `notification.notification.requested.v1` (`RequestNotification` from Audit when `AuditExportJob` completes) | Principal | N; email |
 
-The principal's notice of an audit export (T-AUD-03) is sent as `RequestNotification`; Appendix C has no row for it (Open point 1).
+The principal's notice of an audit export (T-AUD-03) is the second row: Appendix C now carries it, so the `RequestNotification` this sheet already sends is a catalogued row rather than an internal template.
 
 ### 11.3 Settings (Appendix G)
 
@@ -439,7 +441,7 @@ src/Services/Audit/                                         Audit: the append-on
 │   │   │       ├── GetGuardianTransparencyQuery.cs         immutable query record: route and filter parameters only
 │   │   │       ├── GetGuardianTransparencyHandler.cs       grouped by category and role, no names
 │   │   │       ├── GetGuardianTransparencyValidator.cs     FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │       └── GetGuardianTransparencyEndpoint.cs      GET /api/v1/audit/transparency/students/{studentId}, audit.access-log.view at own-children
+│   │   │       └── GetGuardianTransparencyEndpoint.cs      GET /api/v1/audit/transparency/students/{studentId}, audit.access-transparency.view at own-children
 │   │   ├── Integrity/                                      verification and partitions
 │   │   │   ├── GetIntegrityStatus/                         per-month status
 │   │   │   │   ├── GetIntegrityStatusQuery.cs              immutable query record: route and filter parameters only
@@ -603,17 +605,17 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 
 | Test case | What it proves | Level |
 |---|---|---|
-| TC-AUD-001 | The audit test: any sensitive action in the Appendix T simulation can be traced and any number explained | End to end |
-| TC-AUD-002 | Guardian transparency shows reader roles and times, no names, no Wellbeing content | End to end, Appendix O minute 11 |
+| `TC-AUD-001` (Appendix W) | The audit test: any sensitive action in the Appendix T simulation can be traced and any number explained | End to end |
+| `TC-AUD-002` (Appendix W) | Guardian transparency shows reader roles and times, no names, no Wellbeing content | End to end, Appendix O minute 11 |
 | TC-AUD-901 | Integrity check verifies, and a deliberately tampered test row is reported as broken | UAT (Appendix Q) |
-| TC-SEC-270 | An insider edit or delete is refused by the role and caught by the chain | Integration |
-| TC-SEC-271 | A write whose audit event is lost fails a sensitive read in the same transaction | Integration |
-| TC-SEC-272 | The access log shows Wellbeing subjects by existence and record type only | Integration |
-| TC-SEC-273 | A detached partition altered in cold storage fails re-verification on restore | Integration |
-| TC-SEC-904 | Audit export is refused without the high-risk permission and an approved reason | UAT |
+| `TC-SEC-270` (document 12) | An insider edit or delete is refused by the role and caught by the chain | Integration |
+| `TC-SEC-271` (document 12) | A write whose audit event is lost fails a sensitive read in the same transaction | Integration |
+| `TC-SEC-272` (document 12) | The access log shows Wellbeing subjects by existence and record type only | Integration |
+| `TC-SEC-273` (document 12) | A detached partition altered in cold storage fails re-verification on restore | Integration |
+| `TC-SEC-904` (document 12) | Audit export is refused without the high-risk permission and an approved reason | UAT |
 | TC-WEL-703 | Every Wellbeing read writes an access-log entry | Integration with Wellbeing |
-| TC-PRV-068 | Monthly detach of audit partitions to cold storage with a hash | Integration |
-| TC-PERF-016 | Audit writes zero cache keys | Integration |
+| `TC-PRV-068` (document 12) | Monthly detach of audit partitions to cold storage with a hash | Integration |
+| `TC-PERF-016` (document 21) | Audit writes zero cache keys | Integration |
 | TC-AUD-101 | A batch redelivered after a crash appends nothing and the chain has no gap | Integration |
 | TC-AUD-102 | Two shards for two tenants append concurrently without contention; one tenant never blocks another | Integration |
 | TC-AUD-103 | A Sensitive before value is ciphertext at rest and decrypted only for a caller holding the source permission | Integration |
@@ -679,13 +681,11 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Four of the five points this sheet raised are answered by the brief. Appendix C now carries the row "Audit export performed" to the principal (normal, email), so section 11.2 lists it. Appendix B now carries `audit.access-transparency` (view, normal, own-children or self scope, roles and times, never reader names) and Appendix I gives it to the Parent / Guardian template, so the transparency route in section 5 declares it instead of the high-risk `audit.access-log.view`; `08-web-structure.md` has to follow. Appendix E now states that there is no shared audit routing key and that an audit entry named in Appendix R is the publishing service's own `<service>.audit.recorded.v1`, and Appendix R was rewritten to that form, so the form this sheet binds is the brief's. Reference architecture Section 8.0 now states under "Calls every service makes" that every service may read Platform `Settings.GetSettings` and `Retention.ListActiveHolds`, which is exactly what the detach job uses, so section 6 no longer adds anything to the table. The one point left is renumbered.
+
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix C has no row for the principal's notice of an audit export required by T-AUD-03 | `RequestNotification`, normal urgency, email | Product owner, ADR on Appendix C | The principal learns of exports only from the oversight summary |
-| 2 | The guardian transparency panel needs a permission a guardian can hold; `08-web-structure.md` uses `audit.access-log.view`, which Appendix B marks high risk | The route declares `audit.access-log.view` and the Parent template holds it at `own-children` scope only; the response carries roles and times, never names | Product owner, ADR on Appendices B and I | Four-eyes on every parent's grant would make the panel unusable |
-| 3 | Appendix R side effects name audit.action.recorded.v1, which Appendix E does not catalog; the catalogued form is `<service>.audit.recorded.v1` | This sheet binds only the catalogued form | Architect, ADR on Appendix R | None at runtime |
-| 4 | Reference architecture Section 8.0 lists no synchronous dependency for Audit; the detach job needs Platform's holds and retention setting | As stated in section 6, from jobs only | Architect, update to Section 8.0 | Detaching without the hold check would break REQ-PRV-012 |
-| 5 | Appendix J classifies the audit entry as Confidential while Appendix J.3 and `05-service-catalog.md` class Audit as Sensitive | Entries Confidential, sensitive before and after values Sensitive and encrypted; the service classed Sensitive | Data protection officer | None; the stricter handling already applies to the sensitive part |
+| 1 | Appendix J classifies the audit entry as Confidential while Appendix J.3 and `05-service-catalog.md` class Audit as Sensitive | Entries Confidential, sensitive before and after values Sensitive and encrypted; the service classed Sensitive | Data protection officer | None; the stricter handling already applies to the sensitive part |
 
 ## Review record
 

@@ -371,6 +371,13 @@
 | SL-ACA-402 | A parent's home carries today's sheet card per young child, and past sheets arrive through delta sync for reading offline | Bff.Mobile | 1 | REQ-ACA-028, REQ-BFF-008 | GetMobileHome (parent daily-sheet card), SyncPull (daily sheets) | contract: the Academics daily sheet OpenAPI from phase 2 (CAP-ACA-01) |
 | SL-ACA-403 | A parent opens the day's sheet on a phone in Arabic or English with meals, naps, mood, activities, photos and the teacher's note, and scrolls back through past days offline | Mobile | 2 | REQ-ACA-028, REQ-MOB-007 | Parent daily sheet view and history | SL-ACA-402 |
 | SL-ACA-404 | A kindergarten teacher fills and corrects sheets on the web and a guardian reads them there, in both languages with every state | Web | 2 | REQ-ACA-028 | Daily sheet class entry and guardian view | contract: the Academics daily sheet OpenAPI from phase 2 (CAP-ACA-01) |
+
+### CAP-INT-02 A teacher launches a registered external learning tool from a section, and the tool reads only the roster its privacy setting allows
+
+**Phase:** 4 · **Services:** Platform · **Demo:** an administrator registers a demo learning tool with its privacy setting, a teacher launches it from a section in one click without signing in again, and the tool lists exactly the students that setting allows and no more.
+
+| Slice | When it ships, a person can | Service | Days | Covers | Use cases | Depends on |
+|---|---|---|---|---|---|---|
 | SL-INT-411 | A teacher launches a registered LTI 1.3 tool from a section, with deep linking and names and roles: an administrator registers the tool with its URLs through the address guard and a privacy setting, the launch runs the OpenID Connect third-party login with a signed `id_token` from keys on the JWKS endpoint, deep-linked content returns to the teacher's picker, and the tool reads the section roster limited to what its privacy setting permits | Platform | 3 | REQ-INT-016 | Lti (ListLtiTools, RegisterLtiTool, UpdateLtiTool, DeleteLtiTool, StartLtiLaunch, AuthorizeLtiLaunch, ReceiveDeepLinkingReturn, GetLtiJwks) | SL-INT-407; contract: Academics `LaunchLtiTool` placement from phase 2 (CAP-ACA-01) |
 
 ### Coverage notes for part C
@@ -383,7 +390,7 @@ Every phase 3 requirement in this part's scope is built by at least one slice ab
 - REQ-FIN-034 states that no general ledger is built; SL-FIN-443 delivers the accounting export that serves it.
 - REQ-INT-014: iCal feeds themselves were built by Scheduling in phase 2 (CAP-SCD-03); SL-INT-405 adds the Platform subscription URLs and revocation. OneRoster (REQ-INT-015) is built here in phase 3, one phase earlier than the standards table of document 23 section 6 shows, as the roadmap's CAP-INT-01 places it.
 - Gapless numbering (SL-FIN-404, SL-FIN-413, SL-FIN-427) uses a row lock on the series row inside a READ COMMITTED posting transaction, as the Finance sheet and documents 10 and 21 require; plan quotas (SL-DOC-400, SL-INT-401) answer 402 `PLATFORM_PLAN_LIMIT_REACHED`.
-- REQ-INT-016 (LTI 1.3) is built by SL-INT-411, a Platform slice placed at the end of CAP-ACA-03 because document 17 has no phase 4 Integrations capability; it needs the OneRoster copies of SL-INT-407 for the names and roles roster.
+- REQ-INT-016 (LTI 1.3) is built by SL-INT-411, the single slice of CAP-INT-02, the phase 4 Integrations capability document 17 added for it; it needs the OneRoster copies of SL-INT-407 for the names and roles roster.
 - REQ-ADM-006: Admissions open point 4 records that no event or command asks Finance to raise the application fee. SL-ADM-406 raises it through Finance's invoice endpoints, matches payment on `finance.payment.received.v1`, and keeps the officer's fee confirmation as the fallback until `sourceRefs` is added to the payment event.
 - REQ-ADM-016 and REQ-ADM-018: acceptance reaches School by `admissions.offer.accepted.v1` and the Saga 3 command `EnrolStudent`; School's `OfferAcceptedConsumer` and `EnrolStudent` were built in phase 2 (SL-SCH-210). The transport subscription at enrolment follows Admissions open point 8: the family raises it through Requests after enrolment.
 - REQ-ADM-021: the fee check of WF-ADM-02 reads `finance.account.restricted.v1` and `finance.account.cleared.v1`, which need the starred bindings of Admissions open point 6 before SL-ADM-421 can automate the block.

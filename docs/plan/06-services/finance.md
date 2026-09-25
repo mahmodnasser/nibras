@@ -477,30 +477,30 @@ All paths are under `/api/v1/finance/` behind the Gateway. Every endpoint declar
 | POST | `/api/v1/finance/scholarship-applications/{id}/shortlist` | `finance.scholarships.edit` | `{ committeeDate }` | `CommitteeScheduled`, packet built with masked identifiers (TC-FIN-032) | `FINANCE_VALIDATION_FAILED` (criteria not met) | with `If-Match` |
 | GET | `/api/v1/finance/scholarship-applications/{id}/committee-packet` | `finance.scholarships.view` | none | masked packet | `FINANCE_NOT_FOUND` | yes |
 | POST | `/api/v1/finance/scholarship-applications/{id}/decline` | `finance.scholarships.edit` | `{ reason }` | `Declined` | none specific | with `If-Match` |
-| POST | `/api/v1/finance/scholarship-applications/{id}/award` | `finance.scholarships.award` | `{ amount, from, to, conditions, committeeVotes }` | `Awarded` then `DiscountAttached` then `Active` (TC-FIN-033, TC-FIN-034) | `FINANCE_VALIDATION_FAILED` (quorum, budget cap BR-FIN-006) | with `If-Match` |
-| POST | `/api/v1/finance/scholarship-applications/{id}/renew` | `finance.scholarships.award` | `{ to }` | `Renewed` then `Active` (TC-FIN-036) | `FINANCE_VALIDATION_FAILED` | with `If-Match` |
+| POST | `/api/v1/finance/scholarship-applications/{id}/award` | `finance.scholarships.award` | `{ amount, from, to, conditions, committeeVotes }` | `Awarded` then `DiscountAttached` then `Active`, `finance.scholarship.awarded.v1` (TC-FIN-033, TC-FIN-034) | `FINANCE_VALIDATION_FAILED` (quorum, budget cap BR-FIN-006) | with `If-Match` |
+| POST | `/api/v1/finance/scholarship-applications/{id}/renew` | `finance.scholarships.award` | `{ to }` | `Renewed` then `Active`, `finance.scholarship.awarded.v1` (TC-FIN-036) | `FINANCE_VALIDATION_FAILED` | with `If-Match` |
 | POST | `/api/v1/finance/scholarship-applications/{id}/end` | `finance.scholarships.edit` | `{ reason, fromInstallment }` | `Ended`; ends from the next installment (TC-FIN-035) | none specific | with `If-Match` |
 
 ### 5.3 Payers and payer changes
 
-Appendix B has no `finance.payers` resource; payers are managed under `finance.plans.*` because the payer split is part of a student's plan (open point 2).
+Appendix B (v9.1) carries `finance.payers` with `view`, `create`, `edit` and the high-risk `view-bank-details`, the names this sheet proposed. Payer records, payer shares and payer changes all run under it, so payer maintenance no longer needs plan rights.
 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
-| GET | `/api/v1/finance/payers` | `finance.plans.view` | filter `kind`, `q` | `Page<PayerDto>` | none specific | yes |
-| POST | `/api/v1/finance/payers` | `finance.plans.create` | `CreatePayerRequest` (company or sponsor, names `LocalizedText`, tax number, contact reference) | 201 `PayerDto` | `FINANCE_VALIDATION_FAILED` | by `Idempotency-Key` |
-| PATCH | `/api/v1/finance/payers/{id}` | `finance.plans.edit` | merge patch | `PayerDto` | `FINANCE_CONCURRENCY_CONFLICT` | with `If-Match` |
-| PUT | `/api/v1/finance/payers/{id}/bank-details` | `finance.plans.edit` | `{ iban, bankName }` | 204; stored encrypted, access-logged | `FINANCE_VALIDATION_FAILED` (IBAN checksum) | yes |
-| GET | `/api/v1/finance/payers/{id}/bank-details` | `finance.refunds.approve` | `{ reason }` as query | masked IBAN (last 4) for the refund screen | `FINANCE_PERMISSION_DENIED` | yes; every call audited (T-FIN-05) |
-| GET | `/api/v1/finance/students/{studentId}/payer-shares` | `finance.plans.view` | none | `PayerShareDto[]` | `FINANCE_NOT_FOUND` | yes |
-| PUT | `/api/v1/finance/students/{studentId}/payer-shares` | `finance.plans.edit` | `{ shares[], effectiveFrom }` | `PayerShareDto[]`; future charges only | `FINANCE_VALIDATION_FAILED` (total ≠ 100, BR-FIN-019) | with `If-Match` |
-| GET | `/api/v1/finance/payer-changes` | `finance.plans.view` | filter `status` | `Page<PayerChangeDto>` | none specific | yes |
-| POST | `/api/v1/finance/payer-changes` | `finance.plans.edit` | `RequestPayerChangeRequest` (student, sponsor, coverage, effective dates) | 201, `Requested` | `FINANCE_VALIDATION_FAILED` | by `Idempotency-Key` |
-| POST | `/api/v1/finance/payer-changes/{id}/verify-sponsor` | `finance.plans.edit` | `{}` | `SponsorVerified` (TC-FIN-041) | `FINANCE_VALIDATION_FAILED` (tax details missing) | with `If-Match` |
-| POST | `/api/v1/finance/payer-changes/{id}/send-undertaking` | `finance.plans.edit` | `{ templateId }` | `ConfirmationPending`, 14-day timer | `FINANCE_DEPENDENCY_UNAVAILABLE` (Documents down) | with `If-Match` |
-| POST | `/api/v1/finance/payer-changes/{id}/confirm` | `finance.plans.edit` | `{ undertakingFileId }` | `Confirmed` then `Effective` (TC-FIN-042, TC-FIN-044) | `FINANCE_VALIDATION_FAILED` while the file is not scan-clean | with `If-Match` |
-| POST | `/api/v1/finance/payer-changes/{id}/decline` | `finance.plans.edit` | `{ reason }` | `Declined` then `Reverted` (TC-FIN-043) | none specific | with `If-Match` |
-| POST | `/api/v1/finance/payer-changes/{id}/end` | `finance.plans.edit` | `{ endDate }` | `Ended` then `Reverted` (TC-FIN-045) | none specific | with `If-Match` |
+| GET | `/api/v1/finance/payers` | `finance.payers.view` | filter `kind`, `q` | `Page<PayerDto>` | none specific | yes |
+| POST | `/api/v1/finance/payers` | `finance.payers.create` | `CreatePayerRequest` (company or sponsor, names `LocalizedText`, tax number, contact reference) | 201 `PayerDto` | `FINANCE_VALIDATION_FAILED` | by `Idempotency-Key` |
+| PATCH | `/api/v1/finance/payers/{id}` | `finance.payers.edit` | merge patch | `PayerDto` | `FINANCE_CONCURRENCY_CONFLICT` | with `If-Match` |
+| PUT | `/api/v1/finance/payers/{id}/bank-details` | `finance.payers.edit` | `{ iban, bankName }` | 204; stored encrypted, access-logged | `FINANCE_VALIDATION_FAILED` (IBAN checksum) | yes |
+| GET | `/api/v1/finance/payers/{id}/bank-details` | `finance.payers.view-bank-details` | `{ reason }` as query | masked IBAN (last 4) for the refund screen | `FINANCE_PERMISSION_DENIED` | yes; every call audited (T-FIN-05) |
+| GET | `/api/v1/finance/students/{studentId}/payer-shares` | `finance.payers.view` | none | `PayerShareDto[]` | `FINANCE_NOT_FOUND` | yes |
+| PUT | `/api/v1/finance/students/{studentId}/payer-shares` | `finance.payers.edit` | `{ shares[], effectiveFrom }` | `PayerShareDto[]`; future charges only | `FINANCE_VALIDATION_FAILED` (total ≠ 100, BR-FIN-019) | with `If-Match` |
+| GET | `/api/v1/finance/payer-changes` | `finance.payers.view` | filter `status` | `Page<PayerChangeDto>` | none specific | yes |
+| POST | `/api/v1/finance/payer-changes` | `finance.payers.create` | `RequestPayerChangeRequest` (student, sponsor, coverage, effective dates) | 201, `Requested` | `FINANCE_VALIDATION_FAILED` | by `Idempotency-Key` |
+| POST | `/api/v1/finance/payer-changes/{id}/verify-sponsor` | `finance.payers.edit` | `{}` | `SponsorVerified` (TC-FIN-041) | `FINANCE_VALIDATION_FAILED` (tax details missing) | with `If-Match` |
+| POST | `/api/v1/finance/payer-changes/{id}/send-undertaking` | `finance.payers.edit` | `{ templateId }` | `ConfirmationPending`, 14-day timer | `FINANCE_DEPENDENCY_UNAVAILABLE` (Documents down) | with `If-Match` |
+| POST | `/api/v1/finance/payer-changes/{id}/confirm` | `finance.payers.edit` | `{ undertakingFileId }` | `Confirmed` then `Effective`, `finance.payer.changed.v1` (TC-FIN-042, TC-FIN-044) | `FINANCE_VALIDATION_FAILED` while the file is not scan-clean | with `If-Match` |
+| POST | `/api/v1/finance/payer-changes/{id}/decline` | `finance.payers.edit` | `{ reason }` | `Declined` then `Reverted` (TC-FIN-043) | none specific | with `If-Match` |
+| POST | `/api/v1/finance/payer-changes/{id}/end` | `finance.payers.edit` | `{ endDate }` | `Ended` then `Reverted` (TC-FIN-045) | none specific | with `If-Match` |
 
 ### 5.4 Invoices and invoice runs
 
@@ -589,8 +589,8 @@ Appendix B has no `finance.payers` resource; payers are managed under `finance.p
 | GET | `/api/v1/finance/cashier-shifts` | `finance.cashier.view` | filter `campusId`, `businessDate`, `status` | `Page<CashierShiftDto>` | none specific | yes |
 | POST | `/api/v1/finance/cashier-shifts/{id}/counts` | `finance.cashier.open-shift` | `{ counts[] per instrument }` | `Counting` then `Reconciled` or `Discrepant` (TC-FIN-051 to TC-FIN-053) | `FINANCE_VALIDATION_FAILED` (single total) | with `If-Match` |
 | POST | `/api/v1/finance/cashier-shifts/{id}/accept-discrepancy` | `finance.cashier.close-day` | `{ reason }` | `Reconciled` from `Escalated` | `FINANCE_PERMISSION_DENIED` for the shift's own cashier | with `If-Match` |
-| POST | `/api/v1/finance/cashier-shifts/{id}/deposit` | `finance.cashier.open-shift` | `{ depositSlipReference }` | `Deposited` (TC-FIN-055) | `FINANCE_VALIDATION_FAILED` | with `If-Match` |
-| POST | `/api/v1/finance/cashier-shifts/{id}/close` | `finance.cashier.close-day` | `{}` | `Closed`, report rendered | `FINANCE_DAY_CLOSE_OUT_OF_BALANCE` | with `If-Match` |
+| POST | `/api/v1/finance/cashier-shifts/{id}/deposit` | `finance.cashier.open-shift` | `{ depositSlipReference }` | `Deposited`, `finance.deposit.recorded.v1` (TC-FIN-055) | `FINANCE_VALIDATION_FAILED` | with `If-Match` |
+| POST | `/api/v1/finance/cashier-shifts/{id}/close` | `finance.cashier.close-day` | `{}` | `Closed`, report rendered, `finance.cash-session.closed.v1` | `FINANCE_DAY_CLOSE_OUT_OF_BALANCE` | with `If-Match` |
 | POST | `/api/v1/finance/day-closes` | `finance.cashier.close-day` | `{ campusId, businessDate }` | `DayCloseDto`, `finance.day.closed.v1` (TC-FIN-410) | `FINANCE_DAY_CLOSE_OUT_OF_BALANCE` listing the documents (TC-FIN-409), `FINANCE_DAY_ALREADY_CLOSED` | `Idempotency-Key` required |
 | GET | `/api/v1/finance/day-closes` | `finance.cashier.view` | filter `campusId`, `from`, `to` | `Page<DayCloseDto>` | none specific | yes |
 
@@ -651,7 +651,7 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 
 | Routing key | Raised by | Partition key | Consumers (Appendix E) |
 |---|---|---|---|
-| `finance.fee-plan.assigned.v1` | Plan assigned, changed, regenerated or recalculated by a discount or award | `studentId` | Reporting; Admissions and School as saga outcomes (document 11 section 2.6) |
+| `finance.fee-plan.assigned.v1` | Plan assigned, changed, regenerated or recalculated by a discount or award | `studentId` | Reporting, Admissions, School, Requests |
 | `finance.invoice-run.requested.v1` | Run approved and queued | `tenantId` | Documents, Reporting |
 | `finance.invoice.issued.v1` | Every posted invoice, including request fees, charges, late and bounce fees | `invoiceId` | Documents, Notification, Reporting; Requests as a Saga 6 outcome |
 | `finance.payment.received.v1` | Every posted receipt, and cheque clearance | `invoiceId` | Admissions, Operations, Notification, Reporting |
@@ -660,8 +660,12 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 | `finance.refund.processed.v1` | Refund paid | `invoiceId` | Notification, Documents, Reporting; Requests as a Saga 6 outcome |
 | `finance.credit-note.issued.v1` | Every posted credit note | `invoiceId` | Documents, Reporting; Admissions and Requests as saga outcomes |
 | `finance.invoice.overdue.v1` | Each ladder rung | `invoiceId` | Admissions, Notification, Reporting |
-| `finance.account.restricted.v1` | Restriction applied | `studentId` | Assessment, Documents, Notification |
-| `finance.account.cleared.v1` | Restriction lifted, or balance reaches 0.00; the Saga 5 clearance outcome | `studentId` | Assessment, Documents, Notification; School as a saga outcome |
+| `finance.account.restricted.v1` | Restriction applied | `studentId` | Assessment, Documents, Notification, Admissions, Reporting |
+| `finance.account.cleared.v1` | Restriction lifted, or balance reaches 0.00; the Saga 5 clearance outcome | `studentId` | Assessment, Documents, Notification, Admissions, School, Reporting |
+| `finance.scholarship.awarded.v1` | WF-FIN-04 reaches `Awarded`, and each renewal | `studentId` | Notification, Reporting |
+| `finance.payer.changed.v1` | WF-FIN-05 reaches `Effective` or `Reverted` | `studentId` | Notification, Reporting |
+| `finance.cash-session.closed.v1` | A cashier shift closes, with the declared and counted totals and the accepted difference | `campusId` | Reporting, Audit |
+| `finance.deposit.recorded.v1` | A deposit slip is recorded against one or more closed shifts | `campusId` | Reporting, Audit |
 | `finance.day.closed.v1` | Balanced day close | `campusId` | Reporting, Audit |
 | `finance.usage.recorded.v1` | Monthly active-student count (BR-FIN-017), meter `active-students` | `tenantId` | Platform |
 | `finance.audit.recorded.v1` | Every workflow transition, every approval, every access-logged read of a Sensitive column | `tenantId` | Audit |
@@ -791,6 +795,7 @@ Quartz.NET triggers run in `Finance.Worker`; each trigger publishes the worker c
 | `finance.fee-items.view`, `.create`, `.edit`, `.delete` | Accountant (G14, F) | `all-tenant`; normal |
 | `finance.structures.view`, `.create`, `.edit`, `.delete` | Accountant | `all-tenant` or `campus`; normal |
 | `finance.plans.view`, `.create`, `.edit`, `.assign`, `.change-mid-year` | Accountant; Registrar and Admissions Officer view | `campus`; `change-mid-year` elevated |
+| `finance.payers.view`, `.create`, `.edit`, `.view-bank-details` | Accountant (G14 carries `finance.payers.edit`); `view-bank-details` through G15 with four-eyes | `campus`; `view-bank-details` high, reason required, every read access-logged |
 | `finance.invoices.view`, `.create`, `.export`, `.run-batch`, `.post`, `.reverse` | Accountant; Parent / Guardian and Student view in `own-children` and `self`; School Owner and Principal view | `post` elevated, `reverse` high |
 | `finance.payments.view`, `.create`, `.export`, `.record`, `.allocate`, `.mark-bounced` | Accountant; Parent / Guardian `create` for online payment in `own-children` | elevated |
 | `finance.refunds.view`, `.create`, `.approve` | Accountant creates; `approve` through G15 with four-eyes | `approve` high |
@@ -816,7 +821,7 @@ Quartz.NET triggers run in `Finance.Worker`; each trigger publishes the worker c
 | Account restricted or cleared | `finance.account.restricted.v1`, `finance.account.cleared.v1` | Payer, registrar | N; email, in-app |
 | Cashier day close out of balance | `finance.day.closed.v1` | Accountant, principal | N; email |
 
-Workflow messages with no Appendix C row (reversal escalation, scholarship evidence request and award letter, sponsor undertaking and reminder, shift escalation) go through the `RequestNotification` command with templates in Notification; the rows are proposed for Appendix C (open point 6).
+Deduplication is the Appendix C default of five minutes on the same template, recipient and subject (BR-NOT-004); an urgent message is never deduplicated. Workflow messages with no Appendix C row (reversal escalation, scholarship evidence request and award letter, sponsor undertaking and reminder, shift escalation) go through the `RequestNotification` command with templates in Notification; Appendix C v9.1 added no Finance row, so those rows stay proposed (open point 6).
 
 ### 11.3 Settings (Appendix G, owned by Platform, read from `ref_settings`)
 
@@ -831,7 +836,7 @@ Workflow messages with no Appendix C row (reversal escalation, scholarship evide
 | Restriction rules | Finance | none enabled | BR-FIN-016 |
 | Receipt layout | Finance | bilingual, QR, amount in words | BR-L10N-004 |
 | Pro-rata mode | Finance | by day | BR-FIN-002, BR-FIN-003 |
-| Rounding mode and decimals per currency | Finance | half-up, 2 decimals; SAR 2, AED 2, JOD 3 by BR-FIN-011 | BR-FIN-011 (open point 4) |
+| Rounding mode and decimals per currency | Finance | half-up; decimals follow the currency's ISO 4217 minor units (JOD 3, SAR 2, AED 2) as Appendix G v9.1 states | BR-FIN-011 |
 | Currency, time zone, work week | General | tenant values | Series currency, jobs, working-day timers |
 | Fees | Requests | none | `PostRequestFee` amount |
 | Payment, e-invoicing | Integrations | none | `IPaymentGateway`, `IEInvoicingPlugin` |
@@ -1480,6 +1485,10 @@ Existing identifiers are reused; new ones are minted from `TC-FIN-601` upward, a
 | TC-FIN-041 to TC-FIN-046 | Every WF-FIN-05 transition including the split sponsor and guardian invoice | Integration, `PayerChangeToSponsorWorkflowTests` |
 | TC-FIN-051 to TC-FIN-056 | Every WF-FIN-06 transition including the refused edit of a closed session | Integration, `CashierDayCloseWorkflowTests` |
 | TC-FIN-401 to TC-FIN-411 | Appendix Q accountant script: home, batch, cash payment, overpayment refused, currency mismatch, bounce, refund held, refund approved, discrepancy blocked, balanced close, aging export | End-to-end |
+| TC-FIN-404 | Given a posted invoice of 2,750.00 SAR, when the accountant records 3,200.00 SAR against it, then the payment is refused with `FINANCE_PAYMENT_EXCEEDS_BALANCE`, nothing is allocated, and posting the 450.00 SAR excess as payer credit is offered (REQ-FIN-013, BR-FIN-008, BR-FIN-009) | End-to-end |
+| TC-FIN-405 | Given an invoice in the SAR series, when a payment in AED is recorded against it, then it is refused with `FINANCE_CURRENCY_MISMATCH`, the message shows SAR as the invoice currency, and no receipt number is consumed (REQ-FIN-014, BR-FIN-011) | End-to-end |
+| TC-FIN-408 | Given a 1,200.00 SAR refund requested by the accountant and held for approval, when the principal, a different user within the approval limit, approves it, then the refund posts to the original instrument and the audit entry shows both the request and the approval (REQ-FIN-015, WF-FIN-02, BR-FIN-010) | End-to-end |
+| TC-FIN-410 | Given a cashier day blocked by a 25.00 SAR discrepancy, when the discrepancy is corrected and the day is closed, then the day balances to 0.00 SAR, the close is recorded with its deposit slip reference, `finance.day.closed.v1` publishes once, and a later post dated that day returns `FINANCE_DAY_ALREADY_CLOSED` (REQ-FIN-029, WF-FIN-06) | End-to-end |
 | TC-FIN-501 | Appendix Q parent pays 450.00 AED in one flow and receives the receipt | End-to-end |
 | TC-SEC-190 to TC-SEC-195, TC-PRV-013 | T-FIN-01 to T-FIN-08 controls | Security suite |
 | TC-SEC-055, TC-SEC-056 | Generated permission-matrix and tenant-isolation suites over every endpoint of section 5 and every gRPC method of section 6.2 | Generated, nightly |
@@ -1552,12 +1561,12 @@ Rule test classes, one per rule, each carrying its Appendix S examples as theory
 |---|---|---|---|
 | Gapless numbers are allocated by `SELECT ... FOR UPDATE` on the series row inside the `READ COMMITTED` posting transaction | BR-FIN-013; REQ-PERF-028; section 4.19 | As stated | If `SERIALIZABLE` were kept, posts would need a serialization-failure retry loop; the no-gap guarantee is the same |
 | The series counter is per tenant, campus and series code, and the year is part of the code | BR-FIN-013 edge case and third example | As stated | A tenant-wide counter would block campuses behind each other |
-| Money is `numeric(18,4)` plus currency with the stored value at the currency scale: SAR 2, AED 2, JOD 3; rounding half away from zero at line creation | BR-FIN-011; `10-data-architecture.md` section 4 | As stated | A single scale would misprice every JOD invoice |
+| Money is `numeric(18,4)` plus currency with the stored value at the currency scale, which is the ISO 4217 minor unit: SAR 2, AED 2, JOD 3; rounding half away from zero at line creation | BR-FIN-011; Appendix G Finance rounding row; `10-data-architecture.md` section 4 | As stated | A single scale would misprice every JOD invoice |
 | Posted documents are immutable; status and balance are derived fields updated in the posting transactions of payments, credits and write-offs | BR-FIN-014 | As stated | Editing a posted document would break the statement and the audit trail |
 | `postings` is insert-only for `svc_finance` | REQ-FIN-030; master brief Section 19 daily balance | As stated | Without the grant, the daily balance could be made to agree by editing |
 | Card entry never reaches Nibras: hosted fields or redirect only | Master brief Section 36; REQ-FIN-037 | As stated | Any other design pulls the platform into full card-industry scope |
 | Finance jobs run in `Finance.Worker`; reference-copy, saga and command consumers stay in the Api host | Appendix L; document 11 section 1.2 | As stated | None |
-| Payers are managed under `finance.plans.*` until Appendix B gains a payer resource | Appendix B | Open point 2 | A cashier could not correct a payer without plan rights |
+| Payers, payer shares and payer changes are managed under `finance.payers.*`, and bank details are read only under `finance.payers.view-bank-details` | Appendix B (v9.1); ADR-0019 | As stated | A cashier could not correct a payer without plan rights |
 
 ## Dependencies on other documents
 
@@ -1582,12 +1591,12 @@ Rule test classes, one per rule, each carrying its Appendix S examples as theory
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
 | 1 | `10-data-architecture.md` section 1 says `SERIALIZABLE` on number allocation and cites BR-FIN-014; document 21 section 3.9 query 4 uses `UPDATE series ... RETURNING` under `SERIALIZABLE` with index `ux_series_code (tenant_id, code)` | This sheet's row lock under `READ COMMITTED` with `ux_series_campus_code`; both documents are aligned in their next revision and doc 10's citation becomes BR-FIN-013 | Data architect | Resolved 2026-09-22: documents 10 and 21 now describe the row lock and cite this section |
-| 2 | Appendix B has no `finance.payers` resource and no read permission for bank details | Payers under `finance.plans.*`; bank-detail read under `finance.refunds.approve`; propose `finance.payers` with `view`, `create`, `edit` and `view-bank-details` (high) under an ADR | Product owner, Appendix B amendment | Payer maintenance needs plan rights; a cashier cannot fix a payer name |
+| 2 | Appendix B has no `finance.payers` resource and no read permission for bank details | `finance.payers.view`, `.create`, `.edit` and `.view-bank-details` (high) guard sections 5.3 and 11.1; the workaround under `finance.plans.*` and `finance.refunds.approve` is gone | Product owner, Appendix B amendment | Resolved 2026-09-22 (ADR-0019): Appendix B carries `finance.payers` with the four names this sheet proposed, Appendix B rule 5 logs every `view-bank-details` read, and Appendix I gives the Accountant `finance.payers.*` in G14 with `view-bank-details` in G15 under four eyes |
 | 3 | BR-FIN-017 and BR-FIN-018 are SaaS-billing rules assigned to Finance by document 31, while REQ-PLT-009 and REQ-PLT-010 are Platform's; REQ-PLT-009 ("counted on the billing date, prorated by day") contradicts BR-FIN-017 ("enrolled at least one day in the month") | Finance computes BR-FIN-017 and publishes `finance.usage.recorded.v1`; `PlanChangeProrationRule` is built and tested in Finance but has no Finance caller; propose moving BR-FIN-018 to Platform by ADR, and reconciling REQ-PLT-009 with BR-FIN-017 | Product owner, with the architect | Platform bills on a different active-student figure than the contract states |
-| 4 | Appendix G's rounding default ("half-up, 2 decimals") does not say JOD is 3 decimals, and BR-FIN-011 says half away from zero | Per-currency scale from BR-FIN-011 overrides the generic default; half away from zero and half-up agree on positive amounts and this sheet uses half away from zero for credit notes | Product owner | A JOD tenant configured from the generic default would round to 2 decimals |
+| 4 | Appendix G's rounding default ("half-up, 2 decimals") does not say JOD is 3 decimals, and BR-FIN-011 says half away from zero | Decimals are the currency's ISO 4217 minor unit, so a JOD tenant gets 3 with no per-tenant correction; this sheet still uses half away from zero for credit notes, which agrees with half-up on positive amounts | Product owner | Resolved 2026-09-22 (ADR-0019): Appendix G's Finance rounding row now reads "decimals follow the currency's ISO 4217 minor units: 3 for JOD, 2 for SAR and AED", and BR-FIN-011 names the scale as the ISO 4217 minor unit |
 | 5 | REQ-FIN-033 expenses and budgets (Tier 2, WF-OPS-01) have no Finance entity or permission in Appendices B and F | Not built in the Tier 1 service; a `Budget` aggregate and `finance.budgets` permission arrive with the Tier 2 phase under an ADR | Product owner | WF-OPS-01's budget check has no owner until then |
-| 6 | Appendix R names events Appendix E lacks: `finance.scholarship.awarded.v1` (WF-FIN-04), `finance.payer.changed.v1` (WF-FIN-05), `finance.cash-session.closed.v1` and `finance.deposit.recorded.v1` (WF-FIN-06), and `audit.action.recorded.v1` everywhere | This sheet publishes only catalogued keys: awards through `finance.fee-plan.assigned.v1` plus `finance.audit.recorded.v1`; payer change through `finance.audit.recorded.v1` and the `EffectApplied` reply; day close through `finance.day.closed.v1`; audit through `finance.audit.recorded.v1`. Workflow messages without an Appendix C row use `RequestNotification` | Architect, Appendix R and E amendment | Reporting cannot count awards or sponsor changes as events until catalogued |
-| 7 | Reference architecture table 8.0 lists no service with Finance as a synchronous dependency, but `10-data-architecture.md` sections 6 and 7.3 require Admissions, Platform and Reporting to call Finance for fee-plan names, usage recount and snapshots | `nibras.finance.v1` exposes only those reconciliation methods; they are off the request path and not a "sync dep" in the table's sense | Architect | If the table is read strictly, the three callers need events instead (`finance.fee-plan.changed` proposed in doc 10 open point 1) |
+| 6 | Appendix R names events Appendix E lacks: `finance.scholarship.awarded.v1` (WF-FIN-04), `finance.payer.changed.v1` (WF-FIN-05), `finance.cash-session.closed.v1` and `finance.deposit.recorded.v1` (WF-FIN-06), and `audit.action.recorded.v1` everywhere | Section 7.1 publishes all four keys at the transitions that raise them, and `finance.audit.recorded.v1` is the only audit form Finance writes. Workflow messages that still have no Appendix C row (reversal escalation, scholarship evidence request and award letter, sponsor undertaking and reminder, shift escalation) keep going through `RequestNotification` | Architect, Appendix R and E amendment | Resolved 2026-09-22 (ADR-0019): Appendix E carries the four Finance keys with their payloads and consumers, and its cross-cutting paragraph states that the audit entry Appendix R names is the publishing service's own `<service>.audit.recorded.v1`, so there is no shared audit key. The Appendix C rows for the five workflow messages were not added and remain proposed |
+| 7 | Reference architecture table 8.0 lists no service with Finance as a synchronous dependency, but `10-data-architecture.md` sections 6 and 7.3 require Admissions, Platform and Reporting to call Finance for fee-plan names, usage recount and snapshots | `nibras.finance.v1` exposes only those reconciliation methods; they are off the request path and, under the "job only" definition Section 8.0 now carries, are not a request-path dependency | Architect | Still open. ADR-0019 scoped its Section 8.0 edit to School, Platform, Identity, Scheduling, Hr, Academics and Ai, and its change list records that the Finance reconciliation calls still need rows. `finance.fee-plan.changed.v1` was deliberately not added, because Admissions now holds fee-plan codes only |
 | 8 | WF-FIN-03 settles only on `Cleared` while BR-FIN-015 reverses "the cheque's payment" | Both paths exist: a bounce before clearance restores nothing and charges the fee; a bounce advised after clearance posts a reversal receipt and reopens the invoices | Product owner | If only one path is wanted, one handler branch is removed |
 | 9 | `21-performance-engineering.md` section 3.9 writes money as `numeric(19,4)` while doc 10 section 4 writes `numeric(18,4)` | `numeric(18,4)` per doc 10 | Data architect | None at school scale; the documents disagree until aligned |
 | 10 | Document 08 names a `communication.permission-refresh` queue while document 11 routes the permission events through `<service>.tenant-lifecycle` | Finance binds the permission keys on `finance.tenant-lifecycle` as document 11 states | Architect | None for Finance |

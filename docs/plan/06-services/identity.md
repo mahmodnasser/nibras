@@ -18,7 +18,7 @@ Identity answers two questions for every request in the product: who is this, an
 | Build phase | 1 | `05-service-catalog.md`, master brief Section 28 |
 | Service level class | Gateway class: 99.9% monthly availability, p95 under 150 ms for token validation at the edge | Reference architecture Section 8.0, master brief Section 31 |
 | Sensitivity | Sensitive (credentials, second-factor secrets, tokens, API keys) | `05-service-catalog.md`, Appendix J.3 |
-| Synchronous dependencies | none in reference architecture Section 8.0; this sheet adds two query-only calls, see section 6 and Open points | Reference architecture Section 8.0 |
+| Synchronous dependencies | Platform `Settings`, `Retention.ListActiveHolds` and `Tenants.Checksum`; School's staff checksum and guardian eligibility check, each query-only (section 6) | Reference architecture Section 8.0 |
 | Local copies | Tenant status from Platform (Section 8.0); staff directory and teaching assignments (this sheet, section 9) | Reference architecture Section 8.0, `10-data-architecture.md` §6 |
 | Scaling profile | Login peak at the start of the school day; token validation is local in every service; effective permissions cached in Redis keyed by permission version | `05-service-catalog.md` |
 | Why the boundary exists | Security level: credential and token material lives in one service with its own database role and its own threat model | `05-service-catalog.md` |
@@ -485,12 +485,12 @@ Conventions from `22-api-conventions-and-error-catalog.md`: keyset lists (§2.1)
 | POST | `/api/v1/identity/invitations/{invitationId}/resend` | `identity.invitations.resend` | channel | 202 | `IDENTITY_VALIDATION_FAILED` (`notPending`) | no; limited to 3 per day |
 | POST | `/api/v1/identity/invitations/{invitationId}/revoke` | `identity.invitations.revoke` | reason | `revoked` | none | yes |
 | DELETE | `/api/v1/identity/invitations/{invitationId}` | `identity.invitations.delete` | none | 204, only when not pending | none | yes |
-| GET | `/api/v1/identity/public/invitations/{token}` | none, `auth` policy | none | `InvitationPreview` (school name, role title, masked contact) | `IDENTITY_JOIN_CODE_INVALID` for an expired, used or revoked link | safe |
-| POST | `/api/v1/identity/public/invitations/{token}/acceptance` | none, `auth` policy | `AcceptInvitationRequest` (password or passkey, names, contact proof) | `SignInResult`; user `Registered` then `Verified` | `IDENTITY_JOIN_CODE_INVALID`, `IDENTITY_VALIDATION_FAILED` (`passwordBreached`) | single-use token |
-| GET | `/api/v1/identity/join-codes` | `identity.invitations.view` | filter `audience`, `state` | `JoinCodeSummary[]` | none | safe |
-| POST | `/api/v1/identity/join-codes` | `identity.invitations.create` | `CreateJoinCodeRequest` (audience, campus, default role, approver, max uses, expiry) | 201 with the full code once | `IDENTITY_VALIDATION_FAILED` (`defaultRoleHighRisk`, BR-IDN-006) | `Idempotency-Key` optional |
-| POST | `/api/v1/identity/join-codes/{joinCodeId}/revoke` | `identity.invitations.revoke` | reason | `revoked` | none | yes |
-| GET | `/api/v1/identity/join-codes/{joinCodeId}/qr` | `identity.invitations.view` | `size` | PNG of the join URL | none | safe |
+| GET | `/api/v1/identity/public/invitations/{token}` | none, `auth` policy | none | `InvitationPreview` (school name, role title, masked contact) | `IDENTITY_INVITATION_EXPIRED` for a link past its validity, revoked or already accepted | safe |
+| POST | `/api/v1/identity/public/invitations/{token}/acceptance` | none, `auth` policy | `AcceptInvitationRequest` (password or passkey, names, contact proof) | `SignInResult`; user `Registered` then `Verified` | `IDENTITY_INVITATION_EXPIRED`, `IDENTITY_VALIDATION_FAILED` (`passwordBreached`) | single-use token |
+| GET | `/api/v1/identity/join-codes` | `identity.join-codes.view` | filter `audience`, `state` | `JoinCodeSummary[]` | none | safe |
+| POST | `/api/v1/identity/join-codes` | `identity.join-codes.create` | `CreateJoinCodeRequest` (audience, campus, default role, approver, max uses, expiry) | 201 with the full code once | `IDENTITY_VALIDATION_FAILED` (`defaultRoleHighRisk`, BR-IDN-006) | `Idempotency-Key` optional |
+| POST | `/api/v1/identity/join-codes/{joinCodeId}/revoke` | `identity.join-codes.revoke` | reason | `revoked` | none | yes |
+| GET | `/api/v1/identity/join-codes/{joinCodeId}/qr` | `identity.join-codes.view` | `size` | PNG of the join URL | none | safe |
 | POST | `/api/v1/identity/public/join-registrations` | none, `auth` policy | `RegisterWithCodeRequest` (code, names, contact, credential) | 202; join request in `CodeEntered` then `Registered` | `IDENTITY_JOIN_CODE_INVALID` | natural on verified contact |
 | POST | `/api/v1/identity/public/contact-verifications` | none, `auth` policy | `VerifyContactRequest` (join request id, one-time code) | `Verified`, then `PendingApproval` | `IDENTITY_CREDENTIALS_INVALID` | single-use code |
 | GET | `/api/v1/identity/join-requests` | `identity.join-requests.view` | filter `state`, campus, cursor | `JoinRequestSummary[]` (only approvers of that campus see them, TC-IDN-003) | none | safe |
@@ -619,20 +619,24 @@ Payload fields are owned by Appendix E and are not restated. Every event leaves 
 
 | Routing key | Partition key (Appendix E) | Published when | Consumers (Appendix E) |
 |---|---|---|---|
-| `identity.user.invited.v1` | `userId` | An invitation is created or resent; also the outcome of Saga 1 step 3 | Notification, Audit |
+| `identity.user.invited.v1` | `userId` | An invitation is created or resent; also the outcome of Saga 1 step 3 | Notification, Audit, Platform, Admissions |
 | `identity.user.registered.v1` | `userId` | A person registers through a link, a code, the parent page, SSO or bulk | School, Notification, Reporting |
 | `identity.join-request.submitted.v1` | `userId` | A join request reaches `PendingApproval` | Notification, Requests |
 | `identity.join-request.approved.v1` | `userId` | `PendingApproval` to `Approved` | School, Notification |
 | `identity.user.activated.v1` | `userId` | A user becomes `active` (join, reinstatement, activation) | every service holding a user copy, Notification |
-| `identity.user.deactivated.v1` | `userId` | Offboarding revocation, merge of the victim, student deactivation in Saga 5, guardian revocation in Saga 3 compensation | every service holding a user copy, Requests |
+| `identity.user.deactivated.v1` | `userId` | Offboarding revocation, merge of the victim, student deactivation in Saga 5, guardian revocation in Saga 3 compensation | every service holding a user copy, Requests, School, Admissions |
 | `identity.role.changed.v1` | `tenantId` | A role's permission set changes | every service, Communication |
 | `identity.permissions.changed.v1` | `tenantId` | Any permission version bump: assignment, override, scope, delegation start or end, guardian link, key revocation, access-review revocation; `affectedUserIds` or `all` when more than 500 users are affected | every service, Communication |
 | `identity.delegation.started.v1` | `userId` | `Accepted` to `Active` | Requests, Notification |
 | `identity.delegation.ended.v1` | `userId` | `Active` to `Ended` or `Revoked` | Requests, Notification |
 | `identity.login.new-device.v1` | `userId` | A session is created from an unseen device fingerprint, and on a password or second-factor change | Notification, Audit |
-| `identity.guardian-link.created.v1` | `studentId` | `LinkApproved` to `Linked`, and Saga 3 step 4 | School, Communication, Finance, Notification |
+| `identity.guardian-link.created.v1` | `studentId` | `LinkApproved` to `Linked`, and Saga 3 step 4 | School, Communication, Finance, Notification, Wellbeing, Admissions |
 | `identity.access-review.due.v1` | `tenantId` | A campaign opens, at the halfway reminder, 48 hours before and at the deadline | Notification, Requests |
-| `identity.break-glass.used.v1` | `userId` | A break-glass grant is issued (WF-SEC-02) | Notification, Audit, Wellbeing |
+| `identity.break-glass.granted.v1` | `userId` | A break-glass grant is approved and issued (WF-SEC-02) | Notification, Audit, Wellbeing |
+| `identity.break-glass.used.v1` | `userId` | Each record opened under a live grant (WF-SEC-02) | Notification, Audit, Wellbeing |
+| `identity.impersonation.started.v1` | `userId` | A consented support session starts (WF-SEC-03); Communication's hub raises the web shell banner from it | Notification, Audit, Communication |
+| `identity.contact-point.verified.v1` | `userId` | A person verifies an email address or a mobile number | Notification |
+| `identity.contact-point.removed.v1` | `userId` | A verified address is removed or replaced | Notification |
 | `identity.usage.recorded.v1` | `tenantId` | Per-minute `api-calls` batches from the Web block and a daily `accounts-active` meter | Platform |
 | `identity.audit.recorded.v1` | `tenantId` | Every write, every workflow transition, every sign-in success and failure (`action` `sign-in.*`, routed by Audit into login history), every explainer read | Audit |
 
@@ -714,7 +718,7 @@ Every transition runs through the transition pipeline of `Nibras.BuildingBlocks.
 |---|---|---|---|
 | `ref_tenant_status` | `platform.tenant.provisioned.v1`, `platform.tenant.suspended.v1`, `platform.tenant.reactivated.v1`, `platform.tenant.deletion-requested.v1`, `platform.tenant.deleted.v1` | `tenant_id`, `status`, `read_only_from`, `cooling_off_ends_at`, `source_version`, `reconciled_at` | Nightly against Platform `Tenants.Checksum` (`10-data-architecture.md` §6) |
 | `ref_staff` | `school.staff.created.v1`, `school.staff.left.v1`, `hr.staff.hired.v1` | `staff_id`, `employee_number`, `department_id`, `campus_ids`, `last_working_day` | Nightly against School `Directory/StaffChecksum` |
-| `ref_teaching_assignment` | `academics.teaching-assignment.changed.v1` | `staff_id`, `section_id`, `subject_id`, `effective_on` | Nightly; owner method is Open point 3 |
+| `ref_teaching_assignment` | `academics.teaching-assignment.changed.v1` | `staff_id`, `section_id`, `subject_id`, `effective_on` | Nightly; owner method is Open point 2 |
 | `ref_expected_application` | `admissions.offer.accepted.v1` | `application_id`, `offer_id`, `section_id`, `expires_at` (offer plus 90 days) | None needed: a guard, not a copy of truth; expired rows purged by `TokenSweepJob` |
 
 A copy is never the basis of a decision the owning service should make: Identity uses `ref_staff` for department and campus anchors, never to decide employment; it uses `ref_teaching_assignment` only to publish section anchors, never to decide who teaches what.
@@ -729,8 +733,8 @@ Quartz.NET in the Api host, clustered on PostgreSQL so one instance runs each fi
 |---|---|---|---|---|
 | `TokenSweepJob` | hourly | Deletes expired invitations, reset tokens, expired `ref_expected_application` rows; `redis-state` entries expire on their own (`10-data-architecture.md` §8) | `identity.audit.recorded.v1` count summary | none; bounded batches of 5,000 |
 | `CredentialHistoryJob` | daily 02:00 UTC | Deletes password history beyond the fifth entry | none | none |
-| `LoginEventPartitionJob` | monthly, first day | Creates the next three `login_events` partitions and detaches those older than 90 days (Open point 4) | `identity.audit.recorded.v1` | none |
-| `JoiningTimeoutsJob` | every 15 minutes | Invitation reminder at day 7 and expiry at the configured validity; join requests escalate at 48 hours and expire at 7 days (WF-IDN-01) | `identity.audit.recorded.v1`; `RequestNotification` for reminders | none |
+| `LoginEventPartitionJob` | monthly, first day | Creates the next three `login_events` partitions and detaches those older than 90 days (Open point 3) | `identity.audit.recorded.v1` | none |
+| `JoiningTimeoutsJob` | every 15 minutes | Invitation reminder at day 7 and expiry at day 14 (Joining → invitation expiry); join requests escalate at 48 hours and expire at 7 days (WF-IDN-01) | `identity.audit.recorded.v1`; `RequestNotification` for reminders | none |
 | `GuardianClaimTimeoutsJob` | daily 07:00 per tenant time zone | `MatchProposed` reminder at 3 working days, escalation at 10; `Unmatched` cleared after 30 days | same | none |
 | `DelegationWindowJob` | every minute | Activates delegations at `starts_at`, ends them at `ends_at`, lapses unaccepted ones at the start date and escalates to the line manager | `identity.delegation.started.v1`, `identity.delegation.ended.v1`, `identity.permissions.changed.v1` | none |
 | `GrantProposalTimeoutsJob` | every 15 minutes | `AwaitingSecondApproval` reminder at 24 hours, escalation to the security administrator at the grant window, expiry at 14 days untouched | `identity.audit.recorded.v1` | none |
@@ -762,7 +766,8 @@ The break-glass recovery command `nibras-identity recover-super-admin --incident
 | `identity.roles.view`, `.create`, `.edit`, `.delete`, `.clone`, `.assign-role` | normal | 5.3, 5.4, 5.5 |
 | `identity.roles.grant-high-risk` | high | 5.5, second approval of a `high` proposal |
 | `identity.permissions.view`, `.explain-effective` | normal | 5.3, 5.4 |
-| `identity.invitations.view`, `.create`, `.delete`, `.resend`, `.revoke` | normal | 5.7, join codes included |
+| `identity.invitations.view`, `.create`, `.delete`, `.resend`, `.revoke` | normal | 5.7 invitations |
+| `identity.join-codes.view`, `.create`, `.delete`, `.rotate`, `.revoke` | normal | 5.7 join codes and their QR |
 | `identity.join-requests.view`, `.approve`, `.reject` | normal | 5.7 |
 | `identity.sessions.view`, `.revoke` | elevated | 5.3 |
 | `identity.api-keys.view`, `.create`, `.delete` | elevated | 5.2, 5.3 |
@@ -783,8 +788,11 @@ The break-glass recovery command `nibras-identity recover-super-admin --incident
 | New device login, password or 2FA changed | `identity.login.new-device.v1` | User | U; email, push |
 | Break-glass access used | `identity.break-glass.used.v1` | Principal, security administrator | U; push, email |
 | Access review due | `identity.access-review.due.v1` | Reviewer | N; email, in-app |
+| Invitation sent | `identity.user.invited.v1` | Invitee, on the contact the invitation names | N; email or SMS, as the invitation names; the message states the 14-day expiry |
+| Invitation reminder at day 7 | `RequestNotification` from `JoiningTimeoutsJob` at day 7 of the 14-day validity | Invitee who has not accepted | N; email or SMS, as the invitation names |
+| One-time code or password reset link | `RequestNotification` from Identity for sign-in, verification and reset | The person verifying | U, never deduplicated or digested; SMS or email as the person chose, never push |
 
-Invitation links, one-time codes and password reset links are sent through the `RequestNotification` command with templates owned by Notification; Appendix C carries no row for them (Open point 1).
+The last three rows are Appendix C rows: the invitation, its day-7 reminder and the one-time code and reset link are catalogued, with the templates owned by Notification. Identity still sends the reminder and the code through `RequestNotification`, because neither has an event of its own.
 
 ### 11.3 Settings (Appendix G, values owned by Platform)
 
@@ -799,7 +807,7 @@ Invitation links, one-time codes and password reset links are sent through the `
 | Security → high-risk grant approval window | tenant | 72 hours | BR-IDN-004 |
 | Security → delegation maximum duration | tenant | 30 days | BR-IDN-003 |
 | Security → retention periods | tenant | Appendix J values | Token and history jobs |
-| Joining → enabled methods, join codes, default roles, approvers, invitation expiry | tenant, campus | invitations on; codes off; invitation expiry 7 days | WF-IDN-01, BR-IDN-006 |
+| Joining → enabled methods, join codes, default roles, approvers, invitation expiry | tenant, campus | invitations on; codes off; invitation expiry 14 days with a reminder to the invitee at day 7 (Appendix G) | WF-IDN-01, BR-IDN-006 |
 | General → time zone, default language | tenant, campus | from provisioning | Delegation window, job firing, invitation language |
 | Integrations → API keys, SSO | tenant | keys per plan | Key limits, SSO connections |
 
@@ -813,7 +821,9 @@ Invitation links, one-time codes and password reset links are sent through the `
 | `IDENTITY_TOKEN_EXPIRED` | 401 | Access token past 15 minutes |
 | `IDENTITY_REFRESH_TOKEN_REUSED` | 401 | Rotated refresh handle presented again; the family is revoked |
 | `IDENTITY_PERMISSION_VERSION_STALE` | 409 | Raised inside the authorization block and by `PermissionLookup` when the presented version is behind |
-| `IDENTITY_JOIN_CODE_INVALID` | 400 | Unknown, expired or used code or invitation link |
+| `IDENTITY_JOIN_CODE_INVALID` | 400 | Unknown, expired or used join code |
+| `IDENTITY_INVITATION_EXPIRED` | 410 | An invitation link past its 14-day validity, revoked or already accepted; the response names the school and offers to ask for a new invitation, never the invited contact |
+| `IDENTITY_TOKEN_INVALID` | 401 | A token that is malformed, whose signature does not verify, or that was issued for another tenant or audience; the Gateway raises the same code at the edge |
 | `IDENTITY_GUARDIAN_LINK_UNVERIFIED` | 403 | Claim on an unverified account; School's eligibility refused |
 | `IDENTITY_FOUR_EYES_REQUIRED` | 409 | A direct `high` grant; the response names the proposal |
 | `IDENTITY_SELF_APPROVAL_REFUSED` | 403 | Requester, first approver or subject approving; break-glass review by the operator |
@@ -1500,22 +1510,22 @@ src/Services/Identity/                                                Identity a
 │   │   │   │   ├── CreateJoinCodeCommand.cs                          immutable command record: the only input type of the use case
 │   │   │   │   ├── CreateJoinCodeHandler.cs                          JoinMethodDefaultRoleRule; code shown once
 │   │   │   │   ├── CreateJoinCodeValidator.cs                        FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── CreateJoinCodeEndpoint.cs                         POST /api/v1/identity/join-codes, identity.invitations.create
+│   │   │   │   └── CreateJoinCodeEndpoint.cs                         POST /api/v1/identity/join-codes, identity.join-codes.create
 │   │   │   ├── ListJoinCodes/                                        join codes
 │   │   │   │   ├── ListJoinCodesQuery.cs                             immutable query record: route and filter parameters only
 │   │   │   │   ├── ListJoinCodesHandler.cs                           uses and expiry
 │   │   │   │   ├── ListJoinCodesValidator.cs                         FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── ListJoinCodesEndpoint.cs                          GET /api/v1/identity/join-codes, identity.invitations.view
+│   │   │   │   └── ListJoinCodesEndpoint.cs                          GET /api/v1/identity/join-codes, identity.join-codes.view
 │   │   │   ├── RevokeJoinCode/                                       revoke a code
 │   │   │   │   ├── RevokeJoinCodeCommand.cs                          immutable command record: the only input type of the use case
 │   │   │   │   ├── RevokeJoinCodeHandler.cs                          further registrations refused
 │   │   │   │   ├── RevokeJoinCodeValidator.cs                        FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── RevokeJoinCodeEndpoint.cs                         POST /api/v1/identity/join-codes/{joinCodeId}/revoke, identity.invitations.revoke
+│   │   │   │   └── RevokeJoinCodeEndpoint.cs                         POST /api/v1/identity/join-codes/{joinCodeId}/revoke, identity.join-codes.revoke
 │   │   │   ├── GetJoinCodeQr/                                        QR image
 │   │   │   │   ├── GetJoinCodeQrQuery.cs                             immutable query record: route and filter parameters only
 │   │   │   │   ├── GetJoinCodeQrHandler.cs                           PNG of the join URL
 │   │   │   │   ├── GetJoinCodeQrValidator.cs                         FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │   │   └── GetJoinCodeQrEndpoint.cs                          GET /api/v1/identity/join-codes/{joinCodeId}/qr, identity.invitations.view
+│   │   │   │   └── GetJoinCodeQrEndpoint.cs                          GET /api/v1/identity/join-codes/{joinCodeId}/qr, identity.join-codes.view
 │   │   │   ├── RegisterWithJoinCode/                                 transition CodeEntered to Registered
 │   │   │   │   ├── RegisterWithJoinCodeCommand.cs                    immutable command record: the only input type of the use case
 │   │   │   │   ├── RegisterWithJoinCodeHandler.cs                    seat quota check, one user per verified contact
@@ -2152,13 +2162,13 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 | Credentials belong to a platform-scoped `Person` in an `identity_registry` schema with no `tenant_id`; tenant accounts are `User` rows | BR-IDN-007 needs one credential set across tenants; `10-data-architecture.md` §2.1 names only Platform's registry as an exception | As stated, pending ADR | Per-tenant credentials would break the one-parent-many-schools promise and force a second password per school |
 | Self-service routes (`/me`, consent, withdrawal) declare the `self` scope and no Appendix B permission | Appendix B has no self-service permission; `22-api-conventions-and-error-catalog.md` §1.2 requires a declared permission | As stated; the generated suite treats `self` as allowed for every authenticated caller on their own subject only | If Appendix B gains an `identity.me.*` resource, the routes declare it; no behaviour changes |
 | SCIM authenticates with a tenant API key holding the SCIM scope set, the one exception to the `identity.*` rule for keys, and provisions staff only | `23-integrations-and-public-api.md` §7.2 | As stated | A separate SCIM credential would need its own revocation path outside the permission version |
-| Join codes use the `identity.invitations.*` permissions | Appendix B has no join-code resource | As stated | A separate resource would split one administrative screen across two permissions |
+| Join codes use the `identity.join-codes.*` permissions | Appendix B gained the `identity.join-codes` resource (view, create, delete, `rotate`, `revoke`) under ADR-0019 | As stated | The joining screen checks two resources, invitations and join codes, which is what Appendix B now defines |
 | `DELETE /users/{id}` is limited to never-activated accounts; an active user leaves through WF-IDN-06 | Appendix R WF-IDN-06: history kept, only the ability to act removed | As stated | A plain delete would lose the reassignment inventory |
 | The Security and Joining setting values live in Platform (ADR-0009); Platform checks `identity.security-policy.edit` for the Security group and calls `PermissionLookup.GetRoleRisk` to validate join defaults | Appendix L.5, `21-performance-engineering.md` §1.1 row "security policy" | As stated | Moving the values into Identity would duplicate the settings audit trail |
 | The impersonation workflow runs in Identity, with the Platform support console calling Identity's routes | `31-business-rules-and-workflows.md` assigns WF-SEC-03 to Identity; `12-security-privacy-safety.md` §3.6 draws Platform in front | As stated | Running it in Platform would need a synchronous token-issuing call from Platform to Identity |
 | Login history of 7 years is Audit's; Identity keeps `login_events` only as a short working set | Appendix F lists `LoginEvent` under Audit; `10-data-architecture.md` §1 partitions `login_events` in Identity | 90 days in Identity | A longer window only costs storage |
 | Offboarding starts from `POST /offboarding-cases` or from `school.staff.left.v1`; reassignment of tasks and approvals is done by Requests on `identity.user.deactivated.v1`, and of teaching assignments by Academics | Appendix R WF-IDN-06, Appendix E consumers | As stated | Identity would otherwise need write access to other services' data |
-| On deactivation, force sign-out, offboarding revocation and tenant access revocation Identity writes a revoked-subject mark `state:revoked:{tenant}:{userId}` in `redis-state` with the 15-minute access-token lifetime as expiry; the Gateway refuses a token whose subject carries the mark (TC-IDN-056) | Appendix R WF-IDN-06 "request refused at the gateway"; access tokens are validated locally | As stated; the prefix is Open point 13 | Without it a leaver keeps a valid access token for up to 15 minutes |
+| On deactivation, force sign-out, offboarding revocation and tenant access revocation Identity writes a revoked-subject mark `state:revoked:{tenant}:{userId}` in `redis-state` with the 15-minute access-token lifetime as expiry; the Gateway refuses a token whose subject carries the mark (TC-IDN-056) | Appendix R WF-IDN-06 "request refused at the gateway"; access tokens are validated locally | As stated; the prefix is Open point 9 | Without it a leaver keeps a valid access token for up to 15 minutes |
 | Identity does not publish `identity.audit.recorded.v1` for reads of its own non-sensitive lists; it does for every explainer call, every credential change and every sign-in | Appendix J rule 8 applies to sensitive reads only | As stated | Auditing every list read would multiply the audit volume without evidential value |
 
 ## Dependencies on other documents
@@ -2179,21 +2189,19 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Four points are answered by the brief and two are narrowed. Appendix C now carries "Invitation sent" with its 14-day expiry, "Invitation reminder at day 7" and "One-time code or password reset link" (urgent, never deduplicated), so section 11.2 lists them. Reference architecture Section 8.0 now gives Identity Platform `Settings`, `Retention.ListActiveHolds` and `Tenants.Checksum`, and School's staff checksum and guardian eligibility check, which is exactly what section 6 describes, so the facts table states them as the brief's. Appendix R now cites Appendix B's own permission names, `identity.join-requests.approve`, `identity.access-reviews.certify` and `school.guardians.link`, the strings this sheet already used. The product owner settled invitation validity at 14 days with a reminder at day 7: Appendix G, Appendix J and master brief Section 10.4 all say 14 days, so section 11.3's default, `JoiningTimeoutsJob` and the new Appendix C rows do too, and Appendix R WF-IDN-01 needed no change. Appendix B also gained the `identity.join-codes` resource, so sections 5.7 and 11.1, the folder tree and Decisions in force use `identity.join-codes.*` instead of borrowing `identity.invitations.*`. Points 1 and 4 below are what is left of the event and error-code points; the rest are renumbered.
+
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix C has no row for invitation delivery, one-time codes or password reset, although Appendix E names Notification as a consumer of `identity.user.invited.v1` | Delivered through `RequestNotification` as urgent (codes) and normal (invitations), templates in Notification | Product owner, ADR on Appendix C | Missing rows leave the templates without a catalogued urgency |
-| 2 | Appendix E has no events for suspension, guardian-link revocation, delegation acceptance, access-review opening and certification, break-glass grant and expiry, impersonation start and end; Appendix R side effects name identity.delegation.activated.v1, identity.access-review.opened.v1, identity.access-review.certified.v1, identity.break-glass.granted.v1, identity.break-glass.expired.v1, identity.impersonation.started.v1, identity.impersonation.ended.v1 and audit.action.recorded.v1, none of which Appendix E catalogs | This sheet publishes only Appendix E keys: `identity.permissions.changed.v1` carries every revocation, `identity.delegation.started.v1` stands for activation, `identity.break-glass.used.v1` for the grant, and every other transition is `identity.audit.recorded.v1` | Architect, ADR on Appendices E and R | Web shell banners for impersonation (document 08 names platform.impersonation.started) need a real key; until then they poll the session |
-| 3 | Academics exposes no checksum method for teaching assignments, so the `ref_teaching_assignment` copy has no owner to reconcile against | Nightly replay request through the data-quality rule; mismatches raised, not repaired | Academics sheet owner | Section anchors could drift for up to a day after a lost event |
-| 4 | Retention of Identity's `login_events` is not in `10-data-architecture.md` §8 | 90 days, then detach and drop | Data architect | Longer only costs storage |
-| 5 | Reference architecture Section 8.0 lists no synchronous dependency for Identity; this sheet adds School's staff checksum and guardian eligibility check and Platform's `Tenants` and `Settings` services; `05-service-catalog.md` §5.3 says every gRPC dependency points at School or Identity | As stated in section 6, each query-only and none nested | Architect, ADR and an update to Section 8.0 | Without the eligibility call, custody could not be checked without copying custody text into Identity |
-| 6 | Appendix R guards name permissions that Appendix B does not have: identity.join-request.approve (B: `identity.join-requests.approve`), school.students.link-guardian (B: `school.guardians.link`), identity.access-review.decide (B: `identity.access-reviews.certify`) | This sheet uses the Appendix B strings | Architect, ADR on Appendix R | None at runtime; the appendix text is wrong |
-| 7 | Invitation validity: Appendix J says 7 days, Appendix R WF-IDN-01 says 14 days with a reminder at day 7 | 7 days from Joining → invitation expiry, reminder at day 4; Appendix R's 14 days available as a setting value | Product owner | A family that opens the link late must ask for a resend |
-| 8 | Appendix K has no code for an expired or revoked invitation link, a password policy violation, an IP allowlist refusal or a disallowed SSO domain | `IDENTITY_JOIN_CODE_INVALID` for links, `IDENTITY_VALIDATION_FAILED` with `params.reason` for policy, `GATEWAY_PERMISSION_DENIED` with `params.reason = "ipNotAllowed"`, enforced at the Gateway | Architect, ADR on Appendix K | Clients map on `params.reason` until codes exist |
-| 9 | The SAML 2.0 library is not chosen; document 23 §7.1 defers the choice to the Tier 2 slice | Chosen and pinned in `19-dependency-and-license-inventory.md` when the slice starts, from the licence allow-list | Tech lead | Tier 2 only; no phase 1 impact |
-| 10 | BR-IDN-009 examples use a 60-minute impersonation window, Appendix R WF-SEC-03 caps sessions at 30 minutes | 30 minutes | Security lead | A longer default widens the exposure window |
-| 11 | Appendix A3 lists service accounts; Appendix B has no permission to manage them | The registry is deployment configuration, changed by pull request, not a tenant screen | Architect | None for tenants |
-| 12 | The `own-homeroom` anchor needs the homeroom teacher of a section, which no Appendix E payload carries | Each consuming service resolves `own-homeroom` from its own section copy; Identity passes only the scope kind | School and Academics sheet owners | A homeroom teacher change is seen per service rather than once |
-| 13 | `21-performance-engineering.md` §2.2 does not list a `state:revoked:` prefix, and §2.3 gives `svc_gateway` no read on it | Add the prefix with Identity as writer and the Gateway as reader | Architect, update to document 21 | Without it the leaver rule of WF-IDN-06 holds only after the 15-minute token lifetime |
+| 1 | Appendix E now carries `identity.break-glass.granted.v1`, `identity.impersonation.started.v1` and the two contact-point events, and Appendix R records the other transitions as `identity.audit.recorded.v1`. It still has no key for the end of an impersonation session or the expiry of a break-glass grant | Publish the catalogued keys; the end of a session, the expiry of a grant and the opening and certification of an access review are `identity.audit.recorded.v1` | Architect, ADR on Appendix E | The web shell banner is raised by `identity.impersonation.started.v1` but cannot be cleared by an event, so the shell polls the session to end it |
+| 2 | Academics exposes no checksum method for teaching assignments, so the `ref_teaching_assignment` copy has no owner to reconcile against | Nightly replay request through the data-quality rule; mismatches raised, not repaired | Academics sheet owner | Section anchors could drift for up to a day after a lost event |
+| 3 | Retention of Identity's `login_events` is not in `10-data-architecture.md` §8 | 90 days, then detach and drop | Data architect | Longer only costs storage |
+| 4 | Appendix K now has `IDENTITY_INVITATION_EXPIRED` for the invitation link and `IDENTITY_TOKEN_INVALID` for a foreign token; it still has no code for a password policy violation, an IP allowlist refusal or a disallowed SSO domain | `IDENTITY_VALIDATION_FAILED` with `params.reason` for policy and SSO domain, `GATEWAY_PERMISSION_DENIED` with `params.reason = "ipNotAllowed"`, enforced at the Gateway | Architect, ADR on Appendix K | Clients map on `params.reason` until codes exist |
+| 5 | The SAML 2.0 library is not chosen; document 23 §7.1 defers the choice to the Tier 2 slice | Chosen and pinned in `19-dependency-and-license-inventory.md` when the slice starts, from the licence allow-list | Tech lead | Tier 2 only; no phase 1 impact |
+| 6 | BR-IDN-009 examples use a 60-minute impersonation window, Appendix R WF-SEC-03 caps sessions at 30 minutes | 30 minutes | Security lead | A longer default widens the exposure window |
+| 7 | Appendix A3 lists service accounts; Appendix B has no permission to manage them | The registry is deployment configuration, changed by pull request, not a tenant screen | Architect | None for tenants |
+| 8 | The `own-homeroom` anchor needs the homeroom teacher of a section, which no Appendix E payload carries | Each consuming service resolves `own-homeroom` from its own section copy; Identity passes only the scope kind | School and Academics sheet owners | A homeroom teacher change is seen per service rather than once |
+| 9 | `21-performance-engineering.md` §2.2 does not list a `state:revoked:` prefix, and §2.3 gives `svc_gateway` no read on it | Add the prefix with Identity as writer and the Gateway as reader | Architect, update to document 21 | Without it the leaver rule of WF-IDN-06 holds only after the 15-minute token lifetime |
 
 ## Review record
 

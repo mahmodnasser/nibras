@@ -2,7 +2,7 @@
 
 > Group E. The coverage matrix is **quoted from Appendix V** and the load scenarios are **quoted from Appendix N**; both are normative. This document adds what the plan owes on top of them: the pyramid per layer with its tool, runner and gate; the `tests/` tree; naming and fixtures; the two interceptors that turn a query budget into a failing test; the generated suites with their sizes and inputs; the contract, business-rule, workflow, interface, document and non-functional suites; the test data tiers and staging anonymization; the quality gates per phase; the flaky-test policy; acceptance; coverage enforcement; and the platform cases allocated by document 33. Requirement area: `TST`.
 
-**Group** E · **Requirement areas covered** `TST`, with `PLAT` cases by reference · **Last updated** 2026-09-20 by M. Nasser
+**Group** E · **Requirement areas covered** `TST`, with `PLAT` cases by reference · **Last updated** 2026-09-22 by the plan-scorecard remediation
 
 **Rule for reading.** Where a value here and a value in Appendix V, Appendix N or Appendix X disagree, the appendix wins and this document is the defect. The mechanism of the generated permission-matrix and tenant-isolation suites is described in document 12, parts 4.3 and 4.4; this document cites it and adds only sizes, inputs and where the suites run. Every claim in this document ends in a test case identifier, a pipeline stage, or a drill on a calendar, because master brief Section 19 says proof, not belief.
 
@@ -16,7 +16,7 @@ Master brief Section 24 fixes the shape: many fast unit tests on domain and appl
 |---|---|---|---|---|
 | `<Service>.Domain` | Unit: table-driven rule tests from Appendix S, property-based tests for arithmetic, aggregate invariants from Appendix F | xUnit, Shouldly or AwesomeAssertions, `EntityBuilder<T>` over Bogus, FsCheck (part 6) | `ci-service.yml` unit stage on the Linux runner; `BuildingBlocks`, `Documents` and `Localization` also on the Windows runner | 90 percent line coverage per project; mutation score 80 percent on the rule-heavy classes in part 6 |
 | `<Service>.Application` | Unit through the mediator pipeline with the ports faked at the boundary; the handler itself is never mocked | xUnit, NSubstitute for ports only, `FakeClock`, fake identifier generator | Unit stage | 80 percent line coverage per project |
-| `<Service>.Infrastructure` | Integration against real PostgreSQL 16, RabbitMQ 4, Redis 8 and Valkey 8: EF Core mappings, named query filters, outbox and inbox, the caching wrapper, the reference-copy consumers | Testcontainers through `Nibras.BuildingBlocks.Testing` | Integration stage, Linux; `BuildingBlocks` and `Documents` also Windows | Deliver-twice, tenant-key isolation and Redis-down tests green; every hot query inside its budget |
+| `<Service>.Infrastructure` | Integration against the real PostgreSQL, RabbitMQ, Redis and Valkey at the versions `19-dependency-and-license-inventory.md` §7 pins (PostgreSQL 18.6, RabbitMQ 4.3.6, Redis 8.10.2, Valkey 9.1.2; reference architecture Section 16 sets the majors, Valkey 9.1 since brief v9.1): EF Core mappings, named query filters, outbox and inbox, the caching wrapper, the reference-copy consumers | Testcontainers through `Nibras.BuildingBlocks.Testing` | Integration stage, Linux; `BuildingBlocks` and `Documents` also Windows | Deliver-twice, tenant-key isolation and Redis-down tests green; every hot query inside its budget |
 | `<Service>.Api` and `.Worker` | Endpoint and consumer integration through `NibrasWebAppFactory<TProgram>`; Problem Details and pagination contract; query-budget assertion per handler | xUnit, the command-counting interceptor (part 3.4) | Integration stage | Zero handlers over budget without an ADR attribute |
 | Generated suites | Permission matrix, tenant isolation, response shape per role | `tools/permission-matrix-gen`, `TenantIsolation.Tests/Generator` (document 12) | Sampled per pull request; full at size nightly in the Test environment | One isolation failure blocks the release |
 | `src/Contracts` | Consumer-driven contracts for gRPC and backend-for-frontend REST; message schema baselines per `v<n>` record | PactNet, JSON schema baselines | `Contracts.Tests`, on every change to `src/Contracts/**` and to a consumer or provider | Provider verification green before merge; a changed baseline is a new version |
@@ -200,9 +200,9 @@ All in `Nibras.BuildingBlocks.Testing`, which document 07 names as production co
 
 | Fixture | What it provides | Rules |
 |---|---|---|
-| `PostgresFixture` | One PostgreSQL 16 container per xUnit collection, a database per test class, migrations applied from the service's migration bundle, row-level security policies on | Reset between tests by truncating in dependency order, never by recreating the container; the pool is the real PgBouncer image in transaction mode so that TC-PLAT-015 runs in every service, not only in the isolation suite |
+| `PostgresFixture` | One PostgreSQL container per xUnit collection at the version document 19 §7 pins (18.6), a database per test class, migrations applied from the service's migration bundle, row-level security policies on | Reset between tests by truncating in dependency order, never by recreating the container; the pool is the real PgBouncer image in transaction mode so that TC-PLAT-015 runs in every service, not only in the isolation suite |
 | `RabbitMqFixture` | One RabbitMQ 4 container with the service's exchange and quorum queues declared from the same topology code production uses | A test publishes through the real outbox and observes through a test consumer; no direct channel publishes in a handler test |
-| `RedisFixture` | One Redis 8 container, or Valkey 8 when `NIBRAS_CACHE_IMAGE=valkey`; both run nightly | `Stop()` and `Start()` exposed so that a test can take the cache away mid-request for the Redis-down cases |
+| `RedisFixture` | One Redis container, or Valkey when `NIBRAS_CACHE_IMAGE=valkey`, both at the versions document 19 §7 pins (Redis 8.10.2, Valkey 9.1.2); both run nightly | `Stop()` and `Start()` exposed so that a test can take the cache away mid-request for the Redis-down cases |
 | `TenantFixture` | Tenants A and B seeded from the Appendix H demo shapes with structurally identical data, one signed-in user per Appendix I template in each, tokens carrying the current permission version | Tenant B exists in every integration test, even when the test is not about isolation, so that a leaked row has somewhere to leak from |
 | `FakeClock` | `IClock` pinned to a fixed UTC instant; `Advance(TimeSpan)`, `SetTimeZone("Asia/Riyadh")`; the calendar seams (term boundary, lock window, rollover, Ramadan timings) are named constants | A test that reads `DateTime.UtcNow` or `DateTime.Now` fails the architecture rule in document 07; the analyzer forbids both outside the clock implementation |
 | `FakeIdGenerator` | Sequential UUID v7 values so that identifiers are stable across runs and readable in assertions | |
@@ -273,9 +273,9 @@ Document 12 parts 4.3 and 4.4 describe the generators, the inputs and the attack
 
 | Suite | Identifier | Generation inputs | Approximate size and derivation | Cadence |
 |---|---|---|---|---|
-| Permission matrix | `TC-SEC-055` | Appendix B tables; Appendix I twenty-three templates, groups G01 to G24 and the `F V A S — 4` matrix; the aggregated OpenAPI with `x-nibras-permission` per operation | About 600 operations times 23 templates gives about 13,800 allowed-or-denied tests; plus about 1,200 scope tests for `S` cells, about 150 four-eyes tests for `4` cells and high-risk permissions, and one must-not-hold test per template: **about 15,000 tests** | Per pull request: every operation once allowed and once denied, about 1,200 tests, sampled by the generator with the changed service's operations always included. Nightly: the full set at size in the Test environment |
+| Permission matrix | `TC-SEC-055` (document 12) | Appendix B tables; Appendix I's templates, the twenty-six permission groups G01 to G26 (Appendix I v9.1) and the `F V A S — 4` matrix; the aggregated OpenAPI with `x-nibras-permission` per operation | About 600 operations times 23 templates gives about 13,800 allowed-or-denied tests; plus about 1,200 scope tests for `S` cells, about 150 four-eyes tests for `4` cells and high-risk permissions, and one must-not-hold test per template: **about 15,000 tests** | Per pull request: every operation once allowed and once denied, about 1,200 tests, sampled by the generator with the changed service's operations always included. Nightly: the full set at size in the Test environment |
 | Response shape per role | `TC-SEC-057` | The OpenAPI response schemas, the field-level rules in Appendix B, the templates | One snapshot per operation and template with a field-level rule, about 600 classes | Nightly, and per pull request for the changed service |
-| Tenant isolation | `TC-SEC-056` | The aggregated OpenAPI (about 600 operations, about 1,300 identifier parameters); gRPC methods from `Nibras.Contracts.<Service>` (about 30); inbox registrations (159 events in Appendix E, about 400 consumer registrations); the scheduler registry (about 60 jobs); the caching tables of the service sheets (about 140 entries); Documents signed-URL and share-link routes (about 10); the 20 databases for the pool swap; the family swap for every `own-children` endpoint | About 1,300 identifier swaps, 600 header swaps, 600 token swaps, 400 consumer envelope swaps, 140 cache-key swaps, 10 signed-URL swaps, 20 pool swaps, about 40 family swaps: **about 3,100 attacks** | Per pull request: every attack for the changed service. Nightly: the full set. The count of surfaces attacked is the evidence line in the Appendix V.4 gate |
+| Tenant isolation | `TC-SEC-056` (Gateway sheet) | The aggregated OpenAPI (about 600 operations, about 1,300 identifier parameters); gRPC methods from `Nibras.Contracts.<Service>` (about 30); inbox registrations (159 events in Appendix E, about 400 consumer registrations); the scheduler registry (about 60 jobs); the caching tables of the service sheets (about 140 entries); Documents signed-URL and share-link routes (about 10); the 20 databases for the pool swap; the family swap for every `own-children` endpoint | About 1,300 identifier swaps, 600 header swaps, 600 token swaps, 400 consumer envelope swaps, 140 cache-key swaps, 10 signed-URL swaps, 20 pool swaps, about 40 family swaps: **about 3,100 attacks** | Per pull request: every attack for the changed service. Nightly: the full set. The count of surfaces attacked is the evidence line in the Appendix V.4 gate |
 | Endpoint contract, plan addition | `TC-TST-201` | The aggregated OpenAPI and Appendix K | One test per operation asserting the Problem Details shape for every documented error code, the pagination envelope on every list, and that the error code exists in Appendix K: **about 600 tests** | Per pull request for the changed service |
 | Cache entry, plan addition | `TC-TST-202` | The caching table of each service sheet, the event catalog | Three tests per entry: invalidation by the real event, tenant-key isolation, Redis-down fallback: **about 420 tests** | Per pull request for the changed service |
 | Consumer idempotency and ordering, plan addition | `TC-TST-203` | Inbox registrations and the partition keys in Appendix E | Deliver-twice for every consumer registration (about 400) and out-of-order delivery for every keyed consumer (about 250): **about 650 tests** | Per pull request for the changed service |
@@ -356,11 +356,11 @@ Appendix V requires a property-based test for money, dates and weighted averages
 
 | Library | Licence | Position |
 |---|---|---|
-| FsCheck with `FsCheck.Xunit` | BSD-3-Clause, unverified until document 19 pins the version | Default, as document 13 already names it; mature shrinking, C# API adequate |
-| CsCheck | MIT, unverified until document 19 pins the version | Named alternative; C#-first API, same generators can be written in a day |
-| Hedgehog for .NET | BSD-3-Clause, unverified until document 19 pins the version | Named alternative; integrated shrinking; F#-first |
+| FsCheck with `FsCheck.Xunit` | BSD-3-Clause, verified at 3.4.0 by `19-dependency-and-license-inventory.md` §3 | Default, as document 13 already names it; mature shrinking, C# API adequate |
+| CsCheck | MIT, unverified: not pinned, so document 19 carries no row for it | Named alternative; C#-first API, same generators can be written in a day |
+| Hedgehog for .NET | BSD-3-Clause, unverified: not pinned, so document 19 carries no row for it | Named alternative; integrated shrinking; F#-first |
 
-The choice is recorded by document 19 in an ADR when the version is pinned; the rule text and the table-driven rows do not change with the library. The arithmetic rules and the property each must hold:
+Document 19 §3 pins FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 with the licence read from each nuspec of that version. Master brief Section 6.2's Testing list names no property-based library, so the choice itself is recorded by ADR (document 19, open point 7). The rule text and the table-driven rows do not change with the library. The arithmetic rules and the property each must hold:
 
 | Rule | Property | Domain generated |
 |---|---|---|
@@ -619,13 +619,13 @@ The phases are those of master brief Section 28. A gate applies from the phase i
 
 | Gate | Phase 1 Foundation | Phase 2 School year loop | Phase 3 Money and paperwork | Phase 4 Growth | Phase 5 Extended | Phase 6 Hardening |
 |---|---|---|---|---|---|---|
-| All tests green | Every suite for the 6 services | Plus 5 services, web and mobile suites | Plus 4 | Plus 4 | Plus 3 | All |
+| All tests green | Every suite for the 6 services | Plus 6 services, web and mobile suites | Plus 4 | Plus 3 | Plus 4 | All |
 | Coverage 90 / 80 | Building blocks and the 6 services | Every service so far | Same | Same | Same | Same |
 | Mutation 80 percent | Permissions | Plus grading, attendance rules, offline rules | Plus fees | Plus promotion | Same | Same |
 | Vulnerabilities | Zero high or critical | Same | Same | Same | Same | Plus penetration-test findings closed or accepted with an owner |
 | Licence scan | Clean | Clean | Clean | Clean | Clean | Clean, with document 19 re-verified |
 | Accessibility | axe on the design system and the console | axe plus the manual pass on the teacher, parent and principal workspaces | Plus accountant and registrar | Plus dashboards | Plus Tier 2 workspaces | Full manual pass and the conformance statement |
-| Performance | Demo-tier smoke for N-01, N-05, N-11 | Load-tier gate for N-01, N-02, N-05, N-08, N-11 | Plus N-03, N-04, N-09 | Plus N-06, N-10, N-07 nightly | Same | Scale tier for every scenario; N-07 weekly; chaos nightly |
+| Performance | Demo-tier smoke for N-01, N-05, N-11 | Load-tier gate for N-01, N-02, N-05, N-08, N-11 | Plus N-03, N-04, N-09, and N-06 nightly from phase 3 as `18-risk-register.md` RISK-19 requires | Plus N-10, N-07 nightly | Same | Scale tier for every scenario; N-07 weekly; chaos nightly |
 | Tenant isolation | Every surface of the 6 services | Every surface so far | Same | Same | Same | Same, plus the penetration-test isolation table |
 | Traceability | Every requirement of the phase has a test case | Same | Same | Same | Same | Same |
 | Documentation | Runbooks for the 6 services; restore drill run once | Same, quarterly drill | Same | Same | Same | Every runbook exercised within ninety days |
@@ -680,27 +680,27 @@ Coverage is a floor, not a target. A rule class at 100 percent line coverage wit
 
 ## 16. The platform cases allocated by document 33
 
-Document 33 part 9 maps every Appendix X.3 edge case to a `TC-PLAT-` identifier, a runner and an owning document. This part places each case in a suite so that the identifier resolves to a test, and document 20 carries the same identifiers in its Platform column.
+Document 33 part 9 maps every Appendix X.3 edge case to a `TC-PLAT-` identifier, a runner and an owning document, and is where each of these tests is defined. This part cites them and places each case in a suite so that the identifier resolves to a runnable test, and document 20 carries the same identifiers in its Platform column.
 
 | Identifier | Edge case | Suite that holds it | Level | Runner |
 |---|---|---|---|---|
-| TC-PLAT-001 | Two files differing only by case | `kit-lint` R13 in `ci-kit.yml`, and the repository pipeline check | pipeline | Linux, Windows |
-| TC-PLAT-002 | A path longer than 200 characters | `kit-lint` R14 | pipeline | Linux, Windows |
-| TC-PLAT-003 | CRLF inside generated SQL or a PDF baseline | Byte-for-byte comparison of generated artefacts between the two `ci-service.yml` runs; `.gitattributes` | pipeline | Linux, Windows |
-| TC-PLAT-004 | An Alpine image without ICU | The culture test inside the built image, checks G1 to G5 of document 33 | integration, inside the image | Linux |
-| TC-PLAT-005 | A tzdata update mid-year | The culture test asserts Riyadh, Amman and Dubai offsets; tzdata pinned per release | integration, inside the image | Linux |
-| TC-PLAT-006 | An ICU update mid-year | The culture test asserts known Hijri and Gregorian pairs; ICU pinned per release | integration, inside the image | Linux |
-| TC-PLAT-007 | Culture-sensitive parsing of a decimal | The money rule tests under `ar-SA`, `en-US` and `de-DE` through `UseCulture` in `BuildingBlocks` and `Finance.UnitTests`; the analyzer G10 | unit | Linux, Windows |
-| TC-PLAT-008 | Arabic digits in an Excel file produced on Windows | `Documents.IntegrationTests/Imports/` with a committed file containing Arabic-Indic digits | integration | Linux, Windows |
-| TC-PLAT-009 | Font shaping differs between emulator and device | Goldens on Linux; the device pass checks three Arabic screens per device | golden and manual | Linux, device |
-| TC-PLAT-010 | iOS suspends the app for days | Mobile sync test replaying a 30-day-old delta token; confirmed on the iPhone SE in the device pass | unit and manual | Linux, device |
-| TC-PLAT-011 | Android battery optimisation kills the sync worker | Widget test that the restriction is explained exactly once; device pass confirms an urgent push still arrives | widget and manual | Linux, device |
-| TC-PLAT-012 | A device clock is wrong by hours | `Attendance.IntegrationTests/Offline/` submits `occurredAt` hours off and asserts ordering by `receivedAt` | integration | Linux |
-| TC-PLAT-013 | Podman names its network differently from Docker | `dev-smoke.yml` runs one Podman and one Docker Engine configuration | pipeline | Linux, Windows |
-| TC-PLAT-014 | A white-label flavour builds on Linux but its iOS twin does not | The white-label release gate in document 33 part 7 refuses a flavour with one artefact missing | pipeline | Linux, macOS |
-| TC-PLAT-015 | A pooled connection under transaction pooling sees another tenant's rows | The pool swap attack in `TenantIsolation.Tests/Attacks/`, and `PostgresFixture` runs every service's integration suite through PgBouncer in transaction mode | integration | Linux |
-| TC-PLAT-016 | A Flutter golden regenerated on macOS or Windows | `ci-mobile.yml` on Linux is the only place goldens are accepted; a pull request changing a golden without a Linux run attached is refused | pipeline | Linux |
-| TC-PLAT-017 | A kit archive built with `Compress-Archive` | The packaging step uses `tar -a -c -f`; a test extracts on Linux and compares the file count | pipeline | Linux, Windows |
+| `TC-PLAT-001` (document 33) | Two files differing only by case | `kit-lint` R13 in `ci-kit.yml`, and the repository pipeline check | pipeline | Linux, Windows |
+| `TC-PLAT-002` (document 33) | A path longer than 200 characters | `kit-lint` R14 | pipeline | Linux, Windows |
+| `TC-PLAT-003` (document 33) | CRLF inside generated SQL or a PDF baseline | Byte-for-byte comparison of generated artefacts between the two `ci-service.yml` runs; `.gitattributes` | pipeline | Linux, Windows |
+| `TC-PLAT-004` (document 33) | An Alpine image without ICU | The culture test inside the built image, checks G1 to G5 of document 33 | integration, inside the image | Linux |
+| `TC-PLAT-005` (document 33) | A tzdata update mid-year | The culture test asserts Riyadh, Amman and Dubai offsets; tzdata pinned per release | integration, inside the image | Linux |
+| `TC-PLAT-006` (document 33) | An ICU update mid-year | The culture test asserts known Hijri and Gregorian pairs; ICU pinned per release | integration, inside the image | Linux |
+| `TC-PLAT-007` (document 33) | Culture-sensitive parsing of a decimal | The money rule tests under `ar-SA`, `en-US` and `de-DE` through `UseCulture` in `BuildingBlocks` and `Finance.UnitTests`; the analyzer G10 | unit | Linux, Windows |
+| `TC-PLAT-008` (document 33) | Arabic digits in an Excel file produced on Windows | `Documents.IntegrationTests/Imports/` with a committed file containing Arabic-Indic digits | integration | Linux, Windows |
+| `TC-PLAT-009` (document 33) | Font shaping differs between emulator and device | Goldens on Linux; the device pass checks three Arabic screens per device | golden and manual | Linux, device |
+| `TC-PLAT-010` (document 33) | iOS suspends the app for days | Mobile sync test replaying a 30-day-old delta token; confirmed on the iPhone SE in the device pass | unit and manual | Linux, device |
+| `TC-PLAT-011` (document 33) | Android battery optimisation kills the sync worker | Widget test that the restriction is explained exactly once; device pass confirms an urgent push still arrives | widget and manual | Linux, device |
+| `TC-PLAT-012` (document 33) | A device clock is wrong by hours | `Attendance.IntegrationTests/Offline/` submits `occurredAt` hours off and asserts ordering by `receivedAt` | integration | Linux |
+| `TC-PLAT-013` (document 33) | Podman names its network differently from Docker | `dev-smoke.yml` runs one Podman and one Docker Engine configuration | pipeline | Linux, Windows |
+| `TC-PLAT-014` (document 33) | A white-label flavour builds on Linux but its iOS twin does not | The white-label release gate in document 33 part 7 refuses a flavour with one artefact missing | pipeline | Linux, macOS |
+| `TC-PLAT-015` (document 33) | A pooled connection under transaction pooling sees another tenant's rows | The pool swap attack in `TenantIsolation.Tests/Attacks/`, and `PostgresFixture` runs every service's integration suite through PgBouncer in transaction mode | integration | Linux |
+| `TC-PLAT-016` (document 33) | A Flutter golden regenerated on macOS or Windows | `ci-mobile.yml` on Linux is the only place goldens are accepted; a pull request changing a golden without a Linux run attached is refused | pipeline | Linux |
+| `TC-PLAT-017` (document 33) | A kit archive built with `Compress-Archive` | The packaging step uses `tar -a -c -f`; a test extracts on Linux and compares the file count | pipeline | Linux, Windows |
 
 ---
 
@@ -734,6 +734,19 @@ Document 07 allocated `TC-TST-101` to `TC-TST-124` to the architecture rules. Th
 
 ---
 
+## 18. The test-case registry
+
+Every test case is defined in exactly one document and cited everywhere else (ADR-0020). The list of all of them, with the document that defines each, what it proves and who cites it, is **`16-annex-test-case-registry.md`**, generated by `node tools/plan-build/gen-tc-registry.mjs`. Kit-lint rule R20 runs the same ownership code, so a second definition or a citation with no definition fails the lint before it reaches review.
+
+| Rule | Consequence for whoever writes a test |
+|---|---|
+| A test is defined where a table cell holds its identifier alone, in the first column or a column headed as a test, or where a heading opens with it | Write the test once, in the table of the document that owns it |
+| Owner by precedence: Appendix R, Appendix W, the service sheet of the area, the area's cross-cutting plan document, then any other | A service sheet that relies on a workflow transition test writes "`TC-ATT-003` (Appendix R)", not a second definition |
+| Same identifier, different test | The lower-precedence document renumbers; the registry and R20 show the collision the moment it is written |
+| Derived acceptance tests | `TC-<AREA>-(950 + requirement number)` belong to their requirement in document 03 (document 20 Section 2) and are never minted in another document |
+
+The first run of R20 found 206 identifiers defined in more than one document and 163 cited with no definition. They were resolved by making restatements explicit citations, by renumbering the few that meant a different test, and by adding definitions where a document relied on a test nobody had written down; the registry now holds 1,566 tests defined once and 334 derived acceptance tests.
+
 ## Decisions in force
 
 | Decision | Where |
@@ -764,6 +777,7 @@ Document 07 allocated `TC-TST-101` to `TC-TST-124` to the architecture rules. Th
 
 | Claim | Proof | Where it runs |
 |---|---|---|
+| Every test case is defined once and every cited test exists | Kit-lint rule R20; the registry annex is regenerated from the same code |
 | The quoted tables match Appendix V and Appendix N word for word | `/lint-plan` diffs the quoted sections against the appendices; a difference is a defect in this document | `ci-kit.yml` |
 | Every artefact class in the coverage matrix has a suite named in this document | The `test-strategist` agent's `## Suites` table on review; a row of Appendix V.3 with no part of this document naming its suite is a gap | Plan review |
 | Every `TC-TST-` and `TC-PLAT-` identifier here resolves | Document 20 carries each in its Test case or Platform column; `/lint-plan` refuses an identifier present here and absent there | `ci-kit.yml` |

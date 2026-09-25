@@ -1,0 +1,88 @@
+# Test-case work for `docs/plan/22-api-conventions-and-error-catalog.md`
+
+## Tests cited but defined nowhere: define them here
+
+- **TC-API-002**
+  - cited `docs/plan/03-requirements-catalog.md` line 898: "REQ-API-006 | Every list returns one pagination envelope, and keyset lists carry `items`, `pageSize`, `nextCursor`, `previousCursor`, `hasMore`, `sort` and `filterHash` with no total count | 1 | cross"
+  - cited `docs/plan/20-traceability-matrix.md` line 731: "REQ-API-006 | Every list returns one pagination envelope, and keyset lists carry `items`, `pageSize`, `nextCursor`, `prev... | 1 | cross-cutting | none | none | 22 | 1 | SL-API-002 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 788: "Every list uses the one envelope and its maximum page size | Every pull request per service"
+- **TC-API-001**
+  - cited `docs/plan/03-requirements-catalog.md` line 899: "REQ-API-007 | Page size defaults to 50 and a request above the declared maximum of at most 200 is clamped, not rejected | 1 | cross-cutting | Master brief Section 19 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 732: "REQ-API-007 | Page size defaults to 50 and a request above the declared maximum of at most 200 is clamped, not rejected | 1 | cross-cutting | none | none | 22 | 1 | SL-API-002 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 788: "Every list uses the one envelope and its maximum page size | Every pull request per service"
+- **TC-API-010**
+  - cited `docs/plan/03-requirements-catalog.md` line 900: "REQ-API-008 | Every list endpoint uses one filter and sort syntax, and every sort ends in `id` so that page boundaries are deterministic | 1 | cross-cutting | Master brief Section 19 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 733: "REQ-API-008 | Every list endpoint uses one filter and sort syntax, and every sort ends in `id` so that page boundaries ar... | 1 | cross-cutting | none | none | 22 | 1 | SL-API-002 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 790: "The filter and sort grammar parses and refuses as specified | Every pull request touching `BuildingBlocks`"
+- **TC-API-031**
+  - cited `docs/plan/03-requirements-catalog.md` line 901: "REQ-API-009 | Every error body is RFC 9457 Problem Details carrying a stable `code` from the central catalog in Appendix K and the correlation id | 1 | cross-cutting | Master brief Section 19; Appendi"
+  - cited `docs/plan/20-traceability-matrix.md` line 734: "REQ-API-009 | Every error body is RFC 9457 Problem Details carrying a stable `code` from the central catalog in Appendix ... | 1 | cross-cutting | none | none | 22 | 1 | SL-API-001 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 715: "Every code has a test | Appendix K rule 7: generated authorization and validation tests assert the exact code"
+- **TC-API-033**
+  - cited `docs/plan/03-requirements-catalog.md` line 902: "REQ-API-010 | Error messages are localized on the client from the code, and the server `detail` text is never shown to an end user | 1 | cross-cutting | Master brief Section 19; Appendix K | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 735: "REQ-API-010 | Error messages are localized on the client from the code, and the server `detail` text is never shown to an... | 1 | cross-cutting | none | none | 22 | 1 | SL-L10N-001 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 718: "Server messages are hints | Appendix K rule 1: `title` and `detail` are English developer text, never shown to an end user, never translated on the server"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 795: "Problem Details shape and the `code` field | Every pull request"
+- **TC-API-030**
+  - cited `docs/plan/03-requirements-catalog.md` line 903: "REQ-API-011 | Every catalog error code has text in English and Arabic in the client bundles | 1 | cross-cutting | Master brief Section 17; Appendix K | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 736: "REQ-API-011 | Every catalog error code has text in English and Arabic in the client bundles | 1 | cross-cutting | none | none | 22 | 1 | SL-L10N-001 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 714: "Every code has text in both languages | The Angular and Flutter resource bundles carry `errors.<CODE>.title` and `errors.<CODE>.message` in `en` and `ar`"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 795: "Problem Details shape and the `code` field | Every pull request"
+- **TC-API-032**
+  - cited `docs/plan/03-requirements-catalog.md` line 904: "REQ-API-012 | A code that is not parent-safe renders on guardian and student surfaces as a generic message with the reference number | 1 | cross-cutting | Appendix K | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 737: "REQ-API-012 | A code that is not parent-safe renders on guardian and student surfaces as a generic message with the refer... | 1 | cross-cutting | none | none | 22 | 1 | SL-L10N-001 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 716: "Parent-safe is a property of the code | Appendix K rule 4"
+- **TC-API-020**
+  - cited `docs/plan/03-requirements-catalog.md` line 906: "REQ-API-014 | Updates require `If-Match` with the last `ETag`, and a stale tag returns 409 with the current tag | 1 | cross-cutting | Master brief Section 19 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 739: "REQ-API-014 | Updates require `If-Match` with the last `ETag`, and a stale tag returns 409 with the current tag | 1 | cross-cutting | none | none | 22 | 1 | SL-API-004 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 791: "`If-Match` is required and a mismatch is `_CONCURRENCY_CONFLICT` with the current ETag | Every pull request per service, generated from the OpenAPI extension"
+- **TC-API-021**
+  - cited `docs/plan/03-requirements-catalog.md` line 907: "REQ-API-015 | An update without `If-Match` is refused with 400 rather than overwriting silently | 1 | cross-cutting | Master brief Section 19 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 740: "REQ-API-015 | An update without `If-Match` is refused with 400 rather than overwriting silently | 1 | cross-cutting | none | none | 22 | 1 | SL-API-004 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 791: "`If-Match` is required and a mismatch is `_CONCURRENCY_CONFLICT` with the current ETag | Every pull request per service, generated from the OpenAPI extension"
+- **TC-API-022**
+  - cited `docs/plan/03-requirements-catalog.md` line 908: "REQ-API-016 | Unsafe retried `POST` operations accept an `Idempotency-Key` held for 24 hours, 7 days for payment callbacks, and a replay returns the original response with `Idempotency-Replayed: true`"
+  - cited `docs/plan/20-traceability-matrix.md` line 741: "REQ-API-016 | Unsafe retried `POST` operations accept an `Idempotency-Key` held for 24 hours, 7 days for payment callback... | 1 | cross-cutting | none | none | 22 | 1 | SL-API-004 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 792: "`Idempotency-Key` replays, refuses fingerprint mismatch, fails closed for required endpoints | Every pull request touching `BuildingBlocks`; nightly for payment endpoints in Finance"
+- **TC-API-050**
+  - cited `docs/plan/03-requirements-catalog.md` line 909: "REQ-API-017 | Bulk endpoints accept at most 500 items and return a per-item result with a summary, in `independent` or `allOrNothing` mode | 1 | cross-cutting | Master brief Section 19 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 742: "REQ-API-017 | Bulk endpoints accept at most 500 items and return a per-item result with a summary, in `independent` or `a... | 1 | cross-cutting | none | none | 22 | 1 | SL-API-007 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 794: "Bulk endpoints return per-item results and respect 500 | Every pull request per service with a bulk endpoint"
+- **TC-API-040**
+  - cited `docs/plan/03-requirements-catalog.md` line 910: "REQ-API-018 | Work that can exceed 2 seconds at the p95 runs as a job that answers 202 with a `Location` of the job resource | 1 | cross-cutting | Master brief Section 8; Section 19 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 743: "REQ-API-018 | Work that can exceed 2 seconds at the p95 runs as a job that answers 202 with a `Location` of the job resource | 1 | cross-cutting | none | none | 22 | 1 | SL-API-007 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 793: "The long-running-operation contract | Nightly against Assessment and Finance workers"
+- **TC-API-041**
+  - cited `docs/plan/03-requirements-catalog.md` line 911: "REQ-API-019 | A running job can be cancelled and ends in `cancelled` with a partial summary | 1 | cross-cutting | Master brief Section 8 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 744: "REQ-API-019 | A running job can be cancelled and ends in `cancelled` with a partial summary | 1 | cross-cutting | none | none | 22 | 1 | SL-API-007 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 793: "The long-running-operation contract | Nightly against Assessment and Finance workers"
+- **TC-API-060**
+  - cited `docs/plan/03-requirements-catalog.md` line 912: "REQ-API-020 | Every authenticated response carries `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`, and a 429 carries `Retry-After` between 1 and 60 seconds | 1 | cross-cutting | Master"
+  - cited `docs/plan/20-traceability-matrix.md` line 745: "REQ-API-020 | Every authenticated response carries `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`, and a ... | 1 | cross-cutting | none | none | 22 | 1 | SL-GW-002 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 796: "The three rate-limit layers and the 429 contract | Every pull request for the Gateway and `BuildingBlocks`; nightly load tier for N-06"
+- **TC-API-072**
+  - cited `docs/plan/03-requirements-catalog.md` line 915: "REQ-API-023 | A request makes at most one synchronous gRPC hop, and a nested call is refused | 1 | cross-cutting | Master brief Section 7.3 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 748: "REQ-API-023 | A request makes at most one synchronous gRPC hop, and a nested call is refused | 1 | cross-cutting | none | none | 22 | 1 | SL-API-006 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 797: "gRPC metadata, deadlines and the one-hop rule | Every pull request"
+- **TC-API-070**
+  - cited `docs/plan/03-requirements-catalog.md` line 916: "REQ-API-024 | gRPC metadata carries the tenant, and a call without it or with a tenant differing from the token is refused | 1 | cross-cutting | Master brief Section 7.4 | none"
+  - cited `docs/plan/20-traceability-matrix.md` line 749: "REQ-API-024 | gRPC metadata carries the tenant, and a call without it or with a tenant differing from the token is refused | 1 | cross-cutting | none | none | 22 | 1 | SL-API-006 | any | Planned"
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 797: "gRPC metadata, deadlines and the one-hop rule | Every pull request"
+- **TC-API-003**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 789: "A cursor from another sort, filter or endpoint is refused | Every pull request"
+- **TC-API-014**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 790: "The filter and sort grammar parses and refuses as specified | Every pull request touching `BuildingBlocks`"
+- **TC-API-025**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 792: "`Idempotency-Key` replays, refuses fingerprint mismatch, fails closed for required endpoints | Every pull request touching `BuildingBlocks`; nightly for payment endpoints in Finance"
+- **TC-API-051**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 794: "Bulk endpoints return per-item results and respect 500 | Every pull request per service with a bulk endpoint"
+- **TC-API-052**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 794: "Bulk endpoints return per-item results and respect 500 | Every pull request per service with a bulk endpoint"
+- **TC-API-061**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 796: "The three rate-limit layers and the 429 contract | Every pull request for the Gateway and `BuildingBlocks`; nightly load tier for N-06"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 756: "Quotas return 402, rate limits 429 | Every pull request in `BuildingBlocks`; nightly"
+- **TC-API-062**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 796: "The three rate-limit layers and the 429 contract | Every pull request for the Gateway and `BuildingBlocks`; nightly load tier for N-06"
+  - cited `docs/plan/23-integrations-and-public-api.md` line 756: "Quotas return 402, rate limits 429 | Every pull request in `BuildingBlocks`; nightly"
+- **TC-API-071**
+  - cited `docs/plan/22-api-conventions-and-error-catalog.md` line 797: "gRPC metadata, deadlines and the one-hop rule | Every pull request"

@@ -35,8 +35,10 @@ The public API is not a second API. It is the same `/api/v{n}/<service>/` endpoi
 |---|---|
 | Marker | An endpoint is public when its OpenAPI operation carries `x-nibras-tier` and the tag `public`; the Gateway refuses an API-key or token call to any operation without the tag with `GATEWAY_PERMISSION_DENIED` |
 | Never public | Every `/bff/` route; every `wellbeing.*` endpoint; every operation declaring a permission of risk `high` in Appendix B; every endpoint returning a field classified Sensitive in Appendix J; every Platform tenant-lifecycle and plan endpoint; every Identity endpoint except the caller's own personal access tokens |
-| Tier 1 public set (proposed, open point 1) | Read-only (`GET`) operations on: `school.students`, `school.guardians` (contact fields only), `school.staff`, `school.sections`, `school.subjects`, `school.grade-levels`, `school.terms`, `school.academic-years`, `school.campuses`, `scheduling.timetable`, `scheduling.calendar`, `attendance.student-attendance`, `academics.assignments`, `assessment.report-cards` (published only), `finance.invoices`, `finance.payments`; plus the OneRoster 1.2 export (§6.2) and iCal feeds (§6.1) |
-| Tier 2 public set | Writes on the same resources where Appendix B has a `normal` or `elevated` action, webhooks (§4), LTI 1.3 (§6.3), QTI 3 (§6.4), Open Badges 3.0 (§6.5), CASE (§6.6) |
+| Tier in force | Tier 2, for the whole public set. Appendix W feature 24 ("Open by default: API, webhooks, iCal, standards") is Tier 2, and master brief Section 13 lists no public surface in Tier 1. Tier is a product-scope decision; it says nothing about **when** a part is built, which §6 and `17-roadmap.md` own |
+| The read-only set proposed for Tier 1 (open question 28, undecided) | Read-only (`GET`) operations on: `school.students`, `school.guardians` (contact fields only), `school.staff`, `school.sections`, `school.subjects`, `school.grade-levels`, `school.terms`, `school.academic-years`, `school.campuses`, `scheduling.timetable`, `scheduling.calendar`, `attendance.student-attendance`, `academics.assignments`, `assessment.report-cards` (published only), `finance.invoices`, `finance.payments`; plus the OneRoster 1.2 export (§6.2) and iCal feeds (§6.1). This is the set `02-competitive-gap-analysis.md` asks to move; until the product owner decides, none of it has moved |
+| Tier 2 public set | The set above, plus writes on the same resources where Appendix B has a `normal` or `elevated` action, webhooks (§4), LTI 1.3 (§6.3), QTI 3 (§6.4), Open Badges 3.0 (§6.5), CASE (§6.6) |
+| Tier is not phase | Webhooks are a Tier 2 feature built early: `34-work-breakdown.md` builds the keys and the webhook machinery in phase 1 (SL-INT-001 to SL-INT-003) and opens subscriptions to schools in phase 3 under CAP-INT-01 (SL-INT-406). A Tier 2 label never means "after everything in Tier 1 ships" for a part another part depends on |
 | Response models | The same per-role response model as the first-party client for the role the key acts as (§2.3); a sensitive field is absent, never null (`22-api-conventions-and-error-catalog.md` §1.4) |
 | Documentation | Only public operations appear in the developer portal's reference (§3); the full aggregated document stays behind first-party sign-in |
 | Export stays available | Read access through the public API continues while a tenant is read-only for non-payment, as master brief Section 36 promises; keys keep their read scopes and lose write scopes on `platform.tenant.suspended.v1` |
@@ -92,7 +94,7 @@ A scope is a permission name from Appendix B, nothing else. There is no second v
 | Rule | Detail |
 |---|---|
 | Grammar | `<service>.<resource>.<action>`, exactly as in Appendix B; the console offers only public permissions (§1) |
-| Tier 1 keys | `view` and `export` actions only; a write scope is refused with `PLATFORM_VALIDATION_FAILED` and `params.reason = "writeScopeNotInTier"` until the Tier 2 write set ships |
+| Read-only until the write set ships | Keys carry `view` and `export` actions only; a write scope is refused with `PLATFORM_VALIDATION_FAILED` and `params.reason = "writeScopeNotInTier"` until the write set of §1 ships with webhooks and the delivery log (decision row "The first keys a school gets are read-only") |
 | Never grantable | Any `high` action, any `wellbeing.*` permission, `identity.*` except `identity.api-keys.view` on a personal token and the SCIM scope set of §7.2 on a tenant key, `platform.api-keys.*`, `platform.integrations.*`, `audit.*` |
 | Data scope | Tenant keys: `all-tenant` or `campus` with a campus id; personal tokens inherit the user's scopes per Appendix B's narrowing rule |
 | Endpoint check | The endpoint's declared `x-nibras-permission` must be in the credential's effective scope list; the same authorization handler as a session token runs, so a key cannot reach anything a person with those permissions could not |
@@ -461,16 +463,16 @@ What is never a deprecation: an additive change inside a major (`22-api-conventi
 
 ### 6. Standards by phase
 
-Phases are those of master brief Section 35 against the delivery plan of Section 28. Compatibility is engineering; conformance certification is a commercial decision whose fees sit in Section 30, and no page of the portal claims certification before a certificate exists.
+Phases are the delivery phases of `17-roadmap.md` §2 and the slices of `34-work-breakdown.md`, which own them; this table quotes them rather than restating master brief Section 35's wording. Two of them read one phase earlier than Section 35: iCal feeds ship with Scheduling in phase 2 and OneRoster with CAP-INT-01 in phase 3, which is where open question 28's recorded default puts them. The question itself, whether the read-only public API, OneRoster and iCal move from Tier 2 into Tier 1, is the product owner's and is not settled here. Compatibility is engineering; conformance certification is a commercial decision whose fees sit in Section 30, and no page of the portal claims certification before a certificate exists.
 
-| Standard | Phase | Owner (Appendix L.5) | Direction | Tier |
-|---|---|---|---|---|
-| iCal (RFC 5545) | 3 | Scheduling publishes; Platform exposes the subscription URL | out | 1 if the split of open point 1 is approved, else 2 |
-| OneRoster 1.2 | 4 | Platform | out (provider) | 1 if the split is approved, else 2 |
-| LTI 1.3 as platform | 4 | Platform | both (launch out, scores in) | 2 |
-| QTI 3 | 5 | Academics | in and out | 2 |
-| Open Badges 3.0 | 5 | Behavior | out (issuer) | 2 |
-| CASE 1.0 | 5 | Academics (curriculum mapping) | in (consumer) | 2 |
+| Standard | Phase | Roadmap capability | Owner (Appendix L.5) | Direction | Tier |
+|---|---|---|---|---|---|
+| iCal (RFC 5545) | 2 for the feeds; 3 for the public subscription URL and revocation | CAP-SCD-03, then CAP-INT-01 (`34-work-breakdown.md` SL-INT-405) | Scheduling publishes; Platform exposes the subscription URL | out | 2 (open question 28) |
+| OneRoster 1.2 | 3 | CAP-INT-01 (`34-work-breakdown.md` SL-INT-407 to SL-INT-410) | Platform | out (provider) | 2 (open question 28) |
+| LTI 1.3 as platform | 4 | CAP-INT-02 (`34-work-breakdown.md` SL-INT-411) | Platform | both (launch out, scores in) | 2 |
+| QTI 3 | 5 | CAP-INT-03 (`34-work-breakdown.md` SL-INT-600) | Academics | in and out | 2 |
+| Open Badges 3.0 | 5 | CAP-INT-03 (`34-work-breakdown.md` SL-INT-602) | Behavior | out (issuer) | 2 |
+| CASE 1.0 | 5 | CAP-INT-03 (`34-work-breakdown.md` SL-INT-601) | Academics (curriculum mapping) | in (consumer) | 2 |
 
 #### 6.1 iCal feeds
 
@@ -703,7 +705,7 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 | The public API is the same endpoints with a `public` tag, not a separate surface | This document §1 | Same endpoints | A second surface doubles every contract test and drifts from the first-party one |
 | Credential material for both kinds lives in Identity; Platform owns the console, policy and quotas for tenant keys | This document §2.2; Appendix L.5; Appendix F | As stated | Moving hashes to Platform makes revocation a cross-service race with the permission version |
 | A scope is an Appendix B permission name; no second vocabulary | This document §2.4 | Permission names | A separate scope list drifts from the catalog and the generated permission suite cannot test it |
-| Tier 1 keys are read-only | This document §2.4; open point 1 | Read-only | Write keys before webhooks and the delivery log leave schools with no audit of integrator writes |
+| The first keys a school gets are read-only; writes wait for webhooks and the delivery log | This document §2.4; open point 1 (open question 28) | Read-only | Write keys before webhooks and the delivery log leave schools with no audit of integrator writes |
 | Revocation rides `identity.permissions.changed.v1` and the permission version | This document §2.6; master brief Section 35 | As stated | A separate revocation channel adds a second cache to invalidate |
 | Webhook signature is HMAC-SHA256 over `timestamp.body`, 300-second window | This document §4.4; master brief Section 35 | As stated | A different canonical string breaks every receiver sample |
 | Five attempts at 0, 30 s, 2 min, 10 min, 60 min with a 0.8 to 1.2 jitter factor | This document §4.5 | As stated | A shorter ladder disables endpoints during an ordinary maintenance window; longer delays a school's sync by hours |
@@ -731,7 +733,7 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 
 | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|
-| 1. `02-competitive-gap-analysis.md` recommends moving a read-only public API, the OneRoster export and iCal feeds into Tier 1, leaving webhooks, LTI, QTI, Open Badges and the full developer portal at Tier 2. It changes Appendix W feature 24 and the phase scope of master brief Section 28, so it awaits an ADR | Plan as if approved: the Tier 1 read-only set of §1, OneRoster in phase 4 and iCal in phase 3 as in Section 35, keys read-only; if the ADR is refused, the same work moves to Tier 2 without redesign | Product owner, as an ADR | A school leaving an incumbent asks for the API at evaluation, before Tier 2 exists; if refused and the plan assumed Tier 1, phase 3 and 4 carry scope they do not need |
+| 1. Open question 28: `02-competitive-gap-analysis.md` recommends moving a read-only public API, the OneRoster export and iCal feeds into Tier 1, leaving webhooks, LTI, QTI, Open Badges and the full developer portal at Tier 2. It changes Appendix W feature 24 and the phase scope of master brief Section 28, so it awaits an ADR | The recorded default of open question 28: they stay where the roadmap builds them, iCal in phase 2 and the public API and OneRoster in phase 3 under CAP-INT-01, as Tier 2 features; keys read-only. Nothing in §1 or §6 assumes the move, so approving it changes the tier label and the phase, not the design | Product owner, as an ADR | A school leaving an incumbent asks for the API at evaluation, before Tier 2 exists; if the move is approved late, phases 2 and 3 are re-cut rather than redesigned |
 | 2. Credential material in Identity and key policy in Platform, where Appendix L.5 names Platform as owner of public API keys and Appendix F lists `ApiKey` under Identity | As §2.2, recorded by ADR alongside ADR-0012 | Architect | If Platform must hold the hashes, the Gateway exchange needs a second path and revocation a second event |
 | 3. Quota values in §2.5 and the webhook daily quota | As stated, revised with the load runs | Architect, with the product owner for plan tiers | Too low turns a nightly OneRoster sync into a 402; too high leaves the commercial model with no teeth |
 | 4. The webhook dispatcher runs inside `nibras/platform-api`; a separate worker image would need an Appendix L change | Inside the API host, with its own concurrency limit and health check | Architect | A burst of deliveries competes with console requests for the same pods |
@@ -747,8 +749,8 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Only tagged operations accept keys and tokens | `TC-INT-001`: a generated test calls every operation with a tenant key holding every public scope and asserts `GATEWAY_PERMISSION_DENIED` on every untagged one and on every `wellbeing.*` path | Every pull request touching the Gateway or an OpenAPI document |
-| Scopes, data scope and the intersection rule for personal tokens | `TC-INT-003`: a token scoped to `school.students.view` for a teacher returns only own-section students; after the teacher loses the permission the next call is refused; `TC-INT-004`: a Tier 1 key refuses a write scope at creation | Every pull request in Identity and Platform |
+| Only tagged operations accept keys and tokens | `TC-INT-660` (Gateway sheet): a generated test calls every operation with a tenant key holding every public scope and asserts `GATEWAY_PERMISSION_DENIED` on every untagged one and on every `wellbeing.*` path | Every pull request touching the Gateway or an OpenAPI document |
+| Scopes, data scope and the intersection rule for personal tokens | `TC-INT-003`: a token scoped to `school.students.view` for a teacher returns only own-section students; after the teacher loses the permission the next call is refused; `TC-INT-004`: a read-only key refuses a write scope at creation | Every pull request in Identity and Platform |
 | Revocation reaches every service within 5 seconds | `TC-INT-005`: revoke a key under load, assert the first refused request lands within 5 seconds on three services; extends `TC-SEC-047` | Nightly |
 | Secrets are revealed once and never stored in clear | `TC-SEC-120`; `TC-INT-006`: a database and log scan after key creation finds no secret | Every pull request in Identity |
 | Quotas return 402, rate limits 429 | `TC-API-061`, `TC-API-062` of `22-api-conventions-and-error-catalog.md`, plus `TC-INT-007` for the daily API-call meter | Every pull request in `BuildingBlocks`; nightly |
@@ -763,3 +765,30 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 | SAML and SCIM adapters | `TC-INT-040` a SAML assertion with a replayed id is refused; `TC-INT-041` SCIM create, suspend and group mapping, and refusal to assign a high-risk role | From the Tier 2 slice that ships them |
 | The plug-in kit | `TC-INT-002`: the sample plug-in passes the conformance suite on Windows and Linux under three cultures; every fake implementation backs a sandbox end-to-end run | Every pull request touching `Nibras.Plugins.*` |
 | This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, canonical names and Mermaid types; `/lint-plan` for consistency with `05-service-catalog.md`, `12-security-privacy-safety.md`, `22-api-conventions-and-error-catalog.md` and `24-localization-and-calendars.md` | Every change under `docs/` |
+
+### Test cases
+
+This document defines the integration tests below; `TC-INT-660`, the refusal of keys and tokens on untagged operations, is defined in the Gateway service sheet; `TC-INT-001` and `TC-INT-002` are Appendix W's demo proofs; and the `TC-SEC-*` and `TC-API-*` cases are defined in the documents that own them.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-INT-003 | Given a personal access token scoped to `school.students.view` for a teacher of one section, when it lists students, then only that section's students come back, and after the teacher loses the permission the next call is refused | REQ-INT-004, REQ-INT-005 |
+| TC-INT-004 | Given a tenant key created read-only, when a write scope is requested for it at creation, then creation is refused and no key or secret is issued | REQ-INT-002 |
+| TC-INT-005 | Given a tenant key in use under load, when an administrator revokes it, then the first refused request lands within 5 seconds on each of three services | REQ-INT-005 |
+| TC-INT-006 | Given a tenant key just created, when the database and the log store are scanned, then the secret appears in neither, and the key list shows only the prefix and the last-used time | REQ-INT-003 |
+| TC-INT-007 | Given a small-plan tenant that has made 10,000 API calls today, when call 10,001 arrives, then it is refused with 402 `PLATFORM_PLAN_LIMIT_REACHED`, `params.meter = "api-calls"` and never 429, and `platform.limit.approaching.v1` was published once, at call 8,000 | REQ-INT-002 |
+| TC-INT-010 | Given a new endpoint in `pendingVerification`, when it echoes the challenge within 10 seconds it becomes `active`, and when it fails the three attempts at 0, 1 and 5 minutes it becomes `verificationFailed` and receives no event | REQ-INT-012 |
+| TC-INT-011 | Given a delivery whose `X-Nibras-Timestamp` is 301 seconds old, when the reference receiver checks it, then it is refused before the signature is computed, and the same delivery at 300 seconds is accepted | REQ-INT-009 |
+| TC-INT-012 | Given the test vector of §4.4, when the C#, TypeScript, Python and PHP samples sign it, then each produces exactly the published `sha256=` value, and during an overlap the header carries both values, new first | REQ-INT-008, REQ-INT-013 |
+| TC-INT-013 | Given a receiver fake answering 503, 429 with `Retry-After`, 410 and a timeout, when the dispatcher runs under an injected clock, then the attempts, the delays (within the 0.8 to 1.2 jitter band) and the outcomes match §4.5, with at most five attempts and a 410 disabling the endpoint at once | REQ-INT-010, REQ-INT-011 |
+| TC-INT-014 | Given an endpoint in each state of the §4.7 diagram, when each trigger fires, then the endpoint reaches the diagram's target state, for example `failing` to `disabled` after 72 hours with no success, with one test per transition | REQ-INT-010 |
+| TC-INT-015 | Given continuous deliveries and a rotation with a 24-hour overlap, when the secret rotates, then every attempt in the overlap carries two signatures, new first, and a receiver holding either secret records zero failed verifications | REQ-INT-013 |
+| TC-INT-016 | Given the eligibility table of §4.9, when an endpoint subscribes to a routing key outside it, then the subscription is refused, and every key in `webhook-events.json` exists in Appendix E | REQ-INT-001 |
+| TC-INT-030 | Given a staff calendar feed, when it is validated against RFC 5545 and one event then changes, then the feed validates and the changed event carries a higher `SEQUENCE` | REQ-INT-014, REQ-SCD-012 |
+| TC-INT-031 | Given a tenant with 400 students in 20 sections, when the OneRoster 1.2 export runs, then the REST responses and the CSV binding validate against the published schemas | REQ-INT-015 |
+| TC-INT-032 | Given a tool registered by an administrator, when the standard body's reference tool performs an LTI 1.3 launch and posts a score, then the launch succeeds and the score lands on the right student | REQ-INT-016 |
+| TC-INT-033 | Given one item of each in-scope QTI 3 interaction, when it is exported and imported again, then the round trip yields an identical item | REQ-INT-016, REQ-ACA-026 |
+| TC-INT-034 | Given an awarded badge, when its Open Badges 3.0 credential is checked by an independent verifier, then it verifies | REQ-INT-016, REQ-BEH-006 |
+| TC-INT-035 | Given a CASE framework imported once, when the same framework is imported again, then no outcome is duplicated and changed items are updated in place | REQ-INT-016, REQ-ACA-007 |
+| TC-INT-040 | Given a SAML assertion already accepted once, when the same assertion id is presented again, then sign-in is refused | REQ-IDN-010 |
+| TC-INT-041 | Given a SCIM client, when it creates a user, suspends a user and maps a group, then all three take effect, and a request that would assign a high-risk role is refused | REQ-IDN-010 |

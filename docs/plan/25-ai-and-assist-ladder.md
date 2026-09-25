@@ -19,7 +19,7 @@ This document lets an engineer build any automated or suggested behaviour in Nib
 | Guardrails, prompt-injection cases, bias monitoring | The Ai threat model and its abuse cases | `12-security-privacy-safety.md` §2.20, §2.22 |
 | Evaluation harness and release thresholds | The test pyramid and where suites run | `16-test-strategy.md` §1, §4 |
 | Rung 3 hardware and cost | Infrastructure cost per 1,000 students overall | Master brief Section 30, `15-deployment-and-operations.md` |
-| Metering through `ai.usage.recorded.v1` | Plan limits and the billing model | `06-services/platform.md` §4.6 |
+| Metering: `ai.usage.recorded.v1` at rungs 3 and 4, the owner's `<service>.usage.recorded.v1` meter `ai-rung2` at rung 2 | Plan limits and the billing model | `06-services/platform.md` §4.6 |
 | The Because panel as an interface | The panel's visual design | `14-design-system-and-ux.md`, `.claude/skills/because-panel-pattern` |
 | Arabic folding used by retrieval | The folding function itself | `24-localization-and-calendars.md` §3 |
 
@@ -105,7 +105,7 @@ The remaining 33 rows of Appendix W are rung 1 at autonomy 1 and have no model, 
 
 #### 2.3 Feature codes
 
-The `featureCode` in `ai.usage.recorded.v1` and `ai.suggestion.rejected.v1` is one of these, and the same code is the Appendix G "enabled features" key.
+The `featureCode` in `ai.usage.recorded.v1` and `ai.suggestion.rejected.v1`, and in the `ai-rung2` meter each rung 2 owner publishes (§10), is one of these, and the same code is the Appendix G "enabled features" key.
 
 | Feature code | Row |
 |---|---|
@@ -132,17 +132,18 @@ One gateway in the Ai service, one abstraction, one place where consent, limits,
 
 | Layer | Type | Responsibility |
 |---|---|---|
-| Caller | Any service or backend-for-frontend | Calls `IAssistGateway` over gRPC with a feature code, the caller's token and the inputs; never a prompt |
+| Caller | Bff.Web, on behalf of a first-party client | Submits the request to Ai over **REST** (`06-services/ai.md` §5); every model call answers 202 with an assist job. Reference architecture Section 8.0 gives Ai no synchronous gRPC dependency and no gRPC assist surface. `IAssistGateway` is the C# contract in `Nibras.Contracts.Ai` those routes implement, carrying a feature code, the caller's token and the inputs; never a prompt |
 | Gateway | `AssistGateway` in `Nibras.Ai.Application` | Checks the off switch, the caller's permission (`ai.assistant.use` or `ai.drafting.use`), the usage limit, the rung ceiling and the rung 4 consent; builds the prompt from a versioned template; calls the adapter; applies output checks; emits the usage event |
 | Abstraction | `Microsoft.Extensions.AI` `IChatClient` and `IEmbeddingGenerator<string, Embedding<float>>` | One interface over every adapter, with middleware for telemetry, caching of help-assistant answers only, and function invocation |
 | Local adapters | `OllamaChatClient` (default, single server and scale), vLLM through its OpenAI-compatible endpoint (scale mode with a GPU pool) | Rung 3 inference inside the school's infrastructure |
 | External adapter | `ExternalProviderChatClient`, one configured provider per tenant | Rung 4 only, behind the consent gate in §3.3 |
-| Classical models | ML.NET models loaded by Reporting, Assessment and Hr | Rung 2; they never pass through the language-model gateway, and emit `ai.usage.recorded.v1` with `rung` 2 through the same metering helper |
+| Classical models | ML.NET models loaded by Reporting, Assessment and Hr | Rung 2; they never pass through the language-model gateway. Each owner meters on its own exchange with the cross-cutting `<service>.usage.recorded.v1` and meter `ai-rung2` (§10). A service publishes only under its own prefix (`11-messaging-architecture.md` §1.4), so no service but Ai publishes an `ai.*` key |
 
 #### 3.2 Gateway contract
 
 ```csharp
-// Nibras.Contracts.Ai: the only entry point to rungs 3 and 4
+// Nibras.Contracts.Ai: the only entry point to rungs 3 and 4.
+// Bff.Web calls it through a typed HTTP client over the REST routes of 06-services/ai.md section 5, never over gRPC.
 public interface IAssistGateway
 {
     Task<AssistOutcome<Draft>> DraftAsync(AssistRequest request, CancellationToken ct);        // autonomy 3; the result is never persisted by Ai
@@ -185,7 +186,7 @@ Master brief Section 25: the Ai service never reads another service's database; 
 
 #### 4.1 Schema outline
 
-Database `nibras_ai`, schema `ai_index`, with the base columns and the row-level security template of `10-data-architecture.md` §2.4 and §4.
+Database `nibras_ai`, schema `ai_index`, with the base columns and the row-level security template of `10-data-architecture.md` §2.4 and §4. The index table is `ai_index.embedding_chunk`, the name Appendix F carries for the Ai `IndexedChunk` entity; no other spelling of it is correct.
 
 ```sql
 -- One row per indexable chunk of a source record the Ai service was allowed to read.
@@ -246,12 +247,12 @@ CREATE TABLE ai_index.source_checkpoint (
 | Trigger | Action | Test |
 |---|---|---|
 | A change event for an indexed source | Re-read and re-embed that record; write only if `source_version` is newer | REQ-AI-005 acceptance test |
-| `school.student.status-changed.v1` to withdrawn | Delete every chunk whose `scope_student_ids` contains the student, in the consumer's transaction | `TC-SEC-325` |
+| `school.student.status-changed.v1` to withdrawn | Delete every chunk whose `scope_student_ids` contains the student, in the consumer's transaction | `TC-SEC-325` (document 12) |
 | `school.student.section-changed.v1` | Rewrite the scope tags of the student's chunks; no re-embedding | `ScopeRetagTests` in `Nibras.Ai.Tests` |
-| `identity.permissions.changed.v1` | Nothing in the index; permissions apply at query time from the caller's token and are never baked into rows beyond the source's required permission | `TC-SEC-321` |
+| `identity.permissions.changed.v1` | Nothing in the index; permissions apply at query time from the caller's token and are never baked into rows beyond the source's required permission | `TC-SEC-321` (document 12) |
 | `purge_after` reached | Nightly `ai-index-purge` job deletes; the clock follows the source's Appendix J retention row | `12-security-privacy-safety.md` §10.3, Ai embeddings row |
 | Tenant switches a feature off | Chunks used only by that feature are kept 30 days for a switch back on, then deleted by the same job | `IndexRetentionTests` |
-| `platform.tenant.deleted.v1` | Delete every row for the tenant | `TC-PLT-026` |
+| `platform.tenant.deleted.v1` | Delete every row for the tenant | `TC-PLT-026` (Appendix R) |
 | Embedding model changed | `ai.commands.rebuild-index.v1` on `ai-worker.embeddings.bulk`; completion publishes `ai.index.rebuild-completed.v1` | `IndexRebuildTests` |
 | Legal hold | The index is never evidence and a hold does not pin it; the source record is what is held | `12-security-privacy-safety.md` §10.4 |
 
@@ -263,7 +264,7 @@ CREATE TABLE ai_index.source_checkpoint (
 | 2 Filter | SQL predicate on `tenant_id`, `required_permission = ANY(:permissions)`, campus, and array overlap on sections or students; row-level security applies the tenant a second time |
 | 3 Rank | Cosine distance inside the filtered set, blended with trigram similarity on `content_folded` (Arabic folded per `24-localization-and-calendars.md` §3.1) |
 | 4 Cut | Top 8 chunks, at most 3 per source record |
-| 5 Re-check | Each chunk's source is re-authorized through the owning service's gRPC check before it enters the prompt; a refusal drops it and logs `AI_SCOPE_VIOLATION_BLOCKED` |
+| 5 Re-check | Each chunk's source is re-authorized before it enters the prompt through `POST /bff/web/v1/internal/ai/sources/authorize` under the caller's token, which Bff.Web answers from the owning service (reference architecture Section 8.0, "Ai over REST, through Bff.Web"); a refusal drops the chunk and logs `AI_SCOPE_VIOLATION_BLOCKED` |
 | 6 Attach | Surviving chunks become `SourceRef` entries shown in the Because panel |
 
 Ranking before filtering is forbidden: an approximate nearest-neighbour search that takes the top 8 of the whole tenant and filters afterwards can return nothing while permitted rows exist, and it touches rows the caller may not see. The HNSW index runs with iterative scan enabled so a filtered search stays complete.
@@ -274,11 +275,11 @@ Ranking before filtering is forbidden: an approximate nearest-neighbour search t
 
 | Rule | Mechanism | Error code | Test |
 |---|---|---|---|
-| Retrieved content is data, never instructions | Templates place retrieved text inside a delimited, labelled data block; the system message states that the block carries no instructions; a tool call requested from inside a data block is ignored | `AI_PROMPT_INJECTION_BLOCKED` when the detector fires | `TC-SEC-320` |
-| Tools limited to the caller's permissions | The function list offered to the model is built per request from the caller's token; each tool executes under that token through the owning service; the Ai service holds no credential that writes | `AI_SCOPE_VIOLATION_BLOCKED` | `TC-SEC-321` |
+| Retrieved content is data, never instructions | Templates place retrieved text inside a delimited, labelled data block; the system message states that the block carries no instructions; a tool call requested from inside a data block is ignored | `AI_PROMPT_INJECTION_BLOCKED` when the detector fires | `TC-SEC-320` (document 12) |
+| Tools limited to the caller's permissions | The function list offered to the model is built per request from the caller's token; each tool executes under that token through `POST /bff/web/v1/internal/ai/tools/{toolName}`, which Bff.Web answers from the owning service (reference architecture Section 8.0); the Ai service holds no credential that writes | `AI_SCOPE_VIOLATION_BLOCKED` | `TC-SEC-320` (document 12) |
 | No write tools | Tools are read-only list and get calls; drafts return to the caller's screen | none | `ToolCatalogTests` asserts no tool maps to a non-GET operation |
 | Review before anything reaches a family | Drafts carry `reviewRequired: true`; Communication and Assessment refuse to publish a body whose provenance is `ai-draft` without `ai.drafting.accept-draft` exercised by a person | `AI_OUTPUT_REQUIRES_REVIEW` | `TC-AI-201`, `TC-SEC-324` |
-| Level S never in context | Prompt assembly rejects any slot tagged Sensitive or S | `AI_SENSITIVE_CONTEXT_REFUSED` | `TC-SEC-322` |
+| Level S never in context | Prompt assembly rejects any slot tagged Sensitive or S | `AI_SENSITIVE_CONTEXT_REFUSED` | `TC-SEC-322` (document 12) |
 | Output checks | The draft is scanned for student names outside the source set, national identity number patterns and links not in the sources; a hit discards the draft and degrades to rung 1 | `AI_OUTPUT_REQUIRES_REVIEW` | `OutputFilterTests` |
 | An explanation or nothing | A rung 2 or 3 result without reasons is not shown | `AI_EXPLANATION_REQUIRED` | `BecauseContractTests` |
 | Language support | A request in a language other than Arabic or English is refused before the model is called | `AI_LANGUAGE_UNSUPPORTED` | `GatewayLanguageTests` |
@@ -401,7 +402,7 @@ public sealed record OverrideRecord(
 | Contract rule | Enforcement |
 |---|---|
 | Reasons come from the computation that produced the verdict | Rung 2 factors are the model's own contributions; rung 3 reasons are the `Sources`; a second model call to "explain" is forbidden |
-| An override records who and why | `OverrideRecord` stored by the owning service and audited; at rung 2 an override also emits `ai.suggestion.rejected.v1` with the reason code |
+| An override records who and why | `OverrideRecord` stored by the owning service and audited. At rungs 3 and 4 Ai publishes `ai.suggestion.rejected.v1` with the reason code; at rung 2 the record stays with the model's owner, which publishes nothing on `nibras.ai` (`06-services/ai.md` open point 8) |
 | Bilingual and screen-reader friendly | `LocalizedText` throughout; reasons render as a list per `14-design-system-and-ux.md` §11 |
 | Degradation is disclosed | `Degraded` renders a line saying which rung produced the result |
 
@@ -460,8 +461,9 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 
 | Element | Rule |
 |---|---|
-| Event | `ai.usage.recorded.v1` on `nibras.ai`, consumed by Platform through the `platform.usage` queue of `11-messaging-architecture.md` |
-| Payload | `featureCode`, `rung`, `tokensOrUnits`, `at`, with the tenant on the envelope; never the prompt, the output, a student id or a user id |
+| Event, rungs 3 and 4 | `ai.usage.recorded.v1` on `nibras.ai`, consumed by Platform through the `platform.usage` queue of `11-messaging-architecture.md` |
+| Event, rung 2 | The model's owner meters it, not Ai: Reporting, Assessment and Hr publish the cross-cutting `<service>.usage.recorded.v1` on their own exchange with meter `ai-rung2` (Appendix E cross-cutting events; `06-services/ai.md` open point 8). The `platform.usage` queue binds `*.usage.recorded.v1` on every exchange, so the meter reaches the same counter |
+| Payload | `featureCode`, `rung`, `tokensOrUnits`, `at`, with the tenant on the envelope; never the prompt, the output, a student id or a user id. The rung 2 meter carries the Appendix E cross-cutting fields (`meter`, `quantity`, `unit`, `periodStart`, `periodEnd`) with the §2.3 feature code as the meter's subject |
 | Unit | Tokens in plus out at rungs 3 and 4; one unit per scored subject at rung 2; rung 1 is not metered |
 | Emission | Once per gateway call, through the outbox, in the same transaction as the call's log row |
 | Limits | Appendix G AI "usage limits" per tenant per feature per month; at the limit the gateway answers `AI_USAGE_LIMIT_REACHED` and the feature degrades to rung 1 |
@@ -478,6 +480,8 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 | Every feature declares a rung and an autonomy level; autonomy 4 never over a grade, a payment or a family message | ADR-0015; master brief Section 25 | As stated | A feature at autonomy 4 slips into a family channel unnoticed |
 | Autonomy is assigned in this document because Appendix W has no autonomy column | This document §2 | The §2 assignments | Two sources would disagree; open point 1 moves the column into Appendix W |
 | One model gateway in Ai over `Microsoft.Extensions.AI`; no other service holds a model client | This document §3; reference architecture §8.21 | As stated | Consent, limits and metering are bypassed by a second client |
+| Callers reach Ai over REST through Bff.Web and every model call answers 202; Ai makes no synchronous gRPC call and exposes no gRPC assist surface | Reference architecture Section 8.0; `06-services/ai.md` §5, §6 | As stated | A second transport to secure, and a synchronous hop inside a request that the one-hop rule forbids |
+| Only Ai publishes `ai.*`; rung 2 metering is the owning service's `<service>.usage.recorded.v1` with meter `ai-rung2` | `11-messaging-architecture.md` §1.4; Appendix E cross-cutting events; `06-services/ai.md` open point 8 | As stated | Reporting, Assessment or Hr publishing on `nibras.ai` is refused by the broker, so rung 2 usage is never counted |
 | Ollama by default, vLLM for scale; external provider only at rung 4 with tenant consent | Master brief Sections 6 and 25; REQ-AI-002, REQ-AI-003 | As stated | Student data leaves the school without consent |
 | Filter before rank, with a per-source re-check before prompt assembly | This document §4.4; master brief Section 25 | As stated | Retrieval leaks across scopes or returns nothing while permitted rows exist |
 | Message bodies, Wellbeing records and every Sensitive or level S field are never indexed | This document §4.2; Appendix J; BR-WEL-003 | As stated | The index becomes a copy outside the isolation boundary |
@@ -496,6 +500,8 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 | Arabic folding and the glossary | `24-localization-and-calendars.md` §1.5, §3.1 | Group F review |
 | The accessibility rules the panel follows | `14-design-system-and-ux.md` §11 | Group F review |
 | Plan usage and limits on the console | `06-services/platform.md` §4.6, §5.4 | Group F review |
+| The three Bff.Web internal routes Ai reads through | Reference architecture Section 8.0; `06-services/bff-web.md` | Group F review |
+| Entity and table names, including `ai_index.embedding_chunk` | Appendix F | Every lint run |
 | Feature, error and event names | Appendices B, E, K, L, W | Every lint run |
 
 ## Open points

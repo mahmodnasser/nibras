@@ -347,3 +347,52 @@ test('R19 accepts a command key derived from a name in document 11 and refuses a
   assert.equal(findings.length, 1, JSON.stringify(findings));
   assert.match(findings[0].message, /teleport-meeting/);
 });
+
+/* ---------------------------------------------------------------- R20 */
+
+const r20 = (extra) => {
+  const kit = catalogKit();
+  kit['docs/brief/02-appendices/appendix-r-workflow-catalog.md'] = '# Appendix R. Workflows\n\n### WF-ATT-01 Mark attendance\n\n| Transition | Guard | Effect | Test |\n|---|---|---|---|\n| Open to Marked | Teacher assigned | Saved | TC-ATT-001 |\n';
+  Object.assign(kit, extra);
+  return lintFixture(kit, ['R20-test-case-identifiers']);
+};
+
+test('R20 accepts one definition cited elsewhere, an owner-named citation and a derived acceptance test', () => {
+  const findings = r20({
+    'docs/plan/06-services/attendance.md': '# Attendance\n\n## Test plan\n\n| Test case | What it proves |\n|---|---|\n| TC-ATT-101 | A late mark is refused |\n| `TC-ATT-001` (Appendix R) | The workflow transition |\n\nTC-ATT-101 and TC-ATT-951 prove REQ-ATT-001.\n',
+  });
+  assert.deepEqual(findings, [], JSON.stringify(findings));
+});
+
+test('R20 catches one identifier defined in two documents', () => {
+  const findings = r20({
+    'docs/plan/06-services/attendance.md': '# Attendance\n\n## Test plan\n\n| Test case | What it proves |\n|---|---|\n| TC-ATT-001 | Sixty-second attendance demo |\n',
+  });
+  assert.equal(findings.length, 1, JSON.stringify(findings));
+  assert.match(findings[0].message, /TC-ATT-001 is defined in 2 documents/);
+});
+
+test('R20 catches a test that is cited but defined nowhere, unless it is only history', () => {
+  const findings = r20({
+    'docs/plan/12-security-privacy-safety.md': '# 12\n\n## Content\n\nProven by TC-SEC-404.\n',
+    'docs/project/PROJECT_STATE.md': '# State\n\nTC-SEC-405 was retired.\n',
+  });
+  assert.equal(findings.length, 1, JSON.stringify(findings));
+  assert.match(findings[0].message, /TC-SEC-404 is cited but defined in no document/);
+});
+
+test('R20 catches a derived acceptance test whose requirement does not exist', () => {
+  const findings = r20({
+    'docs/plan/06-services/attendance.md': '# Attendance\n\n## Content\n\nREQ-ATT-001 is proven by TC-ATT-990.\n',
+  });
+  assert.equal(findings.length, 1, JSON.stringify(findings));
+  assert.match(findings[0].message, /TC-ATT-990 is a derived acceptance test, but REQ-ATT-040 does not exist/);
+});
+
+test('R20 treats a heading that opens with an identifier as a definition', () => {
+  const findings = r20({
+    'docs/plan/10-data-architecture.md': '# 10\n\n## Content\n\n### TC-ATT-001 A pooled connection cannot read the previous tenant\n\nText.\n',
+  });
+  assert.equal(findings.length, 1, JSON.stringify(findings));
+  assert.match(findings[0].message, /TC-ATT-001 is defined in 2 documents/);
+});

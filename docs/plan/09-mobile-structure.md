@@ -219,7 +219,7 @@ Offline values are quoted from Appendix M section M.1; where a feature is not an
 | Badges and portfolio | Badges and portfolio | Yes, read | Cached read |
 | Messages and announcements | Messages and announcements | Read last 30 days; send queued | Read messages; Send a message |
 | Private request (counseling appointment) | Private request | Yes, queued | Submit a request |
-| Quiz player | Web only | Not on mobile | Timed assessment needs a live session |
+| Quiz player | Web only; the phone browser on mobile web (§10.3) | Not on mobile | Timed assessment needs a live session, so there is no offline app screen; the exception to master brief Section 18 is stated in §10 |
 
 ### 2.3 Parent or guardian
 
@@ -589,7 +589,7 @@ Every feature renders these through `core/design`; the seven states of `14-desig
 | Sync with a 45-day-old token | Full refresh, outbox still delivered | `TC-MOB-706` |
 | Device clock set two hours fast | Ordering uses `receivedAt`; `occurredAt` is preserved for display only | `TC-MOB-708` |
 | Attachment upload interrupted | The action stays pending; retry resumes rather than duplicating | `TC-MOB-709` |
-| Airplane mode for a full school day, then reconnect | Everything queued arrives, in order, once | `TC-MOB-710`; the demo proof is `TC-MOB-001` |
+| Airplane mode for a full school day, then reconnect | Everything queued arrives, in order, once; the demo proof is `TC-MOB-001` | `TC-MOB-710` |
 
 ---
 
@@ -601,7 +601,7 @@ Categories are the five from master brief Section 18. Android notification chann
 
 | Category | Channel id | Appendix C events (examples) | Deep link | Actionable | Lock-screen text |
 |---|---|---|---|---|---|
-| Urgent | `nibras.urgent` | `attendance.emergency.broadcast-started.v1`, `attendance.student.absent.v1`, `attendance.gate-pass.issued.v1`, `attendance.gate-pass.used.v1`, `wellbeing.clinic-visit.recorded.v1`, `identity.login.new-device.v1`, `scheduling.substitution.assigned.v1` | `/principal/emergency`, `/parent/children/:studentId/attendance`, `/parent/children/:studentId/gate-pass/:passId`, `/parent/children/:studentId`, `/profile/devices`, `/teacher/timetable` | Emergency: **Acknowledge**; absence: **Submit excuse**; substitution: **Accept**, **Decline** | Category text only, no child name for wellbeing; child first name for attendance; breaks quiet hours |
+| Urgent | `nibras.urgent` | `attendance.emergency.broadcast-started.v1`, `attendance.student.absent.v1`, `attendance.gate-pass.issued.v1`, `attendance.gate-pass.used.v1`, `wellbeing.clinic-visit.recorded.v1`, `identity.login.new-device.v1`, `scheduling.substitution.assigned.v1` | `/principal/emergency`, `/parent/children/:studentId/attendance`, `/parent/children/:studentId/gate-pass/:passId`, `/parent/children/:studentId`, `/profile/devices`, `/teacher/timetable` | Emergency: **Acknowledge**; absence: **Submit excuse**; substitution: **Accept**, **Decline** | Category text only, no child name for wellbeing; child first name for attendance; breaks quiet hours. `attendance.student.absent.v1` is in this category on the Open Question 27 default in force, "within 30 seconds of the mark" (REQ-ATT-017, master brief Section 31); the question is open with the product owner, and a 30-minute grace window after the register closes would move the row to the Academic channel |
 | Academic | `nibras.academic` | `academics.assignment.published.v1`, `academics.submission.graded.v1`, `assessment.report-cards.published.v1`, `scheduling.timetable.changed.v1`, `behavior.points.awarded.v1` | `/student/coursework/:assignmentId`, `/student/grades`, `/parent/children/:studentId/documents`, `/student/timetable`, `/student/portfolio` | none | Title and subject; no mark value on the lock screen |
 | Finance | `nibras.finance` | `finance.invoice.issued.v1`, `finance.invoice.overdue.v1`, `finance.payment.received.v1`, `finance.payment.failed.v1` | `/parent/children/:studentId/fees`, `/accountant` (payment received, accountant) | Invoice: **Pay** opens the fees screen; never a one-tap payment from the notification | No amount on the lock screen |
 | Requests | `nibras.requests` | `requests.request.submitted.v1`, `requests.request.approved.v1`, `requests.request.rejected.v1`, `requests.request.needs-info.v1`, `requests.task.assigned.v1`, `attendance.excuse.approved.v1` | `/principal/approvals`, `/parent/requests`, `/homeroom/excuses` | Approver: **Open** only; approval is never taken from a notification because it needs the current permission version (Appendix M) | Request type and state; no requester name for a private request |
@@ -711,6 +711,8 @@ Commands follow the runner assignments in Appendix X.2 and `33-platform-support-
 
 The pipeline (`ci-mobile.yml`, `ci-mobile-ios.yml`) refuses to mark a white-label flavor released with one of its Android and iOS artefacts missing (Appendix X.3).
 
+Both iOS rows depend on Open Question 14, which is open with the product owner: whether there is a Mac build host or hosted macOS runner minutes are bought. The default in force is hosted runner minutes, budgeted in master brief Section 30, which is why the iOS jobs are path-filtered to `src/Mobile/**` and run on a `macos` runner rather than on every push. Android, the desktop kiosk and mobile web are unaffected either way. The same question bounds the white-label iOS builds: each school's build runs under that school's own Apple developer account (§5.4), so the number of white-label applications the release gate can prove in one cycle is limited by the runner minutes and the accounts the schools hold, not by anything in this document.
+
 ### 5.4 Store ownership, from master brief Section 37
 
 | Application | Publisher | Owns listing, certificates, push credentials | Platform's role |
@@ -750,21 +752,21 @@ Master brief Section 18 aligns the application with OWASP MASVS 2; `12-security-
 
 | Control | Implementation | Fallback | Test |
 |---|---|---|---|
-| Secure storage | Refresh token, Drift key, device credential and pinned-certificate set in `flutter_secure_storage`: Android Keystore with `StrongBox` where present, iOS Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, Windows DPAPI, Linux `libsecret` | A device with no secure enclave still uses the keystore; a device where the keystore is unavailable refuses to sign in and explains why | `TC-SEC-041` |
+| Secure storage | Refresh token, Drift key, device credential and pinned-certificate set in `flutter_secure_storage`: Android Keystore with `StrongBox` where present, iOS Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, Windows DPAPI, Linux `libsecret` | A device with no secure enclave still uses the keystore; a device where the keystore is unavailable refuses to sign in and explains why | `TC-SEC-041` (document 12) |
 | Access token | In memory only; 15-minute life (`IDENTITY_TOKEN_EXPIRED`); refresh with rotation and reuse detection through `core/auth` | none | `12-security-privacy-safety.md` §3.2 |
-| Database encryption | SQLCipher with a 256-bit key generated on first sign-in and stored in secure storage; the key is never derived from a PIN | none | `TC-SEC-041` |
-| Biometric unlock | `local_auth` gates the local session after the tenant's inactivity timeout; it never replaces the server token | No biometric enrolled: device PIN or pattern through the same API. No device lock at all: the app requires sign-in with password after the timeout and says why. Biometric hardware failure: password | `TC-SEC-043` |
-| Session timeout | From the tenant security policy through remote configuration; default 15 minutes of inactivity for staff, 30 for guardians; kiosk flavor has no personal session | none | `TC-SEC-043` |
+| Database encryption | SQLCipher with a 256-bit key generated on first sign-in and stored in secure storage; the key is never derived from a PIN | none | `TC-SEC-041` (document 12) |
+| Biometric unlock | `local_auth` gates the local session after the tenant's inactivity timeout; it never replaces the server token | No biometric enrolled: device PIN or pattern through the same API. No device lock at all: the app requires sign-in with password after the timeout and says why. Biometric hardware failure: password | `TC-SEC-043` (document 12) |
+| Session timeout | From the tenant security policy through remote configuration; default 15 minutes of inactivity for staff, 30 for guardians; kiosk flavor has no personal session | none | `TC-SEC-043` (document 12) |
 | No wellbeing data on the device | No Drift table, no file, no cache entry for Wellbeing; nurse mode holds the current screen's data in memory only and clears it on navigation; the Student 360 shows existence only | none | `TC-MOB-704` asserts the schema and the file store; `TC-WEL-202` family asserts the refusal |
-| Nothing sensitive in logs | GlitchTip scrubbing rules drop names, identifiers, message bodies and every request body; breadcrumbs carry route names and Appendix K codes only; `print` is banned by lint; release builds strip `assert` and debug logging | none | `TC-SEC-046` |
-| Nothing sensitive on the lock screen | Android: `visibility = private` on every channel with the safe public text; iOS: the notification service extension rewrites to the safe template; content is fetched after unlock (§4.1) | A payload with no template key shows the category name only | `TC-SEC-045` |
-| Screenshot protection | `FLAG_SECURE` on Android and a secure-field overlay on iOS for the register, Student 360, fees, messages and every mode; the share sheet is disabled on the same screens | none | `TC-SEC-045` |
-| Root and jailbreak | Advisory banner for a guardian or teacher; gate and nurse modes refuse to start | none | `TC-SEC-046` |
-| Certificate pinning | Optional per flavor from the flavor file; pins rotate through remote configuration with an overlap window | A pin failure shows a plain "connection not trusted" state; no cleartext fallback | `TC-SEC-044` |
+| Nothing sensitive in logs | GlitchTip scrubbing rules drop names, identifiers, message bodies and every request body; breadcrumbs carry route names and Appendix K codes only; `print` is banned by lint; release builds strip `assert` and debug logging | none | `TC-SEC-046` (document 12) |
+| Nothing sensitive on the lock screen | Android: `visibility = private` on every channel with the safe public text; iOS: the notification service extension rewrites to the safe template; content is fetched after unlock (§4.1) | A payload with no template key shows the category name only | `TC-SEC-045` (document 12) |
+| Screenshot protection | `FLAG_SECURE` on Android and a secure-field overlay on iOS for the register, Student 360, fees, messages and every mode; the share sheet is disabled on the same screens | none | `TC-SEC-045` (document 12) |
+| Root and jailbreak | Advisory banner for a guardian or teacher; gate and nurse modes refuse to start | none | `TC-SEC-046` (document 12) |
+| Certificate pinning | Optional per flavor from the flavor file; pins rotate through remote configuration with an overlap window | A pin failure shows a plain "connection not trusted" state; no cleartext fallback | `TC-SEC-044` (document 12) |
 | Minimum version enforcement | Bff.Mobile `/config/version` returns `minimumVersion`, `recommendedVersion` and `policy` per tenant (Appendix G, Mobile settings). Below minimum: the app blocks with the upgrade screen and the store link, and the outbox is preserved for after the upgrade. Within one minor of minimum: a nag once per day. The check runs at bootstrap and on every sync | Endpoint unreachable: the last policy is applied; a fresh install with no policy yet proceeds | `TC-MOB-713` |
 | Permission version | Every request carries the permission version; `IDENTITY_PERMISSION_VERSION_STALE` refreshes the set and re-locks the router within five seconds (`TC-SEC-047` on mobile) | none | `TC-SEC-047` |
 | Sign-out and permission loss | Drops the Drift database, clears secure storage for that person, unregisters the push token (`NOTIFICATION_DEVICE_TOKEN_INVALID` is expected afterwards), keeps nothing but the flavor configuration | none | `TC-MOB-714` |
-| Account deletion request | `/profile/account` opens the erasure workflow; the store listings say so | none | `TC-PRV-060` |
+| Account deletion request | `/profile/account` opens the erasure workflow; the store listings say so | none | `TC-PRV-060` (document 12) |
 | No tracking | No advertising or analytics SDK; product analytics covers staff and administrator usage only and is self-hosted (Section 20) | none | Dependency scan in `ci-mobile.yml` against the allow-list in `19-dependency-and-license-inventory.md` |
 
 ---
@@ -880,11 +882,13 @@ Capability names follow `08-web-structure.md` §7. **Web**: the Angular workspac
 | Mark entry grid | full | full, offline draft; submit online | full, online | none | 2 |
 | Comment bank and AI-drafted comments | full | none | none | none | 2 |
 | Lesson plans, syllabus coverage | full | none | available, not optimised | none | 2 |
-| Quiz player and question bank | full | none | none | none | 2 |
+| Quiz player and question bank | full | none | available, not optimised | none | 2 |
 | Moderation, marks approval and lock, report card batch, grade change decision | full | none | available, not optimised | none | 2 |
 | Grades and feedback (student, guardian) | full | full, offline read | full | none | 2 |
 | Report cards and documents download | full | full, offline once downloaded | full | none | 2 |
 | Mastery heatmap and next step (item 42) | full | read | full | none | 5 |
+
+The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, whether a read-only public API, the OneRoster export and iCal move from Tier 2 into Tier 1, is open with the product owner; the default in force keeps them Tier 2, iCal in phase 2 and the other two in phase 3 under CAP-INT-01. Moving them earlier changes the phase column of this row and nothing else in this matrix, because the app's capability is the same either way.
 
 ### 10.4 Communication, requests and notifications
 
@@ -945,7 +949,7 @@ Capability names follow `08-web-structure.md` §7. **Web**: the Angular workspac
 | Platform console: tenants, plans, flags, health, support, retention, releases | full | read-only health and ticket triage | available, not optimised | none | 1 |
 | Because panel (item 28) on automated actions | full | full on the screens that carry the action | full | none | 2 |
 
-**Reading the matrix.** Every capability a parent or student has on the web is `full` on the mobile app (Section 18: "Parents and students must be able to do everything on mobile"); the only parent rows that are online-only are payment, re-enrollment, transparency and the clinic note, each because Appendix M or Appendix J forbids the cache. Every teacher daily task (Appendix U.4 day rows) is `full, offline`. Every `none` on the mobile app is heavy configuration or authoring, and each has a `mobile web` value of `available, not optimised` so nobody is locked out on a phone.
+**Reading the matrix.** Master brief Section 18 requires that parents and students can do everything on mobile, and every capability a parent or student has on the web is `full` on the mobile app with one stated exception, the quiz player in §10.3. The exception's reason is the one §2.2 gives: a timed assessment needs a live session, so it is not an offline-capable app screen; the student takes it in the phone browser, which is why its `mobile web` value is `available, not optimised` and no student is locked out on a phone. The only parent rows that are online-only are payment, re-enrollment, transparency and the clinic note, each because Appendix M or Appendix J forbids the cache. Every teacher daily task (Appendix U.4 day rows) is `full, offline`. Every other `none` on the mobile app is heavy configuration or authoring, and each has a `mobile web` value of `available, not optimised` for the same reason.
 
 ---
 
@@ -956,7 +960,7 @@ Capability names follow `08-web-structure.md` §7. **Web**: the Angular workspac
 | The tree in §1 matches the project | `ci-mobile.yml` runs a structure check that lists `lib/app`, `lib/core/*`, `lib/features/*` and `lib/features/modes/*` and diffs against §1.1; a feature folder without `data/`, `domain/` and `presentation/` fails |
 | Layer boundaries hold | The custom lint rules in §1.3 run in `flutter analyze` on every pull request; `domain/` importing Flutter, a widget importing `drift` or `dio`, or a feature importing another feature fails |
 | No wellbeing data on the device | `TC-MOB-704`: the Drift schema and the application file store contain no wellbeing table, column or file after a nurse-mode session; the schema in §3.2 is generated from the same tables the test inspects |
-| The Appendix M rules are implemented | `TC-MOB-701` to `TC-MOB-710` in §3.9 map one to one to Appendix M section M.5; the owning-service side of each rule is tested in `06-services/attendance.md` and the other service sheets; `TC-MOB-001`, `TC-MOB-102`, `TC-MOB-202`, `TC-MOB-203` and `TC-MOB-602` from Appendices O and Q are the device-pass proofs |
+| The Appendix M rules are implemented | The eight tests in §3.9 (`TC-MOB-701` to `TC-MOB-703`, `TC-MOB-705`, `TC-MOB-706` and `TC-MOB-708` to `TC-MOB-710`) map one to one to Appendix M section M.5, and `TC-MOB-704` and `TC-MOB-707` below cover the M.1 and M.2 limits; the owning-service side of each rule is tested in `06-services/attendance.md` and the other service sheets; `TC-MOB-001`, `TC-MOB-102`, `TC-MOB-202`, `TC-MOB-203` and `TC-MOB-602` from Appendices O and Q are the device-pass proofs |
 | Pending and conflict states are visible | Widget tests for every screen in §2 render the pending, sending, awaiting-attachment, rejected and conflict states through `core/design`; a screen rendering a conflict without `conflict_banner` fails review, and the golden set includes the conflict state for the register |
 | Delta tokens and the 30-day rule | `TC-MOB-706` replays a 45-day-old token and asserts a full refresh plus outbox delivery; the iOS release gate replays a 30-day-old token on the iPhone SE (`33-platform-support-and-dev-environments.md` §7) |
 | Payload limits and resumable upload | `TC-MOB-707` asserts batching at 500 actions and at 5 MB; `TC-MOB-709` interrupts an upload and asserts resumption from `bytes_uploaded` |
@@ -969,3 +973,24 @@ Capability names follow `08-web-structure.md` §7. **Web**: the Angular workspac
 | Parity matrix agrees with the web inventory | `/lint-plan` checks that every capability in §10 names a screen present in `08-web-structure.md` §7 or is marked web `none`, and that every mobile-web value agrees with the mobile-web column there; `20-traceability-matrix.md` carries the platform column per requirement |
 | Brief disagreements reported | Two rows in this document follow Appendix M where Appendix U or Appendix I say otherwise: the clinic visit (§2.6) and principal approvals (§3.6). Both are raised for the product owner with the recommendation to amend Appendix U.2, U.10 and the Appendix I nurse row to match Appendix M, through an ADR and a version bump on all three briefs as `CLAUDE.md` requires |
 | Open question 23 | Riverpod is the decision in force; the ADR recorded by Group D per `29-adr-index.md` closes the question, and `TC-MOB-721` asserts no `flutter_bloc` dependency in `pubspec.lock` |
+
+### Test cases
+
+This document defines the mobile tests below and the §3.9 set (`TC-MOB-701` to `TC-MOB-710` less `TC-MOB-704` and `TC-MOB-707`, which are here), plus `TC-MOB-713` and `TC-MOB-714` in §7. `TC-MOB-102`, `TC-MOB-202`, `TC-MOB-203` and `TC-MOB-602` are the Appendix Q device-pass scripts; Appendix Q quotes them and this document gives each its one meaning. The `TC-SEC-*` and `TC-PRV-*` cases are defined in `12-security-privacy-safety.md` §1.2.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-MOB-102 | Given a principal who queued actions from the approvals inbox in airplane mode (Appendix Q.1 steps 11 and 12), when the network is restored, then each queued action applies exactly once and the pending-approval count on the device equals the server's; under Appendix M.1 the queued actions are nudges and comments, because an approval decision is acted online only (§3.6) | REQ-MOB-008, REQ-MOB-010 |
+| TC-MOB-202 | Given a teacher who marked a class of 25 in airplane mode with 2 absent and 1 late (Appendix Q.2 step 4), when the network is restored, then the queue count reaches 0, each mark is stored exactly once, and the register holds 25 records with no duplicate | REQ-MOB-007, REQ-MOB-010 |
+| TC-MOB-203 | Given a homeroom teacher in airplane mode, when they add a note to a student's timeline, then the note shows at once with the offline badge, and after reconnect it is stored once on the server and the badge clears | REQ-MOB-007, REQ-MOB-015 |
+| TC-MOB-602 | Given a student whose timetable and due list were synced, when they open both in airplane mode and submit an assignment, then both screens render from the local copy and the submission shows as pending with a visible badge, never as submitted, until the server confirms it | REQ-MOB-015 |
+| TC-MOB-704 | Given a nurse-mode session that opened 3 wellbeing records, when the session ends, then the Drift schema holds 0 wellbeing tables or columns and the application file store holds 0 wellbeing files, inspected against the same tables that generate the schema in §3.2 | REQ-MOB-009 |
+| TC-MOB-707 | Given 1,200 queued actions of 1 KB each, when the engine syncs, then it sends three requests of 500, 500 and 200 actions; given 100 actions of 60 KB each, then no request exceeds 5 MB and the remainder follows in the next batch; and a feature whose action body exceeds 64 KB fails the test (§3.8) | REQ-MOB-013 |
+| TC-MOB-711 | Given the App Links `intent-filter` with `autoVerify` and the tenant host's `assetlinks.json`, when the Android device pass runs `adb shell pm verify-app-links`, then the host reports verified for the shared application and every white-label package, and a tenant link opens the app on its target screen | REQ-MOB-018 |
+| TC-MOB-712 | Given the Associated Domains entitlement `applinks:<tenant host>` and the host's `apple-app-site-association`, when a tenant link is tapped on the iPhone SE device pass, then the app opens on its target screen rather than in Safari, for every flavor's bundle identifier | REQ-MOB-018 |
+| TC-MOB-716 | Given the key screens rendered in English and in Arabic, when widget tests read the semantics tree, then every control has a non-empty `Semantics` label in the active language, every icon-only button carries `tooltip` and `semanticsLabel`, and each seat in the seating chart is a button named with the student and the status | REQ-UX-013 |
+| TC-MOB-717 | Given the key screens at `textScaleFactor` 1.0 and 2.0, when the goldens and overflow checks run, then no text clips and no screen scrolls horizontally, and the register at 1.6 renders in list mode | REQ-MOB-032, REQ-UX-013 |
+| TC-MOB-718 | Given every flavor file's generated palette in light and dark, when contrast is computed, then every text pair is at least 4.5:1 and every interface pair at least 3:1, and a flavor below either fails the build | REQ-UX-002, REQ-UX-013 |
+| TC-MOB-719 | Given `MediaQuery.disableAnimations` true or the platform reduce-motion setting on, when each animated screen is pumped, then every animation duration is 0 and movement is replaced by a fade | REQ-UX-009 |
+| TC-MOB-720 | Given the `staging`, `production` and every white-label flavor built in release mode, when the build output and its symbol table are inspected, then the demo login helper class and its sign-in shortcut are absent, and only the `dev` flavor contains them | REQ-MOB-001, REQ-MOB-031 |
+| TC-MOB-721 | Given the resolved `pubspec.lock` of every flavor, when the dependency check runs, then it contains 0 `flutter_bloc` entries and the providers come from `riverpod`, which closes open question 23 | none |

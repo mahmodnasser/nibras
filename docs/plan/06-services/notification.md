@@ -34,7 +34,7 @@ Notification turns business events into messages people actually receive, and do
 | Fallback and credits | The channel fallback order (BR-NOT-002) and the Appendix C fallback and credit table; the SMS credit check before every paid send (BR-NOT-005); the urgent overdraft buffer |
 | Delivery log | One delivery row per recipient and channel attempt, retries, bounces, complaints, suppressions, delivery receipts, resend (REQ-NOT-012, REQ-NOT-018) |
 | Deliverability | Per-tenant sending subdomain with SPF, DKIM and DMARC records generated at provisioning and verified before the first send, platform-domain fallback with the school's display name; bounce and complaint processing; unsubscribe route that never disables urgent mail (REQ-NOT-017, REQ-NOT-018, master brief Section 38) |
-| Devices and contact endpoints | Push registrations per installation, the Google-services flag, and the delivery addresses Notification sends to (open point 1) |
+| Devices and contact endpoints | Push registrations per installation, the Google-services flag, and the delivery addresses Notification sends to, filled from Identity's contact-point events |
 | Unified inbox delivery | The in-app feed of notifications, approvals, mentions and task items with filters, mark-read, mark-all-read and snooze; unread counts per category for badges (REQ-NOT-015, REQ-MOB-020) |
 | Rule classes | BR-NOT-001 to BR-NOT-006 and BR-L10N-005 (document 31 section 2) |
 
@@ -47,7 +47,7 @@ Notification turns business events into messages people actually receive, and do
 | Message threads, announcement bodies and acknowledgments | Communication | Notification holds a template reference and never the body (Appendix J.3) |
 | Emergency broadcast content, acknowledgments and roll call | Attendance | Notification fans the broadcast out on the urgent lane; the one-tap acknowledgment is recorded by Attendance |
 | Users, roles, scopes and verified identities | Identity | Notification keeps a user copy for language, roles and activity |
-| Guardian links and custody restrictions | School and Identity | Notification keeps a recipient-link copy and never sends to a restricted guardian (open point 3) |
+| Guardian links and custody restrictions | School and Identity | Notification keeps a recipient-link copy and never sends to a restricted guardian (open point 1) |
 | Settings storage: channel availability, quiet-hours default, digest schedule, SMS credit limits | Platform (ADR-0009) | Read from `platform.settings.changed.v1`; Notification's operational switch can only narrow what the setting allows |
 | SMS credit purchase and the overage invoice | Platform (plans, limits, tenant invoices) | Notification counts segments and publishes `notification.usage.recorded.v1` |
 | Real-time presence and the SignalR hubs | Communication | In-app delivery to an open client goes through Communication's hub; the inbox row is Notification's |
@@ -185,13 +185,13 @@ Invariants: a channel is usable only when both the Platform setting and the oper
 |---|---|---|---|
 | (common) | | | |
 | device: `user_id`, `installation_id`, `platform`, `push_provider`, `token_ciphertext`, `token_hash`, `has_google_services`, `app_version`, `last_seen_at` | uuid, text, text enum (`android`, `ios`, `huawei`, `web`), text, bytea, bytea, boolean, text, timestamptz | no | `device_registrations`; unique per `(tenant_id, installation_id)`; a token reported invalid is deleted (`NOTIFICATION_DEVICE_TOKEN_INVALID`) |
-| endpoint: `user_id`, `channel`, `address_ciphertext`, `address_hash`, `verified_at`, `source` | uuid, text enum (`email`, `sms`, `whatsapp`), bytea, bytea, timestamptz, text enum (`identity-proof`, `invitation`) | no | `contact_endpoints`; Confidential, column-encrypted, never cached (document 21 section 1.11) |
+| endpoint: `user_id`, `channel`, `address_ciphertext`, `address_hash`, `verified_at`, `source` | uuid, text enum (`email`, `sms`, `whatsapp`), bytea, bytea, timestamptz, text enum (`contact-point-event`, `invitation`) | no | `contact_endpoints`; Confidential, column-encrypted, never cached (document 21 section 1.11) |
 
-Invariants: sign-out or loss of permission unregisters the installation's token (REQ-MOB-026); an address is used only after verification by Identity's contact proof, except the invitation address, which is used once for the invitation itself.
+Invariants: sign-out or loss of permission unregisters the installation's token (REQ-MOB-026); an address is written only from `identity.contact-point.verified.v1`, which Identity publishes when the person has verified it, and is deleted on `identity.contact-point.removed.v1`; the only other address is the one on `identity.user.invited.v1`, used once for the invitation itself.
 
 ### 4.8 Reference copies
 
-`ref_users` (`user_id`, `roles`, `scope`, `preferred_language`, `active`), `ref_recipient_links` (`guardian_user_id`, `student_id`, `relationship`, `rights`, `suspended`), `ref_students` and `ref_staff` for role-relative recipients (open point 2), `ref_tenant_state`, `ref_settings`; each carries `source_version` and `reconciled_at`.
+`ref_users` (`user_id`, `roles`, `scope`, `preferred_language`, `active`), `ref_recipient_links` (`guardian_user_id`, `student_id`, `relationship`, `rights`, `suspended`), `ref_students` and `ref_staff` for role-relative recipients, `ref_tenant_state`, `ref_settings`; each carries `source_version` and `reconciled_at`.
 
 ```mermaid
 erDiagram
@@ -240,7 +240,7 @@ A `Failed` or `Skipped` delivery of a fallback template creates the next channel
 
 ## 5. REST API
 
-All paths are under `/api/v1/notification/`. Every endpoint may also return the K.1 codes with the `NOTIFICATION_` prefix. Self-service endpoints act on the caller's own data in `self` scope; Appendix I grants no `notification.*` permission to any role template, so this sheet's default is that every role template holds `notification.preferences.view` and `notification.preferences.edit` in `self` scope (open point 4).
+All paths are under `/api/v1/notification/`. Every endpoint may also return the K.1 codes with the `NOTIFICATION_` prefix. Self-service endpoints act on the caller's own data in `self` scope; Appendix I rule 8 gives every tenant role template `notification.preferences.view` and `notification.preferences.edit` in `self` scope, which is what the preference and inbox endpoints declare.
 
 ### 5.1 Templates
 
@@ -264,7 +264,6 @@ All paths are under `/api/v1/notification/`. Every endpoint may also return the 
 | GET | `/api/v1/notification/preferences/users/{userId}` | `notification.preferences.view` | none, in `campus` or `all-tenant` scope for support staff | same shape | `NOTIFICATION_NOT_FOUND` | yes |
 | PUT | `/api/v1/notification/devices/me/{installationId}` | `notification.preferences.edit` | `{ platform, pushProvider, token, hasGoogleServices, appVersion }` | 204 | `NOTIFICATION_VALIDATION_FAILED` | yes, by installation |
 | DELETE | `/api/v1/notification/devices/me/{installationId}` | `notification.preferences.edit` | none | 204 (REQ-MOB-026) | none | yes |
-| PUT | `/api/v1/notification/contact-endpoints/me` | `notification.preferences.edit` | `{ channel, contactProof }` signed by Identity for the verified address | 204; the address is stored encrypted | `NOTIFICATION_VALIDATION_FAILED` (proof invalid or expired) | yes |
 
 ### 5.3 Inbox
 
@@ -315,7 +314,7 @@ Task items in the inbox carry the Requests deep link; completing one is `POST /a
 
 ## 6. gRPC
 
-**Consumed.** None on a request path (reference architecture table 8.0); contact data never comes over a synchronous call (open point 1). Off the request path: Identity `Users.Checksum` and `Users.Snapshot` and School `ReferenceReconciliation.Checksum` and `ListSnapshotPage` for the nightly reconciliation and the suspended-link check (30 s, 5 s per page), and Platform `Settings.GetSettings` from the settings client of the building blocks on a cold start (2 s; last value in L1 for 60 s, then the catalog default).
+**Consumed.** None on a request path (reference architecture table 8.0); contact addresses arrive as Identity's contact-point events, never over a synchronous call. Off the request path: Identity `Users.Checksum` and `Users.Snapshot` and School `ReferenceReconciliation.Checksum` and `ListSnapshotPage` for the nightly reconciliation and the suspended-link check (30 s, 5 s per page), and Platform `Settings.GetSettings` from the settings client of the building blocks on a cold start (2 s; last value in L1 for 60 s, then the catalog default).
 
 **Exposed: `nibras.notification.v1`**, reconciliation only (`10-data-architecture.md` sections 6 and 7.3).
 
@@ -348,7 +347,9 @@ Queues are document 11 section 2.5's Notification table: `notification.tenant-li
 | Routing keys | Queue | Handler | What it changes |
 |---|---|---|---|
 | The section 2.3 tenant-lifecycle set of document 11, plus `platform.tenant.provisioned.v1` | `notification.tenant-lifecycle` | `TenantLifecycleConsumer` | Provisioning copies the template library, creates the sender subdomain records and the credit account; suspension pauses non-urgent sends; `platform.settings.changed.v1` updates channel availability, quiet-hours default, digest schedule and SMS limits; `platform.plan.changed.v1` updates the credit allowance; `reporting.data-quality.issue-detected.v1` notifies the data owner |
-| `identity.user.activated.v1`, `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | `notification.reference-copies` | `UserCopyConsumer`, `RecipientLinkConsumer` | `ref_users`, preference seed with language; `ref_recipient_links`; a guardian update naming the link or restriction suspends that link until reconciled (open point 3) |
+| `identity.user.activated.v1`, `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | `notification.reference-copies` | `UserCopyConsumer`, `RecipientLinkConsumer` | `ref_users`, preference seed with language; `ref_recipient_links`; a guardian update naming the link or restriction suspends that link until reconciled (open point 1) |
+| `identity.contact-point.verified.v1`, `identity.contact-point.removed.v1` | `notification.reference-copies` | `ContactEndpointConsumer` | Writes or deletes the recipient's `contact_endpoints` row for the channel. Appendix E classes the address Confidential: it is stored encrypted and never logged |
+| `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.staff.created.v1`, `school.staff.left.v1` | `notification.reference-copies` | `StudentCopyConsumer`, `StaffCopyConsumer` | `ref_students` and `ref_staff`, the section, campus and department a role-relative Appendix C recipient is resolved from |
 | The urgent keys: `attendance.emergency.broadcast-started.v1`, `attendance.roll-call.completed.v1`, `attendance.student.absent.v1`, `attendance.gate-pass.issued.v1`, `attendance.gate-pass.used.v1`, `attendance.visitor.checked-in.v1`, `wellbeing.clinic-visit.recorded.v1`, `wellbeing.medication.administered.v1`, `wellbeing.safeguarding.concern-raised.v1`, `communication.concern.reported-anonymously.v1`, `communication.message.reported.v1`, `scheduling.substitution.assigned.v1`, `identity.user.invited.v1`, `identity.login.new-device.v1`, `identity.break-glass.used.v1`, `audit.integrity-check.failed.v1`, `notification.notification.failed.v1` | `notification.events.urgent` | one consumer per publishing service (section 14) | Resolves recipients, bypasses quiet hours, digests and deduplication; emergency fan-out through the staged `COPY` of document 21 section 3.11 query 7 |
 | The standard keys of document 11's `notification.events` row (every other Appendix C trigger from Platform, Identity, School, Admissions, Academics, Assessment, Scheduling, Attendance, Finance, Communication, Requests, Documents, Behavior, Reporting, Wellbeing, Hr and Operations) | `notification.events` | one consumer per publishing service | Resolves recipients, applies preferences, quiet hours, digests and deduplication |
 | `finance.invoice.issued.v1`, `finance.invoice.overdue.v1`, `documents.document.generated.v1` | `notification.events.bulk` | `FinanceBulkConsumer`, `DocumentGeneratedConsumer` | Bulk-lane requests with the admission window of 2,000 in flight per tenant |
@@ -366,7 +367,7 @@ Notification owns no workflow in Appendix R and orchestrates no saga (document 3
 | Saga or workflow | Role | What Notification guarantees |
 |---|---|---|
 | Sagas 1, 2, 3, 5, 6, 8 (document 13) | Last step, no compensation | `RequestNotification` is idempotent on the command's `messageId` and the derived `notificationId`; a replay sends nothing twice; the step is ordered last because a message cannot be unsent |
-| Saga 8 step 4 | Bulk lane, honours quiet hours (BR-NOT-001) | Deferred, never dropped (TC-FIN-004) |
+| Saga 8 step 4 | Bulk lane, honours quiet hours (BR-NOT-001) | Deferred, never dropped (TC-FIN-550) |
 | Every WF with an Appendix C trigger | Delivery | The Appendix C urgency, recipients and channels; the fallback and credit table |
 | Saga 1, 2, 10 | Participant | Tenant rows, template library copy, sender domain; deletion drops delivery partitions of the tenant |
 
@@ -378,7 +379,8 @@ Notification owns no workflow in Appendix R and orchestrates no saga (document 3
 |---|---|---|---|---|
 | `ref_users` | `identity.user.activated.v1`; `identity.role.changed.v1` and `identity.permissions.changed.v1` from the tenant-lifecycle queue | user, roles, scope, language, active | Nightly against Identity `nibras.identity.v1.Users/Checksum` | Minutes |
 | `ref_recipient_links` | `identity.guardian-link.created.v1`, `school.guardian.updated.v1` | guardian user, student, relationship, rights, suspended | Nightly against School `ReferenceReconciliation.Checksum` for `guardian-link`; an immediate snapshot fetch for a suspended link | Minutes; a link in doubt is suspended, never assumed |
-| `ref_students`, `ref_staff` | open point 2 | student section and campus; staff department and campuses | Nightly against School | Minutes |
+| `ref_students`, `ref_staff` | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.staff.created.v1`, `school.staff.left.v1` | student section and campus; staff department and campuses | Nightly against School | Minutes |
+| `contact_endpoints` | `identity.contact-point.verified.v1`, `identity.contact-point.removed.v1`; the invitation address on `identity.user.invited.v1` | channel and verified address, encrypted | Nightly against Identity `Users/Checksum` with the rest of `ref_users` | Minutes; a removed address stops a send at once |
 | Preferences | owned by Notification, seeded from `identity.user.activated.v1` | not a copy | none (`10-data-architecture.md` section 6) | not applicable |
 
 ---
@@ -411,7 +413,7 @@ Triggers run in `Notification.Worker` except where noted; long work runs on the 
 | Permission | Default holders | Scope |
 |---|---|---|
 | `notification.templates.view`, `.create`, `.edit`, `.delete`, `.send-test`, `.publish` | Principal and a communications officer cloned from Vice Principal; Platform Administrator for the library | `all-tenant` |
-| `notification.preferences.view`, `.edit` | Every role in `self` (open point 4); support staff in `campus` | `self` or `campus` |
+| `notification.preferences.view`, `.edit` | Every tenant role template in `self` (Appendix I rule 8, group G25); support staff in `campus` | `self` or `campus` |
 | `notification.delivery-log.view`, `.export`, `.resend` | IT Support, Principal | `all-tenant`; resend rate-limited |
 | `notification.channels.view`, `.edit`, `.enable`, `.disable` | Principal, IT Support | `all-tenant` |
 | `platform.jobs.view`, `platform.jobs.cancel` | as Appendix B | job endpoints |
@@ -423,7 +425,7 @@ Triggers run in `Notification.Worker` except where noted; long work runs on the 
 | Notification delivery failing repeatedly | `notification.notification.failed.v1` | Platform operators | U; email, push |
 | Daily or weekly digest | job: digest builder inside Notification | Guardians, students, staff | D; push, email |
 
-Every other Appendix C row is triggered by its publisher and delivered here; the low-credit alert, the sender-domain verification result and the test send have no Appendix C row and use internal templates (open point 5).
+Every other Appendix C row is triggered by its publisher and delivered here; the low-credit alert, the sender-domain verification result and the test send have no Appendix C row and use internal templates (open point 2).
 
 ### 11.3 Settings (Appendix G, *Notifications* category unless stated)
 
@@ -580,11 +582,6 @@ src/Services/Notification/                                                    No
 │   │   │   ├── RegisterDeviceHandler.cs                                      token encrypted, one row per installation
 │   │   │   ├── RegisterDeviceValidator.cs                                    platform and provider consistent
 │   │   │   └── RegisterDeviceEndpoint.cs                                     /devices/me/{installationId}
-│   │   ├── RegisterContactEndpoint/                                          verified address from an Identity proof
-│   │   │   ├── RegisterContactEndpointCommand.cs                             channel and proof
-│   │   │   ├── RegisterContactEndpointHandler.cs                             verifies the signature locally, stores encrypted
-│   │   │   ├── RegisterContactEndpointValidator.cs                           proof unexpired and for this user
-│   │   │   └── RegisterContactEndpointEndpoint.cs                            PUT /contact-endpoints/me
 │   │   ├── Inbox/                                                            feed, counts, read, read-all, snooze
 │   │   │   ├── InboxRequests.cs                                              inbox records
 │   │   │   ├── InboxHandler.cs                                               compiled inbox and unread queries
@@ -635,6 +632,9 @@ src/Services/Notification/                                                    No
 │   │   ├── TenantLifecycleConsumer.cs                                        the tenant-lifecycle set and platform.tenant.provisioned.v1
 │   │   ├── UserCopyConsumer.cs                                               identity.user.activated.v1
 │   │   ├── RecipientLinkConsumer.cs                                          identity.guardian-link.created.v1 and school.guardian.updated.v1
+│   │   ├── ContactEndpointConsumer.cs                                        identity.contact-point.verified.v1 and .removed.v1, address stored encrypted
+│   │   ├── StudentCopyConsumer.cs                                            school.student.enrolled.v1 and school.student.section-changed.v1 into ref_students
+│   │   ├── StaffCopyConsumer.cs                                              school.staff.created.v1 and school.staff.left.v1 into ref_staff
 │   │   ├── PlatformEventsConsumer.cs                                         platform limit, trial, invoice and webhook keys
 │   │   ├── IdentityEventsConsumer.cs                                         invitations, registrations, join requests, delegations, access reviews, new device, break-glass
 │   │   ├── SchoolEventsConsumer.cs                                           student document expiry
@@ -800,7 +800,7 @@ Existing identifiers are reused; new ones are minted from `TC-NOT-601` upward, a
 
 | Test case | Proves | Level |
 |---|---|---|
-| TC-NOT-001 | "One calm message, not twelve": digest-eligible items batched per child (Appendix W, REQ-NOT-008) | Integration |
+| `TC-NOT-001` (Appendix W) | "One calm message, not twelve": digest-eligible items batched per child (Appendix W, REQ-NOT-008) | Integration |
 | TC-NOT-501 | A normal test inside quiet hours 21:00 to 06:30 arrives after 06:30 (Appendix Q, REQ-NOT-006) | End-to-end |
 | TC-NOT-502 | An emergency broadcast breaks through quiet hours and is acknowledged in one tap (Appendix Q, REQ-NOT-007) | End-to-end |
 | TC-SEC-220 to TC-SEC-223 | T-NOT-01 to T-NOT-04 controls | Security suite |
@@ -857,7 +857,7 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 | SMS costs run away or an urgent message is blocked by credit | med | high | Reservation ledger, overdraft for urgent only, low-credit alert; TC-NOT-606, TC-NOT-618 | Notification lead |
 | Email lands in spam or bounces silently | med | med | Per-tenant subdomain with SPF, DKIM, DMARC; bounce and complaint processing; TC-NOT-617, TC-NOT-608 | Operations |
 | Parents muted by too many messages | med | med | Digests, deduplication, quiet hours; TC-NOT-001, TC-NOT-612 | Product owner |
-| Contact addresses unavailable for a recipient | med | high | Open point 1; `NOTIFICATION_NO_REACHABLE_CHANNEL` raised to the Data Quality Center; in-app always delivered | Architect |
+| Contact addresses unavailable for a recipient | med | high | Identity's contact-point events fill `contact_endpoints` as soon as a person verifies an address; until then `NOTIFICATION_NO_REACHABLE_CHANNEL` is raised to the Data Quality Center and in-app is always delivered | Architect |
 
 ---
 
@@ -867,7 +867,7 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 |---|---|---|---|
 | The lanes, queues, headers exchange and worker scaling of document 11 are used exactly as written | `11-messaging-architecture.md` sections 1.3, 2.5, 5, 7 | As stated | None |
 | Urgency is a property of the template, never of the message | BR-NOT-001 edge case | As stated | A sender could break quiet hours at will |
-| Deduplication window default 5 minutes per Appendix C, configurable per template (BR-NOT-004's example uses 10) | Appendix C; BR-NOT-004 | 5 minutes | A longer default hides legitimate updates |
+| Deduplication window default 5 minutes, configurable per template; urgent templates are never deduplicated | Appendix C rules paragraph; BR-NOT-004, whose rule and three examples now use the same 5 minutes | 5 minutes | A longer default hides legitimate updates |
 | Fallback is a new channel delivery and command, never a retry of the failed one | Document 11 section 2.5 | As stated | A slow SMS provider would block push |
 | Rendered bodies are not persisted; the delivery row holds template code, parameters reference and outcome | Appendix J.3 | As stated | The log would become a copy of every message |
 | A channel is usable only when both the Platform setting and Notification's operational switch allow it | ADR-0009; Appendix B `notification.channels.*` | As stated | Two owners of one switch |
@@ -890,15 +890,14 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Three points are answered by the brief. Appendix E now carries `identity.contact-point.verified.v1` and `identity.contact-point.removed.v1` with Notification as their consumer, and a paragraph saying the address is Confidential, stored encrypted and never logged, so `contact_endpoints` is filled from those events: the locally verified contact proof and its `PUT /contact-endpoints/me` route are gone from sections 4.7, 5.2 and 14, replaced by `ContactEndpointConsumer`. Appendix E also names Notification a consumer of `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.staff.created.v1` and `school.staff.left.v1`, which are the copies role-relative Appendix C recipients are resolved from, so section 9 names them as the sources of `ref_students` and `ref_staff`. Appendix I rule 8 now gives every tenant role template `notification.preferences.view` and `.edit` in `self` scope and adds group G25 Notification; Appendix B did not gain a `notification.inbox` resource, so the inbox endpoints keep declaring the preference permissions, which is what this sheet already did. The remaining points are renumbered.
+
 | # | Question | Default | Owner | Impact if the default is wrong |
 |---|---|---|---|---|
-| 1 | Appendix E carries no contact address for a user (only `identity.user.invited.v1` carries one, for the invitation), and table 8.0 gives Notification no synchronous dependency, yet email and SMS need addresses | Addresses are Notification-owned `contact_endpoints`, written by the client with a short-lived contact proof signed by Identity when the person verifies an address (`PUT /contact-endpoints/me`), validated locally against Identity's published keys; the invitation address is used once for the invitation; propose an Identity event or command that carries verified endpoints | Architect, with the Identity owner | Guardians who never open the app cannot receive email or SMS until they verify an address |
-| 2 | Role-relative recipients in Appendix C (homeroom teacher, coordinator, counselor, registrar, principal) need student-to-section and staff data that document 11's Notification bindings do not carry | Bind `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.staff.created.v1` and `school.staff.left.v1` into `notification.reference-copies` as starred bindings under document 11 section 2.6, and resolve roles from `ref_users` scopes | Architect, Appendix E amendment | Role-relative rows of Appendix C resolve to no recipient until bound |
-| 3 | `school.guardian.updated.v1` carries only changed field names, so a custody restriction cannot be read from the event | A change naming the link or the restriction suspends that guardian's link for the listed students and triggers an immediate snapshot fetch from School; the link resumes only when the snapshot confirms it | Product owner, with the School owner | A legitimate guardian misses alerts for the minutes the fetch takes |
-| 4 | Appendix I grants no `notification.*` permission to any role, yet every user edits their own preferences and reads their inbox, and Appendix B has no inbox permission | Every role template holds `notification.preferences.view` and `.edit` in `self` scope, and the inbox endpoints declare them | Product owner, Appendix I amendment | The generated permission matrix denies every user their own inbox |
-| 5 | No Appendix C row exists for the low-credit alert, sender-domain verification, test sends, OTPs, invitations and the workflow messages other services send through `RequestNotification` | Internal templates in the platform library; rows proposed for Appendix C | Product owner | kit-lint R12 cannot check these messages |
-| 6 | BR-NOT-005 sends the low-credit alert to "the finance administrator", a role Appendix I does not define | Sent to holders of `notification.channels.edit` and to the Accountant role | Product owner | The alert reaches IT rather than the budget owner |
-| 7 | The Appendix C fallback table says push falls back to email and only urgent falls back to SMS, while BR-NOT-002's example falls through to SMS for any message | Appendix C governs: non-urgent never falls back to SMS unless the template's default channels include SMS | Product owner | SMS spend on non-urgent messages |
+| 1 | `school.guardian.updated.v1` carries only changed field names, so a custody restriction cannot be read from the event | A change naming the link or the restriction suspends that guardian's link for the listed students and triggers an immediate snapshot fetch from School; the link resumes only when the snapshot confirms it | Product owner, with the School owner | A legitimate guardian misses alerts for the minutes the fetch takes |
+| 2 | Appendix C now carries the one-time code, password reset and invitation rows, but the low-credit alert, sender-domain verification, test sends and the workflow messages other services send through `RequestNotification` still have no row | Internal templates in the platform library; rows proposed for Appendix C | Product owner | kit-lint R12 cannot check these messages |
+| 3 | BR-NOT-005 sends the low-credit alert to "the finance administrator", a role Appendix I does not define | Sent to holders of `notification.channels.edit` and to the Accountant role | Product owner | The alert reaches IT rather than the budget owner |
+| 4 | The Appendix C fallback table says push falls back to email and only urgent falls back to SMS, while BR-NOT-002's example falls through to SMS for any message | Appendix C governs: non-urgent never falls back to SMS unless the template's default channels include SMS | Product owner | SMS spend on non-urgent messages |
 
 ## Review record
 

@@ -1,0 +1,218 @@
+# Test-case work for `docs/plan/12-security-privacy-safety.md`
+
+## Collisions to resolve here (the owner keeps the identifier)
+
+- **TC-IDN-005** at line 89: "T-IDN-06 | Join-request approval | Elevation of privilege | Approver from tenant A approves a request in tenant B | low | critical | Tenant check runs before the permission check; attempt audited"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 108: "PendingApproval to Approved | Approver belongs to another tenant | Refused before the permission check, attempt audited"
+- **TC-IDN-015** at line 112: "T-SCH-03 | Guardian link | Elevation of privilege | A guardian restricted by a court order is linked to a child | low | critical | `school.guardians.link` checks the custody record; WF-IDN-02 refuses and surfaces the saf"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 144: "MatchProposed to LinkApproved | A court order restricts this guardian | Transition refused and the safeguarding note surfaced"
+- **TC-IDN-043** at line 87: "T-IDN-04 | Role editor | Elevation of privilege | An administrator grants themselves a high-risk permission | med | high | BR-IDN-004 four-eyes; self-approval refused with `IDENTITY_SELF_APPROVAL_REFUSED`"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 250: "AwaitingSecondApproval to Approved | Second approver is the requester | Refused with a four-eyes violation error"
+- **TC-IDN-052** at line 207: "T-RQS-04 | Reassign | Tampering | Task reassigned to a leaver so it disappears | low | low | Reassignment target must be active; WF-IDN-06 inventories open items"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 282: "Revoked to ReassignmentPending | Leaver holds classes, tasks, or pending approvals | Complete inventory produced, nothing silently dropped"
+- **TC-SEC-022** at line 615: "Impersonation never targets a student account | Platform | Refused outright with no prompt"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 389: "Requested to Refused | Target is a student account | Refused outright with no prompt shown"
+- **TC-PLT-023** at line 683: "Export of a whole tenant | WF-PLT-03 export rung, completeness under BR-PLT-006 | Archive downloadable for 30 days"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 503: "ExportRequested to ExportReady | Archive complete and checksum verified | Owner receives a time-limited download link"
+- **TC-PLT-026** at line 702: "Deleted tenant | WF-PLT-03 | Platform | Purge after 30 days, certificate issued | Certificate"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 506: "DeletionExecuted to Certified | All service schemas and files removed | Certificate issued with scope, timestamp, and operator"
+- **TC-ATT-015** at line 161: "T-ATT-01 | Gate pass verify | Spoofing | A gate pass QR replayed by a second collector | med | critical | One-time code, hashed at rest, validity window, collector photo shown to the officer (WF-ATT-02)"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 968: "PassIssued to PassIssued | Same code presented a second time | Refused as already used, attempt logged"
+- **TC-FIN-014** at line 173: "T-FIN-02 | Refund approval | Elevation of privilege | Accountant approves their own refund | med | high | `finance.refunds.approve` is high risk; WF-FIN-02 requires a different approver"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1049: "RefundRequested to RefundApproved | Approver differs from the requester and the amount is within limit | Refund authorised with both identities audited"
+- **TC-BEH-005** at line 228: "T-BEH-03 | Points | Tampering | Points revoked to punish without a record | low | low | `behavior.points.revoke` records the reason; WF-BEH-01 dismissal path"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1283: "UnderReview to Dismissed | Evidence does not support the record | Points reversed, correction sent, signal recalculated"
+- **TC-WEL-032** at line 617: "Anonymous safeguarding report stores no reporter identity | Wellbeing | WF-WEL-04"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1434: "ReportedAnonymously to Triaged | No reporter identity stored anywhere | Concern triaged with the same priority as a named one"
+- **TC-PRV-006** at line 682: "Erasure | WF-PRV-01 deletion branch; retention rules applied, safeguarding records retained with the reason stated | 30 calendar days"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1869: "Delivered to Delivered | Subject requests deletion instead of a copy | Retention rules applied, safeguarding records retained"
+- **TC-PRV-013** at line 179: "T-FIN-08 | Statement export | Information disclosure | Bulk statement export by an insider | med | high | `finance.reports.export` routes bulk through WF-PRV-02 with watermark"
+  - owner `docs/brief/02-appendices/appendix-r-workflow-catalog.md` line 1906: "Classified to PendingApproval | Export includes medical, safeguarding, or bulk identifiers | Approval required before any file is produced"
+
+## Tests cited but defined nowhere: define them here
+
+- **TC-PRV-702**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 152: "10 | Check the guardian transparency panel as the parent | The counselor's reads are listed by role and time, without the note content"
+  - cited `docs/plan/02-competitive-gap-analysis.md` line 41: "Guardian-visible access log of who read the child's sensitive records | unverified | unverified | unverified | unverified | unverified | unverified | unverified | unverified | unverified | unverified"
+  - cited `docs/plan/02-competitive-gap-analysis.md` line 154: "Every difference names a passing test"
+  - cited `docs/plan/06-services/bff-web.md` line 259: "The threat row is `12-security-privacy-safety.md` §2.21 T-GW-04 (the backend composes a screen with fields the user may not see; control: the backend forwards the caller's token, holds no permissions "
+- **TC-SEC-901**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 177: "4 | Try to open a student record in that tenant | Refused; platform staff hold no tenant data permissions"
+  - cited `docs/plan/03-requirements-catalog.md` line 709: "REQ-SEC-014 | Platform staff hold no tenant data permissions | 1 | cross-cutting | Master brief Section 9; Appendix Q | none"
+  - cited `docs/plan/06-services/identity.md` line 2106: "Platform staff hold no tenant data; impersonation blocked without consent; banner and audit | UAT (Appendix Q)"
+  - cited `docs/plan/20-traceability-matrix.md` line 577: "REQ-SEC-014 | Platform staff hold no tenant data permissions | 1 | cross-cutting | none | none | 12 | 1 | SL-IDN-004 | any | Planned"
+- **TC-SEC-903**
+  - cited `docs/brief/02-appendices/appendix-q-uat-scripts.md` line 179: "6 | After consent, impersonate | A visible banner shows throughout, every action is audited as impersonation, and the session expires on its own"
+  - cited `docs/plan/03-requirements-catalog.md` line 114: "REQ-IDN-044 | Platform staff impersonate a tenant user only with recorded tenant consent, a visible banner, a time box, and a full audit trail of every action | 1 | Identity | Master brief Section 9; "
+  - cited `docs/plan/06-services/identity.md` line 2106: "Platform staff hold no tenant data; impersonation blocked without consent; banner and audit | UAT (Appendix Q)"
+  - cited `docs/plan/12-security-privacy-safety.md` line 475: "Tests: `TC-SEC-021` to `TC-SEC-026`, `TC-SEC-902`, `TC-SEC-903`, and `TC-SEC-284` for the wellbeing exclusion."
+- **TC-SEC-160**
+  - cited `docs/plan/06-services/assessment.md` line 631: "The threat table is `12-security-privacy-safety.md` §2.6 (T-ASM-01 to T-ASM-06; tests `TC-ASM-013`, `TC-SEC-160` to `TC-SEC-164`, `TC-SEC-201`)."
+  - cited `docs/plan/06-services/assessment.md` line 1093: "Security | T-ASM-01 to T-ASM-06"
+  - cited `docs/plan/12-security-privacy-safety.md` line 141: "T-ASM-01 | Mark entry | Tampering | Grade changed after lock without a grade-change request | med | high | `assessment.marks.change-after-lock` is high risk; BR-ASM-014 creates a new version; WF-ASM-0"
+- **TC-SEC-190**
+  - cited `docs/plan/06-services/finance.md` line 885: "The threat table is `12-security-privacy-safety.md` section 2.9, T-FIN-01 to T-FIN-08, with tests TC-FIN-011, TC-SEC-190 to TC-SEC-195, TC-FIN-014 and TC-PRV-013."
+  - cited `docs/plan/06-services/finance.md` line 1489: "T-FIN-01 to T-FIN-08 controls | Security suite"
+  - cited `docs/plan/12-security-privacy-safety.md` line 172: "T-FIN-01 | Payment recording | Tampering | Cashier records a payment then reverses it and keeps the cash | med | high | Posted documents are immutable (BR-FIN-014); reversal is a credit note in its ow"
+  - cited `docs/plan/12-security-privacy-safety.md` line 316: "A-07 | Payment tampering | Cashier | Reverse a posted payment, forge a gateway callback, self-approve a refund | Immutable posted documents, callback verification, four-eyes"
+- **TC-SEC-290**
+  - cited `docs/plan/06-services/hr.md` line 682: "The threat table is `12-security-privacy-safety.md` section 2.18, T-HR-01 to T-HR-04, with tests TC-SEC-801, TC-SEC-290, TC-SEC-291, TC-SEC-292 and TC-SEC-293; TC-SEC-802 proves HR holds no student pe"
+  - cited `docs/plan/06-services/hr.md` line 1248: "The salary section is absent without the permission; HR holds no student permission; T-HR-01 to T-HR-04 | Security suite"
+- **TC-SEC-034**
+  - cited `docs/plan/06-services/identity.md` line 138: "5. The list of tenants for a person is returned only after the credential check succeeds (BR-IDN-007 edge case, `TC-SEC-034`)."
+  - cited `docs/plan/12-security-privacy-safety.md` line 356: "Tests: `TC-SEC-031` password and lockout, `TC-SEC-032` TOTP single use, `TC-SEC-033` passkey, `TC-SEC-034` tenant list withheld until credentials verified (BR-IDN-007), `TC-SEC-035` new-device alert."
+- **TC-SEC-031**
+  - cited `docs/plan/06-services/identity.md` line 2101: "Sign-in, lockout, TOTP single use, passkey, tenant list after credentials, new-device alert, refresh rotation and reuse, current permission version on refresh | Integration"
+  - cited `docs/plan/12-security-privacy-safety.md` line 9: "**Test identifiers.** `TC-SEC-001` to `TC-SEC-026`, `TC-SEC-101` to `TC-SEC-904`, `TC-PRV-001` to `TC-PRV-016` and `TC-PRV-301` to `TC-PRV-902` are quoted from Appendices Q and R. Identifiers from `TC"
+  - cited `docs/plan/12-security-privacy-safety.md` line 31: "V6 Authentication | Password policy, breached-password check, second factor, lockout | Identity with OpenIddict; TOTP and passkeys; offline breached-password list; lockout per Appendix G security poli"
+  - cited `docs/plan/12-security-privacy-safety.md` line 356: "Tests: `TC-SEC-031` password and lockout, `TC-SEC-032` TOTP single use, `TC-SEC-033` passkey, `TC-SEC-034` tenant list withheld until credentials verified (BR-IDN-007), `TC-SEC-035` new-device alert."
+- **TC-SEC-038**
+  - cited `docs/plan/06-services/identity.md` line 2101: "Sign-in, lockout, TOTP single use, passkey, tenant list after credentials, new-device alert, refresh rotation and reuse, current permission version on refresh | Integration"
+  - cited `docs/plan/06-services/identity.md` line 2149: "A stale permission set is honoured after revocation | med | high | Identity lead"
+  - cited `docs/plan/12-security-privacy-safety.md` line 32: "V7 Session management | Short access tokens, rotating refresh tokens, revocation | Access token 15 minutes, refresh 30 days with rotation and reuse detection (Appendix J token row)"
+  - cited `docs/plan/12-security-privacy-safety.md` line 90: "T-IDN-07 | Permission cache | Tampering | Stale cached permission set honoured after a revocation | med | high | BR-IDN-008 version per subject; `identity.permissions.changed.v1` invalidates within 5 "
+- **TC-SEC-059**
+  - cited `docs/plan/06-services/identity.md` line 2103: "Generated permission matrix and tenant-isolation attack suites over every Identity endpoint, gRPC method and consumer; pooled connection | Generated suites"
+  - cited `docs/plan/12-security-privacy-safety.md` line 508: "Scopes on one role union; scopes across stages intersect; an empty scope means no rows, never all rows. Tests: `DataScopeEvaluationRulesTests` from Appendix S, `TC-SEC-055` for the matrix, `TC-SEC-056"
+- **TC-SEC-367**
+  - cited `docs/plan/06-services/identity.md` line 2105: "The seeded-administrator safeguards 1 to 9 of `12-security-privacy-safety.md` §8 | Integration, pipeline secret scan"
+  - cited `docs/plan/12-security-privacy-safety.md` line 636: "9 | The last super administrator cannot be deleted, deactivated or stripped of the role | BR-IDN-005 in the same transaction; `IDENTITY_LAST_SUPER_ADMIN`"
+  - cited `docs/plan/12-security-privacy-safety.md` line 818: "The seeded administrator safeguards hold | Identity integration and `security-scan.yml`"
+  - cited `docs/plan/18-risk-register.md` line 116: "RISK-25 | Demo credentials, the demo login helper or a seeded administrator default reach a production build | 2 | 5 | 10 | A release-candidate image contains the helper assembly; a demo password appe"
+- **TC-SEC-311**
+  - cited `docs/plan/06-services/operations.md` line 590: "The threat table is `12-security-privacy-safety.md` section 2.19, T-OPS-01 to T-OPS-05, with tests TC-SEC-310, TC-SEC-311, TC-IDN-051, TC-SEC-312, TC-SEC-313 and TC-PRV-046."
+  - cited `docs/plan/06-services/operations.md` line 1235: "A revoked attendant device keeps recording boarding | med | high | Operations lead"
+  - cited `docs/plan/12-security-privacy-safety.md` line 278: "T-OPS-02 | Boarding attendant mode | Spoofing | Attendant device used after the attendant left | med | high | Device enrolment bound to the account; WF-IDN-06 revokes devices; offline queue refuses wr"
+- **TC-PRV-051**
+  - cited `docs/plan/06-services/school.md` line 94: "`data_class` | attribute, not a column |"
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+  - cited `docs/plan/12-security-privacy-safety.md` line 817: "Every field is classified and handled per class | Service integration"
+  - cited `docs/plan/18-risk-register.md` line 115: "RISK-24 | Wellbeing data leaks through a projection, a log line, an export, a search index or a cache, despite isolation level S | 2 | 5 | 10 | A Wellbeing entity appears in any projection, index or c"
+- **TC-PRV-048**
+  - cited `docs/plan/06-services/school.md` line 1206: "Sensitive value leaks through a log, cache or event | low | critical | Security reviewer"
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-040**
+  - cited `docs/plan/06-services/school.md` line 1206: "Sensitive value leaks through a log, cache or event | low | critical | Security reviewer"
+  - cited `docs/plan/12-security-privacy-safety.md` line 39: "V14 Data protection | Classification, caching rules, logs free of personal data | Appendix J levels; §6 per-class rules"
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+  - cited `docs/plan/12-security-privacy-safety.md` line 817: "Every field is classified and handled per class | Service integration"
+- **TC-SEC-281**
+  - cited `docs/plan/06-services/wellbeing.md` line 1084: "Break-glass behaves | Unit and security suites"
+  - cited `docs/plan/12-security-privacy-safety.md` line 256: "T-WEL-02 | Break-glass | Repudiation | Break-glass used without a reason or beyond the window | med | critical | `wellbeing.break-glass.use` needs a reason, alerts the record owner and safeguarding le"
+  - cited `docs/plan/12-security-privacy-safety.md` line 451: "Tests: `TC-SEC-101`, `TC-SEC-281`; for the operator path `TC-SEC-011` to `TC-SEC-016`; the CLI recovery command for a locked-out super administrator is `TC-SEC-112`."
+- **TC-PRV-020**
+  - cited `docs/plan/12-security-privacy-safety.md` line 9: "**Test identifiers.** `TC-SEC-001` to `TC-SEC-026`, `TC-SEC-101` to `TC-SEC-904`, `TC-PRV-001` to `TC-PRV-016` and `TC-PRV-301` to `TC-PRV-902` are quoted from Appendices Q and R. Identifiers from `TC"
+  - cited `docs/plan/12-security-privacy-safety.md` line 604: "Messaging policy per school: who may message whom, during which hours | Communication, policy read from Platform settings | Policy evaluated server-side on every send with an Identity check; `COMMUNIC"
+- **TC-SEC-050**
+  - cited `docs/plan/12-security-privacy-safety.md` line 26: "V1 Encoding and sanitization | Output encoding, injection resistance, safe deserialization | Angular default escaping; EF Core parameterization; System.Text.Json with no polymorphic type handling"
+- **TC-SEC-051**
+  - cited `docs/plan/12-security-privacy-safety.md` line 27: "V2 Validation and business logic | Schema validation, business-rule enforcement server-side, anti-automation | FluentValidation on every command; rules from Appendix S as domain invariants; per-tenant"
+- **TC-SEC-247**
+  - cited `docs/plan/12-security-privacy-safety.md` line 30: "V5 File handling | Upload validation, storage outside web root, safe download | Documents service: allow-list, ClamAV, object storage, signed URL of 5 minutes, `Content-Disposition: attachment`"
+- **TC-SEC-035**
+  - cited `docs/plan/12-security-privacy-safety.md` line 31: "V6 Authentication | Password policy, breached-password check, second factor, lockout | Identity with OpenIddict; TOTP and passkeys; offline breached-password list; lockout per Appendix G security poli"
+  - cited `docs/plan/12-security-privacy-safety.md` line 356: "Tests: `TC-SEC-031` password and lockout, `TC-SEC-032` TOTP single use, `TC-SEC-033` passkey, `TC-SEC-034` tenant list withheld until credentials verified (BR-IDN-007), `TC-SEC-035` new-device alert."
+- **TC-SEC-036**
+  - cited `docs/plan/12-security-privacy-safety.md` line 32: "V7 Session management | Short access tokens, rotating refresh tokens, revocation | Access token 15 minutes, refresh 30 days with rotation and reuse detection (Appendix J token row)"
+  - cited `docs/plan/12-security-privacy-safety.md` line 379: "Tests: `TC-SEC-036` rotation issues a new handle, `TC-SEC-037` reuse revokes the family, `TC-SEC-038` refresh carries the current permission version."
+- **TC-SEC-370**
+  - cited `docs/plan/12-security-privacy-safety.md` line 36: "V11 Cryptography | Approved algorithms, key management, envelope encryption | Argon2id for passwords; AES-256-GCM column encryption with per-tenant data keys wrapped in OpenBao (reference architecture"
+  - cited `docs/plan/12-security-privacy-safety.md` line 647: "Database password | per service, user `svc_<service>` | OpenBao at scale, Docker secrets on a single server | 90 days, rolling restart | `rotate-database-password.md`"
+- **TC-PRV-052**
+  - cited `docs/plan/12-security-privacy-safety.md` line 39: "V14 Data protection | Classification, caching rules, logs free of personal data | Appendix J levels; §6 per-class rules"
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+  - cited `docs/plan/12-security-privacy-safety.md` line 769: "Encrypted backups | Backups encrypted with the tenant data key set; restore drill quarterly | WF-INF-03"
+  - cited `docs/plan/12-security-privacy-safety.md` line 817: "Every field is classified and handled per class | Service integration"
+- **TC-SEC-275**
+  - cited `docs/plan/12-security-privacy-safety.md` line 41: "V16 Security logging and error handling | Audit of security events, no stack traces to clients, Problem Details | Audit service hash chain; Appendix K codes; `AUDIT_WRITE_FAILED` fails the action"
+- **TC-SEC-340**
+  - cited `docs/plan/12-security-privacy-safety.md` line 312: "A-03 | Privilege escalation through the role editor | A school administrator | Grant a high-risk permission to their own account or clone a template and add it | BR-IDN-004 four-eyes, self-approval re"
+  - cited `docs/plan/12-security-privacy-safety.md` line 560: "I.5 rule 1, locked and clonable"
+- **TC-SEC-032**
+  - cited `docs/plan/12-security-privacy-safety.md` line 356: "Tests: `TC-SEC-031` password and lockout, `TC-SEC-032` TOTP single use, `TC-SEC-033` passkey, `TC-SEC-034` tenant list withheld until credentials verified (BR-IDN-007), `TC-SEC-035` new-device alert."
+- **TC-SEC-033**
+  - cited `docs/plan/12-security-privacy-safety.md` line 356: "Tests: `TC-SEC-031` password and lockout, `TC-SEC-032` TOTP single use, `TC-SEC-033` passkey, `TC-SEC-034` tenant list withheld until credentials verified (BR-IDN-007), `TC-SEC-035` new-device alert."
+- **TC-PRV-042**
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-043**
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-045**
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-047**
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-049**
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-050**
+  - cited `docs/plan/12-security-privacy-safety.md` line 594: "Tests: `TC-PRV-040` cache rules per level (an architecture test reads the classification attribute and refuses a cache registration for Sensitive or S), `TC-PRV-041` log scrubber corpus, `TC-PRV-042` "
+- **TC-PRV-023**
+  - cited `docs/plan/12-security-privacy-safety.md` line 607: "Report and block in every conversation | Communication | Report locks the thread (`COMMUNICATION_MESSAGE_REPORTED_LOCK`), routes to the safeguarding queue, block is honoured by the policy"
+  - cited `docs/plan/27-compliance-and-legal.md` line 216: "CS-9 | Every conversation offers report and block, and a report reaches the safeguarding officer within 15 minutes | Report lock and routing"
+- **TC-PRV-025**
+  - cited `docs/plan/12-security-privacy-safety.md` line 610: "Safeguarding officer role whose oversight is itself logged | Identity, Audit | `communication.messages.oversee-messages` and `wellbeing.safeguarding.*` are high risk; every read writes an access entry"
+  - cited `docs/plan/27-compliance-and-legal.md` line 217: "CS-10 | Oversight access by the safeguarding officer is itself logged and reviewable by the principal | Access entries on every oversight read"
+- **TC-PRV-026**
+  - cited `docs/plan/12-security-privacy-safety.md` line 611: "Photo and media consent enforced at publishing time | Communication and Behavior publish; School owns the flag | Tagging a student without consent blocks publishing; withdrawal propagates to galleries"
+  - cited `docs/plan/12-security-privacy-safety.md` line 672: "Withdrawal propagates | Within one minute to cached projections, galleries, search indexes, notification bodies, exports still in Ready state | Every holder of the flag consumes `school.student.profil"
+  - cited `docs/plan/27-compliance-and-legal.md` line 215: "CS-8 | A child's photo is not published without the recorded media consent, and withdrawal takes effect across the product | Consent enforced at publishing"
+- **TC-SEC-361**
+  - cited `docs/plan/12-security-privacy-safety.md` line 629: "2 | Password change forced on first login; the default can never be set again for that account | Password history of 5 plus an explicit deny of the documented default for that account"
+- **TC-SEC-364**
+  - cited `docs/plan/12-security-privacy-safety.md` line 632: "5 | Seeder refuses to start when the configured password equals the documented default and the environment is not Development | Startup validation fails the host; the documented default lives in the b"
+- **TC-SEC-377**
+  - cited `docs/plan/12-security-privacy-safety.md` line 659: "Rules quoted: no secret in the repository, an image, a log or a client bundle; read at startup and on a refresh signal; rotation rehearsed at least once before launch; a compromised secret is rotated "
+- **TC-SEC-378**
+  - cited `docs/plan/12-security-privacy-safety.md` line 659: "Rules quoted: no secret in the repository, an image, a log or a client bundle; read at startup and on a refresh signal; rotation rehearsed at least once before launch; a compromised secret is rotated "
+  - cited `docs/plan/23-integrations-and-public-api.md` line 83: "Why a prefix"
+- **TC-PRV-064**
+  - cited `docs/plan/12-security-privacy-safety.md` line 674: "No advertising, no sale, no behavioural tracking of students | Product analytics is self-hosted and covers staff and administrator usage only; the mobile application ships no third-party tracking SDK "
+  - cited `docs/plan/27-compliance-and-legal.md` line 67: "COPPA, FERPA | Guardian consent; no advertising, no sale, no behavioural tracking of students | Platform, mobile pipeline; `12-security-privacy-safety.md` §10.1"
+  - cited `docs/plan/27-compliance-and-legal.md` line 209: "CS-2 | Nibras does not track the behaviour of students for analytics, engagement scoring or profiling; product analytics covers staff and administrator usage only and is self-hosted | Analytics disabl"
+- **TC-PRV-070**
+  - cited `docs/plan/12-security-privacy-safety.md` line 697: "Wellbeing records | `WellbeingRetentionJob` monthly | Wellbeing | Delete at leaving plus 7 years or the local safeguarding rule; skip open cases and holds | Safeguarding officer summary"
+  - cited `docs/plan/27-compliance-and-legal.md` line 81: "Wellbeing records (clinic, counseling, safeguarding) | Per country law; default until leaving plus 7 years | Delete; safeguarding concerns follow the local safeguarding retention rule instead | Suspen"
+- **TC-PRV-076**
+  - cited `docs/plan/12-security-privacy-safety.md` line 710: "A hold names who set it, when, and which subject or case; it is itself an audit entry | `platform.retention.place-legal-hold` is high risk; hold record in Platform; `platform.audit.recorded.v1`"
+  - cited `docs/plan/27-compliance-and-legal.md` line 418: "Holds suspend deletion and pin backups | Every pull request touching retention"
+- **TC-PRV-079**
+  - cited `docs/plan/12-security-privacy-safety.md` line 731: "Test: `TC-PRV-066` disabling the feature stops every call to the adapter within one minute; `TC-PRV-079` the published list equals the set of adapters enabled for that deployment."
+  - cited `docs/plan/27-compliance-and-legal.md` line 56: "GDPR-style baseline | Sub-processor list and refusal by feature | Platform `GET /api/v1/platform/sub-processors`; `12-security-privacy-safety.md` §10.5"
+  - cited `docs/plan/27-compliance-and-legal.md` line 62: "Saudi PDPL | Transfer outside the Kingdom only with consent and disclosure | Rung 4 AI and any foreign sub-processor behind consent; `25-ai-and-assist-ladder.md` §3.3"
+  - cited `docs/plan/27-compliance-and-legal.md` line 130: "Consistency | The published list equals the set of enabled adapters"
+- **TC-PRV-080**
+  - cited `docs/plan/12-security-privacy-safety.md` line 748: "Test: `TC-PRV-080` the exported assessment reflects the modules and sub-processors actually enabled on the day of export."
+  - cited `docs/plan/27-compliance-and-legal.md` line 55: "GDPR-style baseline | Records of processing | Platform impact assessment pre-fill from the Appendix J inventory"
+  - cited `docs/plan/27-compliance-and-legal.md` line 57: "GDPR-style baseline | Completable impact assessment | Platform `DpiaRecord`; `12-security-privacy-safety.md` §10.6"
+  - cited `docs/plan/27-compliance-and-legal.md` line 139: "Accuracy | Reflects the modules and sub-processors enabled on the day of export"
+- **TC-SEC-380**
+  - cited `docs/plan/12-security-privacy-safety.md` line 756: "Pinned dependencies | Lock files for NuGet, npm and pub; exact versions in `19-dependency-and-license-inventory.md` | Every build"
+  - cited `docs/plan/19-dependency-and-license-inventory.md` line 334: "Exact versions only, one place per ecosystem: `Directory.Packages.props` with central package management for NuGet, `package.json` plus `package-lock.json` for npm, `pubspec.yaml` plus `pubspec.lock` "
+  - cited `docs/plan/19-dependency-and-license-inventory.md` line 376: "`12-security-privacy-safety.md` | Group E review"
+- **TC-SEC-381**
+  - cited `docs/plan/12-security-privacy-safety.md` line 757: "SBOM | CycloneDX per image, published with the image | `release.yml`"
+- **TC-SEC-383**
+  - cited `docs/plan/12-security-privacy-safety.md` line 759: "Admission control | The cluster refuses an unsigned image or one with a critical vulnerability | Kubernetes admission policy in `deploy/`"
+- **TC-SEC-384**
+  - cited `docs/plan/12-security-privacy-safety.md` line 760: "Vulnerability and licence scans | Trivy on dependencies and containers, licence scan against the allow-list, every build; critical fixes within 48 hours | `ci-service.yml`, `security-scan.yml`, `licen"
+- **TC-SEC-386**
+  - cited `docs/plan/12-security-privacy-safety.md` line 763: "Non-root containers, read-only file systems | Every image runs as a non-root user with a read-only root and a writable `/tmp` only | Dockerfiles from the service template"
+- **TC-SEC-387**
+  - cited `docs/plan/12-security-privacy-safety.md` line 764: "Network policies | Default deny; each service may reach its own database, RabbitMQ, Redis, and the gRPC peers in its one-hop list | `deploy/` network policies generated from the sync-deps column of re"
+- **TC-SEC-388**
+  - cited `docs/plan/12-security-privacy-safety.md` line 765: "Database user per service | `svc_<service>` owns only its database; Audit's user is append-only; Wellbeing's user is separate with its own credentials | Migrations create the role"
+- **TC-SEC-389**
+  - cited `docs/plan/12-security-privacy-safety.md` line 771: "Promotion without rebuild | An image is built once and promoted by tag | `release.yml`"
+- **TC-SEC-391**
+  - cited `docs/plan/12-security-privacy-safety.md` line 791: "Test identifier for the engagement itself: `TC-SEC-391` the retest confirms every critical and high finding closed."
+  - cited `docs/plan/12-security-privacy-safety.md` line 821: "The standards are met | Before general availability, then yearly"
+  - cited `docs/plan/18-risk-register.md` line 112: "RISK-21 | Late penetration-test findings: critical or high findings arrive in Phase 6 with six to eight weeks to close them, and general availability waits | 3 | 4 | 12 | ZAP reports a high finding th"
+  - cited `docs/plan/34-work-breakdown.md` line 1286: "SL-SEC-604 | tools | 2 | REQ-SEC-018, REQ-TST-023 | fix round 2 and retest; general-availability gate item | SL-SEC-603"
+- **TC-SEC-392**
+  - cited `docs/plan/12-security-privacy-safety.md` line 805: "Tests: `TC-SEC-390` `security.txt` served, `TC-SEC-392` a report submitted through the portal creates a tracked ticket and an acknowledgement inside 2 working days."
+  - cited `docs/plan/34-work-breakdown.md` line 1289: "SL-SEC-607 | A researcher finds `security.txt` on the platform domain and every tenant domain, submits a report through the developer-portal form without an account, and receives an acknowledgement wi"
+- **TC-SEC-394**
+  - cited `docs/plan/19-dependency-and-license-inventory.md` line 248: "Redis | 6.4 row: Redis 8, AGPLv3 option | Tri-licence RSALv2 OR SSPLv1 OR AGPLv3 from 8.0; 7.2 and earlier BSD-3-Clause; the 7.4 line has no AGPL option | 7.4 (RSALv2 or SSPLv1 only), 8.0 (AGPLv3 adde"
+  - cited `docs/plan/19-dependency-and-license-inventory.md` line 413: "No Redis image below 8.0 | Every pull request touching deployment files"
+- **TC-SEC-393**
+  - cited `docs/plan/19-dependency-and-license-inventory.md` line 411: "No disallowed licence reaches a build | Every pull request"
+- **TC-SEC-395**
+  - cited `docs/plan/19-dependency-and-license-inventory.md` line 412: "No banned package is referenced | Every pull request"

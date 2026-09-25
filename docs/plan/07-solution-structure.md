@@ -2,7 +2,7 @@
 
 > The full repository tree to project level, the building blocks and their public surface, the contracts layout, the service template, the dependency rules with the architecture tests that enforce them, and the naming conventions. Names come from Appendix L; the anatomy comes from reference architecture Sections 1 to 3; the standards come from master brief Section 19.
 
-**Group** B · **Requirement areas covered** PLAT, TST, PERF, DATA, MSG, INF · **Last updated** 2026-09-20 by the planning session
+**Group** B · **Requirement areas covered** PLAT, TST, PERF, DATA, MSG, INF · **Last updated** 2026-09-22 by the planning session
 
 ## Purpose
 
@@ -24,13 +24,13 @@ Every tree in this document is a fenced tree with a purpose comment on every ent
 
 **Counts, quoted from Appendix L.** 20 data-owning services, 16 Tier 1 and 4 Tier 2; with Gateway and the two backends-for-frontends, 23 deployable applications, plus 7 worker images. The 7 worker hosts are `Notification.Worker`, `Documents.Worker`, `Scheduling.Worker`, `Assessment.Worker`, `Finance.Worker`, `Reporting.Projections` and `Ai.Worker`. This document adds no service and no worker; it only places them.
 
-**Derived project count, so a reader can check the trees.** 20 services × 4 layer projects = 80, plus 7 worker projects = 87 service projects; 20 × 3 test projects = 60; 13 building blocks; 21 contract projects; AppHost, ServiceDefaults, Gateway, Bff.Web and Bff.Mobile = 5, with 3 test projects for the hosts; 4 .NET projects under `tests/` (EndToEnd and Load are Node projects). Total: **193 .NET projects** in `Nibras.sln`.
+**Derived project count, so a reader can check the trees.** 20 services × 4 layer projects = 80, plus 7 worker projects = 87 service projects; 20 × 3 test projects = 60; 13 building blocks and the 13 building-block test projects part 2.2 requires beside them = 26; 21 contract projects; AppHost, ServiceDefaults, Gateway, Bff.Web and Bff.Mobile = 5, with 3 test projects for the hosts; 4 .NET projects under `tests/` (EndToEnd and Load are Node projects). Total: **206 .NET projects** in `Nibras.sln`.
 
 ---
 
 ## 1. Repository root
 
-Every top-level file and folder. The root carries the settings that make 193 projects build identically on Windows and Linux; nothing under it is allowed to override `Directory.Build.props` without an ADR.
+Every top-level file and folder. The root carries the settings that make 206 projects build identically on Windows and Linux; nothing under it is allowed to override `Directory.Build.props` without an ADR.
 
 ```
 nibras/                                    the mono-repo: one repository for every deliverable (master brief Section 7.1)
@@ -78,7 +78,7 @@ nibras/                                    the mono-repo: one repository for eve
 ├── CLAUDE.md                              the rules the assistant follows in this repository
 ├── README.md                              what Nibras is, how to run it, where the plan and the runbooks are
 ├── Directory.Build.props                  net10.0, nullable on, warnings as errors, analyzers, deterministic build, InvariantGlobalization false
-├── Directory.Packages.props               central package management: every NuGet version pinned once, for all 193 projects
+├── Directory.Packages.props               central package management: every NuGet version pinned once, for all 206 projects
 ├── global.json                            the .NET SDK version with rollForward disabled, so every machine and runner builds identically
 ├── nuget.config                           package sources and RestorePackagesWithLockFile, so restore is reproducible
 └── Nibras.sln                             the solution; its solution folders mirror src/, tests/ and tools/
@@ -154,29 +154,31 @@ One project per publishing service plus `Shared`. Reference architecture Section
 ```
 src/Contracts/                                   versioned integration events, command messages, gRPC protos and error codes; data only, the architect owns this folder
 ├── Nibras.Contracts.Shared/                     MessageEnvelope, common identifiers, PartitionKey, SchemaVersion; the only project a contract may reference
-├── Nibras.Contracts.Identity/                   identity.user.*, identity.role.changed, identity.permissions.changed, identity.login.new-device
-├── Nibras.Contracts.Platform/                   platform.tenant.*, platform.plan.changed, platform.feature-flag.changed, platform.settings.changed, platform.terminology.changed
-├── Nibras.Contracts.School/                     school.student.*, school.guardian.updated, school.staff.*, school.section.*, school.academic-year.*, school.term.started; school.proto for the directory
-├── Nibras.Contracts.Admissions/                 admissions.inquiry.created, admissions.application.*, admissions.offer.*, admissions.re-enrollment.*
-├── Nibras.Contracts.Academics/                  academics.teaching-assignment.changed, academics.assignment.published, academics.submission.*, academics.lesson-plan.submitted
-├── Nibras.Contracts.Assessment/                 assessment.marks.*, assessment.grades.locked, assessment.report-cards.*, assessment.grade-change.approved
-├── Nibras.Contracts.Scheduling/                 scheduling.timetable.*, scheduling.substitution.assigned, scheduling.event.published, scheduling.room-booking.approved
-├── Nibras.Contracts.Attendance/                 attendance.attendance.*, attendance.student.absent, attendance.excuse.approved, attendance.threshold.reached, attendance.gate-pass.*, attendance.visitor.*, attendance.emergency.*, attendance.roll-call.completed
-├── Nibras.Contracts.Finance/                    finance.invoice.*, finance.payment.*, finance.refund.processed, finance.account.restricted, finance.account.cleared, finance.cheque.bounced
-├── Nibras.Contracts.Communication/              communication.announcement.published, communication.message.*, communication.meeting.booked, communication.acknowledgment.*
-├── Nibras.Contracts.Notification/               notification.notification.delivered, notification.notification.failed
-├── Nibras.Contracts.Requests/                   requests.request.*, requests.task.assigned; the command messages other services receive from the request saga
-├── Nibras.Contracts.Documents/                  documents.document.generated, documents.certificate.revoked, documents.import.completed, documents.export.completed, documents.file.scan-failed; the *.generation-requested commands it receives
-├── Nibras.Contracts.Behavior/                   behavior.incident.recorded, behavior.points.awarded, behavior.badge.awarded
-├── Nibras.Contracts.Reporting/                  reporting.early-warning.*, reporting.data-quality.issue-detected
-├── Nibras.Contracts.Audit/                      audit.integrity-check.failed; the audit.recorded envelope every service emits under its own prefix
-├── Nibras.Contracts.Wellbeing/                  wellbeing.referral.created, wellbeing.intervention.opened, wellbeing.clinic-visit.recorded; identifiers and a category code only, never clinical detail
-├── Nibras.Contracts.Hr/                         hr.leave.*, hr.staff.hired, hr.staff-document.expiring
-├── Nibras.Contracts.Operations/                 operations.transport.*, operations.library.loan-overdue, operations.facility.ticket-raised
-└── Nibras.Contracts.Ai/                         ai.usage.recorded, ai.index.rebuild-completed
+├── Nibras.Contracts.Identity/                   identity.user.*, identity.role.changed, identity.permissions.changed, identity.login.new-device, identity.join-request.*, identity.guardian-link.created, identity.delegation.*, identity.break-glass.*, identity.impersonation.started, identity.access-review.due, identity.contact-point.*; identity.proto for the permission, role-risk and API-key lookups
+├── Nibras.Contracts.Platform/                   platform.tenant.*, platform.plan.changed, platform.feature-flag.changed, platform.settings.changed, platform.terminology.changed, platform.custom-field.*, platform.limit.*, platform.invoice.*, platform.trial.*, platform.upgrade.*, platform.webhook.*; platform.proto for tenant context, settings and retention holds
+├── Nibras.Contracts.School/                     school.student.*, school.guardian.*, school.staff.*, school.section.*, school.academic-year.*, school.term.started, school.grade-level.*, school.grading-period.*, school.calendar-day.*, school.department.*, school.room.*, school.sibling.*, school.student-document.*; school.proto for the directories and their checksums
+├── Nibras.Contracts.Admissions/                 admissions.inquiry.created, admissions.application.*, admissions.offer.*, admissions.re-enrollment.*; admissions.proto for Usage.Recount
+├── Nibras.Contracts.Academics/                  academics.teaching-assignment.changed, academics.assignment.published, academics.submission.*, academics.lesson-plan.submitted, academics.homework-load.exceeded, academics.syllabus-coverage.*; academics.proto for TeachingAssignments.Checksum and Usage.Recount
+├── Nibras.Contracts.Assessment/                 assessment.marks.*, assessment.grades.locked, assessment.report-card.*, assessment.report-cards.*, assessment.grade-change.approved, assessment.exam-paper.*; assessment.proto for Usage.Recount
+├── Nibras.Contracts.Scheduling/                 scheduling.timetable.*, scheduling.substitution.assigned, scheduling.event.published, scheduling.room-booking.approved, scheduling.exam-timetable.*; scheduling.proto for Timetables and its checksum
+├── Nibras.Contracts.Attendance/                 attendance.attendance.*, attendance.student.absent, attendance.excuse.approved, attendance.threshold.reached, attendance.gate-pass.*, attendance.visitor.*, attendance.emergency.*, attendance.roll-call.completed, attendance.dismissal.processed, attendance.mark-review.*; attendance.proto for Usage.Recount
+├── Nibras.Contracts.Finance/                    finance.invoice.*, finance.invoice-run.*, finance.payment.*, finance.refund.processed, finance.account.*, finance.cheque.bounced, finance.credit-note.*, finance.day.closed, finance.deposit.*, finance.fee-plan.*, finance.payer.*, finance.scholarship.*, finance.cash-session.*; finance.proto for Usage.Recount
+├── Nibras.Contracts.Communication/              communication.announcement.published, communication.message.*, communication.meeting.booked, communication.acknowledgment.*, communication.concern.*; communication.proto for Usage.Recount
+├── Nibras.Contracts.Notification/               notification.notification.*, notification.channel.suppressed; notification.proto for Usage.Recount
+├── Nibras.Contracts.Requests/                   requests.request.*, requests.task.assigned; the command messages other services receive from the request saga; requests.proto for Usage.Recount
+├── Nibras.Contracts.Documents/                  documents.document.generated, documents.certificate.revoked, documents.import.completed, documents.export.completed, documents.file.scan-failed, documents.sensitive-export.performed; the *.generation-requested commands it receives; documents.proto for Usage.Recount
+├── Nibras.Contracts.Behavior/                   behavior.incident.recorded, behavior.points.awarded, behavior.badge.awarded, behavior.consequence.assigned; behavior.proto for Usage.Recount
+├── Nibras.Contracts.Reporting/                  reporting.early-warning.*, reporting.data-quality.issue-detected, reporting.projection.rebuild-completed; reporting.proto for Usage.Recount
+├── Nibras.Contracts.Audit/                      audit.integrity-check.failed, audit.retention.partition-detached; the audit.recorded envelope every service emits under its own prefix; audit.proto for Usage.Recount
+├── Nibras.Contracts.Wellbeing/                  wellbeing.referral.created, wellbeing.intervention.*, wellbeing.clinic-visit.*, wellbeing.medication.administered, wellbeing.safeguarding.concern-raised; identifiers and a category code only, never clinical detail; wellbeing.proto for Usage.Recount
+├── Nibras.Contracts.Hr/                         hr.leave.*, hr.leave-balance.*, hr.staff.hired, hr.staff-document.expiring, hr.payroll.inputs-ready, hr.appraisal.*; hr.proto for Leave.Checksum and Usage.Recount
+├── Nibras.Contracts.Operations/                 operations.transport.*, operations.library.loan-overdue, operations.facility.ticket-raised, operations.activity.*, operations.frontdesk.*, operations.inventory.*; operations.proto for Usage.Recount
+└── Nibras.Contracts.Ai/                         ai.usage.recorded, ai.index.rebuild-completed, ai.suggestion.rejected; ai.proto for Usage.Recount
 ```
 
-The inside of one contract project, shown for Attendance and, for the proto, for School because School is the service that exposes a directory (reference architecture Section 8):
+**Why every project carries a proto.** Reference architecture Section 8.0 names six services as synchronous callees — Platform, Identity, School, Scheduling, Academics and Hr — and adds that Platform's metering job calls "every data-owning service's `Usage.Recount`", so all twenty expose at least one gRPC service and all twenty contract projects carry `Grpc/<service>.proto`. Section 8.0's one-hop rule holds for every one of them: no service makes a synchronous call from inside a handler that is itself serving one, which the `GrpcHopRules` architecture test named there enforces. Ai is the exception that proves the boundary: it exposes `ai.proto` for metering but makes no gRPC call itself, reading instead through Bff.Web's three internal REST routes from its jobs.
+
+The inside of one contract project, shown for Attendance and, for the richer proto, for School because School is the most-called directory (reference architecture Section 8.0):
 
 ```
 src/Contracts/Nibras.Contracts.Attendance/       everything another service may know about Attendance
@@ -199,6 +201,8 @@ src/Contracts/Nibras.Contracts.Attendance/       everything another service may 
 │       ├── ApplyLeaveEffect.cs                  approved leave request becomes excused sessions
 │       ├── ApplyEarlyDismissalEffect.cs         approved early dismissal becomes a dismissal record
 │       └── ApplyPickupChangeEffect.cs           approved pickup change updates the authorised collectors
+├── Grpc/                                        the synchronous surface this service exposes, one hop
+│   └── attendance.proto                         package nibras.attendance.v1: Usage.Recount for Platform's metering job (reference architecture Section 8.0)
 ├── ErrorCodes/                                  the stable codes from Appendix K, defined once here
 │   └── AttendanceErrorCodes.cs                  ATTENDANCE_SESSION_LOCKED, ATTENDANCE_DUPLICATE_MARK, ATTENDANCE_PICKUP_PERSON_NOT_AUTHORIZED and the rest
 ├── RoutingKeys.cs                               the string constants for every key above, so a publisher cannot misspell one
@@ -207,7 +211,7 @@ src/Contracts/Nibras.Contracts.Attendance/       everything another service may 
 src/Contracts/Nibras.Contracts.School/           the most-consumed contract in the system
 ├── Events/V1/                                   student, guardian, staff, section, academic-year and term events
 ├── Grpc/                                        the synchronous directory that other services may call, one hop
-│   └── school.proto                             package nibras.school.v1: StudentDirectory and StaffDirectory lookups and the reconciliation checksum call
+│   └── school.proto                             package nibras.school.v1: StudentDirectory and StaffDirectory lookups, the guardian eligibility check, the reconciliation checksum and snapshot-page calls, and Usage.Recount
 ├── ErrorCodes/SchoolErrorCodes.cs               SCHOOL_* codes
 ├── RoutingKeys.cs                               string constants
 └── README.md                                    consumers and retirement dates
@@ -458,7 +462,9 @@ src/Services/Attendance/                                          Attendance and
 │   ├── Abstractions/                                             the ports Infrastructure implements
 │   │   ├── IAttendanceRepository.cs                              load and save aggregates
 │   │   ├── IAttendanceReadContext.cs                             AsNoTracking IQueryable sources for the read models
-│   │   └── IStudentDirectory.cs                                  the one synchronous lookup: School over gRPC with a cached fallback; the clock port comes from the Domain block
+│   │   ├── IStudentDirectory.cs                                  School's student directory over gRPC with a cached fallback; the clock port comes from the Domain block
+│   │   ├── ITimetableOfDay.cs                                    Scheduling `Timetables`: the campus day and a published version (reference architecture Section 8.0)
+│   │   └── ILeaveChecksum.cs                                     Hr `Leave.Checksum`, called job only by the nightly reconciler, never inside a request
 │   ├── Permissions/                                              constants that match Appendix B
 │   │   └── AttendancePermissions.cs                              attendance.student-attendance.mark, attendance.excuses.approve, attendance.safety.emergency.broadcast and every other permission, one constant each
 │   └── DependencyInjection.cs                                    AddAttendanceApplication(): handlers, validators, consumers, cache policies
@@ -489,11 +495,13 @@ src/Services/Attendance/                                          Attendance and
 │   ├── Messaging/                                                Wolverine and RabbitMQ topology for this service
 │   │   ├── AttendanceTopology.cs                                 exchange nibras.attendance, queues attendance.<purpose> with .dlq and .parking, partition keys from Appendix E
 │   │   └── IntegrationEventMapper.cs                             domain events to Nibras.Contracts.Attendance V1 records, written through the outbox
-│   ├── Grpc/                                                     clients for the rare synchronous query
-│   │   └── SchoolDirectoryClient.cs                              IStudentDirectory over nibras.school.v1: timeout, retry with jitter, circuit breaker, cached fallback
+│   ├── Grpc/                                                     clients for the synchronous queries reference architecture Section 8.0 allows this service
+│   │   ├── SchoolDirectoryClient.cs                              IStudentDirectory over nibras.school.v1: timeout, retry with jitter, circuit breaker, cached fallback
+│   │   ├── SchedulingTimetableClient.cs                          ITimetableOfDay over nibras.scheduling.v1, same resilience policy and cached fallback
+│   │   └── HrLeaveChecksumClient.cs                              ILeaveChecksum over nibras.hr.v1, called from the reconciler job only
 │   ├── Reconciliation/                                           nightly checksum of the reference copies against School (master brief Section 19)
 │   │   └── ReferenceCopyReconciler.cs                            compares, repairs by replay, raises a data-quality issue on an unexplained difference
-│   └── DependencyInjection.cs                                    AddAttendanceInfrastructure(): pooled DbContext, repositories, topology, gRPC channel
+│   └── DependencyInjection.cs                                    AddAttendanceInfrastructure(): pooled DbContext, repositories, topology, one gRPC channel per callee in reference architecture Section 8.0
 ├── Nibras.Attendance.Api/                                        the HTTP host, image nibras/attendance-api
 │   ├── Program.cs                                                composition root, no logic: ServiceDefaults, Application, Infrastructure, endpoints, probes
 │   ├── Endpoints/                                                endpoint registration by feature group
@@ -501,7 +509,8 @@ src/Services/Attendance/                                          Attendance and
 │   │   ├── ExcuseEndpoints.cs                                    /api/v1/attendance/excuses
 │   │   ├── ThresholdEndpoints.cs                                 /api/v1/attendance/thresholds
 │   │   └── SafetyEndpoints.cs                                    /api/v1/attendance/safety/pickup-persons, gate-passes, visitors, emergency
-│   ├── Grpc/                                                     gRPC services this service exposes; none in v1 because no service names Attendance as a synchronous dependency (reference architecture Section 8), so the template does not create this folder here
+│   ├── Grpc/                                                     gRPC services this service exposes, implementing nibras.attendance.v1
+│   │   └── UsageService.cs                                       Usage.Recount, answered from this service's own data for Platform's metering job; no other service names Attendance as a synchronous dependency (reference architecture Section 8.0)
 │   ├── Jobs/                                                     Quartz.NET jobs, hosted here because Appendix L lists no attendance-worker image
 │   │   ├── UnmarkedClassReminderJob.cs                           per period cut-off, per campus time zone; publishes attendance.attendance.not-marked.v1
 │   │   ├── ThresholdEvaluationJob.cs                             nightly threshold pass; publishes attendance.threshold.reached.v1
@@ -623,7 +632,7 @@ Every entry point is one Node implementation with a `.ps1` and a `.sh` wrapper (
 
 ```
 tools/                                           kit and repository tooling; Node 22 or later is the only prerequisite beyond the product stack
-├── kit-lint/                                    the document lint, rules R01 to R18
+├── kit-lint/                                    the document lint, rules R01 to R19 (nineteen rules, counted in kit-lint.mjs)
 │   ├── kit-lint.mjs                             the implementation
 │   ├── kit-lint.test.mjs                        its own tests, run by ci-kit.yml on both runners
 │   ├── hook-post-edit.mjs                       Claude Code hook after an edit, invoked as node with a relative path
@@ -693,7 +702,7 @@ A service may use only what is listed in the **Public surface** column. Everythi
 
 ## 8. Contracts layout and versioning rule
 
-**Layout.** `src/Contracts/Nibras.Contracts.<Service>/` holds `Events/V<n>/`, `Commands/V<n>/` where the service accepts saga commands, `Grpc/<service>.proto` where the service exposes a synchronous query, `ErrorCodes/<Service>ErrorCodes.cs`, `RoutingKeys.cs` and `README.md`. `Nibras.Contracts.Shared` holds `MessageEnvelope` (message id, correlation id, causation id, tenant id, occurred-at, schema version, partition key), the common identifier types, and nothing else.
+**Layout.** `src/Contracts/Nibras.Contracts.<Service>/` holds `Events/V<n>/`, `Commands/V<n>/` where the service accepts saga commands, `Grpc/<service>.proto` for the synchronous surface the service exposes (every data-owning service has one, because Platform's metering job calls `Usage.Recount` on all of them), `ErrorCodes/<Service>ErrorCodes.cs`, `RoutingKeys.cs` and `README.md`. `Nibras.Contracts.Shared` holds `MessageEnvelope` (message id, correlation id, causation id, tenant id, occurred-at, schema version, partition key), the common identifier types, and nothing else.
 
 **What a contract is.** A contract is only data: C# `record` types, enums, and generated proto classes. A contract project references `Nibras.Contracts.Shared` and no other project; no EF Core, no domain type, no service internals (reference architecture Section 3, and `.claude/rules/contracts.md`).
 
@@ -811,7 +820,7 @@ All in `tests/Architecture.Tests/Rules/`, written with NetArchTest against every
 | TC-TST-111 | `Contracts_ReferenceOnly_ContractsShared` | Every `Nibras.Contracts.<S>` assembly references no `Nibras.` assembly other than `Nibras.Contracts.Shared`. |
 | TC-TST-112 | `Contracts_ContainOnlyData` | Every public type in a contract assembly is a record, an enum, a static class of string constants, or a generated proto type. |
 | TC-TST-113 | `Services_NeverReference_AnotherService` | No `Nibras.<S>.*` assembly references a `Nibras.<Other>.*` assembly for any other service in Appendix L. |
-| TC-TST-114 | `Hosts_NeverReference_ServiceProjects` | `Nibras.Gateway`, `Nibras.Bff.Web`, `Nibras.Bff.Mobile` and `Nibras.ServiceDefaults` reference no `Nibras.<S>.*` assembly. |
+| `TC-TST-114` (BFF Web sheet) | `Hosts_NeverReference_ServiceProjects` | `Nibras.Gateway`, `Nibras.Bff.Web`, `Nibras.Bff.Mobile` and `Nibras.ServiceDefaults` reference no `Nibras.<S>.*` assembly. |
 | TC-TST-115 | `TestingBlock_ReferencedOnlyBy_TestProjects` | Every assembly that references `Nibras.BuildingBlocks.Testing` has a name ending in `Tests`. |
 | TC-TST-116 | `Handlers_ResideIn_FeatureFolders` | Every handler, validator and endpoint type lives in a namespace `Nibras.<S>.Application.Features.<Feature>`, and every consumer in `Nibras.<S>.Application.Consumers`. |
 | TC-TST-117 | `Endpoints_DeclareAPermissionConstant` | Every endpoint type calls `RequirePermission` with a constant from `Nibras.<S>.Application.Permissions`, or carries `[PlatformScoped]` with a justification attribute argument. |
@@ -878,7 +887,7 @@ From Appendix X, enforced and not advised:
 | `core.longpaths` enabled on Windows clones | the Windows setup script in `docs/dev-setup/windows.md` | Build outputs under `bin/` and `obj/` are not repository-relative and can exceed the old limit |
 | Paths composed with `Path.Combine`, never a literal separator | code review and `.claude/rules/portability.md` | A literal `\` breaks the Linux image, a literal `/` breaks nothing until it is concatenated |
 
-**What 200 characters means for this tree.** The longest project prefix in the repository is `src/Services/Communication/tests/Nibras.Communication.IntegrationTests/`, which is 70 characters, leaving 130 for folders and the file name inside the project. The budget this document sets so nobody has to count: at most four folder levels inside a project, folder names of at most 40 characters, file names of at most 60 characters. The worst case under that budget is 70 + 4 × 41 + 60 = 294 only if every limit is hit at once, which the trees above never approach; the longest path in part 3 is `src/Services/Attendance/Nibras.Attendance.Infrastructure/Persistence/Partitioning/attendance_records_partitions.sql` at 115 characters. R14 is the arbiter; the budget is the habit that keeps R14 quiet.
+**What 200 characters means for this tree.** The longest project prefix in the repository is `src/Services/Communication/tests/Nibras.Communication.IntegrationTests`, which is 70 characters, 71 with the separator that follows it, leaving 129 for the folders and the file name inside the project. The budget this document sets so nobody has to count: at most three folder levels inside a project, folder names of at most 24 characters, file names of at most 50 characters. The worst case under that budget is 71 + 3 × 25 + 50 = 196, inside the limit even when every allowance is spent at once. The trees above stay far below it: the longest path in part 3 is `src/Services/Attendance/Nibras.Attendance.Infrastructure/Persistence/Partitioning/attendance_records_partitions.sql` at 115 characters, with two folder levels inside the project. R14 is the arbiter, and it enforces the same 200 characters that `.claude/rules/portability.md` states; the budget is the habit that keeps R14 quiet.
 
 **Case.** Folder names are PascalCase for projects and namespaces, lower case for `tests/`, `deploy/`, `tools/`, `docs/` and everything under them, and kebab-case for pipeline files, chart folders and tool names. Because R13 forbids case-only collisions, `src/Services/Attendance/tests/` and `tests/` at the root never collide, and a service folder `Hr/` never gets a sibling `HR/`.
 
@@ -888,13 +897,13 @@ From Appendix X, enforced and not advised:
 
 | Requirement ID | What it means here | Acceptance criterion | Test case ID |
 |---|---|---|---|
-| REQ-PLAT-001 | Twenty services, sixteen Tier 1, with Assessment and Behavior separate (ADR-0002) | The `src/Services/` tree has exactly the twenty folders of Appendix L with the worker set Appendix L gives | TC-TST-124 |
-| REQ-PLAT-003 | Linux servers with a virtual machine appliance for Windows hosts (ADR-0016) | `deploy/onprem/` exists and the appliance build is a pipeline job | TC-PLAT-101 |
-| REQ-PLAT-004 | Every tool is one Node implementation with `.ps1` and `.sh` wrappers (ADR-0017) | Every entry point under `tools/` has both wrappers | `kit-lint` R15, TC-PLAT-102 |
-| REQ-PERF-002 | Caching goes through `Nibras.BuildingBlocks.Caching` only (ADR-0006) | No service references StackExchange.Redis directly; Wellbeing references no caching at all | TC-TST-109, TC-TST-122 |
-| REQ-TST-001 | Every test carries a test case identifier (ADR-0014) | Every architecture rule in 10.3 is a test method with its `TC-TST-1NN` attribute | TC-TST-101 to TC-TST-124 |
+| REQ-DATA-001 | "Each data-owning service has its own database and schema, and no service ever reads another service's database" (03) — here, the tree that makes that structurally true | The `src/Services/` tree has exactly the twenty folders of Appendix L with the worker set Appendix L gives, and no project of one service references a project of another | TC-TST-124 |
+| REQ-PLAT-004 | "A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware" (03), the shape ADR-0016 decided | `deploy/onprem/` exists and the appliance build is a pipeline job | TC-PLAT-101 |
+| REQ-PLAT-022 | "Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invokes `node` with a relative path" (03), as ADR-0017 decided | Every entry point under `tools/` has both wrappers | `kit-lint` R15, TC-PLAT-102 |
+| REQ-PERF-019 | "All caching goes through `Nibras.BuildingBlocks.Caching` over `HybridCache`" (03), as ADR-0006 decided | No service references StackExchange.Redis directly; Wellbeing references no caching at all | TC-TST-109, TC-TST-122 |
+| REQ-TST-001 | "Every requirement has at least one acceptance test case written as Given, When, Then" (03) — here, every structural rule this document states is one named test | Every architecture rule in 10.3 is a test method carrying its `TC-TST-1NN` identifier, as ADR-0014 requires | TC-TST-101 to TC-TST-124 |
 
-TC-PLAT-101 is the appliance build job in `release.yml`; TC-PLAT-102 is the template smoke test in `ci-kit.yml`. Both identifiers are assigned here and are picked up by `16-test-strategy.md` and `20-traceability-matrix.md`.
+TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the table above. TC-PLAT-102 is the wrapper smoke test in `ci-kit.yml`, which runs every tool entry point through both its wrappers, and is defined in document 33 under "How this document is verified". Document 03 and document 20 carry both identifiers against REQ-PLAT-004 and REQ-PLAT-022; they cite them and do not define them.
 
 ## Decisions in force
 
@@ -916,6 +925,7 @@ TC-PLAT-101 is the appliance build job in `release.yml`; TC-PLAT-102 is the temp
 |---|---|---|
 | The service names, areas, databases, exchanges and images | Appendix L | 2026-09-20 |
 | The anatomy of a service and the building-block list | Reference architecture Sections 2 and 3 | 2026-09-20 |
+| Which services expose gRPC, which call which, the one-hop rule and Ai's route through Bff.Web | Reference architecture Section 8.0 (v9.1) | 2026-09-22 |
 | The naming table | Reference architecture Section 7 | 2026-09-20 |
 | The CI tree and the secrets tree | Reference architecture Sections 11 and 12 | 2026-09-20 |
 | The support matrix and hygiene rules | Appendix X | 2026-09-20 |
@@ -935,7 +945,7 @@ TC-PLAT-101 is the appliance build job in `release.yml`; TC-PLAT-102 is the temp
 ## How this document is verified
 
 - **Architecture tests.** The twenty-four rules in 10.3 are test methods in `tests/Architecture.Tests/`, each carrying its `TC-TST-1NN` identifier, run in every `ci-service.yml`. TC-TST-124 in particular fails if `src/Services/` ever disagrees with Appendix L, and TC-TST-108 fails the day a building block reaches into a domain.
-- **The kit lint.** `node tools/kit-lint/kit-lint.mjs .` checks that every tree in this document has a purpose comment on every entry (R18), that every `Section` and `Appendix` reference resolves (R01, R02), that no placeholder marker exists (R05), that no two paths in the repository differ only by case (R13), that no path exceeds 200 characters (R14), and that every tool under `tools/` ships both wrappers (R15). The document is finished only when the lint reports nothing against it.
+- **The kit lint.** `node tools/kit-lint/kit-lint.mjs .` checks that every tree in this document has a purpose comment on every entry (R18), that every `Section` and `Appendix` reference resolves (R01, R02), that no placeholder marker exists (R05), that no two paths in the repository differ only by case (R13), that no path exceeds 200 characters (R14), that every tool under `tools/` ships both wrappers (R15), and that every identifier this document cites exists in the catalog that owns it (R19). The document is finished only when the lint reports nothing against it.
 - **The template.** `tools/templates/service/template.test.mjs`, run by `ci-kit.yml` on `ubuntu-latest` and `windows-latest`, generates a sample service with `dotnet new nibrassvc`, builds it with warnings as errors, and runs its three generated tests. If the template and this document drift, that job is where it shows.
 - **Cross-document consistency.** `/lint-plan` checks that every service in `05-service-catalog.md` has the folder, worker and contract project this document gives it, and that every routing key named in part 2.3 and part 3 exists in Appendix E.
 - **Review.** The architecture-reviewer agent reads parts 7 and 10 against master brief Section 19 and reference architecture Sections 2 and 3, and the portability-reviewer agent reads parts 6 and 12 against Appendix X, before Group B is scored.
