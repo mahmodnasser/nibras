@@ -423,4 +423,4 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 | Child-safety clauses are true | The tests in §6 | Every pull request touching the owning services |
 | The accessibility statement is generated from real results | Release pipeline stage that assembles §4 from CI and the manual pass | Every release |
 | E-invoicing plug-ins meet §9 | Conformance suite in `Nibras.Plugins.Testing` per plug-in version | Plug-in certification |
-| This document agrees with the catalogs | `tools/kit-lint`; `/lint-plan` against `12-security-privacy-safety.md`, `10-data-architecture.md` and `06-services/platform.md` | Every change under `docs/` |
+| This document agrees with the catalogs | kit-lint R01, R02, R05, R17 and R19; `plan-consistency-checker` with `privacy-auditor` compares this document with `12-security-privacy-safety.md`, `10-data-architecture.md` and `06-services/platform.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |

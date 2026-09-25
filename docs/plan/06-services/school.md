@@ -1259,11 +1259,13 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E with the fields quoted | kit-lint R07 and `/lint-plan`; TC-SCH-419 once code exists | Lint; publisher contract tests |
+| Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
+| Every event here carries the fields Appendix E quotes for it | `messaging-reviewer` compares the payload fields in section 7 with Appendix E at the Group C review and on every change to this sheet or to Appendix E; TC-SCH-419 once code exists | Review; publisher contract tests |
 | Every permission string exists in Appendix B | `/lint-plan` permission check; `PermissionMatrix.Tests` (TC-SCH-415) | Lint; every pull request |
 | Every error code exists in Appendix K | `/lint-plan` error-code check | Lint |
 | The gRPC contract never carries a sensitive field | TC-SCH-418 and `TC-SEC-131` | Contract suite |
-| Every Appendix R transition of WF-SCH-01 to WF-SCH-04 has a test | `/lint-plan` compares TC identifiers in section 15 with Appendix R | Lint; integration suites |
+| Every test Appendix R gives WF-SCH-01 to WF-SCH-04 is cited in section 15 | kit-lint R32 fails this sheet when section 15 omits any TC identifier Appendix R lists under a workflow document 13 assigns to School | Lint |
+| Every Appendix R transition of WF-SCH-01 to WF-SCH-04 has its own test | `test-strategist` compares each transition row of WF-SCH-01 to WF-SCH-04 with the test it names and with section 15 at the Group C review and on every change to this sheet or to Appendix R; the tests themselves run in the integration suites | Review; integration suites |
 | Every consumer is idempotent | TC-SCH-420, TC-SCH-421 | Integration suite |
-| The tree matches the service template anatomy | `EveryServiceHas_TheAnatomy` (`TC-TST-124`) and the tree-comment rule R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (`TC-TST-124`, planned in document 07 under `tests/Architecture.Tests/`, run on every pull request by SL-TST-001) fails the build on a drift | Lint; review; architecture tests |
 | Budgets hold | TC-SCH-423, TC-SCH-424 with committed `EXPLAIN (ANALYZE, BUFFERS)` evidence under `docs/perf/school/` | Pipeline |

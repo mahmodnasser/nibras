@@ -5,7 +5,9 @@ import { dirname as __dirOf, resolve as __resolve } from 'node:path';
 // Paths resolve from this file, so the script runs from any checkout on Windows or Linux.
 const __here = __dirOf(__toPath(import.meta.url)).split(String.fromCharCode(92)).join('/');
 const __kit = __resolve(__here, '../..').split(String.fromCharCode(92)).join('/') + '/';
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { writeGenerated } from './write-generated.cjs';
+
 
 const K = __kit;
 const read = (p) => readFileSync(K + p, 'utf8');
@@ -173,7 +175,7 @@ p('|---|---|');
 p('| No requirement is unmapped | Generated from document 03 row by row; the summary counts are computed |');
 p('| Every identifier exists | `kit-lint` rule R19 over this document |');
 p('| No test cell is empty | The generator assigns a derived acceptance test to any requirement without one |');
-p('| The matrix is current | It is regenerated whenever documents 03, 34 or a service sheet change, and a stale copy fails review |');
+p('| The matrix is current | Kit-lint rule R23 reruns `gen-20.mjs --check` and fails when the matrix differs from what documents 03, 17, 31, 34 and the sheets produce today |');
 p();
-writeFileSync(K + 'docs/plan/20-traceability-matrix.md', L.join('\n'), 'utf8');
+writeGenerated(K + 'docs/plan/20-traceability-matrix.md', L.join('\n'));
 console.log('requirements ' + reqs.length + ', built by slices ' + (reqs.length - noSlice) + ', gates ' + noSlice + ', tests from sources ' + (reqs.length - derived) + ', derived ' + derived);

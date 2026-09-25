@@ -1,7 +1,7 @@
 # Nibras: Project State
 
 **Phase:** Planning. 34 of 35 plan documents are written and lint-clean; only 00 (executive summary) is left. **The scorecard (document 30) blocks every group**: coverage is complete, but consistency, feasibility and testability are at 2. About 14 to 15 days of remediation in eight themes stand between the plan and approval.
-**Kit version:** v9, brief v9.2 (ADR-0019, ADR-0020), on `github.com/mahmodnasser/nibras`, branch `main`. Fixes 4 and 5 are not yet committed.
+**Kit version:** v9, brief v9.3 (ADR-0019, ADR-0020, ADR-0021), on `github.com/mahmodnasser/nibras`, branch `main`. Fix 6 is not yet committed.
 **Last updated:** 2026-09-25, scorecard remediation themes 1 to 5
 
 ## Done: complete and lint-clean
@@ -37,7 +37,7 @@
 | 3 | **Done**: ADR-0019 applied 317 brief corrections, all three briefs are v9.1; four value decisions settled (cooling-off 30 days, invitations 14 days, dedupe 5 minutes, feature 39 to engineering); R03 checks minor versions | done |
 | 4 | **Done**: contradictions removed across 01-33 and all 23 sheets (113 open points closed or narrowed against ADR-0019); Gateway revoked-mark read added to 21; CAP-INT-02 and CAP-INT-03 added to 17 with their slices moved in 34; 79 capabilities; k6 in allow.json | done |
 | 5 | **Done**: ADR-0020 (proposed) and brief v9.2; kit-lint R20 (one definition per test, no undefined citation, derived tests need their requirement) with 5 self-tests; 206 double definitions and 163 undefined citations resolved; registry annex generated (1,566 tests, 334 derived) | done |
-| 6 | Verification claims that name checks that exist | 2 days |
+| 6 | **Done**: ADR-0021 (proposed) and brief v9.3; 12 new kit-lint rules (R21 to R32) with self-tests, R18 strict for plan trees; generators gained `--check`; about 100 verification rows now name a real rule, a named review step or the building slice | done |
 | 7 | Risk honesty: likelihood and RISK ids on every open point; document 18 re-scored | 1.5 days |
 | 8 | Every signature feature with a release-gated demo step | 1.5 days |
 
@@ -45,7 +45,7 @@ Then re-score with `/score-plan` (`node tools/plan-build/build-30.cjs` rebuilds 
 
 ## Tooling added during the plan build
 
-- `kit-lint` rule **R19**: every requirement, workflow, rule, capability, routing key, error code and permission a plan document cites must exist in its catalog. Rule **R20**: every test case is defined in exactly one document and every cited test exists (ADR-0020). 33 self-tests pass.
+- `kit-lint` rule **R19**: every requirement, workflow, rule, capability, routing key, error code and permission a plan document cites must exist in its catalog. Rule **R20**: every test case is defined in exactly one document and every cited test exists (ADR-0020). Rules **R21 to R32** make the plan's verification claims true (ADR-0021). 46 self-tests pass.
 - `tools/license-scan` parses SPDX expressions, treats fonts as assets, and requires every licence override to record its source. 12 tests pass.
 - `tools/plan-build/`: the generators and validators for documents 03, 20, 30, 31, 34 and the test-case registry annex, and the schedule derivation for document 17.
 

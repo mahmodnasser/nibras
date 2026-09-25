@@ -1435,7 +1435,7 @@ Every phase 5 requirement in this part's scope is built by at least one slice ab
 
 | Date | Reviewer | Result |
 |---|---|---|
-| 2026-09-22 | Plan build, assembled and validated by script | 718 slices, every requirement covered |
+| 2026-09-25 | Plan build, assembled and validated by script | 718 slices, every requirement covered |
 
 ## How this document is verified
 
@@ -1444,5 +1444,6 @@ Every phase 5 requirement in this part's scope is built by at least one slice ab
 | Every requirement is built by a slice or satisfied by a named gate | The assembly script refuses to write this document otherwise; the Coverage table above is computed, not typed |
 | Every identifier exists | `kit-lint` rule R19 over this document |
 | No slice exceeds three days or covers nothing | The assembly script |
-| Every capability in the roadmap has slices | The assembly script, both directions |
+| Every capability in the roadmap has slices | The assembly script, both directions, and kit-lint rule R25 on the assembled document |
+| The document is current | Kit-lint rule R23 reruns `assemble-34.mjs --write --check` and fails when a part or document 17 changed since assembly |
 | The estimates were honest | Re-estimated at the end of each phase against the slices actually delivered, recorded in the review record |

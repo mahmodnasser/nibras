@@ -11,6 +11,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const SKIP_DIRS = new Set(['node_modules', '.git', 'bin', 'obj', 'dist', '.dart_tool', 'build']);
 const TEXT_EXT = /\.(md|json|ya?ml|mjs|js|ps1|sh|txt|gitattributes|editorconfig)$/i;
@@ -149,6 +150,14 @@ rule('R01-section-refs', 'Every "Section N" reference resolves to a master-brief
   }
   if (!top.size) return [];
   const parentsWithSubs = new Set([...sub].map((s) => s.split('.')[0]));
+  // "reference architecture Section 8.0" is a reference architecture section, not a master-brief one.
+  const ra = briefFile(ctx, '03-reference-architecture.md');
+  const raTop = new Set();
+  const raSub = new Set();
+  if (ra) for (const h of headings(ra)) {
+    const m = /^(d+)(?:.(d+))?.?s/.exec(h.text);
+    if (m) (m[2] === undefined ? raTop : raSub).add(m[2] === undefined ? m[1] : m[1] + '.' + m[2]);
+  }
   const out = [];
   for (const f of ctx.md) {
     if (f.rel.startsWith('tools/')) continue;
@@ -156,6 +165,12 @@ rule('R01-section-refs', 'Every "Section N" reference resolves to a master-brief
       for (const m of text.matchAll(/\bSection\s+(\d+)(?:\.(\d+))?/g)) {
         const major = m[1];
         const minor = m[2];
+        const before = text.slice(Math.max(0, m.index - 60), m.index);
+        if (raTop.size && /reference architecture[^.;]*$/i.test(before)) {
+          if (!raTop.has(major)) out.push(finding('R01-section-refs', 'error', f.rel, ln, 'Reference architecture Section ' + major + ' does not exist'));
+          else if (minor !== undefined && ![...raSub].some((x) => x.startsWith(major + '.')) === false && !raSub.has(major + '.' + minor)) out.push(finding('R01-section-refs', 'warn', f.rel, ln, 'Reference architecture Section ' + major + '.' + minor + ' has no matching sub-heading'));
+          continue;
+        }
         if (!top.has(major)) {
           out.push(finding('R01-section-refs', 'error', f.rel, ln, 'Section ' + major + ' does not exist in the master brief'));
           continue;
@@ -487,7 +502,12 @@ rule('R18-tree-comments', 'Directory trees explain every entry', (ctx) => {
         const after = l.split(/[\u251c\u2514]\u2500\u2500\s*/)[1] || '';
         return after.trim() && !/\S\s{2,}\S/.test(after) && !after.includes('#');
       });
-      if (bare.length > treeLines.length * 0.5) {
+      // Plan trees are specifications, so every entry explains itself; brief trees are
+      // illustrations and only warn when most entries are bare.
+      if (f.rel.startsWith('docs/plan/') && bare.length) {
+        const first = b.body.indexOf(bare[0]);
+        out.push(finding('R18-tree-comments', 'error', f.rel, b.start + first + 1, bare.length + ' of ' + treeLines.length + ' tree entries have no purpose comment, the first: ' + bare[0].trim().slice(0, 60)));
+      } else if (bare.length > treeLines.length * 0.5) {
         out.push(finding('R18-tree-comments', 'warn', f.rel, b.start, bare.length + ' of ' + treeLines.length + ' tree entries have no purpose comment'));
       }
     }
@@ -726,6 +746,364 @@ rule('R20-test-case-identifiers', 'Every test-case identifier is defined in exac
       const live = list.filter((c) => !c.exempt && !TC_HISTORY.test(c.file));
       if (live.length) out.push(finding('R20-test-case-identifiers', 'error', live[0].file, live[0].line, id + ' is a derived acceptance test, but ' + req + ' does not exist'));
     }
+  }
+  return out;
+});
+
+/* ------------------------------------------------------------ R21 to R32 */
+
+/*
+ * Plan-integrity rules (scorecard theme 6). Each one exists because a plan
+ * document's "How this document is verified" table named a check that nobody
+ * ran. They read the plan's own tables, so a rule is silent on a kit that does
+ * not contain the document it checks.
+ */
+const planDoc = (ctx, num) => ctx.md.find((f) => f.rel.startsWith('docs/plan/' + num + '-'));
+const splitCells = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+
+/** Tables outside fences, with the line number of every row. */
+export function linedTables(file) {
+  const out = [];
+  let cur = null;
+  let fenced = false;
+  file.lines.forEach((raw, i) => {
+    if (/^\s*```/.test(raw)) { fenced = !fenced; if (cur) { out.push(cur); cur = null; } return; }
+    if (fenced) return;
+    if (!/^\s*\|.*\|\s*$/.test(raw)) { if (cur) { out.push(cur); cur = null; } return; }
+    const cells = splitCells(raw);
+    if (!cur) { cur = { header: cells, line: i + 1, rows: [] }; return; }
+    if (/^:?-{2,}:?$/.test(cells[0] || '')) return;
+    cur.rows.push({ cells, line: i + 1 });
+  });
+  if (cur) out.push(cur);
+  return out;
+}
+const col = (t, re) => t.header.findIndex((h) => re.test(h.replace(/[`*]/g, '').trim()));
+
+/** Sections of a file by heading text: returns the lines between a heading matching `re` and the next heading of the same or higher level. */
+function sectionLines(file, re) {
+  const hs = headings(file);
+  const h = hs.find((x) => re.test(x.text));
+  if (!h) return null;
+  const next = hs.find((x) => x.line > h.line && x.level <= h.level);
+  return { start: h.line, lines: file.lines.slice(h.line, next ? next.line - 1 : file.lines.length) };
+}
+
+rule('R21-requirements-catalog', 'The requirements catalog is well formed', (ctx) => {
+  const f = planDoc(ctx, '03');
+  if (!f) return [];
+  const cat = buildCatalogs(ctx);
+  const out = [];
+  const seen = new Set();
+  const last = new Map();
+  f.lines.forEach((line, i) => {
+    if (!line.startsWith('| REQ-')) return;
+    const ln = i + 1;
+    const c = splitCells(line);
+    const bad = (msg) => out.push(finding('R21-requirements-catalog', 'error', f.rel, ln, msg));
+    if (c.length !== 7) bad(c[0] + ' has ' + c.length + ' columns; the catalog has 7');
+    const m = /^REQ-([A-Z0-9]+)-(\d{3})$/.exec(c[0]);
+    if (!m) { bad('Malformed requirement identifier ' + c[0]); return; }
+    if (seen.has(c[0])) bad(c[0] + ' appears twice');
+    seen.add(c[0]);
+    const n = Number(m[2]);
+    const prev = last.get(m[1]) || 0;
+    if (n !== prev + 1) bad(c[0] + ' follows ' + (prev ? 'REQ-' + m[1] + '-' + String(prev).padStart(3, '0') : 'nothing') + '; numbers run without gaps per area');
+    last.set(m[1], n);
+    if (!/^[123]$/.test((c[2] || '').replace(/\D/g, ''))) bad(c[0] + ' has no tier of 1, 2 or 3');
+    if (!(c[6] || '').trim()) bad(c[0] + ' has no acceptance criterion');
+    if (cat.ready.wfs) for (const w of (c[5] || '').match(/WF-[A-Z]+-\d{2}/g) || []) if (!cat.wfs.has(w)) bad(c[0] + ' cites ' + w + ', which Appendix R does not define');
+    if (cat.ready.brs) for (const b of (c[5] || '').match(/BR-[A-Z0-9]+-\d{3}/g) || []) if (!cat.brs.has(b)) bad(c[0] + ' cites ' + b + ', which Appendix S does not define');
+  });
+  return out;
+});
+
+rule('R22-adr-references', 'Every ADR cited exists, and document 29 indexes every record once with its status', (ctx) => {
+  const records = new Map();
+  for (const f of ctx.md) {
+    const m = /^docs\/project\/DECISIONS\/(\d{4})-.*\.md$/.exec(f.rel);
+    if (!m || m[1] === '0000') continue;
+    const status = (/^- \*\*Status:\*\*\s*(\w+)/m.exec(f.text) || [])[1] || '';
+    records.set(m[1], { file: f, status });
+  }
+  if (!records.size) return [];
+  const out = [];
+  for (const f of ctx.md) {
+    if (!/^(docs\/|CLAUDE\.md$|README\.md$)/.test(f.rel) || /^docs\/project\/(CHANGELOG|KIT_V9)/.test(f.rel)) continue;
+    f.lines.forEach((line, i) => {
+      for (const m of line.matchAll(/\bADR[- ](\d{4})\b/g)) {
+        if (m[1] !== '0000' && !records.has(m[1]) && !DISCUSSES_ABSENCE.test(line)) out.push(finding('R22-adr-references', 'error', f.rel, i + 1, 'ADR-' + m[1] + ' is cited but docs/project/DECISIONS has no record ' + m[1]));
+      }
+    });
+  }
+  const idx = planDoc(ctx, '29');
+  if (!idx) return out;
+  const indexed = new Map();
+  for (const t of linedTables(idx)) {
+    if (!/^ADR$/i.test(t.header[0] || '')) continue;
+    const sc = col(t, /^status$/i);
+    for (const r of t.rows) {
+      if (!/^\d{4}$/.test(r.cells[0])) continue;
+      if (r.cells.length !== t.header.length) out.push(finding('R22-adr-references', 'error', idx.rel, r.line, 'ADR ' + r.cells[0] + ' row has ' + r.cells.length + ' cells; the index has ' + t.header.length + ' columns'));
+      if (indexed.has(r.cells[0])) out.push(finding('R22-adr-references', 'error', idx.rel, r.line, 'ADR ' + r.cells[0] + ' is indexed twice'));
+      indexed.set(r.cells[0], { line: r.line, status: sc >= 0 ? r.cells[sc] || '' : '' });
+    }
+  }
+  if (!indexed.size) return out;
+  for (const [n, rec] of records) {
+    const row = indexed.get(n);
+    if (!row) { out.push(finding('R22-adr-references', 'error', idx.rel, 1, 'ADR ' + n + ' (' + rec.file.rel + ') has no row in the index')); continue; }
+    if (rec.status && !row.status.toLowerCase().startsWith(rec.status.toLowerCase())) out.push(finding('R22-adr-references', 'error', idx.rel, row.line, 'ADR ' + n + ' is "' + row.status + '" here but "' + rec.status + '" in its record'));
+  }
+  for (const [n, row] of indexed) if (!records.has(n)) out.push(finding('R22-adr-references', 'error', idx.rel, row.line, 'ADR ' + n + ' is indexed but has no record in docs/project/DECISIONS'));
+  return out;
+});
+
+/*
+ * R23 runs the plan generators in --check mode. They compare what they would
+ * write with what is on disk, ignoring review-record dates and line endings.
+ * It is the slow rule, so the post-edit hook skips it; /lint-plan runs it.
+ */
+const GENERATORS = [
+  ['tools/plan-build/gen-31.mjs', 'docs/plan/31-business-rules-and-workflows.md'],
+  ['tools/plan-build/assemble-34.mjs', 'docs/plan/34-work-breakdown.md', '--write'],
+  ['tools/plan-build/gen-20.mjs', 'docs/plan/20-traceability-matrix.md'],
+  ['tools/plan-build/gen-tc-registry.mjs', 'docs/plan/16-annex-test-case-registry.md'],
+  ['tools/plan-build/build-30.cjs', 'docs/plan/30-plan-scorecard.md'],
+  ['tools/plan-build/schedule-34.mjs', 'docs/plan/17-roadmap.md'],
+];
+rule('R23-generated-documents', 'Every generated plan document matches what its generator produces today', (ctx) => {
+  const out = [];
+  for (const [script, doc, extra] of GENERATORS) {
+    if (!ctx.byRel.has(script) || !ctx.byRel.has(doc)) continue;
+    const args = [join(ctx.root, script), ...(extra ? [extra] : []), '--check'];
+    const r = spawnSync(process.execPath, args, { cwd: ctx.root, encoding: 'utf8' });
+    if (r.status !== 0) {
+      const why = ((r.stdout || '') + (r.stderr || '')).trim().split(/\r?\n/).filter(Boolean).slice(-1)[0] || 'exit ' + r.status;
+      out.push(finding('R23-generated-documents', 'error', doc, 1, 'Stale or failing: ' + script + ' --check says "' + why.slice(0, 200) + '"'));
+    }
+  }
+  return out;
+});
+
+rule('R24-risk-tables', 'Every risk row scores likelihood times impact on the 1 to 5 scale, and every register reference exists', (ctx) => {
+  const reg = planDoc(ctx, '18');
+  const riskIds = new Set();
+  if (reg) for (const m of reg.text.matchAll(/^\| (RISK-\d{2}) \|/gm)) riskIds.add(m[1]);
+  const out = [];
+  for (const f of ctx.md) {
+    if (!f.rel.startsWith('docs/plan/') || PLAN_SKIP.test(f.rel)) continue;
+    for (const t of linedTables(f)) {
+      const li = col(t, /^(L|Likelihood)$/);
+      const ii = col(t, /^(I|Impact)$/);
+      if (li < 0 || ii < 0) continue;
+      const si = col(t, /^Score$/i);
+      const ri = col(t, /^In the register$/i);
+      for (const r of t.rows) {
+        const L = r.cells[li];
+        const I = r.cells[ii];
+        if (!/^\d$/.test(L) || !/^\d$/.test(I)) continue; // word-scaled tables (document 12) are not register rows
+        const bad = (msg) => out.push(finding('R24-risk-tables', 'error', f.rel, r.line, (r.cells[0] || '').slice(0, 40) + ': ' + msg));
+        if (+L < 1 || +L > 5 || +I < 1 || +I > 5) bad('likelihood and impact run from 1 to 5');
+        if (si >= 0 && Number(r.cells[si]) !== +L * +I) bad('score ' + r.cells[si] + ' is not ' + L + ' x ' + I + ' = ' + (+L * +I));
+        if (ri >= 0 && riskIds.size) for (const id of r.cells[ri].match(/RISK-\d{2}/g) || []) if (!riskIds.has(id)) bad(id + ' is not in document 18');
+      }
+    }
+  }
+  return out;
+});
+
+rule('R25-roadmap-coverage', 'Every workflow is assigned once and built by a capability, and every capability has slices', (ctx) => {
+  const cat = buildCatalogs(ctx);
+  const out = [];
+  const d13 = planDoc(ctx, '13');
+  if (d13 && cat.ready.wfs) {
+    const assigned = new Map();
+    const sec = sectionLines(d13, /^1\.\s+Workflow assignment/i);
+    if (sec) sec.lines.forEach((l, k) => { const m = /^\| (WF-[A-Z]+-\d{2}) \|/.exec(l); if (m) { if (assigned.has(m[1])) out.push(finding('R25-roadmap-coverage', 'error', d13.rel, sec.start + k + 1, m[1] + ' is assigned twice')); assigned.set(m[1], true); } });
+    if (sec) for (const w of cat.wfs) if (!assigned.has(w)) out.push(finding('R25-roadmap-coverage', 'error', d13.rel, sec.start, w + ' has no row in the workflow assignment table'));
+  }
+  const d17 = planDoc(ctx, '17');
+  if (d17 && cat.ready.wfs) {
+    const inCaps = new Set();
+    for (const l of d17.lines) if (/^\| CAP-[A-Z0-9]+-\d{2} \|/.test(l)) for (const m of l.matchAll(/WF-[A-Z]+-\d{2}/g)) inCaps.add(m[0]);
+    for (const w of cat.wfs) if (!inCaps.has(w)) out.push(finding('R25-roadmap-coverage', 'error', d17.rel, 1, w + ' is built by no capability in Section 4'));
+  }
+  const d34 = planDoc(ctx, '34');
+  if (d34 && cat.ready.caps) {
+    const sliced = new Set();
+    let cap = null;
+    for (const l of d34.lines) { const h = /^#### (CAP-[A-Z0-9]+-\d{2})\b/.exec(l); if (h) cap = h[1]; else if (/^#{1,4} /.test(l)) cap = null; if (cap && /^\| SL-/.test(l)) sliced.add(cap); }
+    for (const c of cat.caps) if (!sliced.has(c)) out.push(finding('R25-roadmap-coverage', 'error', d34.rel, 1, c + ' has no slices'));
+  }
+  return out;
+});
+
+rule('R26-open-questions-mirror', 'Document 01 and OPEN_QUESTIONS.md carry the same open questions', (ctx) => {
+  const oq = ctx.byRel.get('docs/project/OPEN_QUESTIONS.md');
+  const d01 = planDoc(ctx, '01');
+  if (!oq || !d01) return [];
+  const nums = (f, stop) => {
+    const s = new Set();
+    for (const l of f.lines) { if (stop && stop.test(l)) break; const m = /^\| (\d{1,3}) \| [^|]*\?/.exec(l); if (m) s.add(m[1]); }
+    return s;
+  };
+  const a = nums(oq, /^## Settled/);
+  const b = nums(d01);
+  const out = [];
+  for (const n of a) if (!b.has(n)) out.push(finding('R26-open-questions-mirror', 'error', d01.rel, 1, 'Open question ' + n + ' is in OPEN_QUESTIONS.md but not in document 01'));
+  for (const n of b) if (!a.has(n)) out.push(finding('R26-open-questions-mirror', 'error', oq.rel, 1, 'Question ' + n + ' is in document 01 but not open in OPEN_QUESTIONS.md'));
+  return out;
+});
+
+rule('R27-messaging-keys', 'Document 11 publishes only catalogued keys, and every service publishes on its own exchange', (ctx) => {
+  const out = [];
+  const e = ctx.md.find((f) => /appendix-e-event-catalog/.test(f.rel));
+  const d11 = planDoc(ctx, '11');
+  if (e && d11) {
+    const inE = new Set([...e.text.matchAll(/`([a-z][a-z0-9-]*(?:\.[a-z0-9-]+){2,}\.v\d+)`/g)].map((m) => m[1]));
+    const names = new Set([...d11.text.matchAll(/`([A-Z][A-Za-z0-9]+)`/g)].map((m) => m[1]));
+    d11.lines.forEach((line, i) => {
+      if (DISCUSSES_ABSENCE.test(line)) return;
+      for (const m of line.matchAll(/`([a-z][a-z0-9-]*(?:\.[a-z0-9-]+){2,}\.v\d+)`/g)) {
+        const key = m[1];
+        if (!SERVICE_NAMESPACES.has(key.split('.')[0]) || inE.has(key)) continue;
+        if (/\.(usage|audit)\.recorded\.v\d+$/.test(key) && key.split('.').length === 4) continue;
+        const d = /^[a-z][a-z0-9-]*\.(commands|replies)\.([a-z0-9-]+)\.v\d+$/.exec(key);
+        if (d && names.has(d[2].split('-').map((w) => w[0].toUpperCase() + w.slice(1)).join(''))) continue;
+        out.push(finding('R27-messaging-keys', 'error', d11.rel, i + 1, key + ' is used in document 11 but is not in Appendix E and matches no command or reply document 11 names'));
+      }
+    });
+  }
+  const d05 = planDoc(ctx, '05');
+  if (d05) {
+    for (const t of linedTables(d05)) {
+      const pi = col(t, /^Publishes$/i);
+      if (pi < 0 || !/^Service$/i.test(t.header[0])) continue;
+      for (const r of t.rows) {
+        const svc = r.cells[0].replace(/[*`]/g, '').trim().toLowerCase();
+        if (!SERVICE_NAMESPACES.has(svc)) continue;
+        for (const m of r.cells[pi].matchAll(/`([a-z][a-z0-9-]*(?:\.[a-z0-9-]+){2,}\.v\d+)`/g)) {
+          if (m[1].split('.')[0] !== svc) out.push(finding('R27-messaging-keys', 'error', d05.rel, r.line, r.cells[0].replace(/[*`]/g, '') + ' lists ' + m[1] + ' as published, but a service publishes only on its own exchange'));
+        }
+      }
+    }
+  }
+  return out;
+});
+
+rule('R28-threat-coverage', 'Every high or critical threat names the test that proves its control', (ctx) => {
+  const d12 = planDoc(ctx, '12');
+  if (!d12) return [];
+  const out = [];
+  for (const t of linedTables(d12)) {
+    const ii = col(t, /^Impact$/i);
+    const ti = col(t, /^Test$/i);
+    if (ii < 0 || ti < 0) continue;
+    for (const r of t.rows) {
+      if (!/^(high|critical)$/i.test(r.cells[ii] || '')) continue;
+      if (!/TC-[A-Z0-9]+-\d{3}|SL-[A-Z0-9]+-\d{3}/.test(r.cells[ti] || '')) out.push(finding('R28-threat-coverage', 'error', d12.rel, r.line, (r.cells[0] || '') + ' has impact ' + r.cells[ii] + ' but its Test cell names no test case or slice'));
+    }
+  }
+  return out;
+});
+
+rule('R29-state-diagrams', 'Every workflow state diagram has an exit and a label on every transition', (ctx) => {
+  const out = [];
+  for (const f of ctx.md) {
+    if (!/appendix-r-workflow-catalog|^docs\/plan\/13-/.test(f.rel)) continue;
+    for (const b of fencedBlocks(f, 'mermaid')) {
+      if (!/^\s*stateDiagram-v2/.test(b.body.find((l) => l.trim()) || '')) continue;
+      if (!b.body.some((l) => /-->\s*\[\*\]/.test(l))) out.push(finding('R29-state-diagrams', 'error', f.rel, b.start, 'State diagram has no terminal state (--> [*])'));
+      b.body.forEach((l, k) => {
+        if (!/-->/.test(l) || /^\s*\[\*\]\s*-->/.test(l) || /-->\s*\[\*\]/.test(l)) return;
+        if (!/-->\s*[^:]+:\s*\S/.test(l)) out.push(finding('R29-state-diagrams', 'error', f.rel, b.start + k + 1, 'Transition has no label: ' + l.trim().slice(0, 80)));
+      });
+    }
+  }
+  return out;
+});
+
+rule('R30-sql-comments', 'Every column in a plan CREATE TABLE explains itself in a comment', (ctx) => {
+  const out = [];
+  for (const f of ctx.md) {
+    if (!f.rel.startsWith('docs/plan/')) continue;
+    for (const b of fencedBlocks(f, 'sql')) {
+      let inTable = false;
+      b.body.forEach((l, k) => {
+        if (/create\s+table/i.test(l)) { inTable = true; return; }
+        if (!inTable) return;
+        if (/^\s*\)\s*(partition|;|$)/i.test(l) || /^\s*\);/.test(l)) { inTable = false; return; }
+        const t = l.trim();
+        if (!t || t.startsWith('--') || /^(constraint|primary|unique|foreign|check|exclude|like)\b/i.test(t)) return;
+        if (/^"?[a-z_][a-z0-9_]*"?\s+[a-z]/i.test(t) && !t.includes('--')) out.push(finding('R30-sql-comments', 'error', f.rel, b.start + k + 1, 'Column without a comment: ' + t.slice(0, 70)));
+      });
+    }
+  }
+  return out;
+});
+
+rule('R31-canonical-names', 'Every database and image name a plan document uses is registered in Appendix L', (ctx) => {
+  const l = ctx.md.find((f) => /appendix-l-registry/.test(f.rel));
+  if (!l) return [];
+  const dbs = new Set([...l.text.matchAll(/`(nibras_[a-z0-9_]+)`/g)].map((m) => m[1]));
+  // Appendix L writes a service's further images as a shorthand suffix: `nibras/reporting-api`, `-projections`.
+  const images = new Set();
+  for (const line of l.lines) {
+    const full = [...line.matchAll(/`(nibras\/[a-z0-9-]+)`/g)].map((m) => m[1]);
+    for (const x of full) images.add(x);
+    if (!full.length) continue;
+    const base = full[0].replace(/-[a-z0-9]+$/, '');
+    for (const m of line.matchAll(/`(-[a-z0-9-]+)`/g)) images.add(base + m[1]);
+  }
+  if (!dbs.size) return [];
+  // Metric names share the `nibras_` prefix and label keys the `nibras/` prefix, so only a
+  // name that starts with a service, or a cell in a Database column, is a database or image.
+  const serviceLed = (x) => SERVICE_NAMESPACES.has(x.split(/[-_]/)[0]);
+  const out = [];
+  for (const f of ctx.md) {
+    if (!f.rel.startsWith('docs/plan/') || PLAN_SKIP.test(f.rel)) continue;
+    for (const t of linedTables(f)) {
+      const di = col(t, /^Database$/i);
+      if (di < 0) continue;
+      for (const r of t.rows) for (const m of (r.cells[di] || '').matchAll(/`(nibras_[a-z0-9_]+)`/g)) if (!dbs.has(m[1])) out.push(finding('R31-canonical-names', 'error', f.rel, r.line, 'Database ' + m[1] + ' is not in Appendix L'));
+    }
+    f.lines.forEach((line, i) => {
+      if (DISCUSSES_ABSENCE.test(line)) return;
+      for (const m of line.matchAll(/`nibras_([a-z0-9]+)`/g)) if (serviceLed(m[1]) && !dbs.has('nibras_' + m[1])) out.push(finding('R31-canonical-names', 'error', f.rel, i + 1, 'Database nibras_' + m[1] + ' is not in Appendix L'));
+      for (const m of line.matchAll(/`nibras\/([a-z0-9-]+)`/g)) if (serviceLed(m[1]) && !images.has('nibras/' + m[1])) out.push(finding('R31-canonical-names', 'error', f.rel, i + 1, 'Image nibras/' + m[1] + ' is not in Appendix L'));
+    });
+  }
+  return out;
+});
+
+rule('R32-workflow-tests', 'The owning service sheet cites every transition test of its workflows', (ctx) => {
+  const r = ctx.md.find((f) => /appendix-r-workflow-catalog/.test(f.rel));
+  const d13 = planDoc(ctx, '13');
+  const l = ctx.md.find((f) => /appendix-l-registry/.test(f.rel));
+  if (!r || !d13 || !l) return [];
+  const owner = new Map();
+  for (const line of d13.lines) { const m = /^\| (WF-[A-Z]+-\d{2}) \|[^|]*\| ([A-Za-z.]+) \|/.exec(line); if (m) owner.set(m[1], m[2]); }
+  const tests = new Map();
+  const hs = headings(r).filter((h) => /^WF-[A-Z]+-\d{2}\b/.test(h.text));
+  hs.forEach((h, k) => {
+    const end = k + 1 < hs.length ? hs[k + 1].line - 1 : r.lines.length;
+    tests.set(/^(WF-[A-Z]+-\d{2})/.exec(h.text)[1], new Set(r.lines.slice(h.line, end).join('\n').match(/TC-[A-Z0-9]+-\d{3}/g) || []));
+  });
+  const expand = (text) => {
+    const s = new Set(text.match(/TC-[A-Z0-9]+-\d{3}/g) || []);
+    for (const m of text.matchAll(/TC-([A-Z0-9]+)-(\d{3})`?\s*(?:to|through|–|-)\s*`?TC-\1-(\d{3})/g)) for (let n = +m[2]; n <= +m[3]; n++) s.add('TC-' + m[1] + '-' + String(n).padStart(3, '0'));
+    return s;
+  };
+  const out = [];
+  for (const [wf, svc] of owner) {
+    const sheet = ctx.byRel.get('docs/plan/06-services/' + svc.toLowerCase().replace('.', '-') + '.md');
+    if (!sheet || !tests.has(wf)) continue;
+    const plan = sectionLines(sheet, /test plan/i);
+    if (!plan) { out.push(finding('R32-workflow-tests', 'error', sheet.rel, 1, 'No "Test plan" section, so ' + wf + ' has no transition tests here')); continue; }
+    const cited = expand(plan.lines.join('\n'));
+    const missing = [...tests.get(wf)].filter((t) => !cited.has(t));
+    if (missing.length) out.push(finding('R32-workflow-tests', 'error', sheet.rel, plan.start, wf + ': the test plan does not cite ' + missing.join(', ')));
   }
   return out;
 });

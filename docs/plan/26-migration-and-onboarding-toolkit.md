@@ -589,4 +589,4 @@ When every blocking check passes, the tenant moves `Onboarding` to `Live` (WF-PL
 | Adapters produce the reference rows | Golden-output test per adapter fixture | Every pull request touching an adapter |
 | The end-to-end import demo | `TC-DOC-001` (Appendix W item 9) | Demo pipeline |
 | Provisioning to live | `TC-PLT-001` to `TC-PLT-006` | Every pull request touching Platform |
-| This document agrees with the catalogs | `tools/kit-lint`; `/lint-plan` against Appendix R and `06-services/platform.md` | Every change under `docs/` |
+| This document agrees with the catalogs | kit-lint R01, R02, R05, R17, R19 and R30 (a comment on every column of a `CREATE TABLE`); `plan-consistency-checker` compares this document with Appendix R and `06-services/platform.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |

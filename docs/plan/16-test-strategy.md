@@ -159,13 +159,13 @@ src/Services/Attendance/tests/
 │   │   └── MarkAttendanceEndpointTests.cs        the worked example in part 3.4
 │   ├── Workflows/                                one class per Appendix R workflow owned by Attendance
 │   │   ├── WF-ATT-01/                            daily attendance to intervention
-│   │   │   └── DailyAttendanceTransitionTests.cs six transition rows, TC-ATT-001 to TC-ATT-006, plus the compensation path
+│   │   │   └── DailyAttendanceTransitionTests.cs  six transition rows, TC-ATT-001 to TC-ATT-006, plus the compensation path
 │   │   └── WF-ATT-02/                            early dismissal and gate pickup
 │   ├── Consumers/                                deliver-twice and ordering tests per inbox registration
 │   ├── Cache/                                    invalidation by the real event, tenant-key isolation, Redis-down, for every caching-table entry
 │   ├── Offline/                                  the eight Appendix M.5 tests for the attendance conflict rules
 │   ├── Perf/                                     EXPLAIN (ANALYZE, BUFFERS) capture for the hot queries; output committed under docs/perf/attendance/
-│   └── Nibras.Attendance.IntegrationTests.csproj references Api and the Testing block
+│   └── Nibras.Attendance.IntegrationTests.csproj  references Api and the Testing block
 └── Nibras.Attendance.ContractTests/              this service's side of every pact it consumes or provides
     ├── Consumer/                                 School directory gRPC consumer pact
     ├── Provider/                                 verification of the pacts Bff.Web and Bff.Mobile hold against attendance-api
@@ -777,13 +777,13 @@ The first run of R20 found 206 identifiers defined in more than one document and
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every test case is defined once and every cited test exists | Kit-lint rule R20; the registry annex is regenerated from the same code |
-| The quoted tables match Appendix V and Appendix N word for word | `/lint-plan` diffs the quoted sections against the appendices; a difference is a defect in this document | `ci-kit.yml` |
+| Every test case is defined once and every cited test exists | Kit-lint R20; R23 fails when `16-annex-test-case-registry.md` differs from what `gen-tc-registry.mjs` produces today | Lint (`/lint-plan`) |
+| The quoted tables match Appendix V and Appendix N word for word | Review step, not a lint rule: the `test-strategist` agent compares the quoted sections with Appendix V and Appendix N word for word at the Group E review and on every change to this document or to either appendix; a difference is a defect in this document | Group E review |
 | Every artefact class in the coverage matrix has a suite named in this document | The `test-strategist` agent's `## Suites` table on review; a row of Appendix V.3 with no part of this document naming its suite is a gap | Plan review |
-| Every `TC-TST-` and `TC-PLAT-` identifier here resolves | Document 20 carries each in its Test case or Platform column; `/lint-plan` refuses an identifier present here and absent there | `ci-kit.yml` |
+| Every `TC-TST-` and `TC-PLAT-` identifier here resolves | Kit-lint R20: every identifier cited here is defined in exactly one document. That document 20 carries each in its Test case or Platform column is a review step for the `test-strategist` agent at the Group E review | Lint (`/lint-plan`); Group E review |
 | The interceptors fail a test that exceeds its budget | A deliberate N+1 handler in the Testing block's own tests fails `AssertAtMost(5)` with the offending SQL in the message; a deliberate 300 ms `pg_sleep` fails `AssertNoCommandSlowerThan` | `tests/Nibras.BuildingBlocks.Testing.Tests/` on both runners |
 | The generated suites are the size this document estimates | The pipeline summary publishes the measured counts; a count below half the estimate for any suite is a review finding, because it means a registry the generator reads is empty | Nightly |
-| Every Appendix S rule has its class and every Appendix R row has its test | `kit-lint` R08 and R09 on the appendices; the trait scan that generates document 20 | `ci-kit.yml`, `ci-service.yml` |
+| Every Appendix S rule has its class and every Appendix R row has its test | Kit-lint R09: every Appendix S rule has three worked examples and names its test class. Kit-lint R08: every Appendix R workflow has a state diagram, a Transition table and test case identifiers; R32: the owning service sheet cites every transition test of the workflow; R23: document 20 equals what `gen-20.mjs` produces from the sheets today. That each transition row carries its own test is checked by the `test-strategist` agent at the Group E review; in code, the trait scan is added by the traceability check of SL-TST-005 | Lint (`/lint-plan`); Group E review; `ci-service.yml` from SL-TST-005 |
 | The thresholds in the load scenarios are the Section 19 budgets | One shared thresholds file under `tests/Load/thresholds/` imported by every scenario, with a test that its numbers equal the table in document 21 | `tests/Load` self-test |
 | The chaos and restore cases run on the cadence stated | The nightly and weekly pipeline schedules and the quarterly drill records with dates and names | Operations calendar |
 | Flaky tests cannot hide | Zero retries in every pipeline configuration, checked by a `ci-kit.yml` rule that greps the workflow files for a retry setting; `TC-TST-221` | `ci-kit.yml` |

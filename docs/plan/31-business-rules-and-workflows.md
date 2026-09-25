@@ -291,6 +291,7 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 | Claim | Proof |
 |---|---|
 | Every rule and workflow has a row | The document is generated from the appendices; the coverage check in Section 7 is recomputed on every regeneration |
+| The document is current | Kit-lint rule R23 reruns `gen-31.mjs --check` and fails when Appendices R or S or document 05 changed since it was generated |
 | Every rule has a test class that exists in code | Once code exists, an architecture test enumerates `BR-` comments and asserts the named test class exists |
 | Every worked example is a test row | `/simulate-year` and the business-rules-reviewer agent compare Appendix S examples with the test data sources |
 | Mutation targets are met | Stryker.NET in the pipeline, gated at 80% on the classes in Section 6 |

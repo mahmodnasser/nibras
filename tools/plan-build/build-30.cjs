@@ -1,6 +1,7 @@
 // Assemble docs/plan/30-plan-scorecard.md from the six group scorecards.
 const fs = require('fs');
 const path = require('path');
+const { writeGenerated } = require('./write-generated.cjs');
 // Paths resolve from this file, so the script runs from any checkout on Windows or Linux.
 const SP = path.join(__dirname, 'parts') + path.sep;
 const OUT = path.join(__dirname, '..', '..', 'docs', 'plan', '30-plan-scorecard.md');
@@ -136,6 +137,7 @@ p('| Every score has evidence | Each row of Section 3 quotes a document with fil
 p('| The summary table matches the group scores | Section 2 is computed from Section 3 by the assembly script, not typed |');
 p('| The most consequential findings are real | Section 4 records the hand check of each |');
 p('| The verdict follows the rule | A group with any axis below 4 is shown blocked; the script applies the rule |');
+p('| The document is current | Kit-lint rule R23 reruns `build-30.cjs --check` and fails when a group scorecard changed since this document was built |');
 p();
-fs.writeFileSync(OUT, L.join('\n'), 'utf8');
+writeGenerated(OUT, L.join('\n'));
 console.log('written; mins per axis', axisMin.join(','));

@@ -3,7 +3,9 @@
 // It runs the same ownership code as kit-lint rule R20, so the registry and the
 // rule cannot disagree.
 //   node tools/plan-build/gen-tc-registry.mjs
-import { writeFileSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { writeGenerated } from './write-generated.cjs';
+
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { buildContext, testCaseOwnership } from '../kit-lint/kit-lint.mjs';
@@ -135,8 +137,8 @@ p();
 p('| Claim | Proof |');
 p('|---|---|');
 p('| Every identifier has one definition | Kit-lint rule R20, which runs the same ownership code as this generator |');
-p('| The annex is current | Regenerated whenever a test is added, renumbered or moved; a stale copy fails review because R20 and this list are computed alike |');
+p('| The annex is current | Kit-lint rule R23 reruns `gen-tc-registry.mjs --check` and fails when a test was added, renumbered or moved since the annex was generated |');
 p();
-writeFileSync(join(root, OUT), L.join('\n'), 'utf8');
+writeGenerated(join(root, OUT), L.join('\n'));
 console.log('registry: ' + rows.length + ' defined, ' + derived.length + ' derived, ' + problems.length + ' problems');
 for (const x of problems.slice(0, 20)) console.log('  ' + x);

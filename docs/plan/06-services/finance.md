@@ -1611,13 +1611,13 @@ Rule test classes, one per rule, each carrying its Appendix S examples as theory
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | kit-lint R07 and `/lint-plan`; publisher contract tests in `Nibras.Finance.ContractTests/Messages` | Lint; pipeline |
-| Every permission string exists in Appendix B | `/lint-plan` permission check; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
-| Every error code exists in Appendix K | `/lint-plan` error-code check; endpoint contract tests (TC-TST-201) | Lint; pipeline |
-| Every Appendix R transition of WF-FIN-01 to WF-FIN-06 has a test | `/lint-plan` compares section 15 with Appendix R; `[TestCase]` attributes once code exists | Lint; integration suites |
+| Every routing key here exists in Appendix E or is a command or reply document 11 names | kit-lint R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names); publisher contract tests in `Nibras.Finance.ContractTests/Messages` | Lint; pipeline |
+| Every permission string exists in Appendix B | kit-lint R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; review; every pull request |
+| Every error code exists in Appendix K | kit-lint R19 (every back-quoted service-prefixed error code is in Appendix K or ends in a K.1 suffix); endpoint contract tests (TC-TST-201) | Lint; pipeline |
+| Every Appendix R transition of WF-FIN-01 to WF-FIN-06 has a test | kit-lint R32 (every test case in the WF-FIN-01 to WF-FIN-06 entries of Appendix R is cited in section 15, ranges expanded) and R20 (each is defined in exactly one document); R25 keeps each workflow assigned once in document 13, whose owner column R32 reads; once code exists the per-transition workflow tests carry their `TestCase` traits from the SL-TST-004 workflow kit and run on every pull request through the SL-TST-001 pipeline | Lint; integration suites |
 | Every Finance rule of document 31 has its named test class and examples | Architecture test on `BR-` comments; `/simulate-year` | Pipeline |
 | The series is gapless under concurrency and crashes | TC-FIN-001, TC-FIN-601 to TC-FIN-605, `GaplessNumberingRulesTests` property test, `KilledBeforeCommit_NoGap` | Integration suite; N-03 load run |
 | No card or bank data leaves its side tables | TC-FIN-612, TC-FIN-628, TC-FIN-629, TC-SEC-193 | Integration and contract suites |
 | Every consumer and command is idempotent | TC-TST-203, TC-FIN-610, TC-FIN-615, TC-FIN-622, TC-FIN-623 | Integration suite |
-| The tree matches the service template anatomy | `EveryServiceHas_TheAnatomy` (TC-TST-124) and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Finance and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (TC-TST-124), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | `TC-PERF-1NN` rows with committed `EXPLAIN (ANALYZE, BUFFERS)` evidence under `docs/perf/finance/` | Pipeline |

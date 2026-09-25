@@ -1357,11 +1357,11 @@ Hr has no Appendix S rule, so no rule test class exists (document 31 section 1).
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | kit-lint R07 and `/lint-plan`; publisher contract tests | Lint; pipeline |
-| Every permission string exists in Appendix B | `/lint-plan`; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
-| Every error code exists in Appendix K | `/lint-plan`; endpoint contract tests (TC-TST-201) | Lint; pipeline |
-| Every WF-HR row in Appendix R has a test | `/lint-plan` compares section 15 with Appendix R | Lint; integration suite |
+| Every routing key here exists in Appendix E or is a command or reply document 11 names | kit-lint R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names); publisher contract tests | Lint; pipeline |
+| Every permission string exists in Appendix B | kit-lint R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; review; every pull request |
+| Every error code exists in Appendix K | kit-lint R19 (every back-quoted service-prefixed error code is in Appendix K or ends in a K.1 suffix); endpoint contract tests (TC-TST-201) | Lint; pipeline |
+| Every WF-HR row in Appendix R has a test | kit-lint R32 (every test case in the WF-HR-01 to WF-HR-04 entries of Appendix R is cited in section 15, ranges expanded) and R20 (each is defined in exactly one document); R25 keeps each workflow assigned once in document 13, whose owner column R32 reads | Lint; integration suite |
 | No salary member leaves the service without the permission | TC-SEC-801, TC-SEC-057 response-shape snapshots, TC-HR-612 | Security suite |
 | Every effect command and consumer is idempotent | TC-HR-605, TC-HR-617, TC-HR-618, TC-HR-625, TC-TST-203 | Integration suite |
-| The tree matches the service template anatomy | TC-TST-124 and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Hr and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (TC-TST-124), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/hr/` | Pipeline |

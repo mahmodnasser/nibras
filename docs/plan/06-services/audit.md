@@ -697,7 +697,7 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every permission, routing key and error code exists in its appendix | `/lint-plan` identifier checks and `tools/kit-lint` rule R07 extended to `docs/plan/` | Lint |
+| Every permission, routing key and error code exists in its catalog | `tools/kit-lint` rule R19 (permission strings in Permission columns against Appendix B; every back-quoted routing key in Appendix E or document 11; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix) and rule R27 (every key document 11 uses is in Appendix E or is a command or reply it names); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet | Lint, review |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |
 | Nothing can edit the log | `TC-SEC-270` and the role grants checked by the migration lint | Integration, pipeline |
 | Every read of evidence is itself evidence | `TC-AUD-104` | Integration |

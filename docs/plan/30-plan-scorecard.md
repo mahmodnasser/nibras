@@ -257,7 +257,7 @@ Each group is re-scored with `/score-plan` after the themes that touch it are cl
 
 | Date | Reviewer | Result |
 |---|---|---|
-| 2026-09-22 | Six independent adversarial reviewers, one per group; four findings re-checked by hand | Groups A to F blocked; lowest axes Consistency (2) and Feasibility (2); remediation of about 14 to 15 days in eight themes |
+| 2026-09-25 | Six independent adversarial reviewers, one per group; four findings re-checked by hand | Groups A to F blocked; lowest axes Consistency (2) and Feasibility (2); remediation of about 14 to 15 days in eight themes |
 
 ## How this document is verified
 
@@ -267,3 +267,4 @@ Each group is re-scored with `/score-plan` after the themes that touch it are cl
 | The summary table matches the group scores | Section 2 is computed from Section 3 by the assembly script, not typed |
 | The most consequential findings are real | Section 4 records the hand check of each |
 | The verdict follows the rule | A group with any axis below 4 is shown blocked; the script applies the rule |
+| The document is current | Kit-lint rule R23 reruns `build-30.cjs --check` and fails when a group scorecard changed since this document was built |

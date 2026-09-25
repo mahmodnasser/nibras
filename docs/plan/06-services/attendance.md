@@ -1260,11 +1260,11 @@ Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | `tools/kit-lint` rule R07 and `/lint-plan` over `docs/plan/06-services/` | Lint |
-| Every permission string exists in Appendix B | `/lint-plan` permission cross-check; the generated permission-matrix suite once code exists (TC-ATT-312) | Lint, pipeline |
-| Every error code exists in Appendix K | `/lint-plan` error-code cross-check; generated authorization and validation tests assert the exact code | Lint, pipeline |
+| Every routing key here exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
+| Every permission string exists in Appendix B | `tools/kit-lint` rule R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; the generated permission-matrix suite once code exists (TC-ATT-312) | Lint, review, pipeline |
+| Every error code exists in Appendix K | `tools/kit-lint` rule R19 (every back-quoted service-prefixed error code is in Appendix K or ends in a K.1 suffix); generated authorization and validation tests assert the exact code | Lint, pipeline |
 | The tree matches document 07 part 3 entry for entry | Diff of the two trees ignoring "(extension)" rows at Group C review; the service-template smoke test once code exists | Review, `ci-kit.yml` |
-| Every Appendix R transition and every BR-ATT rule has a test | Section 14 against Appendix R and document 31 §2; `[TestCase]` attributes compared once code exists | Review, pipeline |
+| Every Appendix R transition and every BR-ATT rule has a test | Section 14 against Appendix R and document 31 §2; `tools/kit-lint` rule R32 for the transitions (every test case in the WF-ATT-01 and WF-ATT-02 entries of Appendix R is cited in section 14, ranges expanded); `[TestCase]` attributes compared once code exists | Review, lint, pipeline |
 | The query budgets hold | `TC-ATT-315`, `TC-ATT-316` with the command counter and plan capture | Integration suite |
 | Every consumer is idempotent | `TC-ATT-317`, `TC-ATT-318` | Integration suite |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |

@@ -976,10 +976,10 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | kit-lint R07 and `/lint-plan` | Lint |
-| Every permission and error code exists in Appendices B and K | `/lint-plan`; TC-SEC-055; TC-TST-201 | Lint; pipeline |
+| Every routing key here exists in Appendix E or is a command or reply document 11 names | kit-lint R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
+| Every permission and error code exists in Appendices B and K | kit-lint R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-SEC-055; TC-TST-201 | Lint; review; pipeline |
 | Child-safety controls hold | TC-COM-601, TC-COM-602, TC-COM-712, TC-COM-713, TC-COM-714, TC-COM-715 | Integration and end-to-end suites |
 | Hubs never cross tenants | TC-COM-718, TC-SEC-053, TC-SEC-056 | Integration and generated suites |
 | Every consumer and the meeting effect are idempotent | TC-TST-203, TC-COM-716, TC-COM-721 | Integration suite |
-| The tree matches the service template anatomy | TC-TST-124 and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Communication and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (TC-TST-124), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | `TC-PERF-1NN` rows with evidence under `docs/perf/communication/` | Pipeline |

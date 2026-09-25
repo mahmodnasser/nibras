@@ -2342,9 +2342,9 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every permission string exists in Appendix B | `/lint-plan` permission check | Lint |
-| Every routing key exists in Appendix E | `tools/kit-lint` rule R07 extended to `docs/plan/` by `/lint-plan` | Lint |
+| Every routing key exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
 | Every error code exists in Appendix K | `/lint-plan` code check | Lint |
-| Every WF, BR and TC identifier reused exists where cited | `/lint-plan` identifier check | Lint |
+| Every WF, BR and TC identifier reused exists | kit-lint R19 checks every WF against Appendix R and every BR against Appendix S; R20 checks every TC cited is defined in exactly one document | Lint |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |
 | The endpoint table matches the built service | `TC-PLT-125` once code exists | Pipeline, phase 1 |
 | Sagas lose and duplicate nothing | The worker-kill and deliver-twice tests of `13-workflows-and-sagas.md` Sagas 1, 2 and 10 | Integration suites |

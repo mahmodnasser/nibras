@@ -951,10 +951,10 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key exists in Appendix E | kit-lint R07 and `/lint-plan`; TC-ACA-420 | Lint; contract suite |
-| Every permission and error code is catalogued | `/lint-plan`; TC-ACA-417 | Lint; generated suite |
-| Every WF-ACA-01 transition has a test | TC-ACA-001 to TC-ACA-006 against Appendix R | `/lint-plan`; integration suite |
+| Every routing key exists in Appendix E or is a command or reply document 11 names | kit-lint R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names); TC-ACA-420 in the contract suite once code exists | Lint; contract suite |
+| Every permission and error code is catalogued | kit-lint R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-ACA-417 | Lint; review; generated suite |
+| Every WF-ACA-01 transition has a test | kit-lint R32 (every test case in the WF-ACA-01 entry of Appendix R, TC-ACA-001 to TC-ACA-006, is cited in section 15, ranges expanded) and R20 (each is defined in exactly one document); R25 keeps WF-ACA-01 assigned once in document 13, whose owner column R32 reads | Lint; integration suite |
 | Offline grades never overwrite silently | TC-ACA-006, TC-ACA-409 | Integration suite |
 | Consumers are idempotent | TC-ACA-419 | Integration suite |
-| The tree matches the anatomy | `EveryServiceHas_TheAnatomy` (`TC-TST-124`), R18 | Architecture tests; lint |
+| The tree matches the anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Academics and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (`TC-TST-124`), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | TC-ACA-421 with `EXPLAIN (ANALYZE, BUFFERS)` under `docs/perf/academics/` | Pipeline |

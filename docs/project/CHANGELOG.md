@@ -1,5 +1,15 @@
 # Changelog
 
+## v9.3 brief, 2026-09-25
+
+Every verification claim names a check that runs (ADR-0021, proposed). Of 167 verification rows that named a kit check, 67 were true; the rest named the wrong rule, a check nobody had built, or no one at all.
+
+**Kit-lint.** Twelve new rules, each with a self-test: R21 requirements catalog, R22 ADR references and index, R23 generated documents current, R24 risk arithmetic, R25 roadmap coverage, R26 open-questions mirror, R27 messaging keys, R28 threat coverage, R29 state diagrams, R30 SQL comments, R31 canonical names, R32 workflow tests. R18 now requires a comment on every plan tree entry; R01 resolves reference-architecture sections against the reference architecture. 46 self-tests.
+
+**Generators.** Every plan generator writes through `tools/plan-build/write-generated.cjs` and has a `--check` mode; regenerating no longer moves a review date when nothing else changed.
+
+**Plan.** About 100 verification rows rewritten across 46 documents to name a real rule, a named review step (who, what, when) or the slice that builds a product check; document 03 gained its verification section; 37 tree entries gained comments; document 11 lists its 16 worker-job commands. **Brief.** One unlabelled transition in Appendix R (WF-FIN-04) labelled.
+
 ## v9.2 brief, 2026-09-25
 
 Every test case is defined in exactly one document (ADR-0020, proposed). Kit-lint rule R20 refuses an identifier defined twice, a citation with no definition, and a derived acceptance test without its requirement; `docs/plan/16-annex-test-case-registry.md` lists all 1,566 tests and 334 derived acceptance tests with their owner, meaning and citations, generated from the same code.

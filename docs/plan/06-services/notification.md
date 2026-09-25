@@ -910,11 +910,11 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every Appendix C row is implemented with its trigger, recipients, urgency and channels | TC-NOT-601 reads Appendix C; kit-lint R12 checks every row names a trigger | Integration suite; lint |
-| Every routing key here exists in Appendix E | kit-lint R07 and `/lint-plan` | Lint |
+| Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
 | Every permission and error code exists in Appendices B and K | `/lint-plan`; TC-SEC-055; TC-TST-201 | Lint; pipeline |
 | Urgent traffic never waits behind bulk | TC-NOT-614, TC-NOT-615, `MessagingConventions.UrgentHostsBindOnlyUrgentQueues` | Integration, load and architecture tests |
 | The fallback and credit table holds | TC-NOT-605 to TC-NOT-610 | Integration suite |
 | Every rule has its named test class and examples | Architecture test on `BR-` comments; `/simulate-year` | Pipeline |
 | Nothing sensitive leaves in a preview, log or response | TC-NOT-623, TC-NOT-624, TC-SEC-220 to TC-SEC-222 | Contract and integration suites |
-| The tree matches the service template anatomy | TC-TST-124 and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (TC-TST-124, planned in document 07 under `tests/Architecture.Tests/`, run on every pull request by SL-TST-001) fails the build on a drift | Lint; review; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/notification/` | Pipeline |

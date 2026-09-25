@@ -78,5 +78,20 @@ if (process.argv[1] && /schedule-34\.mjs$/.test(process.argv[1])) {
   const mvpCaps = new Set(['CAP-RQS-01', 'CAP-COM-01', 'CAP-COM-02', 'CAP-DOC-02']);
   const mvp = schedule((c) => ['1', '2'].includes(capPhase.get(c)) || mvpCaps.has(c));
   const m = Object.values(mvp);
-  console.log('MVP    caps ' + m.reduce((t, o) => t + o.caps.size, 0) + ', days ' + m.reduce((t, o) => t + o.days, 0) + ', weeks ' + m.reduce((t, o) => t + o.low, 0) + ' to ' + m.reduce((t, o) => t + o.high, 0));
+  const mv = { caps: m.reduce((t, o) => t + o.caps.size, 0), days: m.reduce((t, o) => t + o.days, 0), low: m.reduce((t, o) => t + o.low, 0), high: m.reduce((t, o) => t + o.high, 0) };
+  console.log('MVP    caps ' + mv.caps + ', days ' + mv.days + ', weeks ' + mv.low + ' to ' + mv.high);
+
+  // --check: document 17 must state exactly these figures (kit-lint rule R23).
+  if (process.argv.includes('--check')) {
+    const problems = [];
+    for (const p of Object.keys(all)) {
+      const row = roadmap.split(/\r?\n/).find((l) => new RegExp('^\\| \\*\\*' + p + ' ').test(l));
+      const want = all[p].low + ' to ' + all[p].high + ' weeks';
+      if (!row || !row.includes('| ' + want + ' |')) problems.push('phase ' + p + ' should read "' + want + '"');
+    }
+    if (!roadmap.includes(lo + ' to ' + hi + ' weeks')) problems.push('the launch total should read "' + lo + ' to ' + hi + ' weeks"');
+    if (!new RegExp(mv.caps + ' capabilities, ' + mv.days.toLocaleString('en') + ' slice-days, and ' + mv.low + ' to ' + mv.high + ' weeks').test(roadmap.replace(/\*\*/g, ''))) problems.push('the MVP line should read "' + mv.caps + ' capabilities, ' + mv.days.toLocaleString('en') + ' slice-days, and ' + mv.low + ' to ' + mv.high + ' weeks"');
+    if (problems.length) { console.log('stale: docs/plan/17-roadmap.md: ' + problems.join('; ')); process.exit(1); }
+    console.log('current: docs/plan/17-roadmap.md');
+  }
 }

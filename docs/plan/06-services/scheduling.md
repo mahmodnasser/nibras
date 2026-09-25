@@ -1008,10 +1008,10 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key exists in Appendix E | kit-lint R07 and `/lint-plan`; TC-SCD-131 | Lint; contract suite |
+| Every routing key exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names; TC-SCD-131 once code exists | Lint; contract suite |
 | Every permission and error code is catalogued | `/lint-plan`; TC-SCD-127 | Lint; generated suite |
-| Every rule has its test class | Section 15 rows TC-SCD-101 to TC-SCD-108 against document 31 | `/lint-plan`; unit suite |
+| Every rule has its test class | `test-strategist` compares section 15 rows TC-SCD-101 to TC-SCD-108 with every Scheduling rule document 31 assigns, one named test class per rule, at the Group C review and on every change to this sheet or to Appendix S; kit-lint R23 fails when document 31 is not what its generator produces from Appendix S today | Review; lint; unit suite |
 | The solver is cancellable, reports progress and survives a killed worker | TC-SCD-112, TC-SCD-115, TC-SCD-117 | Integration and chaos suites |
 | Publishing never rewrites recorded attendance | TC-SCD-106, TC-SCD-119 | Integration suite |
-| The tree matches the anatomy with the worker project | `EveryServiceHas_TheAnatomy` (`TC-TST-124`), `Workers_DefineNoEndpoints` (`TC-TST-123`), R18 | Architecture tests; lint |
+| The tree matches the anatomy with the worker project | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree, worker project included, with document 07's service anatomy and Appendix L's worker image at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (`TC-TST-124`) and `Workers_DefineNoEndpoints` (`TC-TST-123`), planned in document 07 under `tests/Architecture.Tests/` and run on every pull request by SL-TST-001, fail the build on a drift | Lint; review; architecture tests |
 | Budgets hold | TC-SCD-132 with `EXPLAIN (ANALYZE, BUFFERS)` under `docs/perf/scheduling/` | Pipeline |

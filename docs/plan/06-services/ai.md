@@ -1009,13 +1009,13 @@ Query budgets are the `TC-PERF-2NN` rows generated from document 21 §3.20 and s
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E or document 11 | kit-lint R07 and R19; publisher contract tests | Lint; pipeline |
-| Every permission string exists in Appendix B | kit-lint R19; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
+| Every routing key here exists in Appendix E or document 11 | kit-lint R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names); publisher contract tests | Lint; pipeline |
+| Every permission string exists in Appendix B | kit-lint R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; review; every pull request |
 | Every error code exists in Appendix K | kit-lint R19; endpoint contract tests (TC-TST-201) | Lint; pipeline |
 | Every feature is off by default and the product works with all off | TC-AI-601 | Every pull request touching Ai or a feature above rung 1 |
 | Filter before rank and no cross-scope retrieval | TC-AI-607, TC-AI-630, TC-SEC-321 | Every pull request touching Ai |
 | Withdrawal purges the index | TC-AI-605, TC-SEC-325 | Every pull request touching Ai |
 | Every consumer and worker command is idempotent | TC-AI-624, TC-AI-633, TC-TST-203 | Integration suite |
 | Quality holds in both languages | TC-AI-638 and TC-SEC-320 in the `ai-eval` stage | Nightly and every release candidate |
-| The tree matches the service template anatomy | TC-TST-124 and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Ai and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (TC-TST-124), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/ai/` | Pipeline |

@@ -943,4 +943,4 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | No requirement is unmapped | Generated from document 03 row by row; the summary counts are computed |
 | Every identifier exists | `kit-lint` rule R19 over this document |
 | No test cell is empty | The generator assigns a derived acceptance test to any requirement without one |
-| The matrix is current | It is regenerated whenever documents 03, 34 or a service sheet change, and a stale copy fails review |
+| The matrix is current | Kit-lint rule R23 reruns `gen-20.mjs --check` and fails when the matrix differs from what documents 03, 17, 31, 34 and the sheets produce today |

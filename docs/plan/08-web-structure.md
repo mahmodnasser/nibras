@@ -32,9 +32,9 @@ src/Web/
 ├── openapi/                             # checked-in OpenAPI documents, one per service and per BFF, pulled by CI (Section 4)
 │   ├── attendance.v1.json               # example: the Attendance service contract that data-access/attendance is generated from
 │   └── bff-web.v1.json                  # the Bff.Web contract: role home payloads, Student 360, navigation and permission bootstrap
-├── apps/
+├── apps/                                # the two deployable Angular applications; each is a thin host over the libraries below
 │   ├── school/                          # the tenant application: admin console plus every role workspace, one host per tenant domain
-│   │   ├── src/
+│   │   ├── src/                         # application source: bootstrap, providers, top-level routes and the navigation manifest
 │   │   │   ├── main.ts                  # bootstrapApplication with zoneless change detection, withViewTransitions, service worker registration
 │   │   │   ├── app.config.ts            # providers: router, HTTP interceptors from core, i18n loader, realtime, permission store
 │   │   │   ├── app.routes.ts            # top-level routes: auth, verify, workspaces by lazy area, no-access, offline
@@ -45,7 +45,7 @@ src/Web/
 │   │   ├── i18n/                        # en.json and ar.json for strings owned by the application shell only; features ship their own
 │   │   └── project.json                 # per-application build targets, bundle budgets, service worker on for production
 │   └── platform-console/                # the SaaS operator console, separate host and build, Nibras brand always (master brief Section 16)
-│       ├── src/
+│       ├── src/                         # console application source: bootstrap, providers, routes and the operator manifest
 │       │   ├── main.ts                  # bootstrap as above; no tenant resolution, operator identity only
 │       │   ├── app.config.ts            # providers as above with the console realtime hub and the operator permission set
 │       │   ├── app.routes.ts            # top-level routes: today, tenants, plans, flags, health, jobs, failed messages, support, retention
@@ -55,7 +55,7 @@ src/Web/
 │       ├── public/                      # static assets; Nibras brand assets only, never tenant assets
 │       ├── i18n/                        # en.json and ar.json for the console shell; Appendix Q script Q.10 step 11 requires full Arabic
 │       └── project.json                 # build targets and the console bundle budgets
-├── libs/
+├── libs/                                # every library the applications share; each is published inside the workspace as @nibras/<lib>
 │   ├── ui/                              # @nibras/ui: the design system (document 14). Tokens, theme, 64 components, motion utilities, Storybook
 │   │   ├── tokens/                      # design tokens as CSS custom properties and a JSON export shared with Flutter (document 14 Section 2)
 │   │   ├── theme/                       # light and dark themes, per-tenant palette generation from one brand colour, density modes
@@ -163,53 +163,53 @@ libs/features/attendance/
 ├── project.json                                     # lint, test, storybook targets for this library
 ├── index.ts                                         # exports routes and the components another workspace embeds (RegisterCard, UnmarkedClassesCard)
 ├── routes.ts                                        # lazy routes: register, excuses, thresholds, staff attendance; each with permissionGuard
-├── i18n/
+├── i18n/                                            # this feature's translation files, loaded lazily with its routes
 │   ├── en.json                                      # English strings for this feature, keys prefixed attendance.
 │   └── ar.json                                      # Arabic strings; the longest-string story renders from here
-├── pages/
-│   ├── register/
+├── pages/                                           # smart routed components, one folder per route in routes.ts
+│   ├── register/                                    # the class register route, seating chart or list mode
 │   │   ├── register.page.ts                         # smart: loads the session for a section and date, wires the store, handles lock window
 │   │   ├── register.page.html                       # layout: student header strip, mode toggle (seating or list), exception bar, save
 │   │   ├── register.page.scss                       # logical properties only; grid areas for 360, 768 and desktop
 │   │   └── register.page.spec.ts                    # unit: pre-fill from gate scan, all-present then exceptions, lock-window refusal shown
-│   ├── excuses/
+│   ├── excuses/                                     # the excuse approval queue route
 │   │   ├── excuses.page.ts                          # smart: excuse queue for the viewer's scope, approve and reject with reason
 │   │   ├── excuses.page.html                        # list with attachment preview through a short-lived link; medical detail never shown
 │   │   └── excuses.page.spec.ts                     # unit: approve updates the register and announces in the live region
-│   ├── thresholds/
+│   ├── thresholds/                                  # the absence threshold and escalation rules route
 │   │   ├── thresholds.page.ts                       # smart: threshold rules per stage and their escalation targets
 │   │   └── thresholds.page.html                     # editable table with dependency hints
-│   └── staff-attendance/
+│   └── staff-attendance/                            # the staff register route for HR and principal scope
 │       ├── staff-attendance.page.ts                 # smart: staff register for HR and principal scope
 │       └── staff-attendance.page.html               # list view only; no seating chart for staff
-├── components/
-│   ├── seating-chart/
+├── components/                                      # presentational components, one folder each with its stories
+│   ├── seating-chart/                               # the seat grid the register page renders in seating mode
 │   │   ├── seating-chart.component.ts               # presentational: seats as buttons, status cycle on tap, keyboard arrows move focus
 │   │   ├── seating-chart.component.html             # grid with aria-grid semantics; status announced per change
 │   │   ├── seating-chart.component.scss             # ripple-and-settle via animate.enter on the status chip (document 14 Section 6)
 │   │   └── seating-chart.component.stories.ts       # stories: default, pre-filled, all-present, locked, offline, no-permission, in both dirs and themes
-│   ├── attendance-list/
+│   ├── attendance-list/                             # the list the register page renders in list mode and for staff
 │   │   ├── attendance-list.component.ts             # presentational: list mode with virtual scroll for large sections
 │   │   ├── attendance-list.component.html           # rows: student header, status segmented control, note affordance
 │   │   └── attendance-list.component.stories.ts     # stories per state and combination
-│   ├── exception-bar/
+│   ├── exception-bar/                               # the pre-fill summary strip above the register
 │   │   ├── exception-bar.component.ts               # presentational: "N pre-filled from gate scan, M approved leave" with a review action
 │   │   └── exception-bar.component.stories.ts       # stories: pre-fill sources, none pre-filled, stale pre-fill
-│   ├── lock-window-notice/
+│   ├── lock-window-notice/                          # the notice that explains the register lock time and the edit-after-lock path
 │   │   ├── lock-window-notice.component.ts          # presentational: shows the lock time, the edit-after-lock path and who can grant it
 │   │   └── lock-window-notice.component.stories.ts  # stories: open, closing soon, locked, locked with edit permission
-│   ├── register-card/
+│   ├── register-card/                               # the teacher Today card this library exports through index.ts
 │   │   ├── register-card.component.ts               # presentational bento card for the teacher Today: next class to mark, one action
 │   │   └── register-card.component.stories.ts       # stories: due now, already marked, nothing today, offline as-of
-│   └── unmarked-classes-card/
+│   └── unmarked-classes-card/                       # the principal Today card this library exports through index.ts
 │       ├── unmarked-classes-card.component.ts       # presentational bento card for the principal Today: unmarked classes with a nudge action
 │       └── unmarked-classes-card.component.stories.ts  # stories: none unmarked (the calm state), several, after cut-off
-├── state/
+├── state/                                              # SignalStores for this feature and the realtime patcher that updates them
 │   ├── register.store.ts                            # SignalStore: session, records, pre-fill sources, dirty set, save status, lock state
 │   ├── register.store.spec.ts                       # unit: optimistic mark, rollback on ATTENDANCE_SESSION_LOCKED, idempotent resave
 │   ├── excuses.store.ts                             # SignalStore: queue, filters, decision in flight
 │   └── attendance.realtime.ts                       # subscribes to attendance.* events on the realtime channel and patches the stores
-└── testing/
+└── testing/                                         # fixtures and harnesses shared by this library's specs, stories and the e2e screen specs
     ├── attendance.fixtures.ts                       # typed fixtures built from the generated models for stories and specs
     └── attendance.harness.ts                        # component harnesses used by the page specs and the e2e screen specs
 ```
@@ -869,7 +869,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Claim | Proof |
 |---|---|
 | The tree in Section 1 matches the workspace | `ci-web.yml` runs a structure check that lists `apps/*`, `libs/*` and `libs/features/*` and diffs against the tree in this document; a new library without an entry here fails |
-| Boundaries hold | ESLint boundary rules in `eslint.config.mjs`, run on every pull request; a feature-to-feature import or an `@angular/animations` import fails lint |
+| Boundaries hold | Product artefact: the ESLint boundary rules in `eslint.config.mjs` (Section 1.1), which the product build adds with the workspace lint of SL-WEB-001 and runs on every pull request in the lint stage of `ci-web.yml` (path in document 07); a feature-to-feature import or an `@angular/animations` import fails lint. Until that slice lands, the boundary table in Section 1.2 is a review step: `architecture-reviewer` checks every library's allowed imports against it at the Group D review and on every change to Section 1 |
 | Every route in Section 2 has a guard with a real permission | A unit test walks every route configuration and asserts a `permissionGuard` with a string present in Appendix B; the string set is generated from the appendix |
 | Permission refresh without sign-out | `TC-SEC-047` (document 12) with `TC-IDN-044`, as an end-to-end spec on web: change a role while a second browser context is open, assert the menu changes within five seconds and the session persists |
 | Generated clients are current | `ci-web.yml` regenerates from the published OpenAPI artefacts and fails on diff |
@@ -877,7 +877,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Accessibility | axe-core in the Storybook test runner for every component and in Playwright for every screen; the manual screen-reader pass per release from Appendix X |
 | Mobile web and installability | Lighthouse budgets in `ci-web.yml` on the five routes named in Section 8; a test asserts the never-cached URL patterns are absent from `ngsw-config.json` |
 | Bundle budgets and Core Web Vitals | Angular build budgets fail the build; Lighthouse asserts LCP, INP and CLS; `TC-ATT-202` times the sixty-second attendance |
-| Appendix Q and O coverage | Every TC id in Section 7 maps to a spec in `e2e/journeys/`; `20-traceability-matrix.md` lists the mapping and `/lint-plan` reports a TC id here with no spec |
+| Appendix Q and O coverage | In the plan, `kit-lint` rule R20 fails on any TC id in Section 7 that no document defines or that two documents define. In the product, every TC id in Section 7 maps to a Playwright spec in `e2e/journeys/` (Section 1.1; the `e2e/` folder in document 07), built on the Playwright end-to-end harness of SL-TST-006; the product build adds to that harness a check in `ci-web.yml` that fails on a Section 7 TC id with no spec. `20-traceability-matrix.md` lists the mapping |
 | Design system inventory | The Storybook test runner fails on any component in Section 6 missing one of the seven required stories; the contrast and four-way snapshot jobs in `14-design-system-and-ux.md` cover their rendering |
 
 ### Test cases

@@ -1308,7 +1308,7 @@ A service whose evidence is missing for any row is not done, whatever its functi
 | The replica routing holds the budget | `TC-DATA-013`, `TC-PERF-027` | Nightly |
 | Rule-heavy paths stay fast | The BenchmarkDotNet suite in Section 7 with the 10 percent rule | Nightly, one runner class |
 | Caches invalidate, isolate and degrade as designed | `TC-PERF-001` to `TC-PERF-020` (Section 1.23) | Every pull request touching caching; nightly with the Valkey matrix |
-| This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, forbidden markers and SQL comments; `/lint-plan` for names against Appendix L and routing keys against Appendix E | Every change under `docs/` |
+| This document agrees with the catalogs | kit-lint R01, R02 and R05 for section and appendix references and forbidden markers, R19 for routing keys (in Appendix E or document 11), R30 for a comment on every column of a `CREATE TABLE`, and R31 for database and image names against Appendix L; `plan-consistency-checker` with `performance-reviewer` checks the other names (projects, exchanges, cache keys) against Appendix L | kit-lint on every change under `docs/`; the name check at the Group C review and on every change to this document |
 
 ### Test cases
 

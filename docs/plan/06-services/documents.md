@@ -1340,11 +1340,11 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | `tools/kit-lint` rule R07 and `/lint-plan` over `docs/plan/06-services/` | Lint |
-| Every permission string exists in Appendix B | `/lint-plan` permission cross-check; TC-DOC-339 once code exists | Lint, pipeline |
-| Every error code exists in Appendix K | `/lint-plan` error-code cross-check; generated tests assert the exact code | Lint, pipeline |
-| The tree follows document 07's anatomy with a Worker project | Group C review against `07-solution-structure.md` part 3; TC-TST-124 once code exists | Review, `ci-kit.yml` |
-| Every Appendix R transition of WF-DATA-01 and WF-PRV-02 has a test | Section 14 against Appendix R; `[TestCase]` attributes compared once code exists | Review, pipeline |
+| Every routing key here exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
+| Every permission string exists in Appendix B | `tools/kit-lint` rule R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-DOC-339 once code exists | Lint, review, pipeline |
+| Every error code exists in Appendix K | `tools/kit-lint` rule R19 (every back-quoted service-prefixed error code is in Appendix K or ends in a K.1 suffix); generated tests assert the exact code | Lint, pipeline |
+| The tree follows document 07's anatomy with a Worker project | Group C review against `07-solution-structure.md` part 3; TC-TST-124 once code exists | Review, `ci-service.yml` |
+| Every Appendix R transition of WF-DATA-01 and WF-PRV-02 has a test | Section 14 against Appendix R; `tools/kit-lint` rule R32 (every test case in the WF-DATA-01 and WF-PRV-02 entries of Appendix R is cited in section 14, ranges expanded); `[TestCase]` attributes compared once code exists | Review, lint, pipeline |
 | The query budgets hold | TC-DOC-341, TC-DOC-342 with the command counter and plan capture | Integration suite |
 | Every consumer and command is idempotent | TC-DOC-343, TC-DOC-344 | Integration suite |
 | PDFs render correctly in both languages | TC-TST-208 snapshot baselines | Integration suite |

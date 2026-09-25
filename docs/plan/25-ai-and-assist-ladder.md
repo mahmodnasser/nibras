@@ -532,4 +532,4 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 | Withdrawal purges the index | `TC-SEC-325` | Every pull request touching Ai |
 | Fallback is downward and never an error | REQ-AI-008 acceptance test with the model endpoint stopped, and with the provider stopped | Nightly |
 | Quality in both languages | §6.2 thresholds over the §6.1 golden sets | Nightly and every release candidate |
-| This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, names and Mermaid types; `/lint-plan` against `12-security-privacy-safety.md` and Appendix W | Every change under `docs/` |
+| This document agrees with the catalogs | kit-lint R01, R02 and R17 for section and appendix references and Mermaid types, R30 for a comment on every column of a `CREATE TABLE`, and R31 for database and image names against Appendix L (R11 checks Appendix W's own register, not this document); `plan-consistency-checker` with `privacy-auditor` compares this document with `12-security-privacy-safety.md` and Appendix W | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |

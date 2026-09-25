@@ -845,7 +845,7 @@ Quoted from reference architecture Section 7. This document does not restate dif
 | Service name | PascalCase singular domain noun | `Attendance` |
 | Projects and root namespaces | `Nibras.<Service>.<Layer>` | `Nibras.Attendance.Application` |
 | Building blocks and contracts | `Nibras.BuildingBlocks.<Name>`, `Nibras.Contracts.<Service>` | `Nibras.BuildingBlocks.Tenancy` |
-| Container image | `nibras/<service>-<kind>` | `nibras/attendance-api`, `nibras/attendance-worker` |
+| Container image | `nibras/<service>-<kind>` | `nibras/attendance-api`, `nibras/reporting-projections` |
 | Database | `nibras_<service>` | `nibras_attendance` |
 | Database user | `svc_<service>` | `svc_attendance` |
 | Tables and columns | snake_case plural tables | `attendance_records.tenant_id` |

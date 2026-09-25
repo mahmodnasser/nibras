@@ -1016,7 +1016,7 @@ src/Services/Assessment/                                          Assessment and
     │   ├── Workflows/                                            one class per Appendix R workflow
     │   │   ├── ExamToReportCardWorkflowTests.cs                  TC-ASM-001 to TC-ASM-006
     │   │   ├── GradeAppealAndPostLockChangeWorkflowTests.cs      TC-ASM-011 to TC-ASM-016
-    │   │   └── ExamPaperSettingReviewAndPrintingWorkflowTests.cs TC-ASM-021 to TC-ASM-026
+    │   │   └── ExamPaperSettingReviewAndPrintingWorkflowTests.cs  TC-ASM-021 to TC-ASM-026
     │   ├── Sagas/                                                saga tests of document 13
     │   │   └── ReportCardBatchSagaTests.cs                       every Saga 7 scenario including WorkerKilledMidBatch_Resumes_NoDuplicates
     │   ├── Cache/                                                invalidation by the real event for every §1.6 entry
@@ -1162,10 +1162,10 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key exists in Appendix E | `tools/kit-lint` rule R07 and `/lint-plan` | Lint |
-| Every permission and error code exists in Appendices B and K | `/lint-plan` cross-checks; generated permission and validation tests assert exact codes (TC-ASM-320) | Lint, pipeline |
+| Every routing key exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
+| Every permission and error code exists in Appendices B and K | `tools/kit-lint` rule R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; generated permission and validation tests assert exact codes (TC-ASM-320) | Lint, review, pipeline |
 | Every BR-ASM rule has its test class and the mutation gate | Section 14 rows TC-ASM-301 to TC-ASM-315 against document 31 §2 and §6; Stryker.NET in the pipeline | Review, pipeline |
-| Every Appendix R transition has a test | Section 14 against the three WF-ASM tables | Review, pipeline |
+| Every Appendix R transition has a test | Section 14 against the three WF-ASM tables; `tools/kit-lint` rule R32 (every test case in the WF-ASM-01 to WF-ASM-03 entries of Appendix R is cited in section 14, ranges expanded) | Review, lint, pipeline |
 | Saga 7 matches document 13 | `ReportCardBatchSagaTests` covers every scenario in document 13's table | Integration suite |
 | Calculations are reproducible | `ReproducibilityCheckJob` weekly and TC-ASM-316 | Worker, integration suite |
 | The tree follows document 07's anatomy and every entry has a comment | Group C review diff; `tools/kit-lint` rule R18 | Review, lint |

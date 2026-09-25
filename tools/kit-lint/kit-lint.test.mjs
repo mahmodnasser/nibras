@@ -396,3 +396,128 @@ test('R20 treats a heading that opens with an identifier as a definition', () =>
   assert.equal(findings.length, 1, JSON.stringify(findings));
   assert.match(findings[0].message, /TC-ATT-001 is defined in 2 documents/);
 });
+
+/* ---------------------------------------------------------- R21 to R32 */
+
+const only = (id, files) => lintFixture({ ...catalogKit(), ...files }, [id]);
+const messages = (fs) => fs.map((f) => f.message).join(' | ');
+const FENCE = '```';
+
+test('R21 catches a gap in numbering, a missing tier and an unknown rule in the requirements catalog', () => {
+  const f = only('R21-requirements-catalog', {
+    'docs/plan/03-requirements-catalog.md': '# 03\n\n| ID | Requirement | Tier | Service | Source | WF / BR | Acceptance |\n|---|---|---|---|---|---|---|\n| REQ-ATT-001 | Mark | 1 | Attendance | A | WF-ATT-01 | TC-ATT-001 |\n| REQ-ATT-003 | Late | x | Attendance | A | BR-ATT-777 | Given |\n',
+  });
+  assert.match(messages(f), /follows REQ-ATT-001/);
+  assert.match(messages(f), /no tier/);
+  assert.match(messages(f), /BR-ATT-777/);
+});
+
+test('R22 catches a cited ADR with no record, an unindexed record and a status mismatch', () => {
+  const f = only('R22-adr-references', {
+    'docs/project/DECISIONS/0001-one.md': '# ADR-0001: One\n\n- **Status:** Accepted\n',
+    'docs/project/DECISIONS/0002-two.md': '# ADR-0002: Two\n\n- **Status:** Proposed\n',
+    'docs/plan/29-adr-index.md': '# 29\n\n| ADR | Title | Status |\n|---|---|---|\n| 0001 | One | Proposed |\n',
+    'docs/plan/04-architecture-overview.md': '# 04\n\nSee ADR-0009.\n',
+  });
+  assert.match(messages(f), /ADR-0009 is cited/);
+  assert.match(messages(f), /ADR 0002 .* has no row/);
+  assert.match(messages(f), /"Proposed" here but "Accepted"/);
+});
+
+test('R23 reports a generator whose check fails', () => {
+  const f = only('R23-generated-documents', {
+    'tools/plan-build/gen-20.mjs': "console.log('stale: docs/plan/20-traceability-matrix.md differs'); process.exit(1);\n",
+    'docs/plan/20-traceability-matrix.md': '# 20\n',
+  });
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.match(f[0].message, /stale/);
+});
+
+test('R24 catches a score that is not likelihood times impact and an unknown register reference', () => {
+  const f = only('R24-risk-tables', {
+    'docs/plan/18-risk-register.md': '# 18\n\n| Id | Risk | L | I | Score |\n|---|---|---|---|---|\n| RISK-01 | Late | 3 | 4 | 11 |\n',
+    'docs/plan/10-data-architecture.md': '# 10\n\n| Risk | L | I | In the register |\n|---|---|---|---|\n| Leak | 2 | 5 | RISK-99 |\n',
+  });
+  assert.match(messages(f), /score 11 is not 3 x 4/);
+  assert.match(messages(f), /RISK-99 is not in document 18/);
+});
+
+test('R25 catches a workflow in no capability and a capability with no slices', () => {
+  const f = only('R25-roadmap-coverage', {
+    'docs/plan/34-work-breakdown.md': '# 34\n\n#### CAP-ATT-02 Other\n\n| SL-ATT-001 | x |\n',
+  });
+  assert.match(messages(f), /WF-ATT-01 is built by no capability/);
+  assert.match(messages(f), /CAP-ATT-01 has no slices/);
+});
+
+test('R26 catches an open question missing from document 01', () => {
+  const f = only('R26-open-questions-mirror', {
+    'docs/project/OPEN_QUESTIONS.md': '# OQ\n\n| # | Question |\n|---|---|\n| 1 | Which runtime? |\n| 2 | Which host? |\n\n## Settled\n',
+    'docs/plan/01-questions-and-assumptions.md': '# 01\n\n| # | Question |\n|---|---|\n| 1 | Which runtime? |\n',
+  });
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.match(f[0].message, /Open question 2/);
+});
+
+test('R27 catches an uncatalogued key in document 11 and a service publishing on another exchange', () => {
+  const f = only('R27-messaging-keys', {
+    'docs/plan/11-messaging-architecture.md': '# 11\n\n| Target | Commands |\n|---|---|\n| Attendance | `CloseRegister` |\n\nUses `attendance.commands.close-register.v1`, `attendance.student.absent.v1` and `attendance.register.teleported.v1`.\n',
+    'docs/plan/05-service-catalog.md': '# 05\n\n| Service | Publishes |\n|---|---|\n| **Attendance** | `finance.invoice.issued.v1` |\n',
+  });
+  assert.match(messages(f), /attendance\.register\.teleported\.v1 is used in document 11/);
+  assert.match(messages(f), /only on its own exchange/);
+  assert.doesNotMatch(messages(f), /close-register/);
+});
+
+test('R28 catches a high-impact threat with no test', () => {
+  const f = only('R28-threat-coverage', {
+    'docs/plan/12-security-privacy-safety.md': '# 12\n\n| ID | Threat | Impact | Test |\n|---|---|---|---|\n| T-ATT-01 | Forged mark | high | policy |\n| T-ATT-02 | Typo | low | none |\n',
+  });
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.match(f[0].message, /T-ATT-01 has impact high/);
+});
+
+test('R29 catches a state diagram with an unlabelled transition and no exit', () => {
+  const f = only('R29-state-diagrams', {
+    'docs/plan/13-workflows-and-sagas.md': '# 13\n\n' + FENCE + 'mermaid\nstateDiagram-v2\n    [*] --> Open\n    Open --> Marked\n' + FENCE + '\n',
+  });
+  assert.match(messages(f), /no terminal state/);
+  assert.match(messages(f), /Transition has no label: Open --> Marked/);
+});
+
+test('R30 catches a column without a comment', () => {
+  const f = only('R30-sql-comments', {
+    'docs/plan/10-data-architecture.md': '# 10\n\n' + FENCE + 'sql\nCREATE TABLE attendance.mark (\n    tenant_id uuid NOT NULL, -- owner\n    status smallint NOT NULL,\n    PRIMARY KEY (tenant_id)\n);\n' + FENCE + '\n',
+  });
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.match(f[0].message, /status smallint/);
+});
+
+test('R31 catches an unregistered image and database, and ignores metric and label prefixes', () => {
+  const f = only('R31-canonical-names', {
+    'docs/brief/02-appendices/appendix-l-registry-and-id-codes.md': '# L\n\n| Service | Database | Images |\n|---|---|---|\n| **Attendance** | `nibras_attendance` | `nibras/attendance-api` |\n| **Reporting** | `nibras_reporting` | `nibras/reporting-api`, `-projections` |\n',
+    'docs/plan/07-solution-structure.md': '# 07\n\nImages `nibras/attendance-worker`, `nibras/reporting-projections`; metric `nibras_ui`; label `nibras/tenant`.\n\n| Service | Database |\n|---|---|\n| Attendance | `nibras_attendence` |\n',
+  });
+  assert.match(messages(f), /Image nibras\/attendance-worker/);
+  assert.doesNotMatch(messages(f), /reporting-projections|nibras_ui|nibras\/tenant/);
+  assert.match(messages(f), /nibras_attendence/);
+});
+
+test('R32 catches an owner sheet that does not cite a transition test of its workflow', () => {
+  const kit = catalogKit();
+  kit['docs/brief/02-appendices/appendix-r-workflow-catalog.md'] = '# R\n\n### WF-ATT-01 Mark attendance\n\n| Transition | Test |\n|---|---|\n| Open to Marked | TC-ATT-001 |\n| Marked to Locked | TC-ATT-002 |\n';
+  kit['docs/brief/02-appendices/appendix-l-registry-and-id-codes.md'] = '# L\n';
+  kit['docs/plan/13-workflows-and-sagas.md'] = '# 13\n\n### 1. Workflow assignment\n\n| Workflow | Name | Owner |\n|---|---|---|\n| WF-ATT-01 | Mark | Attendance |\n';
+  kit['docs/plan/06-services/attendance.md'] = '# Attendance\n\n## 15. Test plan\n\n| Test case | What |\n|---|---|\n| `TC-ATT-001` (Appendix R) | Open to Marked |\n';
+  const f = lintFixture(kit, ['R32-workflow-tests']);
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.match(f[0].message, /does not cite TC-ATT-002/);
+});
+
+test('R18 requires a comment on every plan tree entry', () => {
+  const f = only('R18-tree-comments', {
+    'docs/plan/07-solution-structure.md': '# 07\n\n' + FENCE + '\nsrc/\n├── a/        # one\n├── b/        # two\n├── c/        # three\n├── d/\n└── e/        # five\n' + FENCE + '\n',
+  });
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.equal(f[0].severity, 'error');
+});

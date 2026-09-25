@@ -249,19 +249,19 @@ Three further cases the plan adds, because they surfaced while writing the setup
 
 | Claim | Proof |
 |---|---|
-| The quoted tables match Appendix X word for word | `/lint-plan` diffs the quoted sections against `docs/brief/02-appendices/appendix-x-platform-support.md`; any difference is a defect in this document, never in the appendix |
-| The setup guides work on each operating system | The `dev-smoke` job on two runners (ubuntu and windows) runs the one-command start from a clean checkout nightly and on every change to `deploy/compose/**`, `docs/dev-setup/**` or `tools/dev-setup/**`, once with Podman and once with Docker Engine; macOS is verified by the mobile engineer's machine at each phase demo, and the guide says so |
-| The verification command does what part 3 of this document says | `tools/dev-setup/verify-setup.mjs` is the single source; the check list in part 3 is read from the script, and `ci-kit.yml` runs it on both runners with the required checks expected to pass |
+| The quoted tables match Appendix X word for word | `plan-consistency-checker` with `portability-reviewer` compares the quoted sections word for word with `docs/brief/02-appendices/appendix-x-platform-support.md` at the Group F review and on every change to Appendix X or this document; any difference is a defect in this document, never in the appendix |
+| The setup guides work on each operating system | The `dev-smoke` job (`dev-smoke.yml`, path in document 07, built by SL-PLAT-005) on two runners (ubuntu and windows) runs the one-command start from a clean checkout nightly and on every change to `deploy/compose/**`, `docs/dev-setup/**` or `tools/dev-setup/**`, once with Podman and once with Docker Engine; macOS is verified by the mobile engineer's machine at each phase demo, and the guide says so |
+| The verification command does what part 3 of this document says | `tools/dev-setup/verify-setup.mjs` is the single source (in the kit today; path in document 07 part 6). The product build adds its run to `ci-kit.yml` (path in document 07) on both runners, with the required checks expected to pass, alongside the Node tool wrappers SL-PLAT-001 builds. That the check list in part 3 matches the script is a review step: `portability-reviewer` compares them on every change to `verify-setup.mjs` or part 3 |
 | Every image passes the globalization checklist | The culture test inside the built image (G1 to G4, G6), the Dockerfile lint (G5), the PDF snapshot test (G7), the container assertions (G8), the architecture test (G9) and the analyzer (G10), all steps of `ci-service.yml` |
 | Every hygiene rule is enforced, not advised | `kit-lint` rules R13, R14, R15, R16, R17 and R05 on both runners in `ci-kit.yml`; `.gitattributes` and `.editorconfig` at the repository root; `verify-setup` for the two Git settings |
 | Every mobile target has its artefact and its gate | The release pipeline refuses a flavour without both Android and iOS artefacts; the device pass per release is recorded against the five devices in Appendix X.2 with the three Arabic screens checked on each |
 | The appliance path works on real Windows hosts | The nested-virtualisation build in `release.yml` and the quarterly drill on Hyper-V, recorded in the runbook |
-| Every edge case has a test | The `TC-PLAT-` identifiers above appear in document 16 and in the Platform column of document 20; `/lint-plan` refuses an identifier listed here that appears in neither |
+| Every edge case has a test | kit-lint R20 fails on a `TC-PLAT-` identifier listed here that no document defines, or that more than one document defines; that every edge case in part 9 carries an identifier is checked by `test-strategist` at the Group F review and on every change to part 9 |
 | Every Section and Appendix reference resolves, and no placeholder exists | `kit-lint` rules R01, R02 and R05 |
 
 ### Test cases
 
-Tests this document defines beyond the edge cases of part 9. Document 03, document 07 and document 20 cite them.
+Tests this document defines beyond the edge cases of part 9. Document 03, document 07 and document 20 cite them. TC-PLAT-102 is a product pipeline test: it runs in `ci-kit.yml` (path in document 07) and SL-PLAT-001, which builds the Node tool wrappers, builds it. kit-lint R15 checks only that both wrappers exist beside each entry point and R16 that each hook invokes `node` with a relative path; that both wrappers exit and print the same is proved by this test alone.
 
 | Test case | What it proves | Covers |
 |---|---|---|

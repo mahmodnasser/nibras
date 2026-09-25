@@ -894,11 +894,11 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key exists in Appendix E | kit-lint R07 and `/lint-plan`; TC-ADM-425 | Lint; contract suite |
-| Every permission and error code is catalogued | `/lint-plan`; TC-ADM-422 | Lint; generated suite |
-| Every rule has its test class | TC-ADM-401 to TC-ADM-406 against document 31 | `/lint-plan`; unit suite |
-| Every Appendix R transition of WF-ADM-01 and WF-ADM-02 has a test | TC-ADM-001 to TC-ADM-006, TC-ADM-011 to TC-ADM-016 | `/lint-plan`; integration suite |
+| Every routing key exists in Appendix E or is a command or reply document 11 names | kit-lint R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names); TC-ADM-425 in the contract suite once code exists | Lint; contract suite |
+| Every permission and error code is catalogued | kit-lint R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-ADM-422 | Lint; review; generated suite |
+| Every rule has its test class | `test-strategist` checks that every BR-ADM rule of document 31 has a section 15 row naming its `*Tests` class (TC-ADM-401 to TC-ADM-406), at the Group C review and on every change to this sheet or document 31; kit-lint R09 checks that each Appendix S rule has three Given examples and names a class ending in `Tests`, and R20 that each cited test is defined in exactly one document | Review; lint; unit suite |
+| Every Appendix R transition of WF-ADM-01 and WF-ADM-02 has a test | TC-ADM-001 to TC-ADM-006, TC-ADM-011 to TC-ADM-016; kit-lint R32 (every test case in each workflow's Appendix R entry is cited in section 15, ranges expanded) and R20 (each is defined in exactly one document); R25 keeps both workflows assigned once in document 13, whose owner column R32 reads | Lint; integration suite |
 | Saga 3 compensates, holds the seat, and survives a killed Api | TC-ADM-006, TC-ADM-414 to TC-ADM-419 | Integration and chaos suites |
 | Capacity is never oversubscribed | TC-ADM-407 | Integration suite |
-| The tree matches the anatomy | `EveryServiceHas_TheAnatomy` (`TC-TST-124`), R18 | Architecture tests; lint |
+| The tree matches the anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Admissions and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (`TC-TST-124`), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | The public surge holds | TC-ADM-420 on scenario N-10 | Load suite, before each release |

@@ -657,9 +657,9 @@ The requirements catalog is written in parallel; this table cites the brief dire
 | Projections are fresh and rebuildable | `TC-DATA-011` measures `nibras_reporting_projection_lag_seconds` under the N-01 load; `TC-DATA-012` rebuilds and compares row counts and checksums | Nightly |
 | Replica lag routing | `TC-DATA-013` pauses replay on the replica and asserts primary routing and the alert | Nightly |
 | Every retention row has a job | `TC-DATA-014` enumerates Section 8, asserts a registered Quartz job per row, and runs each with a fake clock against seeded rows on both sides of the boundary; legal hold cases from `TC-PRV-902` | Nightly |
-| Single-tenant restore | `TC-DATA-020`, the quarterly drill from WF-INF-03, with the ordering in Section 9 scripted in `tools/restore-tenant/` and its timings recorded in `docs/runbooks/` | Quarterly |
+| Single-tenant restore | `TC-DATA-020`, the quarterly drill from WF-INF-03 (the drill pipeline is built by SL-INF-600), with the ordering in Section 9 scripted in `tools/restore-tenant/` (built by SL-INF-601; path in document 07 part 6) and its timings recorded in `docs/runbooks/` | Quarterly, once SL-INF-601 is built |
 | Tier migration | `TC-DATA-010` on the load tier | Before each general-availability release |
-| This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, event names and Mermaid types; `/lint-plan` for consistency with `05-service-catalog.md`, the service sheets and `11-messaging-architecture.md` | Every change under `docs/` |
+| This document agrees with the catalogs | Kit-lint R01 and R02 for section and appendix references, R19 for the routing keys, requirement, workflow and rule identifiers cited here, R17 for Mermaid types, R30 for SQL column comments and R31 for database names; for everything else, a review step: the `plan-consistency-checker` agent compares this document with `05-service-catalog.md`, the service sheets and `11-messaging-architecture.md` at the Group C review and on every change to any of them | Lint (`/lint-plan`) on every change under `docs/`; Group C review |
 
 ### Test cases
 

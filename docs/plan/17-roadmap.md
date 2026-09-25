@@ -222,7 +222,7 @@ Identifiers are `CAP-<AREA>-<NN>` with area codes from Appendix L. Each is named
 
 **Exit criteria.** Each Tier 2 module meets the definition of done in master brief Section 26; the product is fully usable with every assist rung above 1 switched off; the standards checklist of REQ-INT-016 passes a QTI 3 round trip, an Open Badges 3.0 credential verified by an independent verifier, and a CASE import.
 
-CAP-INT-02 and CAP-INT-03 carry the REQ-INT-016 standards work that the Platform service sheet and the requirement itself time to phases 4 and 5. `34-work-breakdown.md` wrote those slices before this section named a capability for them, so SL-INT-411 sits today at the end of CAP-ACA-03 and SL-INT-600 to SL-INT-602 at the end of CAP-AI-01. They move under these two capabilities when document 34 is next regenerated; their days, services and dependencies do not change, so the phase ranges in Section 1 are unaffected.
+CAP-INT-02 and CAP-INT-03 carry the REQ-INT-016 standards work that the Platform service sheet and the requirement itself time to phases 4 and 5. `34-work-breakdown.md` lists SL-INT-411 under CAP-INT-02 and SL-INT-600 to SL-INT-602 under CAP-INT-03; moving them there from CAP-ACA-03 and CAP-AI-01 changed no days, services or dependencies, so the phase ranges in Section 1 are unaffected.
 
 #### Phase 6: Hardening and launch
 
@@ -345,8 +345,8 @@ flowchart LR
 | Claim | Proof |
 |---|---|
 | Every service requirement is in exactly one phase | The Section 2 table is computed from document 03 by service phase; its counts add to 561, and with the 299 cross-cutting requirements to the 860 in document 03 |
-| Every workflow has a capability | Every `WF-` identifier in document 31 appears in a capability row in Section 4; `/lint-plan` checks it once document 34 exists |
-| Every capability is broken into slices | Document 34 lists slices under every `CAP-` identifier here; a capability with no slices fails `/lint-plan`. CAP-INT-02 and CAP-INT-03 are the open case: their slices exist as SL-INT-411 and SL-INT-600 to SL-INT-602 but sit under CAP-ACA-03 and CAP-AI-01 until document 34 is regenerated, which is a finding in document 34, not a missing slice |
+| Every workflow has a capability | kit-lint R25 fails when a `WF-` heading of Appendix R, the catalog document 31 is generated from, appears in no `CAP-` row of Section 4; kit-lint R19 fails when a Section 4 row cites a `WF-` identifier Appendix R does not define |
+| Every capability is broken into slices | kit-lint R25 fails when a `CAP-` row here has no `SL-` row under its `#### CAP-` heading in document 34. CAP-INT-02 holds SL-INT-411 and CAP-INT-03 holds SL-INT-600 to SL-INT-602 |
 | Every requirement reaches a slice | Document 34 and document 20 together; a requirement with no slice is scope nobody will build |
-| The ranges match the work | `node tools/plan-build/schedule-34.mjs` prints the Section 1 ranges and the MVP figure from document 34; a mismatch with this document is a defect |
+| The ranges match the work | kit-lint R23 runs `tools/plan-build/schedule-34.mjs --check`, which recomputes the ranges from the slices in document 34 and fails when a Section 1 phase row, the launch total or the MVP line differs from what it computes |
 | The ranges stay honest | Re-computed at the end of each phase from the slices actually delivered and the team actually present, and recorded in the review record |

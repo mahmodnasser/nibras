@@ -1029,11 +1029,12 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | kit-lint R07 and `/lint-plan`; publisher contract tests | Lint; pipeline |
+| Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names; publisher contract tests once code exists | Lint; pipeline |
 | Every permission string exists in Appendix B | `/lint-plan`; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
 | Every error code exists in Appendix K | `/lint-plan`; endpoint contract tests (TC-TST-201) | Lint; pipeline |
-| Every WF-RQS-01 row in Appendix R has a test | `/lint-plan` compares section 15 with Appendix R | Lint; integration suite |
+| Every test Appendix R gives WF-RQS-01 is cited in section 15 | kit-lint R32 fails this sheet when section 15 omits any TC identifier Appendix R lists under a workflow document 13 assigns to Requests | Lint |
+| Every WF-RQS-01 transition row in Appendix R has its own test | `test-strategist` compares each transition row of WF-RQS-01 with the test it names and with section 15 at the Group C review and on every change to this sheet or to Appendix R; the tests themselves run in the integration suite | Review; integration suite |
 | Every BR-RQS rule has its named test class and examples | Architecture test on `BR-` comments; `/simulate-year` | Pipeline |
 | Every Saga 6 step is idempotent and compensable | TC-RQS-623, TC-RQS-624, `RequestFulfilmentSagaTests` | Integration suite |
-| The tree matches the service template anatomy | TC-TST-124 and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (TC-TST-124, planned in document 07 under `tests/Architecture.Tests/`, run on every pull request by SL-TST-001) fails the build on a drift | Lint; review; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/requests/` | Pipeline |

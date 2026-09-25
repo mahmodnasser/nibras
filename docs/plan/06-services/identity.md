@@ -2213,10 +2213,10 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every permission string in this sheet exists in Appendix B | `/lint-plan` extracts back-quoted `<service>.<resource>.<action>` strings and checks them against Appendix B | Lint |
-| Every routing key in sections 7 and 11 exists in Appendix E | `tools/kit-lint` rule R07 extended to `docs/plan/` by `/lint-plan` | Lint |
+| Every permission string in this sheet exists in Appendix B | kit-lint R19 checks every back-quoted `<service>.<resource>.<action>` string in a table column headed Permission against Appendix B; permission strings written in prose are compared with Appendix B by `plan-consistency-checker` at the Group C review and on every change to this sheet | Lint; review |
+| Every routing key in sections 7 and 11 exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
 | Every error code exists in Appendix K | `/lint-plan` code check | Lint |
-| Every WF, BR and TC identifier reused here exists where this sheet says it does | `/lint-plan` identifier check against Appendices R, S and Q and documents 12, 16 and 21 | Lint |
+| Every WF, BR and TC identifier reused here exists, where this sheet says it does | kit-lint R19 checks every WF against Appendix R and every BR against Appendix S; R20 checks every TC cited is defined in exactly one document; that it is defined in the document this sheet names is compared by `plan-consistency-checker` at the Group C review and on every change to this sheet | Lint; review |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |
 | The endpoint table matches the built service | `TC-IDN-125` compares the OpenAPI document with section 5 once code exists | Pipeline, phase 1 |
 | The caching and budgets hold | `TC-PERF-001`, `TC-PERF-002`, `TC-IDN-120` | Integration suites |

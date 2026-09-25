@@ -1294,12 +1294,13 @@ Operations has no Appendix S rule, so no rule test class exists (document 31 sec
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | kit-lint R07 and `/lint-plan`; publisher contract tests | Lint; pipeline |
+| Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names; publisher contract tests once code exists | Lint; pipeline |
 | Every permission string exists in Appendix B | `/lint-plan`; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
 | Every error code exists in Appendix K | `/lint-plan`; endpoint contract tests (TC-TST-201) | Lint; pipeline |
-| Every WF-OPS row in Appendix R has a test | `/lint-plan` compares section 15 with Appendix R | Lint; integration suite |
+| Every test Appendix R gives WF-OPS-01 to WF-OPS-05 is cited in section 15 | kit-lint R32 fails this sheet when section 15 omits any TC identifier Appendix R lists under a workflow document 13 assigns to Operations | Lint |
+| Every WF-OPS transition row in Appendix R has its own test | `test-strategist` compares each transition row of WF-OPS-01 to WF-OPS-05 with the test it names and with section 15 at the Group C review and on every change to this sheet or to Appendix R; the tests themselves run in the integration suite | Review; integration suite |
 | A sub-domain can be split mechanically | TC-OPS-601 no cross-schema foreign key; TC-OPS-602 each DbContext alone | Integration suite, every build |
 | No location is stored or sent against a child | TC-OPS-607, TC-SEC-310 | Integration and security suites |
 | Every effect, clearance command and consumer is idempotent | TC-OPS-606, TC-OPS-617, TC-OPS-621, TC-TST-203 | Integration suite |
-| The tree matches the service template anatomy | TC-TST-124 and kit-lint R18 | Architecture tests; lint |
+| The tree matches the service template anatomy | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (TC-TST-124, planned in document 07 under `tests/Architecture.Tests/`, run on every pull request by SL-TST-001) fails the build on a drift | Lint; review; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/operations/` | Pipeline |

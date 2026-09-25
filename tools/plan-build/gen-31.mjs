@@ -5,7 +5,9 @@ import { dirname as __dirOf, resolve as __resolve } from 'node:path';
 // Paths resolve from this file, so the script runs from any checkout on Windows or Linux.
 const __here = __dirOf(__toPath(import.meta.url)).split(String.fromCharCode(92)).join('/');
 const __kit = __resolve(__here, '../..').split(String.fromCharCode(92)).join('/') + '/';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { writeGenerated } from './write-generated.cjs';
+
 
 const K = __kit;
 const R = readFileSync(K + 'docs/brief/02-appendices/appendix-r-workflow-catalog.md', 'utf8');
@@ -199,11 +201,12 @@ p();
 p('| Claim | Proof |');
 p('|---|---|');
 p('| Every rule and workflow has a row | The document is generated from the appendices; the coverage check in Section 7 is recomputed on every regeneration |');
+p('| The document is current | Kit-lint rule R23 reruns `gen-31.mjs --check` and fails when Appendices R or S or document 05 changed since it was generated |');
 p('| Every rule has a test class that exists in code | Once code exists, an architecture test enumerates `BR-` comments and asserts the named test class exists |');
 p('| Every worked example is a test row | `/simulate-year` and the business-rules-reviewer agent compare Appendix S examples with the test data sources |');
 p('| Mutation targets are met | Stryker.NET in the pipeline, gated at 80% on the classes in Section 6 |');
 p();
-writeFileSync(K + 'docs/plan/31-business-rules-and-workflows.md', L.join('\n'), 'utf8');
+writeGenerated(K + 'docs/plan/31-business-rules-and-workflows.md', L.join('\n'));
 console.log('rules ' + rules.length + ', workflows ' + flows.length + ', arithmetic ' + rules.filter((r) => r.arithmetic).length);
 console.log('no owner ' + ruleNoOwner.length + ', no test ' + ruleNoTest.length + ', dup test ' + dupTest.length + ', wf no owner ' + flowNoOwner.length + ', unknown phase: ' + (unknownPhase.join(',') || 'none'));
 console.log('phases found: ' + [...phase.entries()].map(([k, v]) => k + '=' + v).join(' '));

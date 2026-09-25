@@ -281,11 +281,11 @@ You need to know what happens on a bad day. Every tenant is isolated by row-leve
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every Appendix W feature has exactly one matrix row with every P.4 column filled | A row count of 44 across §1.1 and §1.2 against Appendix W, which likewise keeps row 39 marked as moved, and no empty cell | Group F review; `/lint-plan` |
+| Every Appendix W feature has exactly one matrix row with every P.4 column filled | `demo-director` counts 44 rows across §1.1 and §1.2 against Appendix W, which likewise keeps row 39 marked as moved, and finds no empty P.4 cell (kit-lint R11 checks Appendix W's own register, not this matrix) | Group F review; every change to Appendix W or §1 |
 | Every "who else has it" value is traceable to document 02 | Each yes, partial and no carries a document 02 footnote number; every other cell reads unverified | Domain expert review as a school buyer |
 | Every sixty-second proof exists | Each minute's test case runs in the end-to-end suite against the demo tenant on every release (Appendix O); each reserve step's test runs on the same schedule (open point 1) | Every release |
 | Each minute fits in sixty seconds | The duration assertions named in §4.1, and a timed dry run by the demo director before each phase demo | Every phase demo |
 | Every capability cited exists in the roadmap | `tools/kit-lint` rule R19 against `17-roadmap.md` §4 | Every change under `docs/` |
-| The MVP mapping matches the roadmap | `/lint-plan` compares §3 with `17-roadmap.md` §5 | Every change to either document |
+| The MVP mapping matches the roadmap | `plan-consistency-checker` compares the phase §3 gives each capability with `17-roadmap.md` §5; kit-lint R19 fails on a `CAP-` identifier in §3 that document 17 does not define | The comparison on every change to either document; kit-lint on every change under `docs/` |
 | No banned claim reaches the sales material | The sales sheet is reviewed against §2.2 before each release | Every release |
 | This document agrees with the catalogs | `node tools/kit-lint/kit-lint.mjs .` for section and appendix references, identifiers and open markers | Every change under `docs/` |

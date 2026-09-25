@@ -46,7 +46,7 @@ src/Mobile/
 │   ├── Runner/NotificationService/          # notification service extension: rewrites lock-screen text to the safe template (§7)
 │   └── ExportOptions.*.plist                # export options per flavor; the white-label plist points at the school's team identifier
 ├── windows/  linux/                         # desktop kiosk host projects; full-screen, no window chrome, launcher script for Linux (§5)
-├── lib/
+├── lib/                                     # all Dart source: flavor entry points, the application shell, core services and the feature folders
 │   ├── main_dev.dart  main_shared.dart  main_whitelabel.dart  main_kiosk.dart   # one entry point per flavor; each builds AppConfig and calls bootstrap()
 │   ├── app/                                 # application shell: things that exist once
 │   │   ├── bootstrap.dart                   # ordered start-up: config, secure storage, Drift open, first frame, then deferred initialisation (§8)
@@ -110,49 +110,49 @@ Every feature has the same three layers (`.claude/rules/mobile.md`). `domain/` h
 lib/features/attendance/
 ├── attendance_routes.dart                          # typed go_router routes: /teacher/classes/:sectionId/attendance, /homeroom/excuses, /principal/attendance
 ├── attendance_feature.dart                         # feature registration: routes, sync entity groups it owns, outbox action types it handles, deep-link targets
-├── domain/
-│   ├── entities/
+├── domain/                                         # pure Dart: entities, local rule mirrors and use cases; imports no Flutter
+│   ├── entities/                                   # the attendance entities the use cases and screens work with
 │   │   ├── attendance_session.dart                 # session for a section and date: mode (daily or per period), lock time, records, pre-fill sources
 │   │   ├── attendance_record.dart                  # one student's status, source (teacher, gate, bus, kiosk, offline replay), note, version, occurredAt
 │   │   ├── attendance_status.dart                  # present, absent, late, excused, early leave; codes from the tenant's attendance settings
 │   │   ├── excuse.dart                             # excuse with type, window, evidence requirement, decision
 │   │   └── pre_fill_source.dart                    # gate scan, bus boarding, approved leave: what pre-filled a record and when
-│   ├── rules/
+│   ├── rules/                                      # device-side mirrors of server rules, used to explain an outcome, never to decide it
 │   │   ├── lock_window_rule.dart                   # local mirror of BR-ATT-002 for the notice only; the server decides, the device explains
 │   │   └── exception_only_rule.dart                # which records are exceptions to confirm (master brief Section 12.1 item 26)
-│   └── usecases/
+│   └── usecases/                                   # one class per user action, called by the presentation state
 │       ├── open_register.dart                      # load the session from cache, merge pre-fill, return the register view model with its "as of" time
 │       ├── mark_student.dart                       # write the record locally, enqueue attendance.mark with the held version, mark the row pending
 │       ├── mark_all_present_then_exceptions.dart   # one queued action per student with the same batch id, so a partial sync stays consistent
 │       ├── submit_excuse.dart                      # enqueue the excuse and its attachment; the action waits for the attachment (§3.8)
 │       ├── decide_excuse.dart                      # approve or reject; online only because approval needs the current permission version (Appendix M)
 │       └── resolve_conflict.dart                   # applies the one action the banner offers: submit edit-after-lock request, keep server value, choose value
-├── data/
-│   ├── dto/
+├── data/                                           # the repository implementation and everything it reads and writes: DTOs, Drift, API, outbox
+│   ├── dto/                                        # wire shapes for sync pages and queued actions
 │   │   ├── attendance_session_dto.dart             # generated from the Bff.Mobile OpenAPI document; never edited by hand
 │   │   ├── mark_action_dto.dart                    # outbox payload shape for attendance.mark: sessionId, studentId, status, note, entityVersion, occurredAt
 │   │   └── attendance_delta_dto.dart               # delta page for the attendance entity group: upserts, deletes, discarded values, next token
-│   ├── local/
+│   ├── local/                                      # Drift tables, the data access object and the delta applier for the attendance entity group
 │   │   ├── attendance_tables.dart                  # Drift tables: attendance_sessions, attendance_records, excuses (§3.2)
 │   │   ├── attendance_dao.dart                     # queries: register by section and date, pending rows, rows with conflicts, purge older than 14 days
 │   │   └── attendance_delta_applier.dart           # applies a delta page inside one transaction; per-student merge, never per session
-│   ├── remote/
+│   ├── remote/                                     # the network side, over the generated Bff.Mobile client
 │   │   └── attendance_api.dart                     # thin wrapper over the generated client: sync page, excuse decision, edit-after-lock request
-│   ├── outbox/
+│   ├── outbox/                                     # the handler that turns this feature's queued actions into requests and outcomes
 │   │   └── attendance_outbox_handler.dart          # maps queued action types to requests and maps Appendix K codes to outbox outcomes (§3.7)
 │   └── attendance_repository_impl.dart             # cache-first reads, outbox writes, delta subscription; the only class presentation talks to
-├── presentation/
-│   ├── state/
+├── presentation/                                   # Riverpod state, screens and widgets; reaches data only through the use cases and the repository
+│   ├── state/                                      # Riverpod notifiers the screens watch
 │   │   ├── register_provider.dart                  # Riverpod notifier: session, records, dirty set, pending count, lock state, conflict list
 │   │   ├── excuses_provider.dart                   # excuse queue for the viewer's scope and decisions in flight
 │   │   └── unmarked_classes_provider.dart          # principal card: unmarked classes at the cut-off, from the cached home payload
-│   ├── screens/
+│   ├── screens/                                    # one routed screen per file
 │   │   ├── register_screen.dart                    # the register: seating or list mode, exception bar, mark all present, save; every one of the seven states
 │   │   ├── excuse_review_screen.dart               # homeroom excuse review with attachment preview through a short-lived link; medical detail never shown
 │   │   ├── submit_excuse_screen.dart               # guardian excuse form with camera capture; queues offline with a pending badge
 │   │   ├── unmarked_attendance_screen.dart         # principal: unmarked classes with a nudge action
 │   │   └── my_attendance_screen.dart               # student and guardian read view with the percentage and its denominator explained
-│   └── widgets/
+│   └── widgets/                                    # feature widgets composed from core/design components
 │       ├── seating_chart.dart                      # seats as 48 dp targets, status cycles on tap, ripple-and-settle in 100 ms, semantics label per seat
 │       ├── attendance_list.dart                    # list mode with ListView.builder, segmented status control, note affordance
 │       ├── exception_bar.dart                      # "N pre-filled from gate scan, M approved leave" with a review action
@@ -160,7 +160,7 @@ lib/features/attendance/
 │       ├── pending_row_badge.dart                  # the pending, sending, failed and conflict states per row (§3.7)
 │       ├── conflict_banner.dart                    # both values side by side, which was kept and why, the one resolving action (Appendix M banner rule)
 │       └── register_card.dart                      # bento card for the teacher five-minute home: next class to mark, one action
-└── test/
+└── test/                                           # this feature's unit, widget and golden tests, mirroring the folders above
     ├── domain/mark_student_test.dart               # unit: enqueues with the held version, marks pending, never claims completion
     ├── data/attendance_delta_applier_test.dart     # unit: per-student merge, lock-after rule creates a request, discarded value recorded
     ├── data/attendance_outbox_handler_test.dart    # unit: ATTENDANCE_DUPLICATE_MARK is success, ATTENDANCE_SESSION_LOCKED becomes a request, 5xx retries
@@ -970,7 +970,7 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 | Security controls | The `TC-SEC-041` to `TC-SEC-047` rows in `12-security-privacy-safety.md` §1.2, plus `TC-MOB-713` (version policy) and `TC-MOB-714` (sign-out purge); the mobile scope of the penetration test |
 | Performance budgets | `integration_test/cold_start_test.dart` and `frame_timing_test.dart` on the emulator profile in `ci-mobile.yml`; the device pass records cold start on the low-end Android 8; `TC-MOB-715` measures data usage; the APK size budget fails the pipeline |
 | Accessibility and RTL | `TC-MOB-716` to `TC-MOB-719`; goldens in both directions; the manual TalkBack and VoiceOver pass per release (Appendix X.2) |
-| Parity matrix agrees with the web inventory | `/lint-plan` checks that every capability in §10 names a screen present in `08-web-structure.md` §7 or is marked web `none`, and that every mobile-web value agrees with the mobile-web column there; `20-traceability-matrix.md` carries the platform column per requirement |
+| Parity matrix agrees with the web inventory | Review step: `plan-consistency-checker` checks that every capability in §10 names a screen present in `08-web-structure.md` §7 or is marked web `none`, and that every mobile-web value agrees with the mobile-web column there, at the Group D review and on every change to 08 §7 or 09 §10; `ux-reviewer` confirms the parity levels. `20-traceability-matrix.md` carries the platform column per requirement |
 | Brief disagreements reported | Two rows in this document follow Appendix M where Appendix U or Appendix I say otherwise: the clinic visit (§2.6) and principal approvals (§3.6). Both are raised for the product owner with the recommendation to amend Appendix U.2, U.10 and the Appendix I nurse row to match Appendix M, through an ADR and a version bump on all three briefs as `CLAUDE.md` requires |
 | Open question 23 | Riverpod is the decision in force; the ADR recorded by Group D per `29-adr-index.md` closes the question, and `TC-MOB-721` asserts no `flutter_bloc` dependency in `pubspec.lock` |
 

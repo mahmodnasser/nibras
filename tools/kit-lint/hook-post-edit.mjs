@@ -9,7 +9,11 @@
  * people disable. Silent when the edit did not touch documentation.
  */
 
-import { lint, formatFindings } from './kit-lint.mjs';
+import { lint, formatFindings, rules } from './kit-lint.mjs';
+
+// R23 reruns the plan generators; mid-edit a generated document is expected to lag,
+// so the hook skips it and /lint-plan runs it.
+const HOOK_RULES = rules.map((r) => r.id).filter((id) => id !== 'R23-generated-documents');
 
 let input = '';
 process.stdin.setEncoding('utf8');
@@ -30,7 +34,7 @@ process.stdin.on('end', () => {
   }
 
   let findings = [];
-  try { findings = lint(process.cwd()); } catch { process.exit(0); }
+  try { findings = lint(process.cwd(), HOOK_RULES); } catch { process.exit(0); }
 
   const errors = findings.filter((f) => f.severity === 'error');
   if (!errors.length) process.exit(0);

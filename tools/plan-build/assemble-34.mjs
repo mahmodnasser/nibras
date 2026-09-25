@@ -9,7 +9,9 @@ import { dirname as __dirOf, resolve as __resolve } from 'node:path';
 // Paths resolve from this file, so the script runs from any checkout on Windows or Linux.
 const __here = __dirOf(__toPath(import.meta.url)).split(String.fromCharCode(92)).join('/');
 const __kit = __resolve(__here, '../..').split(String.fromCharCode(92)).join('/') + '/';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
+import { writeGenerated } from './write-generated.cjs';
+
 
 const S = __here + '/parts/';
 const K = __kit;
@@ -281,8 +283,9 @@ p('|---|---|');
 p('| Every requirement is built by a slice or satisfied by a named gate | The assembly script refuses to write this document otherwise; the Coverage table above is computed, not typed |');
 p('| Every identifier exists | `kit-lint` rule R19 over this document |');
 p('| No slice exceeds three days or covers nothing | The assembly script |');
-p('| Every capability in the roadmap has slices | The assembly script, both directions |');
+p('| Every capability in the roadmap has slices | The assembly script, both directions, and kit-lint rule R25 on the assembled document |');
+p('| The document is current | Kit-lint rule R23 reruns `assemble-34.mjs --write --check` and fails when a part or document 17 changed since assembly |');
 p('| The estimates were honest | Re-estimated at the end of each phase against the slices actually delivered, recorded in the review record |');
 p();
-writeFileSync(K + 'docs/plan/34-work-breakdown.md', L.join('\n'), 'utf8');
+writeGenerated(K + 'docs/plan/34-work-breakdown.md', L.join('\n'));
 console.log('WRITTEN docs/plan/34-work-breakdown.md');

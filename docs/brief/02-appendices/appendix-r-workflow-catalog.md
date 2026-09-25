@@ -1108,7 +1108,7 @@ stateDiagram-v2
     DiscountAttached --> Active: future installments recalculated
     Active --> Renewed: annual review approves continuation
     Active --> Ended: period ended or conditions not met
-    Renewed --> Active
+    Renewed --> Active: new period starts on the same terms
     Ended --> [*]
     Declined --> [*]
 ```

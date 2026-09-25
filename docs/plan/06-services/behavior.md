@@ -920,11 +920,11 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | `tools/kit-lint` rule R07 and `/lint-plan` over `docs/plan/06-services/` | Lint |
-| Every permission and error code exists in Appendices B and K | `/lint-plan` cross-checks; TC-BEH-335 | Lint, pipeline |
-| Every Appendix R transition of WF-BEH-01 has a test | Section 14 against Appendix R; `[TestCase]` attributes once code exists | Review, pipeline |
+| Every routing key here exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
+| Every permission and error code exists in Appendices B and K | `tools/kit-lint` rule R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-BEH-335 | Lint, review, pipeline |
+| Every Appendix R transition of WF-BEH-01 has a test | Section 14 against Appendix R; `tools/kit-lint` rule R32 (every test case in the WF-BEH-01 entry of Appendix R is cited in section 14, ranges expanded); `[TestCase]` attributes once code exists | Review, lint, pipeline |
 | The parent-visible and Wellbeing lines hold | TC-BEH-318, TC-BEH-321 to TC-BEH-323, TC-SEC-250, TC-SEC-251 | Integration and security suites |
 | The query budgets hold | TC-BEH-337, TC-BEH-338 | Integration suite |
 | Every consumer is idempotent | TC-BEH-339 | Integration suite |
-| The tree follows document 07's anatomy | Group C review; TC-TST-124 once code exists | Review, `ci-kit.yml` |
+| The tree follows document 07's anatomy | Group C review; TC-TST-124 once code exists | Review, `ci-service.yml` |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |

@@ -142,7 +142,7 @@ Section 27 lists thirteen decisions to confirm before starting. This is the stat
 
 | Claim | Proof |
 |---|---|
-| Every question in `docs/project/OPEN_QUESTIONS.md` appears here with the same number and the same default | `/lint-plan` compares the two files by question number; a question present in one and absent in the other is a defect in this document |
+| Every question in `docs/project/OPEN_QUESTIONS.md` appears here with the same number and the same default | `kit-lint` rule R26 compares the open question numbers in the two files and fails on a question present in one and absent in the other. The same default in both is a review step: `plan-consistency-checker` compares the "Default in force" cell of each question with the "Default assumption" cell of its row in `OPEN_QUESTIONS.md`, at the Group A review and on every change to either file |
 | Every default is either a Proposed ADR in `docs/project/DECISIONS/` or an open question with a named owner | The Owner column above and the Status column in `OPEN_QUESTIONS.md`; a row with neither cannot be written, because the plan-document rule forbids an unresolved placeholder |
 | No placeholder text | `kit-lint` rule R05 fails the build on any of the five placeholder words it lists |
 | Every Section and Appendix reference resolves | `kit-lint` rules R01 and R02 |

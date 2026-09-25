@@ -823,7 +823,7 @@ Two points that stood here in v9 are settled by the v9.1 brief and now sit in De
 | Bilingual names and fallback | `BilingualNameRulesTests` for BR-L10N-007; the data-quality fallback count in Reporting | Every pull request in School and Reporting |
 | The culture test inside the image | Checks G1 to G4 and G6 run inside each built service image: `ar-SA` resolves, `UmAlQuraCalendar` returns the §5.2 pairs, `Asia/Riyadh`, `Asia/Amman` and `Asia/Dubai` return the §6.2 offsets, ICU and tzdata versions equal the release manifest (TC-PLAT-004, TC-PLAT-005, TC-PLAT-006) | Every image build |
 | Ramadan bell schedules and time zones | `TC-L10N-620` (§6.4) | Nightly |
-| This document agrees with the catalogs | `tools/kit-lint` for section and appendix references, canonical names, Mermaid types and SQL comments; `/lint-plan` for consistency with `08-web-structure.md`, `14-design-system-and-ux.md`, `22-api-conventions-and-error-catalog.md`, `23-integrations-and-public-api.md` and `33-platform-support-and-dev-environments.md` | Every change under `docs/` |
+| This document agrees with the catalogs | kit-lint R01, R02 and R17 for section and appendix references and Mermaid types, R30 for a comment on every column of a `CREATE TABLE`, and R31 for database and image names against Appendix L; `plan-consistency-checker` with `rtl-localization-reviewer` compares the rest, project and exchange names included, with `08-web-structure.md`, `14-design-system-and-ux.md`, `22-api-conventions-and-error-catalog.md`, `23-integrations-and-public-api.md` and `33-platform-support-and-dev-environments.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of those documents |
 
 ### Test cases
 

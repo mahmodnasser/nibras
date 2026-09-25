@@ -825,12 +825,12 @@ Master brief Section 11 names five effects executed automatically on approval; A
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every WF identifier in Appendix R appears once in the assignment table with an owner from Appendix L | `/lint-plan` cross-check of section 1 against Appendix R.1 | Lint |
-| Every routing key in this document exists in Appendix E | `tools/kit-lint` rule R07 extended to `docs/plan/` by `/lint-plan` | Lint |
-| Every Mermaid block is a `stateDiagram-v2` with a terminal state and every transition labelled | `tools/kit-lint` rule R17; `/lint-plan` counts `[*]` exits per block | Lint |
+| Every WF identifier in Appendix R appears once in the assignment table with an owner from Appendix L | Kit-lint R25: every Appendix R workflow has a row in section 1 and no workflow has two. The owner in each row is compared with Appendix L by the `plan-consistency-checker` agent at the Group D review and on every change to this document | Lint (`/lint-plan`); Group D review |
+| Every routing key in this document exists in Appendix E | Kit-lint R19: every backticked routing key here is in Appendix E, or is a key, command or reply that `11-messaging-architecture.md` defines | Lint (`/lint-plan`) |
+| Every Mermaid block is a `stateDiagram-v2` with a terminal state and every transition labelled | Kit-lint R17 (every block opens with a known diagram type) and R29 (every `stateDiagram-v2` block here and in Appendix R has a `--> [*]` exit and a label on every transition). That no block here uses another diagram type is checked by the `plan-consistency-checker` agent at the Group D review | Lint (`/lint-plan`); Group D review |
 | Every saga has a compensation or an explicit "last, irreversible" for every step | Manual review against the saga-design skill checklist | Group D review |
 | Every saga step is idempotent | The deliver-twice test per step in `<SagaName>SagaTests` | Service integration suites, phase of the owning service |
 | A killed worker loses and duplicates nothing | The `WorkerKilled*` test per saga (master brief Section 8, item 12) | Service integration suites and the phase 6 chaos drill |
 | Every transition writes an audit event through the outbox | Architecture test that no transition bypasses the pipeline; Audit integration test that every `<service>.audit.recorded.v1` lands in the chain | `tests/Architecture.Tests`, Audit integration suite |
-| One transition test per Appendix R row | `/lint-plan` compares `[TestCase]` attributes with the TC identifiers in Appendix R once code exists | Pipeline, from phase 1 |
+| One transition test per Appendix R row | In the plan, kit-lint R32: the owning service sheet's Test plan cites every transition test of each workflow it owns, and R08: every Appendix R workflow carries test case identifiers. In code, the product build adds to the traceability check of SL-TST-005 a comparison of the `[TestCase]` traits with the Appendix R transition identifiers, over the per-transition workflow test kit of SL-TST-004 | Lint (`/lint-plan`); `ci-service.yml` from SL-TST-005 |
 | Every state enum lives in Domain | Architecture test on `*State` types | `tests/Architecture.Tests` |

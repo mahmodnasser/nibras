@@ -977,7 +977,7 @@ Existing identifiers are reused; new ones are minted upward from `TC-RPT-310` in
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | `tools/kit-lint` rule R07 and `/lint-plan` over `docs/plan/06-services/` | Lint |
+| Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
 | Every permission and error code exists in Appendices B and K | `/lint-plan` cross-checks; TC-RPT-339 | Lint, pipeline |
 | No Wellbeing value leaks | TC-RPT-310 to TC-RPT-313, TC-RPT-329, TC-RPT-345, TC-SEC-261, TC-SEC-263 | Integration and security suites |
 | Projections are fresh and rebuildable | TC-DATA-011, TC-DATA-012, TC-RPT-314 to TC-RPT-317 | Integration suite, nightly |

@@ -597,14 +597,14 @@ Numbers are quoted from master brief Sections 19 (performance budgets), 21 (non-
 
 | Claim | Proof |
 |---|---|
-| Every name in every diagram is a canonical name from Appendix L | `kit-lint` canonical-name checks; Group B review reads each diagram against the Appendix L table |
+| Every name in every diagram is a canonical name from Appendix L | Review step: `plan-consistency-checker` reads every node label and edge label in each diagram against the Appendix L service, worker and exchange names, at the Group B review and on every change to this document or Appendix L. `kit-lint` rule R31 fails on any backticked database or service-led image name not registered in Appendix L; the diagrams carry none today, so the rule guards additions only |
 | Every Mermaid block opens with a known diagram type and stays under forty nodes | `kit-lint` rule R17; the reviewer counts nodes in the two container views, which are the largest |
 | The context diagram's external systems each map to an adapter interface | The table in Section 1; document 23 names the interface per integration and document 19 lists the adapter packages |
-| The bounded-context relationships match the dependency matrix | Each edge in Section 3 corresponds to a row in `05-service-catalog.md` Section 3 or Section 5; `/lint-plan` cross-checks the pairs |
+| The bounded-context relationships match the dependency matrix | Review step: `plan-consistency-checker` maps every Section 3 edge to a row of `05-service-catalog.md` Section 3 or Section 5 and returns an edge with no row, at the Group B review and on every change to 04 or 05 |
 | The runtime topology refines reference architecture Section 9.1 without contradicting it | Group B review diff against Section 9.1; document 15 draws the same topology per environment |
 | The three deployment modes agree with master brief Sections 7.7 and 34 and reference architecture Section 6 | Group B review; the compose profiles and umbrella chart in document 15 name the same containers |
 | The isolation tiers and the migration steps match reference architecture Section 14 | Group B review; the pooled-connection isolation test in document 16 proves the shared tier; the tier-migration drill in document 15 proves the move |
 | Every licence in Section 7 is what Section 6.2 states, and every unverified row is marked | Group B review; document 19 verifies exact versions from the source and the licence scan in CI fails on a disallowed licence |
-| Every ADR in Section 8 exists with the alternatives stated | `29-adr-index.md` lists them; `/lint-plan` fails on an ADR number referenced here with no file in `docs/project/DECISIONS/` |
+| Every ADR in Section 8 exists with the alternatives stated | `kit-lint` rule R22 fails on an ADR number cited here with no record in `docs/project/DECISIONS/`, and checks that `29-adr-index.md` indexes every record once with the status the record carries. That each record states its alternatives is a review step: `architecture-reviewer` reads the "Alternatives considered" section of every ADR Section 8 cites, at the Group B review and whenever an ADR is added or changes status |
 | Every number in Section 10 is a quotation from Sections 19, 21 or 31 | Group B review diff; each number is tied to the test, scenario or drill in its last column, which documents 16 and 28 carry as identified test cases |
 | The assist ladder paragraph agrees with master brief Section 25 and ADR-0015 | Group B review; document 25 and Appendix W carry the per-feature assignment the paragraph refers to |

@@ -1103,3 +1103,18 @@ The counts below are computed from the rows in this document and are the numbers
 | REQ-PLAT-021 | Paths are composed with `Path.Combine`, never with a literal separator | 1 | cross-cutting | Master brief Section 19; Appendix X.4 | none | Given the portability analyzer, when code concatenates a path with a slash literal, then the build fails naming the file |
 | REQ-PLAT-022 | Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invokes `node` with a relative path | 1 | cross-cutting | Appendix X.4 | none | TC-PLAT-102 |
 | REQ-PLAT-023 | Kit archives are built with a tool that preserves the file set on every operating system | 1 | cross-cutting | Appendix X.2; Master brief Section 24 | none | TC-PLAT-017 |
+
+## How this document is verified
+
+| Claim | Proof |
+|---|---|
+| Every row is well formed: seven columns, a `REQ-<AREA>-<NNN>` identifier, a tier of 1, 2 or 3, and an acceptance criterion | `kit-lint` rule R21 fails on a row with another column count, a malformed identifier, a tier outside 1 to 3, or an empty acceptance cell |
+| Numbers run from 001 within each area, never reused and never skipped | `kit-lint` rule R21 fails on a duplicate identifier and on a number that does not follow the previous one in its area |
+| Every workflow and business rule a row depends on exists | `kit-lint` rule R21 fails on a WF identifier in the dependency column that Appendix R does not define and on a BR identifier that Appendix S does not define |
+| Every test case named as an acceptance criterion exists | `kit-lint` rule R20 fails on a TC identifier cited here that no document defines |
+| Every requirement identifier another plan document cites is a row here | `kit-lint` rule R19 fails on a REQ identifier in any plan document that this catalog does not contain |
+| A withdrawn row cites an ADR that exists | `kit-lint` rule R22 fails on an ADR number cited here with no record in `docs/project/DECISIONS/` |
+| The traceability matrix is current with this catalog | `kit-lint` rule R23 runs `tools/plan-build/gen-20.mjs --check` and fails when `20-traceability-matrix.md` differs from what the generator builds from this document |
+| Every area code is one of the thirty-six in Appendix L, and every row cites a brief section or appendix that demands it | Review step: `plan-consistency-checker` compares the area headings with Appendix L and reads the Source column for an empty or unresolvable cell, at the Group B review and on every change to this document |
+| The Summary counts equal the rows | Review step: `plan-consistency-checker` recounts the rows per area and tier against the Summary table, at the Group B review and on every change that adds, withdraws or re-tiers a row; R21 does not count rows |
+| No placeholder text | `kit-lint` rule R05 |

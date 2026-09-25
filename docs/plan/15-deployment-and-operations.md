@@ -881,7 +881,8 @@ stateDiagram-v2
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| The `deploy/` tree matches document 07 and every entry has a purpose | `tools/kit-lint` rule R18; `/lint-plan` compares the folder set with document 07, part 5 | Every change under `docs/` |
+| Every entry of the `deploy/` tree has a purpose | Kit-lint R18: every entry of a plan directory tree carries a purpose comment | Lint (`/lint-plan`) on every change under `docs/` |
+| The `deploy/` tree matches document 07 | Review step, not a lint rule: the `plan-consistency-checker` agent compares the folder set here with document 07 part 5 at the Group E review and on every change to either document | Group E review |
 | All three modes start and report ready | `dev-smoke.yml` on both runners for the developer mode; `TC-INF-108` starts the single-server profile in CI and runs `healthcheck.sh`; the scale mode is exercised by the preview and test environments on every pull request | Every pull request; nightly |
 | Every `ci-service.yml` stage fails on its condition | `TC-INF-114`: a deliberate violation per stage (a warning, an unformatted file, an N+1, a secret string, an unsigned image) is committed on a throwaway branch in the test environment and each is seen to fail | Once per release of the pipeline |
 | Built once, promoted by tag, signed, with an SBOM | `TC-INF-101` to `TC-INF-103` | Every release |
@@ -898,8 +899,8 @@ stateDiagram-v2
 | Rotation works before launch | `TC-INF-113`: every rotation runbook executed on staging with the drill record | Before the first paying customer; then per interval |
 | Calendar-aware scaling and warm-up | Appendix N, N-01 across four waves and N-11; `WarmUpJobMissed` and `CalendarScaleUpMissed` silent on the load tier for a full school week | Nightly; weekly |
 | No capacity, sizing or cost figure is restated here | Review only: part 13 is read against `28-capacity-and-cost-model.md`; a number written into part 13 rather than cited is a finding | Group E and Group F reviews |
-| Incident process is followed | Every Sev1 and Sev2 has a post-mortem file with the nine headings within 5 business days, checked by `/lint-plan` over `docs/runbooks/incidents/` | Monthly review |
-| This document agrees with the catalogs and the briefs | `tools/kit-lint` for section and appendix references and Mermaid types; `/lint-plan` for consistency with documents 04, 07, 10, 11, 28 and 33 | Every change under `docs/` |
+| Incident process is followed | The monthly operations review lists the month's Sev1 and Sev2 incidents and checks that each has a post-mortem with the nine headings under `docs/runbooks/incidents/` within 5 business days; the practice and the folder are built by SL-INF-618, under the `docs/runbooks/` folder of document 07 | Monthly review |
+| This document agrees with the catalogs and the briefs | Kit-lint R01 and R02 for section and appendix references, R17 for Mermaid types, R19 for cited identifiers and routing keys, R31 for database and image names; for everything else, a review step: the `plan-consistency-checker` agent compares this document with documents 04, 07, 10, 11, 28 and 33 at the Group E review and on every change to any of them | Lint (`/lint-plan`) on every change under `docs/`; Group E review |
 
 ### Test cases
 
