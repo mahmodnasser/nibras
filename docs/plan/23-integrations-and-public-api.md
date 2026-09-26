@@ -1,8 +1,8 @@
 # 23. Integrations and Public API
 
-> Plan document for the Nibras platform. Group D. It refines master brief Section 35 (credentials, versioning, the webhook contract, standards by phase, enterprise identity), the regional plug-in line of Section 17, the Integrations ownership row of Appendix L.5 and the `platform.integrations` and `platform.api-keys` rows of Appendix B; it does not re-derive them. Wire conventions (URL shape, Problem Details, pagination, rate-limit layers, idempotency, header formats) are owned by `22-api-conventions-and-error-catalog.md` and are cited, not restated. Where this document and the brief disagree, an ADR records the deviation.
+> Plan document for the Nibras platform. Group F. It refines master brief Section 35 (credentials, versioning, the webhook contract, standards by phase, enterprise identity), the regional plug-in line of Section 17, the Integrations ownership row of Appendix L.5 and the `platform.integrations` and `platform.api-keys` rows of Appendix B; it does not re-derive them. Wire conventions (URL shape, Problem Details, pagination, rate-limit layers, idempotency, header formats) are owned by `22-api-conventions-and-error-catalog.md` and are cited, not restated. Where this document and the brief disagree, an ADR records the deviation.
 
-**Group** D · **Requirement areas covered** INT (all of it), IDN (the credential and enterprise-identity parts), PLT (the Integrations capability), API (only the deprecation timeline) · **Last updated** 2026-09-21 by the platform plan
+**Group** F · **Requirement areas covered** INT (all of it), IDN (the credential and enterprise-identity parts), PLT (the Integrations capability), API (only the deprecation timeline) · **Last updated** 2026-09-21 by the platform plan
 
 ## Purpose
 
@@ -721,13 +721,13 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 | Service names, ownership of Integrations, iCal, Open Badges and QTI | Appendix L.1 and L.5 | Every lint run |
 | The permission rows for `platform.integrations`, `platform.api-keys`, `identity.api-keys`, `identity.users`, `identity.roles` | Appendix B | Every lint run |
 | Every routing key in the eligibility table and its payload | Appendix E | Every lint run; the `webhook-events.json` check once generated |
-| URL shape, Problem Details, pagination, idempotency, rate-limit layers, deprecation header set | `22-api-conventions-and-error-catalog.md` | Group D review |
-| Token issuance, token exchange, permission version, key and secret rotation, address guard | `12-security-privacy-safety.md` §1.3, §2.2, §3, §9 | Group D review |
+| URL shape, Problem Details, pagination, idempotency, rate-limit layers, deprecation header set | `22-api-conventions-and-error-catalog.md` | Group F review |
+| Token issuance, token exchange, permission version, key and secret rotation, address guard | `12-security-privacy-safety.md` §1.3, §2.2, §3, §9 | Group F review |
 | Retention of delivery logs and API key history | `10-data-architecture.md` | Group C review |
 | RabbitMQ bindings for the fan-out queue | `11-messaging-architecture.md` | Group C review |
-| Terminology overrides and bilingual text in feeds and payloads | `24-localization-and-calendars.md` | Group D review |
+| Terminology overrides and bilingual text in feeds and payloads | `24-localization-and-calendars.md` | Group F review |
 | The recommendation to split feature 24 | `02-competitive-gap-analysis.md` "Recommendations for the roadmap" | Product owner decision |
-| Culture test, image checks G1 to G6 | `33-platform-support-and-dev-environments.md` | Group E review |
+| Culture test, image checks G1 to G6 | `33-platform-support-and-dev-environments.md` | Group F review |
 
 ## Open points
 
@@ -739,7 +739,7 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 | 4. The webhook dispatcher runs inside `nibras/platform-api`; a separate worker image would need an Appendix L change | Inside the API host, with its own concurrency limit and health check | Architect | A burst of deliveries competes with console requests for the same pods | 2 | 2 | 4 | RISK-19 |
 | 5. Webhook quota breach skips deliveries rather than delaying them | Skip and allow replay after reset | Product owner | Delaying keeps order but grows the queue without bound on a misconfigured integration | 2 | 2 | 4 | none |
 | 6. Open question 18: do any target customers require SAML 2.0 or SCIM? §7 builds both as Tier 2 protocol adapters | The recorded default: no; OpenID Connect with Google and Microsoft covers phase 1, and the external-login pipeline is protocol-neutral from phase 1, so an adapter is not a redesign | Product owner | A school group that signs its staff in only through its own SAML directory cannot go live until the Tier 2 slice is pulled into an earlier phase | 2 | 3 | 6 | RISK-02 |
-| 7. Open question 9: which regional plug-ins come first? §8 ships the interfaces in Tier 1 and leaves each country's implementation to the plug-in's own repository | The recorded default: interfaces in Tier 1, implementations per country in phase 5. `34-work-breakdown.md` SL-FIN-444 already has a Saudi or Jordanian school submitting invoices through its e-invoicing plug-in in phase 3, so the default and the slice disagree, and nobody is named to build the ZATCA or JoFotara plug-in before phase 5 | Product owner, with the Finance owner | A Saudi or Jordanian school that runs its fees on Nibras from phase 3 cannot submit its tax invoices from it and keeps a second system for e-invoicing until phase 5, which qualifies the Finance promise at its launch | 4 | 3 | 12 | RISK-53 |
+| 7. Open question 9: which regional plug-ins come first? §8 ships the interfaces in Tier 1 and leaves each country's implementation to the plug-in's own repository. For e-invoicing the question is still open, not settled | The recorded default of open question 9 stays in force: interfaces in Tier 1, implementations per country in phase 5. `34-work-breakdown.md` SL-FIN-444 has a Saudi or Jordanian school submitting invoices through its e-invoicing plug-in in phase 3, so the default and the slice disagree until the question is decided. **Who builds the first plug-in:** the Finance owner's team, as part of SL-FIN-444, for the country of the first VAT-registered customer recorded against open question 3 (ZATCA for Saudi Arabia, JoFotara for Jordan), unless a certified partner builds it against §8.3 first; the other country's plug-in stays at phase 5. **Decision point:** the Phase 2 exit review, where the product owner decides open question 9 for e-invoicing and the plug-in joins the phase 3 slice list or SL-FIN-444 ships with the accounting export only (RISK-53's signal: the question still open at the Phase 2 exit). Until then Finance runs with the accounting export and the queued submission path of SL-FIN-444 | Product owner decides at the Phase 2 exit review; the Finance owner builds the first plug-in | A Saudi or Jordanian school that runs its fees on Nibras from phase 3 cannot submit its tax invoices from it and keeps a second system for e-invoicing until phase 5, which qualifies the Finance promise at its launch | 4 | 3 | 12 | RISK-53 |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
 
@@ -747,7 +747,9 @@ The fake implementations of all six interfaces ship in `Nibras.Plugins.Testing` 
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-21 | Group D review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | Webhooks stated as Tier 2 while phase 1 builds them, and the OneRoster phase disagreeing with the roadmap (Consistency) |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | The round 1 items were closed (§1 "Tier is not phase"; §6 OneRoster in phase 3). New: this document was labelled Group D (Consistency), and open point 7 named nobody to build the first e-invoicing plug-in that SL-FIN-444 needs in phase 3 (Feasibility, not blocking) |
+| 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | Relabelled Group F with every dependency check at the Group F review; open point 7 names the builder of the first e-invoicing plug-in and the Phase 2 exit review as the point where open question 9 is decided for e-invoicing, with the default kept in force until then |
 
 ## How this document is verified
 

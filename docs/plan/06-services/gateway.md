@@ -2,7 +2,9 @@
 
 > Service sheet, plan document 06. Group C. It refines reference architecture Section 8.1 and the Gateway row of `05-service-catalog.md`; names come from Appendix L, error codes from Appendix K. The Gateway owns no data and publishes no events, so the entity, event and reference-copy sections say "none, by design" and the REST section describes routes and upstream calls. Where this sheet adds something the brief does not state, the addition is listed under Decisions in force or Open points.
 
-**Group** C · **Requirement areas covered** GW (all 9 rows), plus REQ-INT-006 and REQ-INT-007 · **Last updated** 2026-09-21 by the platform plan
+**Group** C · **Requirement areas covered** GW (all 9 rows), plus REQ-INT-006 and REQ-INT-007 · **Last updated** 2026-09-26 by the platform plan
+
+## 1. Service at a glance
 
 The Gateway is the single public entry point behind the edge proxy. Every request from a browser, the mobile app, an integrator or a public page passes through it once: it resolves the tenant from the custom domain, the subdomain or the header a mobile or API-key caller sends, validates the token locally against Identity's published keys, exchanges an API credential for a short internal token, applies the first layer of rate limiting per source address and per tenant, enforces request size limits, CORS and security headers, answers maintenance mode, adds the correlation id and trace context, routes by path prefix to the owning service or backend-for-frontend, degrades one route without taking the rest down, publishes the deprecation headers of a retiring API version, and serves the aggregated OpenAPI document. It holds no business rule, stores nothing but rate-limit counters, and trusts nothing it did not verify.
 
@@ -92,6 +94,7 @@ Every route carries the metadata generated from the aggregated OpenAPI at start-
 | `/api/v1/school/`, `/api/v1/admissions/`, `/api/v1/academics/`, `/api/v1/assessment/`, `/api/v1/scheduling/`, `/api/v1/attendance/`, `/api/v1/finance/`, `/api/v1/communication/`, `/api/v1/notification/`, `/api/v1/requests/`, `/api/v1/documents/`, `/api/v1/behavior/`, `/api/v1/reporting/`, `/api/v1/audit/`, `/api/v1/hr/`, `/api/v1/operations/` | `<service>-api`, one cluster per service | token; keys and personal tokens only on `public` operations | required | per tenant | Public verification and feed routes of Documents and Scheduling are anonymous by their route metadata |
 | `/api/v1/wellbeing/` | `wellbeing-api` | first-party token only; keys and personal tokens always refused | required | per tenant | Never public (document 23 §1) |
 | `/api/v1/ai/` | not routed | none | none | none | Ai is reached only through the backends-for-frontends in-cluster (`07-solution-structure.md` §2.4) |
+| `/bff/web/v1/internal/` | not routed | none | none | none | Bff.Web's internal routes for Ai's jobs (source feed, source re-check, read tools; `06-services/bff-web.md` §4.1), reachable only in-cluster from `ai-api` and `ai-worker`; matched before the `/bff/web/v1/` row, so a public request is `GATEWAY_NOT_FOUND` (`TC-GW-751`) |
 | `/bff/web/v1/` | `bff-web` | first-party web token | required | per tenant | Never documented in the portal |
 | `/bff/mobile/v1/` | `bff-mobile` | first-party mobile token with `X-Nibras-Tenant-Id` | required | per tenant; the sync route is exempt from the burst cap per `15-deployment-and-operations.md` | |
 | `/hubs/` | `communication-api` | token in the access-token query parameter only for the WebSocket upgrade, as SignalR requires, never logged | required | per tenant, connection rate | WebSocket upgrade with long idle timeout |
@@ -262,7 +265,7 @@ src/Gateway/                                 the single public entry point; one 
 │   │   ├── ClusterConfiguration.cs          per-cluster timeouts, HTTP/2 pools, health probes and service discovery names
 │   │   ├── RouteMetadata.cs                 public tag, administrative flag, deprecation and sunset, anonymous flag, rate class per operation
 │   │   ├── RouteMetadataProvider.cs         builds RouteMetadata from the aggregated OpenAPI extensions x-nibras-tier, x-nibras-admin, x-nibras-deprecated-sunset
-│   │   └── BlockedPrefixes.cs               prefixes never routed from outside: /api/v1/ai/ and the internal tenant-resolution route
+│   │   └── BlockedPrefixes.cs               prefixes never routed from outside: /api/v1/ai/, /bff/web/v1/internal/ and the internal tenant-resolution route
 │   ├── Pipeline/                            one middleware per step of section 5.2, registered in order
 │   │   ├── CorrelationMiddleware.cs         step 1: X-Nibras-Correlation-Id and traceparent issued when absent
 │   │   ├── MaintenanceMiddleware.cs         step 2: platform-wide then per-tenant maintenance, health routes skipped
@@ -361,6 +364,20 @@ src/Gateway/                                 the single public entry point; one 
 | TC-GW-016 | Client-supplied `X-Nibras-*` internal headers are stripped before forwarding | Integration |
 | TC-GW-017 | No log line contains an `Authorization` header, a cookie, a body or a credential query string under the full test run | Integration, log capture |
 | TC-GW-018 | `security.txt` is served and not expired | Integration |
+| TC-GW-750 | With the process culture set to `tr-TR` and then `ar-SA`, `SCHOOL.example` and `school.example` resolve to the same tenant, and a custom domain registered in Arabic script resolves when the request host arrives in its punycode (`xn--`) form; host comparison is ordinal and case-insensitive under the invariant culture | Integration, `Tenancy/` |
+| TC-GW-751 | A request from outside to any path under `/bff/web/v1/internal/` returns `GATEWAY_NOT_FOUND` and reaches no upstream, while the same path called in-cluster from `ai-api` reaches Bff.Web (the in-cluster half is `TC-BFF-750`, Bff.Web sheet) | Integration, `Routing/` |
+| TC-GW-752 | With the process culture set to `ar-SA`, whose default calendar is Um Al Qura, the `Sunset` and `Retry-After` headers of a deprecated route and a 429 are an RFC 9110 date in the Gregorian calendar and an integer in Latin digits, byte-identical to the same responses under the invariant culture | Integration, `RateLimiting/` and `Routing/` |
+
+### Platform notes
+
+| Concern | What holds here | Proof and runner |
+|---|---|---|
+| Runner | The Gateway's suite runs on the Linux runner (`ubuntu-latest`) in `ci-service.yml`; it is not one of the projects document 33 runs on Windows (only `BuildingBlocks`, `Documents` and `Localization` are). The developer-setup check `dev-smoke` runs on `ubuntu-latest`, `windows-latest` and `macos-latest`, and it starts the Gateway with the rest of the stack | Document 33 part 4 runner matrix |
+| Culture-sensitive values | Host names, header values, rate-limit counters and the credential prefixes are machine-facing, so every comparison is ordinal and every number and date is formatted under the invariant culture; the Gateway renders no user-facing sentence, only Appendix K codes whose text the Angular and Flutter bundles carry in both languages (`22-api-conventions-and-error-catalog.md` §12.4) | `TC-GW-750`, `TC-GW-752` on the Linux runner; the portability analyzer of document 33 (G10) at build time |
+| Right-to-left output | None produced here; the Gateway passes bodies through unread and adds only headers | Not applicable |
+| Devices without Google services | They receive push only through the in-app real-time channel while the app is open (REQ-NOT-019), which is the `/hubs/` WebSocket route above; its long idle timeout and per-tenant connection rate are therefore what such a device depends on, and the fallback itself is Notification's | `TC-NOT-610` (Notification sheet) end to end through this route |
+
+**Signature features.** The Gateway owns none. It serves Appendix W features 24 (the public API, credential exchange and deprecation headers) and 44 (Brotli and `ETag` pass-through for the low-bandwidth profile). Each is cited by number only; its moment, rung, autonomy, the requirements and slices that build it, its Appendix O step and its demo test are held once, in the "Signature feature trace" table of `32-product-differentiation-and-demo.md`.
 
 ---
 
@@ -373,13 +390,15 @@ src/Gateway/                                 the single public entry point; one 
 | Partitioning | None; rate-limit counters are keyed by tenant and window in `redis-state` | `redis-state` CPU above 50% from rate limiting |
 | Connections | HTTP/2 multiplexed pools per cluster; WebSocket upgrades on `/hubs/` counted separately | Pool exhaustion on the hub cluster |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A tenant spoofed by header or domain | med | critical | Header accepted only from mobile and credential callers, token tenant must match, verified hosts only (T-GW-01) | Security lead |
-| The Gateway becomes a single point of failure | low | critical | 3 or more replicas across zones, no state, health-routed by the edge proxy | Platform operations |
-| A cold cache after a Redis loss floods Platform and Identity | med | med | Negative caching, request coalescing per host and per key, degraded rate-limit profile (`21-performance-engineering.md` §1.22) | Platform operations |
-| A noisy tenant degrades others | med | med | Per-tenant token bucket from the plan, N-06 scenario | Platform operations |
-| Business logic creeps into the Gateway | med | med | Architecture rule `Hosts_NeverReference_ServiceProjects`; review rule that the pipeline of section 5.2 is the whole behaviour | Architect |
+Likelihood (L) and impact (I) use the 1 to 5 scales of `18-risk-register.md` Section 1; Score is L times I, and a row scoring 12 or more names the register risk that covers it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A tenant spoofed by header or domain | 2 | 5 | 10 | Header accepted only from mobile and credential callers, token tenant must match, verified hosts only (T-GW-01) | Security lead | RISK-20 |
+| The Gateway becomes a single point of failure | 2 | 5 | 10 | 3 or more replicas across zones, no state, health-routed by the edge proxy | Platform operations | none |
+| A cold cache after a Redis loss floods Platform and Identity | 3 | 3 | 9 | Negative caching, request coalescing per host and per key, degraded rate-limit profile (`21-performance-engineering.md` §1.22) | Platform operations | RISK-13 |
+| A noisy tenant degrades others | 3 | 3 | 9 | Per-tenant token bucket from the plan, N-06 scenario | Platform operations | RISK-19 |
+| Business logic creeps into the Gateway | 3 | 3 | 9 | Architecture rule `Hosts_NeverReference_ServiceProjects`; review rule that the pipeline of section 5.2 is the whole behaviour | Architect | none |
 
 ---
 
@@ -411,7 +430,7 @@ src/Gateway/                                 the single public entry point; one 
 
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `21-performance-engineering.md` §2.3 gives `svc_gateway` read access only to tenant resolution and its rate-limit prefix; this sheet also reads the key set, maintenance entries, the security settings entry and the revoked-subject mark | Extend the ACL with read-only access to those four keys | Architect, update to document 21 | Without it the Gateway cannot enforce maintenance, the allowlist or the leaver rule | 2 | 3 | 6 | none |
+| 1 | `21-performance-engineering.md` §2.3 gave `svc_gateway` read access only to tenant resolution and its rate-limit prefix; this sheet also reads the key set, maintenance entries, the security settings entry and the revoked-subject mark, and subscribes to `state:invalidate` | The ACL grants read-only access to those four key sets and the subscription | Architect | Closed 2026-09-26: document 21 §2.2 lists `state:revoked:{tenant}:{userId}` with Identity as writer and the Gateway as reader, and §2.3 gives `svc_gateway` read-only `~nibras:platform:identity:jwks:*`, `~nibras:*:platform:*` (maintenance state and security settings) and `~state:revoked:*`, and the `&state:invalidate` channel that section 10's `InvalidationSubscriber` listens on | 1 | 1 | 1 | none |
 | 2 | The Gateway has no audit channel of its own for refused allowlist attempts (REQ-IDN-047 asks that the attempt is logged) | A structured security log line with the tenant and address prefix, exported to the log store and counted on the abuse dashboard; not an audit-chain entry | Security lead | An auditor looking only at the audit viewer does not see refused administrative attempts | 3 | 2 | 6 | none |
 | 3 | "Administrative route" needs a definition the OpenAPI can carry | Operations declaring any permission in Appendix I groups G01, G02, G03 or G24 are marked `x-nibras-admin` by the generator | Architect | A route missing the flag is not protected by the allowlist | 2 | 3 | 6 | none |
 

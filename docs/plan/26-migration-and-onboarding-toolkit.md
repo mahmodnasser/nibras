@@ -1,6 +1,6 @@
 # 26. Migration and Onboarding Toolkit
 
-> Plan document for the Nibras platform. Group F. It refines master brief Section 23 (the legacy migration toolkit), Section 39 (getting a school live), Section 12 item 9 and Section 12.1 item 29 (go live in a day, the smart defaults engine), WF-DATA-01 and WF-PLT-01 of Appendix R, and scenario N-04 of Appendix N; it does not re-derive them. Provisioning and the smart defaults engine are owned by `06-services/platform.md`; Arabic folding, numerals and Hijri conversion by `24-localization-and-calendars.md`. There is no Documents service sheet yet, so the staging design in §2 is specified here and moves into that sheet when it is written. Where this document and the brief disagree, an ADR records the deviation.
+> Plan document for the Nibras platform. Group F. It refines master brief Section 23 (the legacy migration toolkit), Section 39 (getting a school live), Section 12 item 9 and Section 12.1 item 29 (go live in a day, the smart defaults engine), WF-DATA-01 and WF-PLT-01 of Appendix R, and scenario N-04 of Appendix N; it does not re-derive them. Provisioning and the smart defaults engine are owned by `06-services/platform.md`; Arabic folding, numerals and Hijri conversion by `24-localization-and-calendars.md`. The import machinery that Documents runs (the `import_jobs` state, the worker job groups, the import endpoints and Saga 9's orchestrator) is specified in `06-services/documents.md`, which this document cites rather than restates; §2 here owns the two-stage staging design across services and the target services' Stage B (open point 4). Where this document and the brief disagree, an ADR records the deviation.
 
 **Group** F · **Requirement areas covered** DOC (the import centre and the migration toolkit: REQ-DOC-011, REQ-DOC-012, REQ-DOC-013, REQ-DOC-016), PLT (onboarding: REQ-PLT-001 to REQ-PLT-004), L10N (import parsing only) · **Last updated** 2026-09-22 by the platform plan
 
@@ -298,7 +298,7 @@ Rules run in Stage A in this order; a row collects every finding rather than sto
 | All | Arabic-Indic and extended digits folded before the check; spaces and hyphens removed | | |
 | All | Unique within the file and against the tenant, compared on the folded value | | `duplicateNationalId` with `related_row_no` or the existing record |
 
-The algorithms live in `Nibras.BuildingBlocks.Localization` as `NationalIdValidator` per country, selected by the country plug-in, so the fourth country of `27-compliance-and-legal.md` §12 adds a validator and a test, not an import change. Values appear in the error report masked to the last four characters.
+The algorithms live in `Nibras.BuildingBlocks.Localization` as `NationalIdValidator` per country, selected by the country plug-in, so the fourth country of `27-compliance-and-legal.md` §12 adds a validator and a test, not an import change. Values appear in the error report masked to the last four characters. `TC-DATA-800` proves every row of this table.
 
 #### 3.5 Dates, Hijri-tolerant
 
@@ -314,11 +314,11 @@ The algorithms live in `Nibras.BuildingBlocks.Localization` as `NationalIdValida
 | A Hijri day 30 in a 29-day month | `invalidHijriDate`, with the suggestion of day 29 or day 1 of the next month; never silently shifted |
 | Anything else | `invalidDate` |
 
-Every converted date is shown in the dry-run preview in both calendars, so the registrar can see that 1432-05-10 became 2011-04-14 before committing. The source value is kept in `raw`.
+Every converted date is shown in the dry-run preview in both calendars, so the registrar can see that 1432-05-10 became 2011-04-14 before committing. The source value is kept in `raw`. `TC-DATA-801` proves every row of this table.
 
 #### 3.6 Numerals and amounts
 
-Numbers are parsed per `24-localization-and-calendars.md` §4.3: Arabic-Indic and extended digits and the Arabic decimal and thousands separators are accepted; mixed digit systems in one value are refused as `mixedNumerals`; a comma is never a decimal separator (`invalidNumber`). Amounts are then rounded to the currency's minor units with the tenant's rounding mode, and a rounding change is a warning (`amountRounded`) showing both values.
+Numbers are parsed per `24-localization-and-calendars.md` §4.3: Arabic-Indic and extended digits and the Arabic decimal and thousands separators are accepted; mixed digit systems in one value are refused as `mixedNumerals`; a comma is never a decimal separator (`invalidNumber`). Amounts are then rounded to the currency's minor units with the tenant's rounding mode, and a rounding change is a warning (`amountRounded`) showing both values. `TC-DATA-802` proves these rules; the Arabic-Indic digits of a Windows-produced workbook are `TC-PLAT-008` (document 33).
 
 #### 3.7 Duplicate detection
 
@@ -429,7 +429,7 @@ An adapter turns a source export into the §1 template rows; everything after it
 | `accounting-balances` | Any accounting package export of receivables by student | Trial balance or aged receivables in CSV or XLSX | Opening balances | Requires the control total; unmatched accounts listed for manual mapping |
 | `timetable-xml` | aSc Timetables XML export | The exported XML | Timetable, subjects, rooms | Periods mapped to the tenant bell schedule; conflicts reported, never resolved automatically |
 
-A new adapter is certified like a plug-in (`23-integrations-and-public-api.md` §8.3): fixture, golden output, both cultures, both operating systems.
+A new adapter is certified like a plug-in (`23-integrations-and-public-api.md` §8.3): fixture, golden output, both cultures, both operating systems. `TC-DATA-803` is the golden-output test every adapter in the table runs.
 
 ### 7. The onboarding wizard
 
@@ -557,7 +557,7 @@ When every blocking check passes, the tenant moves `Onboarding` to `Live` (WF-PL
 | OneRoster 1.2 profile and plug-in certification | `23-integrations-and-public-api.md` §6.2, §8.3 | Group F review |
 | Seeded administrator safeguards | `12-security-privacy-safety.md` §8 | Group F review |
 | N-04 thresholds | Appendix N | Nightly load tier |
-| A Documents service sheet that will absorb §2 | `06-services/documents.md`, not yet written | Group C completion |
+| The import machinery that builds §2: the import center, `import_jobs`, the Saga 9 handlers, the worker job groups and the import endpoints | `06-services/documents.md` | Group F review, and on every change to either document |
 
 ## Open points
 
@@ -566,29 +566,42 @@ When every blocking check passes, the tenant moves `Onboarding` to `Live` (WF-PL
 | 1. Which adapters ship in the first release? | `excel-template`, `csv-mapped`, `oneroster-csv` and `noor-export`; the rest by demand from the first schools | Product owner | A school on an unsupported system falls back to `csv-mapped`, which costs a day of mapping | 3 | 2 | 6 | none |
 | 2. Is the Saudi identity check digit applied as an error or a warning? | Error, with a documented override for a registrar holding the physical card | Documents owner, with the first Saudi school | A wrong algorithm blocks valid students | 2 | 2 | 4 | none |
 | 3. Should historical results older than 3 years be imported at all? | Import what the school provides, locked and marked legacy | Product owner | Large histories slow the first import with no daily use | 2 | 2 | 4 | none |
-| 4. Move §2 into the Documents service sheet | When `06-services/documents.md` is written | Architect | Two documents own the staging design until then | 4 | 2 | 8 | none |
+| 4. Closed: who owns the staging design of §2, now that `06-services/documents.md` exists and specifies the import machinery in full | Split, not moved: the Documents sheet owns everything built inside Documents (the `import_jobs` state, the worker job groups, the endpoints, Saga 9's orchestrator); §2 here owns the two-stage design across services, the target services' Stage B, and the validation rules of §3, and cites the sheet rather than restating it. A difference between the two is a defect in whichever restates the other, found by `plan-consistency-checker` at the Group F review | Architect | A fact later restated in both documents could drift; the Documents sheet already cites this document for the toolkit as a whole (its decision "Document 26 cites this section rather than restating it"), so the sheet stays authoritative for what Documents builds and this document for the cross-service design | 1 | 2 | 2 | none |
 
-> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022). Point 4 scores likelihood 4 because `06-services/documents.md` now exists and specifies the import machinery itself, so two documents already hold the staging design.
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022). Point 4 is closed and re-scored 1 x 2: `06-services/documents.md` exists and specifies the import machinery itself, and the split in its Default cell gives each document its own half, so the round 2 score of 4 x 2 no longer applies.
 
 ## Review record
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-22 | Group F review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | The validation and adapter claims had no test-case identifier (Testability); `TC-PLT-001` meant provisioning here and other things in documents 27 and 32 (Consistency) |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | The test-id collision was closed. Still open: "table-driven tests per §3.4 to §3.6" and "golden-output test per adapter fixture" named no identifier (Testability); a dependency row still said `06-services/documents.md` was "not yet written", and open point 4 waited on it (Completeness) |
+| 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | `TC-DATA-800` to `TC-DATA-803` defined in the new test table and cited from §3.4, §3.5, §3.6 and §6; `TC-PLAT-008` and `TC-DOC-327` cited with their owners; the dependency row names what the Documents sheet owns; open point 4 closed with the split of ownership |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Templates parse and unknown columns are reported | `TC-DATA-001` | Every pull request touching the import job group |
-| Errors are reported per row and column and nothing is written | `TC-DATA-002`; REQ-DOC-012 | Every pull request touching the import job group |
+| Errors are reported per row and column and nothing is written | `TC-DATA-002` (Appendix R); `TC-DATA-303` (document 10) | Every pull request touching the import job group |
 | Dry run of 10,000 rows inside the budget | `TC-DATA-003`; N-04 | Nightly load tier |
 | Commit is batched with an import identifier and a stale dry run is refused | `TC-DATA-004` | Every pull request |
 | A failed batch reverses the import | `TC-DATA-005` | Every pull request |
 | Rollback restores the prior state exactly and reports conflicts | `TC-DATA-006`, `TC-DATA-303` | Every pull request; N-04 checksum nightly |
-| Duplicates are detected before commit | REQ-DOC-013 acceptance test with Arabic spelling variants | Every pull request |
-| National ID, Hijri and numeral rules | Table-driven tests per §3.4 to §3.6 under `ar-SA`, `en-US` and `de-DE` cultures | Every pull request touching `Nibras.BuildingBlocks.Localization` |
-| Adapters produce the reference rows | Golden-output test per adapter fixture | Every pull request touching an adapter |
+| Duplicates are detected before commit | `TC-DOC-327` (Documents sheet), with Arabic spelling variants | Every pull request |
+| National ID, Hijri and numeral rules | `TC-DATA-800` (§3.4), `TC-DATA-801` (§3.5) and `TC-DATA-802` (§3.6), table-driven under `ar-SA`, `en-US` and `de-DE`; `TC-PLAT-008` (document 33) for Arabic-Indic digits in a workbook produced on Windows | Every pull request touching `Nibras.BuildingBlocks.Localization` or the import job group |
+| Adapters produce the reference rows | `TC-DATA-803`, the golden-output test every adapter of §6 runs against its fixture | Every pull request touching an adapter |
 | The end-to-end import demo | `TC-DOC-001` (Appendix W item 9) | Demo pipeline |
-| Provisioning to live | `TC-PLT-001` to `TC-PLT-006` | Every pull request touching Platform |
-| This document agrees with the catalogs | kit-lint R01, R02, R05, R17, R19 and R30 (a comment on every column of a `CREATE TABLE`); `plan-consistency-checker` compares this document with Appendix R and `06-services/platform.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |
+| Provisioning to live | `TC-PLT-001` to `TC-PLT-006` (Appendix R, WF-PLT-01) | Every pull request touching Platform |
+| This document agrees with the catalogs | kit-lint R01, R02, R05, R17, R19 and R30 (a comment on every column of a `CREATE TABLE`); `plan-consistency-checker` compares this document with Appendix R, `06-services/platform.md` and `06-services/documents.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |
+
+### Test cases
+
+This document defines the validation and adapter tests below; the workflow transitions are Appendix R's `TC-DATA-001` to `TC-DATA-006` and are not restated. Each validation case is table-driven, runs once under each of `ar-SA`, `en-US` and `de-DE` with the clock pinned, and runs on the ubuntu and windows runners where `Nibras.BuildingBlocks.Localization` is built (document 33 part 4).
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-DATA-800 | Given a fixture of identifiers for every row of §3.4, each with a valid form and a form with one digit changed, when the country's `NationalIdValidator` checks them under each of the three cultures, then every valid form passes and every changed form fails with `invalidNationalId`, an Emirates ID whose embedded birth year is two years from `date_of_birth` passes with the `idBirthYearMismatch` warning, the same identifier written in Arabic-Indic digits with spaces and hyphens gives the same result as its Western form, two rows sharing a folded identifier give `duplicateNationalId` with `related_row_no`, and every identifier in the error report shows only its last four characters | REQ-DOC-011 |
+| TC-DATA-801 | Given one cell per row of §3.5, when the date rules parse them under each of the three cultures, then `1432-05-10` becomes 2011-04-14 and the preview shows both calendars, `03/04/2012` is 3 April 2012 in every culture, a year suffixed `هـ` is converted as Hijri, a Hijri day 30 in a 29-day month is `invalidHijriDate` with the two suggestions and is never shifted, an unparseable value is `invalidDate`, and the source value is kept in `raw` | REQ-DOC-011 |
+| TC-DATA-802 | Given amount cells written in Western, Arabic-Indic and extended digits with the Arabic decimal and thousands separators, when §3.6 parses them under each of the three cultures, then each yields the same decimal value, a value mixing two digit systems is `mixedNumerals`, `1,5` is `invalidNumber` and never 1.5, and an amount with more decimals than the currency's minor units is rounded with the tenant's rounding mode and reported as `amountRounded` with both values | REQ-DOC-011, REQ-PLAT-020 |
+| TC-DATA-803 | Given the fixture file and committed golden output of each adapter in §6, when the adapter runs under `ar-SA` and `en-US` on the ubuntu and windows runners, then its template rows and mapping report equal the golden output byte for byte, and for the entities it shares with `excel-template` its rows equal what `excel-template` produces from the same data; an adapter with no fixture or no golden output fails the test | REQ-DOC-016 |

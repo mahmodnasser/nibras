@@ -2,7 +2,7 @@
 
 > Plan document for the Nibras platform. Group E. It refines reference architecture Sections 6, 11, 12, 13, 15, 16 and 17 and master brief Sections 7.6, 7.7, 23, 31 and 34; it does not re-derive them. Where this document and a brief disagree, the brief wins and this document is the defect, unless an ADR records the deviation.
 
-**Group** E · **Requirement areas covered** INF, with PERF where scaling touches capacity and SEC where secrets touch operations · **Last updated** 2026-09-20 by the platform plan
+**Group** E · **Requirement areas covered** INF, with PERF where scaling touches capacity and SEC where secrets touch operations · **Last updated** 2026-09-26 by the round-4 scorecard remediation (the macOS leg of `dev-smoke.yml` aligned with document 33)
 
 ## Purpose
 
@@ -121,10 +121,10 @@ flowchart LR
     CMD -->|starts| INFRA["Containers: postgres, pgbouncer, rabbitmq, redis-cache, redis-state, seaweedfs, gotenberg, clamav, mailpit"]
     HOST -->|emits OTLP| DASH["Aspire dashboard: logs, traces, metrics"]
     HOST -->|seeds on first start| DEMO["Two demo tenants from Appendix H, one-click reset"]
-    SMOKE["dev-smoke.yml on ubuntu-latest and windows-latest"] -->|proves nightly| CMD
+    SMOKE["dev-smoke.yml on ubuntu-latest and windows-latest; setup and builds only on macos-latest"] -->|proves nightly| CMD
 ```
 
-The developer mode is proven by `dev-smoke.yml` on both runners (part 4), which is what makes "one command starts everything" a tested claim rather than a README sentence.
+The developer mode is proven by `dev-smoke.yml` (part 4), which is what makes "one command starts everything" a tested claim rather than a README sentence. The one-command start with containers is proven on Windows and Ubuntu. On macOS the job proves the setup and the builds only (`TC-PLAT-800`, document 33) and reports the container check as unavailable, because hosted Apple-silicon runners lack nested virtualisation; the container start on a Mac is a partial proof, run by the mobile engineer's Mac at each phase demo (open point 6).
 
 #### 2.2 Single server
 
@@ -201,9 +201,10 @@ flowchart LR
 | Evidence the gate requires | Produced by | Blocks promotion when |
 |---|---|---|
 | `ci-service.yml` green for every service in the release, `ci-web.yml`, `ci-mobile.yml`, `ci-kit.yml` | The workflows in part 4 | Any red job, including a licence or secret-scan finding |
-| Nightly k6 load tier green for the last run before the candidate was cut | `tests/load/`, Appendix N | Any threshold failed and no ADR accepts the change |
+| Nightly k6 load-tier gates green for the last run before the candidate was cut, and, from phase 4 when N-07 joins the gate, the last weekly soak green | `tests/Load/`, Appendix N; the nightly and weekly windows in `16-test-strategy.md` part 10.2 | Any threshold failed and no ADR accepts the change |
+| The demo gate green on the candidate: the test cases of every Appendix O step, the fifteen minutes and the reserve bank R-01 to R-20, whose phase has shipped, run end to end against the demo tenant reset to its seed, with each signature feature's own Appendix W demo test from the phase that builds the feature (REQ-TST-022, ADR-0023) | The end-to-end demo suite in the release-candidate gate built by SL-TST-006 in `34-work-breakdown.md` (CAP-INF-01, phase 1); which steps run at which phase is `16-test-strategy.md` part 12.2 | Any step's test fails, or a signature feature's demo test is missing from the run after the phase that builds the feature has shipped |
 | Migration bundle applied on staging and the previous-image test passed | `migrate.yml` (ADR-0010) | The previous image cannot run against the migrated schema |
-| Staging restore drill within the release window, timed | Part 7, `TC-DATA-020` | No timed single-tenant restore since the previous release (`.claude/rules/deploy.md`) |
+| Staging restore drill within the release window, timed | Part 7, `TC-TST-216` (document 16) | No timed single-tenant restore since the previous release (`.claude/rules/deploy.md`) |
 | Error budget of every service in the release above the freeze line | Part 6 | A service is frozen and the change is not an exemption in part 6 |
 | Every new alert in the release has a runbook file | `deploy/observability/alerts/`, `docs/runbooks/` | A rule's `runbook` annotation names a file that does not exist |
 | Release notes generated from commits and reviewed | `release.yml` | Notes missing for a service with a contract change |
@@ -222,7 +223,7 @@ The workflows tree is quoted from reference architecture Section 11; the runner 
 > ├── ci-mobile.yml                  # Flutter: analyze, test, goldens LTR and RTL, Android build
 > ├── ci-mobile-ios.yml              # macOS runner only, path-filtered to src/Mobile/**
 > ├── ci-kit.yml                     # kit-lint and its own tests, on ubuntu-latest and windows-latest
-> ├── dev-smoke.yml                  # one-command local start, on ubuntu-latest and windows-latest
+> ├── dev-smoke.yml                  # one-command local start on ubuntu-latest and windows-latest; setup and builds only on macos-latest
 > ├── license-scan.yml               # NuGet, npm, pub, plus asset licences
 > ├── security-scan.yml              # Trivy, Gitleaks, OWASP ZAP against the preview environment
 > ├── migrate.yml                    # builds migration bundles, runs them as a job before rollout
@@ -292,11 +293,11 @@ A migration bundle that fails leaves the previous image running unchanged, becau
 | Supply chain level | SLSA build level 2 at launch (reference architecture Section 11) | The provenance attestation attached with the SBOM |
 | Dependency updates | Renovate, grouped weekly pull requests; security updates opened immediately with a 48-hour service level for critical | The Renovate configuration and the security-scan job |
 
-#### 4.4 `dev-smoke` on two runners and iOS on macOS
+#### 4.4 `dev-smoke` on three runners and iOS on macOS
 
 | Workflow | Runners | Why | What it proves |
 |---|---|---|---|
-| `dev-smoke.yml` | `ubuntu-latest` and `windows-latest`, one Podman configuration and one Docker Engine configuration | Appendix X.2: the one-command start must work where developers actually work | Every service reports ready through `deploy/compose/healthcheck.sh`; the Podman network naming edge case from Appendix X.3 stays caught |
+| `dev-smoke.yml` | `ubuntu-latest` and `windows-latest`, each with one Podman configuration and one Docker Engine configuration; `macos-latest` for the setup check and the builds | Appendix X.2: the one-command start must work where developers actually work. macOS 14 or later is a supported developer platform (part 2.1), but hosted Apple-silicon runners lack nested virtualisation, so a container engine cannot start there and the macOS leg is a partial proof, not a full one (document 33 open point 3) | On `ubuntu-latest` and `windows-latest`, every service reports ready through `deploy/compose/healthcheck.sh` and the Podman network naming edge case from Appendix X.3 stays caught (`TC-PLAT-013`). On `macos-latest`, `TC-PLAT-800` (document 33): the setup check, the builds and the kit lint pass, and the container check is reported as unavailable on that runner rather than passed |
 | `ci-mobile-ios.yml` | `macos` only, path-filtered to `src/Mobile/**` | An iOS build cannot be produced on Linux or Windows (reference architecture Section 17); the macOS minutes are the Apple build capacity line in master brief Section 30 and open question 14 | iOS goldens, archive and TestFlight upload; the release gate requires both the Android and the iOS artefact before a flavour is marked released |
 
 ---
@@ -510,11 +511,12 @@ Two clarifications this plan adds. First, master brief Section 34 pins a tenant 
 
 | Drill | Cadence | Scope | Environment | Test | Owner |
 |---|---|---|---|---|---|
-| Timed single-tenant restore | Once per release, at least | Restore the demo tenant to a point 2 hours earlier while other tenants keep working | Staging | `TC-DATA-020` on the load tier | Platform engineer |
-| Single-tenant restore under load | Quarterly | As above on the load tier with 49 busy tenants; p95 of the others must not move by more than 10% | Test, load tier | `TC-DATA-020` (document 10) | Platform engineer |
+| Timed single-tenant restore | Once per release, at least | Restore the demo tenant to a point 2 hours earlier while other tenants keep working; elapsed time recorded and zero rows of any other tenant changed, by checksum | Staging | `TC-TST-216` (document 16) | Platform engineer |
+| Single-tenant restore under load | Quarterly | As above on the load tier with 49 busy tenants; p95 of the others must not move by more than 10%. It runs in a nightly gate window announced ahead, never inside the weekly soak window (`16-test-strategy.md` part 10.2) | Test, load tier | `TC-DATA-020` (document 10) | Platform engineer |
 | Regional failover | Quarterly | WF-INF-03 with the drill flag: restore into the isolated standby, verify, report, never switch traffic | Isolated standby | `TC-INF-021` to `TC-INF-024`, `TC-INF-026` | Platform engineer with the architect |
 | Real-event path rehearsal | Yearly | WF-INF-03 with the real-event flag against staging, traffic switched and switched back | Staging | `TC-INF-025` (Appendix R) | Architect |
 | Appliance upgrade and restore | Quarterly | Part 8: install the previous release on real Hyper-V, upgrade, restore from the appliance's own backup | A physical Hyper-V host | `TC-INF-001` to `TC-INF-006` | Platform engineer |
+| Appliance upgrade and restore on VMware | Once before general availability, then at every release that changes `deploy/onprem/image/` | The same steps with the `.ova` image, so the second image part 8 ships is proven and not only built | A VMware host | `TC-INF-001` to `TC-INF-006` | Platform engineer |
 | Backup verification | After every backup | `verify-restore.sh` restores the newest backup into a scratch container and checks row counts | Every mode | `BackupFailed` alert on failure | Automated |
 
 **What a drill records.** Every drill produces one record under `docs/runbooks/drills/<date>-<drill>.md`, and WF-INF-03 publishes the same numbers in its report document. A drill without a record did not happen.
@@ -547,7 +549,7 @@ Appendix X and ADR-0016: all product images are Linux, and a school with a Windo
 | Backup before upgrade | A full pgBackRest backup and an object-storage copy are taken and `verify-restore.sh` proves them before any image changes | `deploy/onprem/upgrade/` | `TC-INF-003`: the upgrade proceeds only after verification |
 | Upgrade | Maintenance banner, migration bundle as a job, roll out the new images, smoke checks within 10 minutes, banner cleared | `deploy/onprem/upgrade/` | `TC-INF-005` |
 | Rollback | Automatic on a failed migration or a failed smoke check, or when the window is exceeded by 30 minutes: the previous images and the verified backup are restored together, never one without the other (WF-INF-01) | `deploy/onprem/upgrade/rollback.sh` | `TC-INF-004`, `TC-INF-006` |
-| Drill | Quarterly, on a real Hyper-V host: install the previous release, upgrade to the current one, restore from the appliance's own backup, record the timings in a drill record (part 7) | A physical host | Appendix X.2, "Quarterly drill on Hyper-V" |
+| Drill | Quarterly, on a real Hyper-V host: install the previous release, upgrade to the current one, restore from the appliance's own backup, record the timings in a drill record (part 7). The `.ova` image runs the same drill on a VMware host before general availability and whenever `deploy/onprem/image/` changes (part 7) | A physical host | Appendix X.2, "Quarterly drill on Hyper-V"; the VMware drill record |
 
 **Pre-upgrade check items.**
 
@@ -704,7 +706,7 @@ Master brief Section 12.1, item 39, and Section 34 fix the requirement: warm-up 
 | Warm-up job | A Quartz job in Platform, `PrePeakWarmUp`, runs every 5 minutes, and for each tenant whose first period on a school day is 30 minutes away calls the internal warm endpoints: Platform (settings, branding, flags, terminology, plan limits), Identity (effective permissions of staff with a lesson today), Scheduling (today's published timetable per section, teacher and room), Attendance (each teacher's entries for today and its timetable reference copy), and School (section rosters and the reference structure). The authoritative list, its order and its cost per tenant are in `21-performance-engineering.md` Section 9. Largest tenants in a band go first; each call is guarded by the single-flight stampede protection from master brief Section 19 | Platform, with warm endpoints in Identity, Scheduling, Attendance and School |
 | Non-school days | The job reads the tenant's calendar: holidays, weekends per country, and exam days with a different bell schedule. No warm-up and no scale-up on a day with no first period | Platform |
 | Evidence | `nibras_platform_warmup_completed_timestamp_seconds{tenant_id}` for the allow-listed tenants and `tenant_tier` for the rest; `nibras_cache_hit_ratio` at first period; `WarmUpJobMissed` and `CalendarScaleUpMissed` in part 5.7 | Observability |
-| Proof | Appendix N, N-11: after a flush at minute 3 and a rolling replacement at minute 5, p95 recovers under 250 ms within 3 minutes with no stampede; N-01 across four time-zone waves shows each band warm at its own first period | `tests/load/` |
+| Proof | Appendix N, N-11: after a flush at minute 3 and a rolling replacement at minute 5, p95 recovers under 250 ms within 3 minutes with no stampede; N-01 across four time-zone waves shows each band warm at its own first period | `tests/Load/` |
 | Manual path | `warm-caches-manually.md` in part 10 | On call |
 
 Cost consequence: the peak minimums apply for roughly 4 hours per band per school day rather than 24 hours; document 28 prices the difference and it is the reason calendar-aware scaling is a cost line and not only a latency line.
@@ -817,13 +819,15 @@ stateDiagram-v2
 | Reference architecture Section 11 | Stages, ordering, promotion by tag, supply chain | Every stage in part 4.1 present and failing on its condition; digest equality across environments | `TC-INF-101`, `TC-INF-102`, `TC-INF-103` |
 | Reference architecture Section 11; ADR-0010 | Migration then rollout; previous image runs | The previous-image test passes before every rollout | `migrate.yml`, `TC-INF-011` to `TC-INF-016` |
 | Reference architecture Section 15; master brief Section 34 | Environments and the approval gate | A production sync without the gate evidence is refused | `TC-INF-109` |
+| Master brief Section 24; Appendix O; ADR-0023 | The demo gate is promotion evidence (REQ-TST-022) | A candidate with a failing Appendix O step test, or with a shipped signature feature's demo test missing from the run, is not promoted | `TC-TST-972` (document 03, REQ-TST-022) |
 | Master brief Section 7.6 | OpenTelemetry, correlation id end to end | One correlation id from the Gateway to the last consumer in a trace of the absence alert flow | `TC-INF-110` |
 | Appendix L | `nibras_` prefix, `nibras.tenant_id` | Metric and log conventions asserted by a test over the emitted names | `TC-INF-111` |
 | Master brief Section 31 | Service levels, error budget, severities | SLO definitions match the quoted table; burn-rate alerts generated from them | `TC-INF-112` |
 | Master brief Section 23; `.claude/rules/deploy.md` | Runbook per alert | Every alert annotation resolves to a file with the nine headings | `TC-INF-107` |
-| Reference architecture Section 13; master brief Section 21 | Backups, restore, disaster recovery, drills | Quarterly drills recorded with measured recovery time and point | `TC-DATA-020`, `TC-INF-021` to `TC-INF-026` |
+| Reference architecture Section 13; master brief Section 21 | Backups, restore, disaster recovery, drills | A timed single-tenant restore on staging every release, and quarterly drills recorded with measured recovery time and point | `TC-TST-216` (document 16), `TC-DATA-020` (document 10), `TC-INF-021` to `TC-INF-026` |
 | Reference architecture Section 12 | Secrets and rotation | Every rotation runbook run once on staging before launch | `TC-INF-113` |
-| Appendix X; ADR-0016; WF-INF-01 | Appliance build, upgrade, rollback, drill | Quarterly Hyper-V drill recorded | `TC-INF-001` to `TC-INF-006`, `TC-INF-105`, `TC-INF-106` |
+| Appendix X; ADR-0016; WF-INF-01 | Appliance build, upgrade, rollback, drill | Quarterly Hyper-V drill recorded; the `.ova` image drilled on a VMware host before general availability and whenever its image changes | `TC-INF-001` to `TC-INF-006`, `TC-INF-105`, `TC-INF-106` |
+| Appendix X.2; master brief Section 7.7 | The developer mode starts on every supported developer operating system | `dev-smoke.yml` green on `ubuntu-latest` and `windows-latest`, where the containers start; on `macos-latest` the setup check and builds of `TC-PLAT-800` pass and the container check is reported unavailable, so the container start on a Mac rests on the mobile engineer's Mac at each phase demo (open point 6) | `dev-smoke.yml`, built by SL-PLAT-005 (CAP-INF-02, phase 1) in `34-work-breakdown.md` |
 | Master brief Section 12.1 item 39; Section 34 | Calendar-aware scaling and warm-up | Each band warm at its own first period; N-11 recovery thresholds | Appendix N, N-01 and N-11 |
 | Master brief Section 19, container rules | Non-root, read-only root, `TZ=UTC`, globalization on | Asserted inside the built image | Stage 14 of `ci-service.yml` |
 | Master brief Section 38 | Safeguarding acknowledgement within 15 minutes | Alert and runbook exist | `SafeguardingFlagUnacknowledged` |
@@ -858,7 +862,9 @@ stateDiagram-v2
 | Runner matrix, culture checklist, appliance in the platform matrix | `33-platform-support-and-dev-environments.md` | Group F review |
 | Sizing, thresholds, cost of peak minimums and the cold standby, and the status of every figure | `28-capacity-and-cost-model.md` | Group F review; part 13 quotes it and restates nothing |
 | Cache entries the warm-up loads, and their lifetimes | `21-performance-engineering.md` | Group C review |
-| Test case identifiers `TC-INF-101` and above | `16-test-strategy.md`, which registers them | Group E review |
+| Test case identifiers `TC-INF-101` to `TC-INF-114` are defined here (the brief sources table and "Test cases"); the generated `16-annex-test-case-registry.md` lists each with this document as its owner, and `16-test-strategy.md` cites them without redefining them (ADR-0020) | `16-annex-test-case-registry.md` | Every lint run (kit-lint R20 and R23) |
+| Which Appendix O steps the demo gate runs at each phase | `16-test-strategy.md` part 12.2 | Every change to Appendix O (kit-lint R34) |
+| The slice that builds the release-candidate gate, SL-TST-006 | `34-work-breakdown.md` | Group E review |
 
 ## Open points
 
@@ -869,6 +875,7 @@ stateDiagram-v2
 | 3. The runbook template header says `docs/ops/runbooks/`; documents 07 and 10 say `docs/runbooks/`. Correct the template? | `docs/runbooks/`; the template header is edited in the next kit release | Architect | Two folders of runbooks, and `TC-INF-107` looks in the wrong one | 2 | 1 | 2 | none |
 | 4. Which paging tool receives Alertmanager routes once on-call begins? | Alertmanager to the team channel until the first paying customer (master brief Section 29); a paging tool chosen with the first customer | Product owner | Sev1 acknowledgement targets cannot be met without paging | 3 | 3 | 9 | RISK-36 |
 | 5. Should the status page heartbeat be per region once a second region exists? | One heartbeat per deployment, which is per region by master brief Section 34 | Architect | A region outage shows as "unknown" for every region | 2 | 2 | 4 | none |
+| 6. Hosted Apple-silicon runners lack nested virtualisation, so no container engine starts on the `macos-latest` leg of `dev-smoke.yml` (part 4.4; document 33 open point 3). How is the one-command start with containers proved on a Mac? | Scored against that known limit, not against a hope that the hosted image can run it. `TC-PLAT-800` proves on the hosted runner what it can (the setup check, the builds, the kit lint) and reports the container check as unavailable rather than passing it; the container start is proved on `ubuntu-latest` and `windows-latest`, and the mobile engineer's Mac runs it at each phase demo. If open question 14 settles on a Mac build host that can run a Podman machine or Colima, the container check moves there | Architect | A container step that works on Linux and Windows but not on a Mac is found by a developer rather than by the job, and costs that developer a day; macOS developer support rests on a partial proof until then | 3 | 1 | 3 | none |
 
 ## Review record
 
@@ -876,6 +883,9 @@ stateDiagram-v2
 |---|---|---|---|
 | 2026-09-20 | Group E review pending | Draft | none recorded yet |
 | 2026-09-22 | Scorecard remediation, theme 4 | Amended: part 13 added so the PLAN_SPEC capacity-and-cost row resolves here by quoting document 28; the procedure-runbook count corrected from eight to eleven and the total from sixty to sixty-three, counted from the part 10 tables | `34-work-breakdown.md` SL-INF-617 still says "sixty runbook files" |
+| 2026-09-26 | Scorecard remediation, theme 8 | Amended under ADR-0023: the demo gate (REQ-TST-022, built by SL-TST-006) added to the evidence the approval gate requires, with its row in the brief sources and the verification table | none |
+| 2026-09-26 | Round-2 scorecard, Group E (blocked on consistency, feasibility and risk honesty), remediation round 3 | Amended: `macos-latest` joins `dev-smoke.yml` beside `ubuntu-latest` and `windows-latest` (parts 2.1, 4 and 4.4), with open point 6 on the runner's container engine; the restore drills take one identifier each, `TC-TST-216` for the per-release timed restore on staging and `TC-DATA-020` for the quarterly drill under load, stated the same way in documents 16 and 18; a VMware drill for the `.ova` image added to parts 7 and 8; `tests/load/` corrected to `tests/Load/` as documents 07 and 16 spell it; the weekly soak added to the approval-gate evidence; the `TC-INF-101` to `TC-INF-114` ownership row corrected; the theme 4 blocking item is gone, since SL-INF-617 now says sixty-three | none |
+| 2026-09-26 | Round-3 scorecard, Group E (blocked on consistency), remediation round 4 | Amended to match document 33 on the macOS leg: parts 2.1, 4.4 and the verification tables now say `macos-latest` proves the setup and the builds only (`TC-PLAT-800`) and reports the container check as unavailable, because hosted Apple-silicon runners lack nested virtualisation; the container start is proved on `ubuntu-latest` and `windows-latest`; open point 6 restated and re-scored against that known limit, from 3 x 2 to 3 x 1 | none |
 
 ## How this document is verified
 
@@ -883,19 +893,20 @@ stateDiagram-v2
 |---|---|---|
 | Every entry of the `deploy/` tree has a purpose | Kit-lint R18: every entry of a plan directory tree carries a purpose comment | Lint (`/lint-plan`) on every change under `docs/` |
 | The `deploy/` tree matches document 07 | Review step, not a lint rule: the `plan-consistency-checker` agent compares the folder set here with document 07 part 5 at the Group E review and on every change to either document | Group E review |
-| All three modes start and report ready | `dev-smoke.yml` on both runners for the developer mode; `TC-INF-108` starts the single-server profile in CI and runs `healthcheck.sh`; the scale mode is exercised by the preview and test environments on every pull request | Every pull request; nightly |
+| All three modes start and report ready | `dev-smoke.yml` on `ubuntu-latest` and `windows-latest` for the developer mode, with the `macos-latest` leg proving setup and builds only (part 4.4); `TC-INF-108` starts the single-server profile in CI and runs `healthcheck.sh`; the scale mode is exercised by the preview and test environments on every pull request | Every pull request; nightly |
 | Every `ci-service.yml` stage fails on its condition | `TC-INF-114`: a deliberate violation per stage (a warning, an unformatted file, an N+1, a secret string, an unsigned image) is committed on a throwaway branch in the test environment and each is seen to fail | Once per release of the pipeline |
 | Built once, promoted by tag, signed, with an SBOM | `TC-INF-101` to `TC-INF-103` | Every release |
 | Migration then rollout, previous image runs | `migrate.yml` and `TC-INF-011` to `TC-INF-016` | Before every rollout |
 | The approval gate cannot be bypassed | `TC-INF-109`: a `gitops/prod/` change without the required review and evidence is refused by the forge's branch protection | Every release |
+| The demo gate blocks a candidate and covers every signature feature | `TC-TST-972` for REQ-TST-022 in the release-candidate gate of SL-TST-006; kit-lint R34 checks that each of the 43 signature features is shown by an Appendix O step whose Test cell runs its demo test and that every step states its phase | Every phase exit and release; R34 on every change under `docs/` |
 | Correlation id end to end | `TC-INF-110`: the absence-alert trace from reference architecture Section 9 has one correlation id from the Gateway span to the Notification worker span | Nightly |
 | Metric and log conventions | `TC-INF-111`: an integration test scrapes every service's metrics endpoint and asserts the `nibras_` prefix, the fixed labels and the absence of `tenant_id` outside the allow-list; the log schema test asserts the fixed fields and the redaction of Sensitive values (`TC-DATA-007` extended) | Every pull request |
 | Cardinality guardrails | `MetricsCardinalityHigh` in the test environment during the N-06 run; the collector's drop counter stays at zero for allow-listed metrics | Nightly |
 | Service levels and burn-rate alerts agree with master brief Section 31 | `TC-INF-112`: the SLO definitions are parsed and compared with the quoted table; the generated rules are diffed against `deploy/observability/alerts/` | Every change under `deploy/observability/` |
 | Every alert has a runbook with the nine headings | `TC-INF-107` | Every change under `deploy/observability/alerts/` or `docs/runbooks/` |
-| Backups restore, single tenant, timed | `TC-DATA-020` once per release and quarterly under load; `verify-restore.sh` after every backup | Per release; quarterly; daily |
+| Backups restore, single tenant, timed | `TC-TST-216` (document 16) once per release on staging; `TC-DATA-020` (document 10) quarterly under load on the load tier; `verify-restore.sh` after every backup | Per release; quarterly; daily |
 | Failover works and the objectives are measured | `TC-INF-021` to `TC-INF-026` in the quarterly drill and the yearly real-event rehearsal, with a drill record | Quarterly; yearly |
-| Appliance builds, upgrades, rolls back, restores | `TC-INF-001` to `TC-INF-006`, `TC-INF-105`, `TC-INF-106`; the quarterly Hyper-V drill record | Per release; quarterly |
+| Appliance builds, upgrades, rolls back, restores | `TC-INF-001` to `TC-INF-006`, `TC-INF-105`, `TC-INF-106`; the quarterly Hyper-V drill record and the VMware drill record (part 7) | Per release; quarterly; before general availability and on every change to `deploy/onprem/image/` |
 | Rotation works before launch | `TC-INF-113`: every rotation runbook executed on staging with the drill record | Before the first paying customer; then per interval |
 | Calendar-aware scaling and warm-up | Appendix N, N-01 across four waves and N-11; `WarmUpJobMissed` and `CalendarScaleUpMissed` silent on the load tier for a full school week | Nightly; weekly |
 | No capacity, sizing or cost figure is restated here | Review only: part 13 is read against `28-capacity-and-cost-model.md`; a number written into part 13 rather than cited is a finding | Group E and Group F reviews |
@@ -904,7 +915,7 @@ stateDiagram-v2
 
 ### Test cases
 
-This document defines the operations tests below; `TC-INF-001` to `TC-INF-026` are the Appendix R transitions of WF-INF-01 to WF-INF-03, and `TC-DATA-020` is defined in `10-data-architecture.md`.
+This document defines the operations tests below, and `TC-INF-107` and `TC-INF-109` to `TC-INF-113` in the brief sources table above; `TC-INF-001` to `TC-INF-026` are the Appendix R transitions of WF-INF-01 to WF-INF-03, `TC-DATA-020` is defined in `10-data-architecture.md`, and `TC-TST-216` in `16-test-strategy.md` part 10.4.
 
 | Test case | What it proves | Covers |
 |---|---|---|

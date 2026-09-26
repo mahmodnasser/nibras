@@ -175,7 +175,7 @@ lib/features/attendance/
 | `domain/` imports no Flutter package and no other layer | Custom lint rule in `analysis_options.yaml`; `flutter analyze` fails |
 | `presentation/` never calls `core/network` or Drift directly; it goes through the feature repository | Import-boundary lint; a widget importing `drift` or `dio` fails analysis |
 | A feature imports only `core/`, `app/config`, `l10n/` and its own folders | Same lint; feature-to-feature import fails |
-| Wellbeing data never enters `core/offline` | The Drift schema has no wellbeing table (§3.2); `nurse/` uses a repository with no local layer; `TC-MOB-704` asserts no `wellbeing` table or column exists |
+| Wellbeing data never enters `core/offline`, with the one exception the plan builds until Open Question 29 is decided (§2.2, §3.1) | The Drift schema has no wellbeing table (§3.2); `nurse/` uses a repository with no local layer; `TC-MOB-704` asserts no `wellbeing` table, column or file exists and no outbox row carries a Wellbeing payload; the student's check-in answer code, the exception, is held to one write-only outbox row by `TC-MOB-780` |
 | No hard-coded user-facing string | `analysis_options.yaml` bans string literals in widget trees; `tool/arb-lint` fails on a key present in `en` and missing in `ar` |
 | Generated clients and Drift code are never hand-edited | `ci-mobile.yml` regenerates and fails on diff |
 
@@ -201,6 +201,7 @@ Offline values are quoted from Appendix M section M.1; where a feature is not an
 | Behavior quick note and points | Behavior quick note | Yes, queued | Record a behaviour point or incident |
 | Meetings and conference-day schedule | Meetings | Yes, the day's schedule read-only | View today's timetable |
 | Homeroom card: absent today, excuses, flags | Homeroom Today | Yes, read | Read messages and announcements (cached read) |
+| "Check in with this student" flag from the daily check-in (homeroom, SL-WEL-619) | Homeroom Today | No, read live; the flag only, never the answer | View a wellbeing record |
 | Excuse review: approve or reject | Excuse review | No | Approve anything |
 | Timeline note on a student | Student 360 (homeroom scope) | Yes, queued | Record a behaviour point or incident (append-only) |
 | Early-warning flags with reasons | Early-warning flags | No, read live | Not an M.1 row; served by Reporting, not cached |
@@ -219,6 +220,7 @@ Offline values are quoted from Appendix M section M.1; where a feature is not an
 | Badges and portfolio | Badges and portfolio | Yes, read | Cached read |
 | Messages and announcements | Messages and announcements | Read last 30 days; send queued | Read messages; Send a message |
 | Private request (counseling appointment) | Private request | Yes, queued | Submit a request |
+| Daily wellbeing check-in (REQ-WEL-015, WF-WEL-05, SL-WEL-619, phase 5) | Check-in card on Student Today; `08-web-structure.md` §7 has no screen for it | **Contested.** On the default in force for Open Question 29, what the plan builds: the answer code alone is queued, write-only, never shown back, purged when it lands or on sign-out; no note and no flag offline. On the recommended answer: no, online only, and the card shows "needs a connection" | Not an M.1 row. M.1 "View a wellbeing record" is No, and the device rule of master brief Section 20 says Wellbeing data never reaches a device; the queued answer code contradicts both until the question is decided (RISK-47) |
 | Quiz player | Web only; the phone browser on mobile web (§10.3) | Not on mobile | Timed assessment needs a live session, so there is no offline app screen; the exception to master brief Section 18 is stated in §10 |
 
 ### 2.3 Parent or guardian
@@ -272,7 +274,7 @@ Offline values are quoted from Appendix M section M.1; where a feature is not an
 
 | Feature | Screen | Offline | M.1 row |
 |---|---|---|---|
-| Care Today: visits, medication schedule, follow-ups | Care Today | **No**; nothing from Wellbeing is held on the device | View a wellbeing record |
+| Care Today: visits, medication schedule, follow-ups | Care Today | **No**; nothing from Wellbeing is held on a staff device | View a wellbeing record |
 | Record a clinic visit and notify the guardian | Clinic visits (nurse mode) | **No** | Record a clinic visit |
 | Medication round | Medication schedule (nurse mode) | **No** | Record a clinic visit |
 | Allergy lookup | Allergy and medical alerts | No, read live and never from a cache | View a wellbeing record (Appendix U.10) |
@@ -281,6 +283,8 @@ Offline values are quoted from Appendix M section M.1; where a feature is not an
 | Accommodation check at an exam sitting | Education plans (read) | No | View a wellbeing record |
 
 Appendix M section M.1 says a clinic visit is never recorded offline because wellbeing data is never stored on a device, and master brief Section 20 and `CLAUDE.md` say wellbeing data never reaches a device. This document implements Appendix M and nurse mode is online only (§6). Appendix U.10 and the Appendix I nurse row once described an offline clinic-visit queue; brief v9.1 corrected both to match Appendix M under ADR-0019, so the brief now agrees with itself here.
+
+The rule is not yet whole on the student's side. Appendix R marks WF-WEL-05, the daily check-in, as offline, and the plan builds that: SL-WEL-619 lets the student's answer code wait in the outbox until sync (§2.2). That is the default in force for Open Question 29, which the privacy officer and then the product owner decide; until they do, it contradicts the no-device rule above, and `12-security-privacy-safety.md` records it as threat T-WEL-09 and RISK-47. The recommended answer is an online-only check-in, which removes the outbox row and the exception; nothing else in this document changes either way.
 
 ### 2.7 Receptionist and security, transport coordinator, librarian, store keeper, platform administrator, IT support
 
@@ -317,6 +321,7 @@ Appendix M section M.1 says a clinic visit is never recorded offline because wel
 | `gate_keys` | The tenant's gate-pass verification public keys with validity windows | Until rotated | Public |
 | `permissions` | The permission set and its version | Until changed | Internal |
 | Never on the device | Anything at Sensitive or level S: custody text, medical detail, counseling, safeguarding, payment instruments, access logs, another family's child | Never | Appendix M: "The device cache holds nothing classified sensitive in Appendix J" |
+| Contested: the student's pending check-in answer | On the Open Question 29 default in force only: at most one `outbox_actions` row per school day, holding the level S answer code, with no note, no flag and no earlier answer; no Drift table, no cache and no screen reads it | Until the server accepts it, or sign-out; the row is deleted, not marked accepted | Level S. Contradicts the row above until Open Question 29 is decided; on the recommended online-only answer this row does not exist (RISK-47, `12-security-privacy-safety.md` T-WEL-09) |
 
 ### 3.2 Drift schema outline
 
@@ -338,7 +343,7 @@ CREATE TABLE sync_state (
 CREATE TABLE outbox_actions (
   idempotency_key      TEXT    PRIMARY KEY,      -- UUID v7 generated on the device when queued; the server's inbox key; never regenerated on retry
   tenant_id            TEXT    NOT NULL,         -- full tenant UUID v7 of the tenant the action belongs to
-  action_type          TEXT    NOT NULL,         -- attendance.mark, attendance.excuse.submit, communication.message.send, requests.request.submit, ...
+  action_type          TEXT    NOT NULL,         -- attendance.mark, attendance.excuse.submit, communication.message.send, requests.request.submit, ...; the student check-in answer is the only Wellbeing type, and only on the Open Question 29 default (§3.1)
   batch_id             TEXT,                     -- groups actions that must land together, e.g. mark-all-present for one session
   entity_id            TEXT,                     -- id of the entity acted on; NULL for a create
   entity_version       INTEGER,                  -- the version the device held when the action was queued; the server compares it to detect a conflict
@@ -681,14 +686,14 @@ flavors/schools/alnoor.json                  # one file per white-label school; 
   "flavor": "whitelabel",                    # which entry point and native flavor to build
   "tenantId": "018f...",                     # fixed tenant UUID v7; the tenant chooser is hidden
   "tenantHost": "alnoor.example",            # the tenant's host for App Links, Universal Links and the API base
-  "apiBaseUrl": "https://alnoor.example/api/mobile",   # Bff.Mobile behind the Gateway on the tenant host
+  "apiBaseUrl": "https://alnoor.example/bff/mobile/v1",   # Bff.Mobile behind the Gateway on the tenant host, under the /bff/mobile/v1/ prefix of 22-api-conventions-and-error-catalog.md
   "appName": {"en": "Al Noor School", "ar": "مدرسة النور"},   # bilingual store and launcher name
   "applicationId": "example.alnoor.school",  # Android application id and iOS bundle identifier, owned by the school
   "brand": {"primary": "#0B5D4B", "onPrimary": "#FFFFFF", "surfaceTint": "#0B5D4B"},   # one brand colour; the palette is generated as on the web
   "icons": "flavors/schools/alnoor/icons/",  # adaptive icon set and splash; generated by the flavor scaffold tool
   "pushStrategy": "fcm",                     # fcm, apns, or none; the no-Google variant builds with none
   "pinnedCertificates": [],                  # optional certificate pins for this host (12-security-privacy-safety.md §1.2 NETWORK)
-  "minimumVersionPolicyUrl": "/config/version"   # the Bff.Mobile version-policy endpoint (§7)
+  "minimumVersionPolicyUrl": "/bff/mobile/v1/config/version"   # the Bff.Mobile version-policy endpoint (§7)
 }
 ```
 
@@ -757,13 +762,13 @@ Master brief Section 18 aligns the application with OWASP MASVS 2; `12-security-
 | Database encryption | SQLCipher with a 256-bit key generated on first sign-in and stored in secure storage; the key is never derived from a PIN | none | `TC-SEC-041` (document 12) |
 | Biometric unlock | `local_auth` gates the local session after the tenant's inactivity timeout; it never replaces the server token | No biometric enrolled: device PIN or pattern through the same API. No device lock at all: the app requires sign-in with password after the timeout and says why. Biometric hardware failure: password | `TC-SEC-043` (document 12) |
 | Session timeout | From the tenant security policy through remote configuration; default 15 minutes of inactivity for staff, 30 for guardians; kiosk flavor has no personal session | none | `TC-SEC-043` (document 12) |
-| No wellbeing data on the device | No Drift table, no file, no cache entry for Wellbeing; nurse mode holds the current screen's data in memory only and clears it on navigation; the Student 360 shows existence only | none | `TC-MOB-704` asserts the schema and the file store; `TC-WEL-202` family asserts the refusal |
+| No wellbeing data on the device | No Drift table, no file, no cache entry for Wellbeing; nurse mode holds the current screen's data in memory only and clears it on navigation; the Student 360 shows existence only. One exception is built on the Open Question 29 default in force: the student's pending check-in answer code in the outbox (§3.1), which contradicts this row until the question is decided (RISK-47) | On the recommended online-only answer the exception is removed and the check-in shows "needs a connection" | `TC-MOB-704` asserts the schema, the file store and the outbox; `TC-MOB-780` asserts the exception's limits; `TC-WEL-202` family asserts the refusal |
 | Nothing sensitive in logs | GlitchTip scrubbing rules drop names, identifiers, message bodies and every request body; breadcrumbs carry route names and Appendix K codes only; `print` is banned by lint; release builds strip `assert` and debug logging | none | `TC-SEC-046` (document 12) |
 | Nothing sensitive on the lock screen | Android: `visibility = private` on every channel with the safe public text; iOS: the notification service extension rewrites to the safe template; content is fetched after unlock (§4.1) | A payload with no template key shows the category name only | `TC-SEC-045` (document 12) |
 | Screenshot protection | `FLAG_SECURE` on Android and a secure-field overlay on iOS for the register, Student 360, fees, messages and every mode; the share sheet is disabled on the same screens | none | `TC-SEC-045` (document 12) |
 | Root and jailbreak | Advisory banner for a guardian or teacher; gate and nurse modes refuse to start | none | `TC-SEC-046` (document 12) |
 | Certificate pinning | Optional per flavor from the flavor file; pins rotate through remote configuration with an overlap window | A pin failure shows a plain "connection not trusted" state; no cleartext fallback | `TC-SEC-044` (document 12) |
-| Minimum version enforcement | Bff.Mobile `/config/version` returns `minimumVersion`, `recommendedVersion` and `policy` per tenant (Appendix G, Mobile settings). Below minimum: the app blocks with the upgrade screen and the store link, and the outbox is preserved for after the upgrade. Within one minor of minimum: a nag once per day. The check runs at bootstrap and on every sync | Endpoint unreachable: the last policy is applied; a fresh install with no policy yet proceeds | `TC-MOB-713` |
+| Minimum version enforcement | Bff.Mobile `GET /bff/mobile/v1/config/version` returns `minimumVersion`, `recommendedVersion` and `policy` per tenant (Appendix G, Mobile settings). Below minimum: the app blocks with the upgrade screen and the store link, and the outbox is preserved for after the upgrade. Within one minor of minimum: a nag once per day. The check runs at bootstrap and on every sync | Endpoint unreachable: the last policy is applied; a fresh install with no policy yet proceeds | `TC-MOB-713` |
 | Permission version | Every request carries the permission version; `IDENTITY_PERMISSION_VERSION_STALE` refreshes the set and re-locks the router within five seconds (`TC-SEC-047` on mobile) | none | `TC-SEC-047` |
 | Sign-out and permission loss | Drops the Drift database, clears secure storage for that person, unregisters the push token (`NOTIFICATION_DEVICE_TOKEN_INVALID` is expected afterwards), keeps nothing but the flavor configuration | none | `TC-MOB-714` |
 | Account deletion request | `/profile/account` opens the erasure workflow; the store listings say so | none | `TC-PRV-060` (document 12) |
@@ -934,6 +939,7 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 | Referrals, case file, session notes, safeguarding queue, education plans | full | referral triage and intervention steps, online | available, not optimised | none | 5 |
 | Break-glass | full | full, online | full | none | 5 |
 | Intervention playbook (item 30) | full | full, online | full | none | 4 |
+| Daily wellbeing check-in (student) and its homeroom flag (REQ-WEL-015, SL-WEL-619; the pastoral staff's web view of flags is SL-WEL-618) | none: no student route in `08-web-structure.md` §2 | student check-in full, answer queued offline on the Open Question 29 default and online only on the recommended answer (§2.2); homeroom flag online | none | none | 5 |
 | Early-warning flags with reasons | full | full, online | full | none | 4 |
 | Leave decisions (HR) | full | full, online | available, not optimised | none | 5 |
 | Staff files, contracts, payroll inputs, appraisals, vacancies, onboarding | full | document expiry chase only | available, not optimised | none | 5 |
@@ -949,7 +955,7 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 | Platform console: tenants, plans, flags, health, support, retention, releases | full | read-only health and ticket triage | available, not optimised | none | 1 |
 | Because panel (item 28) on automated actions | full | full on the screens that carry the action | full | none | 2 |
 
-**Reading the matrix.** Master brief Section 18 requires that parents and students can do everything on mobile, and every capability a parent or student has on the web is `full` on the mobile app with one stated exception, the quiz player in §10.3. The exception's reason is the one §2.2 gives: a timed assessment needs a live session, so it is not an offline-capable app screen; the student takes it in the phone browser, which is why its `mobile web` value is `available, not optimised` and no student is locked out on a phone. The only parent rows that are online-only are payment, re-enrollment, transparency and the clinic note, each because Appendix M or Appendix J forbids the cache. Every teacher daily task (Appendix U.4 day rows) is `full, offline`. Every other `none` on the mobile app is heavy configuration or authoring, and each has a `mobile web` value of `available, not optimised` for the same reason.
+**Reading the matrix.** Master brief Section 18 requires that parents and students can do everything on mobile, and every capability a parent or student has on the web is `full` on the mobile app with one stated exception, the quiz player in §10.3. The exception's reason is the one §2.2 gives: a timed assessment needs a live session, so it is not an offline-capable app screen; the student takes it in the phone browser, which is why its `mobile web` value is `available, not optimised` and no student is locked out on a phone. The only parent rows that are online-only are payment, re-enrollment, transparency and the clinic note, each because Appendix M or Appendix J forbids the cache. The one student row whose offline value is contested is the daily check-in in §10.6: it is a mobile capability with no web route, and whether its answer may wait offline is Open Question 29. Every teacher daily task (Appendix U.4 day rows) is `full, offline`. Every other `none` on the mobile app is heavy configuration or authoring, and each has a `mobile web` value of `available, not optimised` for the same reason.
 
 ---
 
@@ -963,6 +969,8 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 | Open question 23: Riverpod or flutter_bloc, with the record Group D raises (`29-adr-index.md` Section 3) not yet written | Riverpod, as the decision table above states; `TC-MOB-721` asserts it | Architect | The `presentation/state/` folder of every feature changes shape; the domain and data layers, the outbox and the sync engine do not | 1 | 2 | 2 | none |
 | Open question 28: do a read-only public API, the OneRoster export and iCal move from Tier 2 into Tier 1? | They stay Tier 2; iCal in phase 2, the other two in phase 3 under CAP-INT-01 (§10.3) | Product owner | The phase column of the iCal row in §10.3 changes and nothing else in this document, because the app's capability is the same either way | 3 | 1 | 3 | RISK-42 |
 | How long do store reviews take? | Up to three days for iOS and one for Android, with anything date-bound submitted a week early (§5.4) | Mobile engineer | A rejection or a slow review makes a term-start or fee-deadline release miss its date on one store while it ships on the other | 2 | 2 | 4 | none |
+| Open question 27: does a parent receive an absence alert within 30 seconds of the mark, or 30 minutes after the register closes? | Within 30 seconds, as REQ-ATT-017 and master brief Section 31 require: `attendance.student.absent.v1` sits in the Urgent channel `nibras.urgent` of §4.1 and breaks quiet hours | Product owner | A 30-minute grace window after the register closes moves the absence row from the Urgent to the Academic channel in §4.1, so it no longer breaks quiet hours, and the lock-screen text and the **Submit excuse** action arrive later; the register, the outbox and the offline marks of §3 do not change | 3 | 3 | 9 | RISK-41 |
+| Open question 29: may a student's level S check-in answer wait in the device's encrypted outbox until the next sync, or must the check-in be online only? | What the plan builds (WF-WEL-05, SL-WEL-619): the answer code alone waits as one write-only `outbox_actions` row, never shown back and purged when it lands or on sign-out (§2.2, §3.1, §7). This contradicts the rule that Wellbeing data never reaches a device (master brief Section 20, Appendix M.1, REQ-MOB-009) until the privacy officer and then the product owner decide; the recommended answer is online only | Privacy officer, then the product owner | A lost, shared or compromised phone holds a child's wellbeing answer. Choosing online only removes the §3.1 exception, the Wellbeing action type in `outbox_actions` and the queued path of §2.2; the check-in card shows "needs a connection" offline, and `TC-MOB-780` then asserts that no outbox row is written | 4 | 5 | 20 | RISK-47 |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
 
@@ -976,7 +984,7 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 |---|---|
 | The tree in §1 matches the project | `ci-mobile.yml` runs a structure check that lists `lib/app`, `lib/core/*`, `lib/features/*` and `lib/features/modes/*` and diffs against §1.1; a feature folder without `data/`, `domain/` and `presentation/` fails |
 | Layer boundaries hold | The custom lint rules in §1.3 run in `flutter analyze` on every pull request; `domain/` importing Flutter, a widget importing `drift` or `dio`, or a feature importing another feature fails |
-| No wellbeing data on the device | `TC-MOB-704`: the Drift schema and the application file store contain no wellbeing table, column or file after a nurse-mode session; the schema in §3.2 is generated from the same tables the test inspects |
+| No wellbeing data on the device, except the contested check-in answer | `TC-MOB-704`: the Drift schema, the application file store and the outbox contain no wellbeing table, column, file or payload after a nurse-mode session and a synced check-in; the schema in §3.2 is generated from the same tables the test inspects. `TC-MOB-780`: the one exception of the Open Question 29 default holds the answer code only, is never read back and is purged on landing and on sign-out, and on the online-only answer no outbox row is written at all |
 | The Appendix M rules are implemented | The eight tests in §3.9 (`TC-MOB-701` to `TC-MOB-703`, `TC-MOB-705`, `TC-MOB-706` and `TC-MOB-708` to `TC-MOB-710`) map one to one to Appendix M section M.5, and `TC-MOB-704` and `TC-MOB-707` below cover the M.1 and M.2 limits; the owning-service side of each rule is tested in `06-services/attendance.md` and the other service sheets; `TC-MOB-001`, `TC-MOB-102`, `TC-MOB-202`, `TC-MOB-203` and `TC-MOB-602` from Appendices O and Q are the device-pass proofs |
 | Pending and conflict states are visible | Widget tests for every screen in §2 render the pending, sending, awaiting-attachment, rejected and conflict states through `core/design`; a screen rendering a conflict without `conflict_banner` fails review, and the golden set includes the conflict state for the register |
 | Delta tokens and the 30-day rule | `TC-MOB-706` replays a 45-day-old token and asserts a full refresh plus outbox delivery; the iOS release gate replays a 30-day-old token on the iPhone SE (`33-platform-support-and-dev-environments.md` §7) |
@@ -1001,7 +1009,8 @@ This document defines the mobile tests below and the §3.9 set (`TC-MOB-701` to 
 | TC-MOB-202 | Given a teacher who marked a class of 25 in airplane mode with 2 absent and 1 late (Appendix Q.2 step 4), when the network is restored, then the queue count reaches 0, each mark is stored exactly once, and the register holds 25 records with no duplicate | REQ-MOB-007, REQ-MOB-010 |
 | TC-MOB-203 | Given a homeroom teacher in airplane mode, when they add a note to a student's timeline, then the note shows at once with the offline badge, and after reconnect it is stored once on the server and the badge clears | REQ-MOB-007, REQ-MOB-015 |
 | TC-MOB-602 | Given a student whose timetable and due list were synced, when they open both in airplane mode and submit an assignment, then both screens render from the local copy and the submission shows as pending with a visible badge, never as submitted, until the server confirms it | REQ-MOB-015 |
-| TC-MOB-704 | Given a nurse-mode session that opened 3 wellbeing records, when the session ends, then the Drift schema holds 0 wellbeing tables or columns and the application file store holds 0 wellbeing files, inspected against the same tables that generate the schema in §3.2 | REQ-MOB-009 |
+| TC-MOB-704 | Given a nurse-mode session that opened 3 wellbeing records, followed by a student check-in answered offline and then synced, when the session ends and the sync completes, then the Drift schema holds 0 wellbeing tables or columns, the application file store holds 0 wellbeing files, and `outbox_actions` and `outbox_attachments` hold 0 rows whose action type or payload is Wellbeing's, inspected against the same tables that generate the schema in §3.2; a fixture that leaves an accepted check-in row in the outbox fails the test | REQ-MOB-009 |
+| TC-MOB-780 | Given a student on the Open Question 29 default who answers the daily check-in in airplane mode, when the outbox is inspected, then it holds exactly 1 Wellbeing row, carrying the answer code, the client key and `occurred_at` and no note, flag or earlier answer, and no screen, provider or query in the app returns it; when the network returns, then the server accepts it with the original timestamp and the row is deleted, and a second answer queued and followed by sign-out leaves 0 rows. Given the online-only answer instead, when the student opens the check-in in airplane mode, then the card shows "needs a connection" and 0 outbox rows are written | REQ-WEL-015, REQ-MOB-009 |
 | TC-MOB-707 | Given 1,200 queued actions of 1 KB each, when the engine syncs, then it sends three requests of 500, 500 and 200 actions; given 100 actions of 60 KB each, then no request exceeds 5 MB and the remainder follows in the next batch; and a feature whose action body exceeds 64 KB fails the test (§3.8) | REQ-MOB-013 |
 | TC-MOB-711 | Given the App Links `intent-filter` with `autoVerify` and the tenant host's `assetlinks.json`, when the Android device pass runs `adb shell pm verify-app-links`, then the host reports verified for the shared application and every white-label package, and a tenant link opens the app on its target screen | REQ-MOB-018 |
 | TC-MOB-712 | Given the Associated Domains entitlement `applinks:<tenant host>` and the host's `apple-app-site-association`, when a tenant link is tapped on the iPhone SE device pass, then the app opens on its target screen rather than in Safari, for every flavor's bundle identifier | REQ-MOB-018 |

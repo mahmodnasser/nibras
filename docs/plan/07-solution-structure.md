@@ -2,7 +2,7 @@
 
 > The full repository tree to project level, the building blocks and their public surface, the contracts layout, the service template, the dependency rules with the architecture tests that enforce them, and the naming conventions. Names come from Appendix L; the anatomy comes from reference architecture Sections 1 to 3; the standards come from master brief Section 19.
 
-**Group** B · **Requirement areas covered** PLAT, TST, PERF, DATA, MSG, INF · **Last updated** 2026-09-22 by the planning session
+**Group** B · **Requirement areas covered** PLAT, TST, PERF, DATA, MSG, INF · **Last updated** 2026-09-26 by the planning session
 
 ## Purpose
 
@@ -41,7 +41,7 @@ nibras/                                    the mono-repo: one repository for eve
 │   │   ├── ci-mobile.yml                  Flutter: analyze, test, goldens left-to-right and right-to-left, Android build
 │   │   ├── ci-mobile-ios.yml              macOS runner only, path-filtered to src/Mobile/**
 │   │   ├── ci-kit.yml                     kit-lint, its own tests, and the service-template smoke test, on ubuntu-latest and windows-latest
-│   │   ├── dev-smoke.yml                  the one-command local start, on ubuntu-latest and windows-latest
+│   │   ├── dev-smoke.yml                  the one-command local start, on ubuntu-latest, windows-latest and macos-latest (REQ-PLAT-001)
 │   │   ├── license-scan.yml               NuGet, npm and pub scanners plus asset licences, against the allow-list
 │   │   ├── security-scan.yml              Trivy, Gitleaks, OWASP ZAP against the preview environment
 │   │   ├── migrate.yml                    builds migration bundles per service and runs them as a job before rollout
@@ -142,7 +142,21 @@ src/BuildingBlocks/                              technical libraries only; the a
 ├── Nibras.BuildingBlocks.Localization/          culture handling, the bilingual value object, Arabic normalization, Hijri conversion, numerals
 ├── Nibras.BuildingBlocks.Files/                 IFileStorage, signed URLs, scan status
 ├── Nibras.BuildingBlocks.Jobs/                  the long-running job contract with progress and cancellation, Quartz.NET registration
-└── Nibras.BuildingBlocks.Testing/               builders, Testcontainers fixtures, fake clock, tenant fixtures, query-budget assertions; referenced by test projects only
+├── Nibras.BuildingBlocks.Testing/               builders, Testcontainers fixtures, fake clock, tenant fixtures, query-budget assertions; referenced by test projects only
+└── tests/                                       the thirteen building-block test projects, one per block, run on the Linux and the Windows runner (Appendix X)
+    ├── Nibras.BuildingBlocks.Domain.Tests/          Result, Error, value-object equality, UUID v7 ordering
+    ├── Nibras.BuildingBlocks.Application.Tests/     pipeline order: validation, authorization, tenant, transaction, audit, logging, timing
+    ├── Nibras.BuildingBlocks.Tenancy.Tests/         tenant resolution, the SET LOCAL session variable, cache-key prefixing
+    ├── Nibras.BuildingBlocks.Authorization.Tests/   permission-version checks and data-scope evaluation
+    ├── Nibras.BuildingBlocks.Messaging.Tests/       outbox write, inbox deduplication, topology names, lane routing
+    ├── Nibras.BuildingBlocks.Caching.Tests/         tenant prefix on every key and tag, TTL jitter, tag invalidation, breaker fallback
+    ├── Nibras.BuildingBlocks.Persistence.Tests/     named filters, audit columns, keyset paging, binary COPY, command counter
+    ├── Nibras.BuildingBlocks.Web.Tests/             Problem Details, idempotency keys, ETag, filter and sort grammar
+    ├── Nibras.BuildingBlocks.Observability.Tests/   correlation id, tenant enrichment, the nibras_ metric prefix
+    ├── Nibras.BuildingBlocks.Localization.Tests/    Arabic normalization, Hijri conversion, numerals, invariant parsing across cultures
+    ├── Nibras.BuildingBlocks.Files.Tests/           tenant-prefixed paths composed with Path.Combine, signed-URL expiry
+    ├── Nibras.BuildingBlocks.Jobs.Tests/            progress, cancellation, the job store contract
+    └── Nibras.BuildingBlocks.Testing.Tests/         the fixtures themselves: two seeded tenants, fake clock, query-budget assertion
 ```
 
 Each block is one project with a `DependencyInjection.cs` exposing a single `AddNibras<Block>()` extension, a `README.md` that repeats its row from part 7, and a test project `tests/Nibras.BuildingBlocks.<Name>.Tests/` beside it. Appendix X runs the building-block tests on both the Linux and the Windows runner, because path composition, culture and line endings live here.
@@ -176,7 +190,7 @@ src/Contracts/                                   versioned integration events, c
 └── Nibras.Contracts.Ai/                         ai.usage.recorded, ai.index.rebuild-completed, ai.suggestion.rejected; ai.proto for Usage.Recount
 ```
 
-**Why every project carries a proto.** Reference architecture Section 8.0 names six services as synchronous callees — Platform, Identity, School, Scheduling, Academics and Hr — and adds that Platform's metering job calls "every data-owning service's `Usage.Recount`", so all twenty expose at least one gRPC service and all twenty contract projects carry `Grpc/<service>.proto`. Section 8.0's one-hop rule holds for every one of them: no service makes a synchronous call from inside a handler that is itself serving one, which the `GrpcHopRules` architecture test named there enforces. Ai is the exception that proves the boundary: it exposes `ai.proto` for metering but makes no gRPC call itself, reading instead through Bff.Web's three internal REST routes from its jobs.
+**Why every project carries a proto.** Reference architecture Section 8.0 names six services as synchronous callees — Platform, Identity, School, Scheduling, Academics and Hr — and adds that Platform's metering job calls "every data-owning service's `Usage.Recount`", so all twenty expose at least one gRPC service and all twenty contract projects carry `Grpc/<service>.proto`. Section 8.0's one-hop rule holds for every one of them: no service makes a synchronous call from inside a handler that is itself serving one, which the `GrpcHopRules` architecture test named there enforces; it lives in `tests/Architecture.Tests/Rules/` with every other rule, as TC-TST-740 and TC-TST-742 in 10.3. Ai is the exception that proves the boundary: it exposes `ai.proto` for metering but makes no gRPC call itself, reading instead through Bff.Web's three internal REST routes from its jobs.
 
 The inside of one contract project, shown for Attendance and, for the richer proto, for School because School is the most-called directory (reference architecture Section 8.0):
 
@@ -548,8 +562,9 @@ Suites that span services. Each service's own unit, integration and contract sui
 ```
 tests/                                          cross-service suites; every one of them runs in ci-service.yml for the service that changed
 ├── Architecture.Tests/                         NetArchTest rules for every project in Nibras.sln; the rules are listed in 10.3
-│   ├── Rules/                                  one class per rule group: Layers, BuildingBlocks, Contracts, Services, Handlers, Persistence, Hosts
+│   ├── Rules/                                  one class per rule group: Layers, BuildingBlocks, Contracts, Services, Handlers, Persistence, Hosts, Caching, Portability, and GrpcHopRules
 │   ├── Fixtures/                               loads every assembly from the solution, so a new service is covered without editing a test
+│   │   └── SyncDependencies.cs                 the callees reference architecture Section 8.0 gives each service, one row per service, read by TC-TST-742
 │   └── Nibras.Architecture.Tests.csproj        references every src project
 ├── Contracts.Tests/                            Pact and message schema tests
 │   ├── Consumers/                              consumer-driven contracts, one folder per consuming service and per publisher it depends on
@@ -632,9 +647,9 @@ Every entry point is one Node implementation with a `.ps1` and a `.sh` wrapper (
 
 ```
 tools/                                           kit and repository tooling; Node 22 or later is the only prerequisite beyond the product stack
-├── kit-lint/                                    the document lint, rules R01 to R19 (nineteen rules, counted in kit-lint.mjs)
+├── kit-lint/                                    the document lint; its rules are declared and counted in kit-lint.mjs, R01 to R35 on 2026-09-26
 │   ├── kit-lint.mjs                             the implementation
-│   ├── kit-lint.test.mjs                        its own tests, run by ci-kit.yml on both runners
+│   ├── kit-lint.test.mjs                        its own tests, run by ci-kit.yml on ubuntu-latest and windows-latest
 │   ├── hook-post-edit.mjs                       Claude Code hook after an edit, invoked as node with a relative path
 │   ├── hook-stop.mjs                            Claude Code hook at session end
 │   ├── kit-lint.ps1                             PowerShell wrapper
@@ -803,7 +818,7 @@ The reference architecture's rule, quoted: "Domain depends on nothing. Applicati
 
 ### 10.3 The architecture tests
 
-All in `tests/Architecture.Tests/Rules/`, written with NetArchTest against every assembly the fixture loads from `Nibras.sln`. Each rule is one test method named as below, carries its `TC-TST-1NN` identifier as the test-case attribute, and runs in every `ci-service.yml`. A new service is covered the moment its projects exist, because the fixture enumerates the solution rather than a list.
+All in `tests/Architecture.Tests/Rules/`, written with NetArchTest against every assembly the fixture loads from `Nibras.sln`. Each rule is one test method named as below, carries its test-case identifier as the test-case attribute, and runs in every `ci-service.yml`. The rules this document owns are TC-TST-101 to TC-TST-124 (except TC-TST-114) and TC-TST-740 to TC-TST-742; two rows carry an identifier another document owns and cite it with its owner: TC-TST-114 (the BFF Web sheet) and TC-PLAT-971 (document 20). A new service is covered the moment its projects exist, because the fixture enumerates the solution rather than a list.
 
 | Test case | Rule | What it asserts, in one sentence |
 |---|---|---|
@@ -831,8 +846,12 @@ All in `tests/Architecture.Tests/Rules/`, written with NetArchTest against every
 | TC-TST-122 | `Wellbeing_NeverReferences_Caching` | `Nibras.Wellbeing.Application` and `Nibras.Wellbeing.Infrastructure` do not reference `Nibras.BuildingBlocks.Caching`. |
 | TC-TST-123 | `Workers_DefineNoEndpoints` | No type in a `.Worker` or `.Projections` assembly maps an HTTP endpoint other than the probes from ServiceDefaults. |
 | TC-TST-124 | `EveryServiceHas_TheAnatomy` | For every service in Appendix L, the solution contains `.Domain`, `.Application`, `.Infrastructure`, `.Api`, the three test projects, and a `.Worker` or `.Projections` project exactly when Appendix L lists a worker image. |
+| TC-TST-740 | `GrpcHopRules.GrpcServices_MakeNoNestedCall` | No type in an `.Api` assembly that derives from a generated gRPC service base class references a generated gRPC client type, so a synchronous call is never made from inside a handler that is serving one (the one-hop rule of reference architecture Section 8.0). A call marked *job only* lives in `Jobs/`, which no gRPC service type references. |
+| TC-TST-741 | `Services_CacheOnlyThrough_CachingBlock` | No type in a `Nibras.<S>.*` assembly depends on `HybridCache`, `IDistributedCache` or `Microsoft.Extensions.Caching.StackExchangeRedis`, and only `.Infrastructure` assemblies depend on the `StackExchange.Redis` namespace, for the `redis-state` prefixes of document 21 Section 2.2; a service caches through `INibrasCache` alone (ADR-0006). |
+| TC-TST-742 | `GrpcHopRules.GrpcClients_MatchSection80` | For each service, the generated gRPC client types its `.Infrastructure` assembly references are exactly the callees that `Fixtures/SyncDependencies.cs` gives it, which is the Section 8.0 row plus the universal calls below that table; a client for any other service fails the rule. |
+| `TC-PLAT-971` (document 20) | `Paths_ComposedWithPathCombine` | A source scan over `src/**/*.cs` finds no string literal holding `/` or `\` that is concatenated or interpolated into a value passed to a `System.IO` `Path`, `File`, `Directory` or `FileStream` member; each hit fails the pipeline naming the file and line (REQ-PLAT-021, document 33 check G9; written by SL-PLAT-001). |
 
-Twenty-four rules. TC-TST-120 is a source scan and TC-TST-124 is a solution scan rather than a NetArchTest predicate; both live in the same project because they answer the same question, which is whether the repository has the shape this document says it has.
+Twenty-eight rules. TC-TST-120 and the path rule are source scans and TC-TST-124 is a solution scan rather than a NetArchTest predicate; all live in the same project because they answer the same question, which is whether the repository has the shape this document says it has. `GrpcHopRules` is the class reference architecture Section 8.0 names; it holds TC-TST-740 and TC-TST-742 and nothing else. `Fixtures/SyncDependencies.cs` is the one hand-kept list the rules read: the architecture-reviewer agent compares it with reference architecture Section 8.0 row by row at every change to either, in the same pull request. The path rule is the derived acceptance test of REQ-PLAT-021, so it carries document 20's identifier rather than a new one.
 
 ---
 
@@ -885,7 +904,7 @@ From Appendix X, enforced and not advised:
 | `* text=auto eol=lf`, `*.ps1 text eol=crlf`, binary patterns for images, fonts and archives | `.gitattributes` | Generated SQL and PDF baselines must be byte-identical on both runners |
 | `end_of_line = lf` for source | `.editorconfig` | Same reason |
 | `core.longpaths` enabled on Windows clones | the Windows setup script in `docs/dev-setup/windows.md` | Build outputs under `bin/` and `obj/` are not repository-relative and can exceed the old limit |
-| Paths composed with `Path.Combine`, never a literal separator | code review and `.claude/rules/portability.md` | A literal `\` breaks the Linux image, a literal `/` breaks nothing until it is concatenated |
+| Paths composed with `Path.Combine`, never a literal separator | the architecture-test source scan `Paths_ComposedWithPathCombine` in 10.3, which fails the pipeline naming the file (`TC-PLAT-971`, document 20, the acceptance test of REQ-PLAT-021); `.claude/rules/portability.md` and code review catch what the scan cannot see, such as a separator built at run time | A literal `\` breaks the Linux image, a literal `/` breaks nothing until it is concatenated |
 
 **What 200 characters means for this tree.** The longest project prefix in the repository is `src/Services/Communication/tests/Nibras.Communication.IntegrationTests`, which is 70 characters, 71 with the separator that follows it, leaving 129 for the folders and the file name inside the project. The budget this document sets so nobody has to count: at most three folder levels inside a project, folder names of at most 24 characters, file names of at most 50 characters. The worst case under that budget is 71 + 3 × 25 + 50 = 196, inside the limit even when every allowance is spent at once. The trees above stay far below it: the longest path in part 3 is `src/Services/Attendance/Nibras.Attendance.Infrastructure/Persistence/Partitioning/attendance_records_partitions.sql` at 115 characters, with two folder levels inside the project. R14 is the arbiter, and it enforces the same 200 characters that `.claude/rules/portability.md` states; the budget is the habit that keeps R14 quiet.
 
@@ -897,13 +916,15 @@ From Appendix X, enforced and not advised:
 
 | Requirement ID | What it means here | Acceptance criterion | Test case ID |
 |---|---|---|---|
-| REQ-DATA-001 | "Each data-owning service has its own database and schema, and no service ever reads another service's database" (03) — here, the tree that makes that structurally true | The `src/Services/` tree has exactly the twenty folders of Appendix L with the worker set Appendix L gives, and no project of one service references a project of another | TC-TST-124 |
+| REQ-DATA-001 | "Each data-owning service has its own database and schema, and no service ever reads another service's database" (03) — here, the tree that makes that structurally true | Document 03's line: the architecture tests scan every service's connection strings and migrations and find 0 references to another service's database or schema. The structure this document adds beneath it is TC-TST-113 (no service references another) and TC-TST-124 (the twenty folders and the worker set of Appendix L) | `TC-DATA-951` (document 20) |
+| REQ-PLAT-001 | "Development is supported on Windows 11 with PowerShell 7 or Git Bash, Ubuntu 22.04 and later, and macOS 14 and later" (03) — here, the runners that prove it | `dev-smoke.yml` runs the one-command start on `ubuntu-latest`, `windows-latest` and `macos-latest`, and `verify-setup` passes on each | `TC-PLAT-951` (document 20) |
 | REQ-PLAT-004 | "A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware" (03), the shape ADR-0016 decided | `deploy/onprem/` exists and the appliance build is a pipeline job | TC-PLAT-101 |
-| REQ-PLAT-022 | "Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invokes `node` with a relative path" (03), as ADR-0017 decided | Every entry point under `tools/` has both wrappers | `kit-lint` R15, TC-PLAT-102 |
-| REQ-PERF-019 | "All caching goes through `Nibras.BuildingBlocks.Caching` over `HybridCache`" (03), as ADR-0006 decided | No service references StackExchange.Redis directly; Wellbeing references no caching at all | TC-TST-109, TC-TST-122 |
-| REQ-TST-001 | "Every requirement has at least one acceptance test case written as Given, When, Then" (03) — here, every structural rule this document states is one named test | Every architecture rule in 10.3 is a test method carrying its `TC-TST-1NN` identifier, as ADR-0014 requires | TC-TST-101 to TC-TST-124 |
+| REQ-PLAT-021 | "Paths are composed with `Path.Combine`, never with a literal separator" (03) | The source scan `Paths_ComposedWithPathCombine` in 10.3 fails the pipeline naming the file | `TC-PLAT-971` (document 20) |
+| REQ-PLAT-022 | "Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invokes `node` with a relative path" (03), as ADR-0017 decided | Every entry point under `tools/` has both wrappers; `kit-lint` R15 fails on a missing one in the kit itself | `TC-PLAT-102` (document 33) |
+| REQ-PERF-019 | "All caching goes through `Nibras.BuildingBlocks.Caching` over `HybridCache`" (03), as ADR-0006 decided | Document 03's line: tenant B never reads tenant A's entry for the same logical key. The structure this document adds beneath it: no service caches except through `INibrasCache` (TC-TST-741), and Wellbeing references no caching at all (TC-TST-122) | `TC-PERF-969` (document 20) |
+| REQ-TST-001 | "Every requirement has at least one acceptance test case written as Given, When, Then" (03) — here, every structural rule this document states is one named test | Every architecture rule in 10.3 is a test method carrying its test-case identifier, as ADR-0014 requires | `TC-TST-951` (document 20) |
 
-TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the table above. TC-PLAT-102 is the wrapper smoke test in `ci-kit.yml`, which runs every tool entry point through both its wrappers, and is defined in document 33 under "How this document is verified". Document 03 and document 20 carry both identifiers against REQ-PLAT-004 and REQ-PLAT-022; they cite them and do not define them.
+The Test case ID column uses the identifier document 20 assigns to each requirement, so the two documents cannot disagree. TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the table above. TC-PLAT-102 is the wrapper smoke test in `ci-kit.yml`, which runs every tool entry point through both its wrappers, and is defined in document 33 under "How this document is verified". The 950-range identifiers are document 20's derived acceptance tests, each specified by its requirement's Given, When, Then line in document 03; the slice that builds the requirement writes the test under that identifier.
 
 ## Decisions in force
 
@@ -911,7 +932,7 @@ TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the ta
 |---|---|---|---|
 | Twenty services, seven worker images, and the first-release merge as a build-time choice | ADR-0002 | as decided | The `src/Services/` tree and the template's `--worker` list change |
 | Tooling is Node with dual wrappers | ADR-0017 | as decided | The `tools/` tree loses its wrapper entries and Windows developers lose the commands |
-| HybridCache through the Caching block only | ADR-0006 | as decided | The Caching block's surface and rule TC-TST-109 change |
+| HybridCache through the Caching block only | ADR-0006 | as decided | The Caching block's surface and rule TC-TST-741 change |
 | Rollback means the previous image, migrations as bundles | ADR-0010 | as decided | `tools/scripts/migrate-bundle.mjs` and `migrate.yml` change |
 | Linux servers, appliance for Windows hosts | ADR-0016 | as decided | `deploy/onprem/` disappears and a Windows Server target appears, which Appendix X excludes |
 | Domain references its own contract project for error-code constants | this document; an ADR to be numbered when written (ADR-0019 and ADR-0020, first proposed here, now record other decisions) | in force as written | Error codes would be defined twice, in Domain and in Contracts, and drift |
@@ -925,13 +946,13 @@ TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the ta
 |---|---|---|
 | The service names, areas, databases, exchanges and images | Appendix L | 2026-09-20 |
 | The anatomy of a service and the building-block list | Reference architecture Sections 2 and 3 | 2026-09-20 |
-| Which services expose gRPC, which call which, the one-hop rule and Ai's route through Bff.Web | Reference architecture Section 8.0 (v9.1) | 2026-09-22 |
+| Which services expose gRPC, which call which, the one-hop rule and Ai's route through Bff.Web | Reference architecture Section 8.0 (v9.1, under ADR-0019, Accepted) | 2026-09-26 |
 | The naming table | Reference architecture Section 7 | 2026-09-20 |
 | The CI tree and the secrets tree | Reference architecture Sections 11 and 12 | 2026-09-20 |
 | The support matrix and hygiene rules | Appendix X | 2026-09-20 |
 | The building-block boundary rule and the EF Core rules | Master brief Section 19 | 2026-09-20 |
 | The Attendance events, permissions and error codes used in part 3 | Appendices E, B and K | 2026-09-20 |
-| The service catalog's tier, database and worker columns agree with part 2 | `05-service-catalog.md` | on every `/lint-plan` run |
+| The service catalog's tier, database and worker columns agree with part 2 | `05-service-catalog.md` | 2026-09-26; then by `plan-consistency-checker` at every change to 05 or part 2 (How this document is verified) |
 
 ## Open points
 
@@ -944,14 +965,22 @@ TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the ta
 
 ## How this document is verified
 
-- **Architecture tests.** The twenty-four rules in 10.3 are test methods in `tests/Architecture.Tests/`, each carrying its `TC-TST-1NN` identifier, run in every `ci-service.yml`. TC-TST-124 in particular fails if `src/Services/` ever disagrees with Appendix L, and TC-TST-108 fails the day a building block reaches into a domain.
-- **The kit lint.** `node tools/kit-lint/kit-lint.mjs .` checks that every tree in this document has a purpose comment on every entry (R18), that every `Section` and `Appendix` reference resolves (R01, R02), that no placeholder marker exists (R05), that no two paths in the repository differ only by case (R13), that no path exceeds 200 characters (R14), that every tool under `tools/` ships both wrappers (R15), and that every identifier this document cites exists in the catalog that owns it (R19). The document is finished only when the lint reports nothing against it.
-- **The template.** `tools/templates/service/template.test.mjs`, run by `ci-kit.yml` on `ubuntu-latest` and `windows-latest`, generates a sample service with `dotnet new nibrassvc`, builds it with warnings as errors, and runs its three generated tests. If the template and this document drift, that job is where it shows.
-- **Cross-document consistency.** `/lint-plan` checks that every service in `05-service-catalog.md` has the folder, worker and contract project this document gives it, and that every routing key named in part 2.3 and part 3 exists in Appendix E.
-- **Review.** The architecture-reviewer agent reads parts 7 and 10 against master brief Section 19 and reference architecture Sections 2 and 3, and the portability-reviewer agent reads parts 6 and 12 against Appendix X, before Group B is scored.
+| Claim | Proof |
+|---|---|
+| The repository has the shape this document gives it, and every dependency rule in 10.2 holds | Product artefact: the twenty-eight rules in 10.3 are test methods in `tests/Architecture.Tests/`, each carrying its test-case identifier, run in every `ci-service.yml`. SL-TST-003 builds the project and its rule pack, SL-TST-001 puts it in the pipeline, and SL-PLAT-001 adds the path rule. TC-TST-124 fails if `src/Services/` ever disagrees with Appendix L, TC-TST-108 fails the day a building block reaches into a domain, and TC-TST-740 fails on a nested gRPC call |
+| Every tree entry has a purpose comment, every `Section` and `Appendix` reference resolves, and no placeholder remains | `kit-lint` rules R18, R01 and R02, and R05 |
+| No two paths differ only by case, no path exceeds 200 characters, and every tool entry point has both wrappers | `kit-lint` rules R13, R14 and R15, over the kit repository as it stands; the product repository runs the same checks in its own pipeline (SL-PLAT-001) |
+| Every requirement, workflow, rule, event and permission identifier this document cites exists in its catalog | `kit-lint` rule R19, which reads backticked versioned routing keys, `REQ-`, `WF-` and `BR-` identifiers, error codes and permissions outside fences. The routing-key families in the part 2.3 tree and the event names in the part 3 tree are neither backticked nor versioned, so R19 does not read them; the `messaging-reviewer` agent compares them with Appendix E, at the Group B review and on every change to part 2.3, part 3 or Appendix E |
+| Every test-case identifier here is defined once, and every cited one is defined somewhere | `kit-lint` rule R20 |
+| The service template generates what part 9 says | Product artefact: `tools/templates/service/template.test.mjs`, run by `ci-kit.yml` on `ubuntu-latest` and `windows-latest`, generates a sample service with `dotnet new nibrassvc`, builds it with warnings as errors, and runs its three generated tests. If the template and this document drift, that job is where it shows |
+| Every service in `05-service-catalog.md` has the folder, worker and contract project part 2 gives it | Review step: `plan-consistency-checker` compares each row of document 05's catalog with the part 2.3 and part 2.4 trees (folder, worker project, contract project), at the Group B review and on every change to 05, Appendix L or part 2. No kit-lint rule reads trees against the catalog (ADR-0021 lists tree anatomy among the checks left to review) |
+| The dependency rules and block surfaces agree with master brief Section 19 and reference architecture Sections 2, 3 and 8.0 | Review step: the `architecture-reviewer` agent reads parts 7 and 10 and `Fixtures/SyncDependencies.cs` against those sections, at the Group B review and on every change to part 7, part 10 or the reference architecture |
+| The tools, path and case rules agree with Appendix X | Review step: the `portability-reviewer` agent reads parts 6 and 12 against Appendix X, at the Group B review and on every change to part 6, part 12 or Appendix X |
 
 ## Review record
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
 | 2026-09-20 | planning session (self-check against the kit lint) | ready for Group B review | none |
+| 2026-09-25 | Group B scorecard, round 2 (`tools/plan-build/parts/score-B.md`) | blocked on consistency and testability | Requirements covered used test ids document 20 does not; no test for the caching claim; `GrpcHopRules` missing from 10.3; `/lint-plan` claims no rule backs; stale kit-lint range; no macOS runner; REQ-PLAT-021 enforced only by review |
+| 2026-09-26 | planning session, round-3 remediation (self-check against the kit lint) | each blocking item above answered in this document; awaiting the Group B re-score | none in this document; the location of `GrpcHopRules` in document 22 and the wording of SL-TST-003 are for their owners |

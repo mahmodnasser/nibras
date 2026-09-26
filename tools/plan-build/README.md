@@ -11,6 +11,7 @@ The scripts that generated and validate the plan documents that are not written 
 | `build-30.cjs` | `docs/plan/30-plan-scorecard.md` from the six group scorecards in `parts/score-<group>.md` | `node tools/plan-build/build-30.cjs` |
 | `schedule-34.mjs` | The phase ranges and MVP figure in document 17 Section 1, from document 34 slice-days and the Section 29 team | `node tools/plan-build/schedule-34.mjs` |
 | `gen-tc-registry.mjs` | `docs/plan/16-annex-test-case-registry.md`: every test case, its one owner, what it proves, who cites it (ADR-0020) | `node tools/plan-build/gen-tc-registry.mjs` |
+| `rescore-workflow.js` | The reviewer workflow of a scorecard round (Workflow tool script), writing `parts/score-<group>.md` | run through the Workflow tool |
 | `tc-worklist.mjs` | Per-document work lists for kit-lint R20 findings, in `parts/tc-work/` | `node tools/plan-build/tc-worklist.mjs --write` |
 | `gen-20.mjs` | `docs/plan/20-traceability-matrix.md` from 03, 17, 31, 34 and the sheets | `node tools/plan-build/gen-20.mjs`, once document 34 is complete |
 

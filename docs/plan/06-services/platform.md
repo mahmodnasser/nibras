@@ -2,7 +2,7 @@
 
 > Service sheet, plan document 06. Group C. It refines reference architecture Section 8.4 and the Platform row of `05-service-catalog.md`; names come from Appendix L, permissions from Appendix B, events from Appendix E, error codes from Appendix K, workflows from Appendix R and rules from Appendix S. The Integrations capability is specified in `23-integrations-and-public-api.md`, which this sheet cites rather than restates. Where this sheet adds something the brief does not state, the addition is listed under Decisions in force or Open points.
 
-**Group** C · **Requirement areas covered** PLT (all 39 rows), INT (the Platform rows), and the Platform rows of PRV, PERF, DATA, MSG and MOB · **Last updated** 2026-09-21 by the platform plan
+**Group** C · **Requirement areas covered** PLT (all 39 rows), INT (the Platform rows), and the Platform rows of PRV, PERF, DATA, MSG and MOB · **Last updated** 2026-09-26 by the round-3 remediation (section numbering, saga diagrams, platform notes, signature features, risk scale, Open Questions 28 and 30)
 
 Platform is the SaaS operator's service and the tenant's configuration service. On the operator side it owns tenants from signup to certified deletion, the region each tenant is pinned to, its isolation tier, its domains, the plans and subscriptions it pays for, the usage it consumes, the invoices the platform sends it, the support desk, announcements, release notes and the console that shows every saga, job and failed message. On the tenant side it owns every setting of Appendix G, terminology, custom-field definitions, feature flags and modules, branding and white-label, legal document acceptance, retention overrides, legal holds, subject access requests and the whole Integrations capability: tenant API key policy, outgoing webhooks, OneRoster, LTI, provider configuration for the plug-in kit and the developer portal with its sandbox tenants. Every other service reads Platform's answers through cached entries, a small gRPC surface and the `platform.*` broadcasts; none of them writes to it.
 
@@ -15,17 +15,19 @@ Platform is the SaaS operator's service and the tenant's configuration service. 
 | Exchange | `nibras.platform` | Appendix L |
 | Images | `nibras/platform-api` | Appendix L |
 | Worker | none. Quartz.NET jobs and the webhook dispatcher run in the Api host (`23-integrations-and-public-api.md` §4.1, open point 4 there) | Appendix L |
-| Build phase | 1; the Integrations capability arrives by phase: public API and iCal 3, OneRoster and LTI 4 (master brief Section 35) | `05-service-catalog.md`, master brief Section 28 |
+| Build phase | 1; the Integrations capability arrives by phase: the public API, the iCal subscription URLs and OneRoster in 3 (CAP-INT-01, SL-INT-404 to SL-INT-410), LTI 1.3 in 4 (CAP-INT-02, SL-INT-411); the iCal feeds themselves are Scheduling's, phase 2. Whether the public API, OneRoster and iCal move into Tier 1 is Open Question 28, still open: the default in force is the phases above as Tier 2, RISK-42 (open point 10) | `05-service-catalog.md`, `17-roadmap.md` §4, `34-work-breakdown.md` |
 | Service level class | Gateway class: 99.9% monthly availability | Reference architecture Section 8.0, master brief Section 31 |
 | Sensitivity | Confidential; webhook signing secrets and provider keys encrypted per deployment | `05-service-catalog.md`, `10-data-architecture.md` §1 |
 | Synchronous dependencies | Identity `ApiKeyAdministration` and `PermissionLookup.GetRoleRisk`; School's student and staff directory for OneRoster; from jobs only, every service's `Usage.Recount` (section 6) | Reference architecture Section 8.0 |
-| Local copies | Usage counters from every service; OneRoster roster copies for tenants that enable OneRoster (phase 4) | Reference architecture Section 8.0, section 9 |
+| Local copies | Usage counters from every service; OneRoster roster copies for tenants that enable OneRoster (phase 3, SL-INT-407) | Reference architecture Section 8.0, section 9 |
 | Scaling profile | Low traffic, read-heavy and cached everywhere; administrative rather than transactional load; bursts on usage events and webhook fan-out | `05-service-catalog.md` |
 | Why the boundary exists | Team: the platform operator's console and the commercial model change independently of any school-facing feature | `05-service-catalog.md` |
 
+**Signature features.** Platform owns Appendix W features 10 (configurable without code), 15 (sales-ready demo mode with one-click reset), 16 (white-label mobile apps), 24 (open by default: API, webhooks, iCal, standards), 29 (smart defaults engine at onboarding), 37 (template exchange between schools), 38 (plug-in kit for regional integrations), 40 (self-healing operations) and 41 (configuration as code). Row 39, calendar-aware scaling, is also Platform's but is no longer a signature feature (ADR-0019); it is built as an engineering capability. Each feature's rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
 ---
 
-## 2. Responsibilities
+## 1. Responsibilities
 
 | Platform owns | Detail |
 |---|---|
@@ -48,7 +50,9 @@ Platform is the SaaS operator's service and the tenant's configuration service. 
 | Integrations capability | Tenant API key console and policy (secrets stay in Identity), webhooks end to end, OneRoster 1.2 provider, LTI 1.3 platform, provider configuration for the plug-in kit, developer portal data and sandbox tenants (`23-integrations-and-public-api.md`) |
 | Localization rules assigned here | BR-L10N-001, BR-L10N-002 and BR-L10N-006 per `31-business-rules-and-workflows.md` §2 |
 
-### Not responsible for
+---
+
+## 2. Not responsible for
 
 | Platform does not own | Owner | How Platform relates to it |
 |---|---|---|
@@ -154,7 +158,7 @@ Invariants: an upgrade applies at once and prorates by day; a downgrade applies 
 |---|---|---|---|---|
 | TenantInvoice | `number` | text | no | Gapless per seller country series |
 | TenantInvoice | `period_start`, `period_end`, `issued_on`, `due_on` | date | no | |
-| TenantInvoice | `active_student_count` | numeric(10,2) | no | BR-FIN-017: enrolled on the billing date, prorated by day from enrolment, counted for the month of leaving |
+| TenantInvoice | `active_student_count` | numeric(10,2) | no | REQ-PLT-009 and master brief Section 36: enrolled on the billing date, prorated by day from enrolment, counted for the month of leaving. This is the default in force of Open Question 30, which is still open; BR-FIN-017 (any student enrolled for at least one day of the month, no proration) and SL-PLT-010, which cites it, conflict with it until the question is decided (open point 9, RISK-52) |
 | TenantInvoice | `subtotal`, `tax`, `total`, `currency` | numeric(18,4), char(3) | no | Tax follows the seller's country (master brief Section 36) |
 | TenantInvoice | `status` | text enum `issued`, `partially-paid`, `paid`, `waived`, `void` | no | |
 | TenantInvoiceLine | `invoice_id`, `kind` (`plan`, `add-on`, `overage`, `coupon`, `proration`), `quantity`, `unit_amount`, `amount` | | no | |
@@ -227,7 +231,7 @@ Invariants: a legal hold on a tenant blocks Saga 2 at `DeletionScheduled`; a sub
 | ApiKeyUsage | `key_id`, `day`, `calls` | | no | Per-key metering from `api-calls` usage; deleted a year after revocation (`10-data-architecture.md` §8) |
 | ProviderConfiguration | `kind` (`payment`, `sms`, `e-invoicing`, `ministry-export`, `push`, `device`), `plugin_id`, `plugin_version`, `configuration_encrypted`, `status` | | no | Selection and configuration of a certified plug-in (document 23 §8) |
 | LtiTool | `name`, `client_id`, `launch_url`, `login_initiation_url`, `jwks_url`, `deep_linking_url`, `privacy` (`anonymous`, `name`, `name-and-email`), `placements` jsonb, `status` | | urls yes | Launch URL passes the same address guard as webhooks (TC-SEC-124) |
-| OneRosterSettings | `enabled`, `client_key_ids` uuid[], `include_guardians`, `last_export_job_id` | | job yes | Phase 4 |
+| OneRosterSettings | `enabled`, `client_key_ids` uuid[], `include_guardians`, `last_export_job_id` | | job yes | Phase 3 (SL-INT-407 to SL-INT-410) |
 
 Invariants: a webhook URL is https, a public DNS name, port 443 or 8443, at most 2,048 characters, with no credentials and no personal data in the query (document 23 §4.2); an endpoint receives no event before its challenge passes; a subscription names only eligible keys and requires the owner to hold the mapped `view` permission with a matching scope; one rotation per endpoint at a time (`PLATFORM_CONCURRENCY_CONFLICT`); a delivery keeps its delivery id across retries and replays; a sandbox tenant's keys are `test` keys and its providers are fakes.
 
@@ -532,7 +536,7 @@ Conventions from `22-api-conventions-and-error-catalog.md` §1 to §8. Routes wh
 | POST | `/api/v1/platform/webhook-endpoints/{endpointId}/replays` | `platform.integrations.replay-webhook` | since, outcomes (`exhausted`, `skipped`), reason | 202 job | same | `Idempotency-Key` required |
 | POST | `/api/v1/platform/webhook-endpoints/{endpointId}/test-events` | `platform.integrations.edit` | routing key | one synthetic delivery marked `test` | none | no |
 | GET | `/api/v1/platform/oneroster/settings` | `platform.integrations.view` | none | enablement, keys allowed, guardians included | none | safe |
-| PATCH | `/api/v1/platform/oneroster/settings` | `platform.integrations.edit` | changes | settings; enabling starts the copy build | `PLATFORM_FEATURE_DISABLED` before phase 4 | `If-Match` |
+| PATCH | `/api/v1/platform/oneroster/settings` | `platform.integrations.edit` | changes | settings; enabling starts the copy build | `PLATFORM_FEATURE_DISABLED` before phase 3 | `If-Match` |
 | POST | `/api/v1/platform/oneroster/exports` | `platform.integrations.create` | academic session | 202 job producing the OneRoster CSV binding zip with `manifest.csv` | `PLATFORM_FEATURE_DISABLED` | `Idempotency-Key` required |
 | GET | `/api/v1/platform/oneroster/ims/oneroster/rostering/v1p2/{collection}` | a tenant key token with the mapped `school.*.view` scope | OneRoster filter, sort, `limit`, `offset` | OneRoster 1.2 JSON for `orgs`, `schools`, `academicSessions`, `terms`, `courses`, `classes`, `users`, `students`, `teachers`, `enrollments` (document 23 §6.2) | `PLATFORM_PERMISSION_DENIED` | safe |
 | GET | `/api/v1/platform/oneroster/ims/oneroster/rostering/v1p2/{collection}/{sourcedId}` | same | none | one OneRoster resource | `PLATFORM_NOT_FOUND` | safe |
@@ -580,7 +584,7 @@ Package `nibras.platform.v1` in `Nibras.Contracts.Platform/Grpc/platform.proto`,
 | Identity `ApiKeyAdministration.*` | Tenant key lifecycle; the secret material stays in Identity (document 23 §2.2) | 2 s, create 5 s | None; the console shows the error |
 | Identity `PermissionLookup.GetRoleRisk` | Validate Joining default roles (BR-IDN-006) | 2 s | Refuse the setting change |
 | Every data-owning service `Usage/Recount` | Monthly re-sum of usage facts (`10-data-architecture.md` §6, BR-PLT-005) | 30 s | Retry next day; mismatch reported, never auto-corrected without the recount |
-| School `nibras.school.v1` student and staff directory | OneRoster copies: names and numbers that events do not carry (phase 4) | 5 s per page | The copy row stays pending; the OneRoster response omits it until filled |
+| School `nibras.school.v1` student and staff directory | OneRoster copies: names and numbers that events do not carry (phase 3) | 5 s per page | The copy row stays pending; the OneRoster response omits it until filled |
 
 None of these calls is made from inside a Platform gRPC handler, so the one-hop rule holds.
 
@@ -650,13 +654,99 @@ Platform orchestrates three of the ten sagas and owns seven workflows.
 | WF-PLT-01 Tenant signup to live | Saga 1 | `TenantSignupToLiveStatus`; saga `TenantProvisioningState` | `Application/Features/TenantSignupToLive/`, `Application/Sagas/TenantProvisioningSaga/` | TC-PLT-001 to TC-PLT-006, `TenantProvisioningSagaTests` |
 | WF-PLT-02 Trial conversion and plan change | Single, starts Saga 10 on a tier change | `TrialConversionAndPlanChangeStatus` | `Application/Features/TrialConversionAndPlanChange/` | TC-PLT-011 to TC-PLT-016 |
 | WF-PLT-03 Suspension, export, and deletion | Saga 2 | `SuspensionExportAndDeletionStatus`; saga `TenantDeletionState` | `Application/Features/SuspensionExportAndDeletion/`, `Application/Sagas/TenantDeletionSaga/` | TC-PLT-021 to TC-PLT-026, `TenantDeletionSagaTests` |
-| Tier migration (no WF identifier) | Saga 10 | `TierMigrationState` | `Application/Sagas/TierMigrationSaga/` | `TierMigrationSagaTests`; `TC-DATA-010` |
+| Tier migration (no WF identifier) | Saga 10 | `TierMigrationState` | `Application/Sagas/TierMigrationSaga/` | `TierMigrationSagaTests`; `TC-DATA-010` (document 10); `TC-DATA-780` to `TC-DATA-788` (document 13) |
 | WF-PRV-01 Data subject access request | Single, fan-out query | `DataSubjectAccessRequestStatus` | `Application/Features/DataSubjectAccessRequest/` | TC-PRV-001 to TC-PRV-006 |
 | WF-INF-01 On-premises upgrade with rollback | Single | `OnPremisesUpgradeWithRollbackStatus` | `Application/Features/OnPremisesUpgradeWithRollback/` | TC-INF-001 to TC-INF-006 |
 | WF-INF-02 Release rollout with canary and rollback | Single | `ReleaseRolloutWithCanaryAndRollbackStatus` | `Application/Features/ReleaseRolloutWithCanaryAndRollback/` | TC-INF-011 to TC-INF-016 |
 | WF-INF-03 Restore and failover drill | Single | `RestoreAndFailoverDrillStatus` | `Application/Features/RestoreAndFailoverDrill/` | TC-INF-021 to TC-INF-026 |
 
 The saga designs, steps, compensations, timeouts, persisted state, idempotency per step and process-monitor views are `13-workflows-and-sagas.md` Saga 1, Saga 2 and Saga 10 and are binding; saga enums live in `Nibras.Platform.Domain.Tenants` and handlers in `Nibras.Platform.Application/Sagas/`. Platform also takes part in Saga 6 as the effect owner of `OpenSubjectRequest`.
+
+The three state machines Platform orchestrates follow, copied from `13-workflows-and-sagas.md` §3 as they stand on 2026-09-26 so the saga can be built from this sheet. Document 13 is binding: a difference between a diagram here and its twin there is a defect in this sheet, and each state is a member of the saga's state enum.
+
+**Saga 1. Tenant provisioning (WF-PLT-01), `TenantProvisioningState`**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: signup validated
+    Requested --> Provisioning: fan-out sent to every service
+    Provisioning --> SchemasReady: every service replied TenantProvisioned
+    Provisioning --> TimedOut: a service missed 60 s
+    TimedOut --> Provisioning: retry, attempts under 3
+    TimedOut --> Compensating: attempts exhausted
+    SchemasReady --> OwnerInvited: identity.user.invited.v1
+    SchemasReady --> Compensating: Identity refused
+    OwnerInvited --> YearOpened: school.academic-year.opened.v1
+    OwnerInvited --> Compensating: School refused
+    YearOpened --> BrandingApplied: Documents replied
+    YearOpened --> Compensating: Documents refused
+    BrandingApplied --> ProjectionsReady: reporting.projection.rebuild-completed.v1
+    BrandingApplied --> Compensating: Reporting refused
+    ProjectionsReady --> Provisioned: platform.tenant.provisioned.v1
+    Provisioned --> WelcomeSent: notification requested
+    WelcomeSent --> Onboarding: wizard opened
+    Onboarding --> Live: minimum setup complete
+    Compensating --> Compensated: every reverse step acknowledged
+    Compensating --> Stuck: a reverse step failed 3 times
+    Stuck --> Compensating: operator retries
+    Live --> [*]
+    Compensated --> [*]
+```
+
+**Saga 2. Tenant deletion (WF-PLT-03), `TenantDeletionState`**
+
+```mermaid
+stateDiagram-v2
+    [*] --> ReadOnly: read-only confirmed
+    ReadOnly --> ExportRequested: archive requested
+    ExportRequested --> ExportReady: documents.export.completed.v1
+    ExportRequested --> ExportFailed: a service produced no part
+    ExportFailed --> ExportRequested: retried
+    ExportReady --> DeletionScheduled: owner signs
+    ExportReady --> ReadOnly: link expired unsigned
+    DeletionScheduled --> CoolingOff: countdown started
+    CoolingOff --> ReadOnly: owner cancels inside the window
+    CoolingOff --> AccessRevoked: window passed, Identity replied
+    AccessRevoked --> Deleting: DeleteTenantData sent in order
+    Deleting --> Deleting: a service confirmed
+    Deleting --> Stuck: a service unconfirmed after 24 h
+    Stuck --> Deleting: operator retries or fixes the service
+    Deleting --> FilesDeleted: every service confirmed
+    FilesDeleted --> AuditDetached: audit.retention.partition-detached.v1
+    AuditDetached --> Certified: documents.document.generated.v1
+    Certified --> Deleted: platform.tenant.deleted.v1
+    Deleted --> [*]
+```
+
+**Saga 10. Tier migration (entered from WF-PLT-02), `TierMigrationState`**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: plan change applied with a tier change
+    Requested --> TargetsProvisioned: every service replied DedicatedDatabaseReady
+    Requested --> Compensating: a service could not provision
+    TargetsProvisioned --> InitialCopied: every TenantRowsCopied initial
+    TargetsProvisioned --> Compensating: copy failed 3 times
+    InitialCopied --> DeltaCopied: every TenantRowsCopied delta
+    DeltaCopied --> Frozen: platform.tenant.suspended.v1
+    Frozen --> Reconciled: every TenantCopyReconciled match
+    Frozen --> Mismatched: a service reported a difference
+    Frozen --> WindowExceeded: 5 min passed
+    Mismatched --> Compensating: source reactivated first
+    WindowExceeded --> Compensating: source reactivated first
+    Reconciled --> Switched: platform.settings.changed.v1
+    Switched --> Unfrozen: platform.tenant.reactivated.v1
+    Unfrozen --> CoolingOff: source rows retained
+    CoolingOff --> Switched: operator switches back inside the window
+    CoolingOff --> Purged: cooling-off ended, every SourceRowsPurged
+    Compensating --> Compensated: dedicated copies dropped, tenant on the source
+    Compensating --> Stuck: a drop failed
+    Stuck --> Compensating: operator retries
+    Purged --> [*]
+    Compensated --> [*]
+```
+
+Saga 10's read-only window is under 5 minutes, the number `10-data-architecture.md` owns (REQ-DATA-027, `TC-DATA-010`), and the source rows are purged only when the cooling-off period has ended; no operator action purges early. The non-saga workflows of the table (WF-PLT-02, WF-PRV-01, WF-INF-01 to WF-INF-03) keep their state diagrams in Appendix R, which R29 checks.
 
 ---
 
@@ -665,7 +755,7 @@ The saga designs, steps, compensations, timeouts, persisted state, idempotency p
 | Copy | Source events | Fields kept | Reconciliation |
 |---|---|---|---|
 | Usage facts (`usage_records`) | `<service>.usage.recorded.v1` | `meter`, `quantity`, `unit`, `period_start`, `period_end`, `source_service` | Monthly `UsageRecountJob` against each service's `Usage/Recount` (BR-PLT-005) |
-| `ref_oneroster_student`, `ref_oneroster_staff`, `ref_oneroster_class`, `ref_oneroster_enrollment`, `ref_oneroster_session` (phase 4, tenants with OneRoster on) | the OneRoster row of section 7.2 | Identifiers, names in both languages, student and employee numbers, section, campus, grade level, term, status, `source_version`; never date of birth or any demographic (document 23 §6.2) | Nightly against School's directory checksums; enabled tenants only |
+| `ref_oneroster_student`, `ref_oneroster_staff`, `ref_oneroster_class`, `ref_oneroster_enrollment`, `ref_oneroster_session` (phase 3, tenants with OneRoster on) | the OneRoster row of section 7.2 | Identifiers, names in both languages, student and employee numbers, section, campus, grade level, term, status, `source_version`; never date of birth or any demographic (document 23 §6.2) | Nightly against School's directory checksums; enabled tenants only |
 
 A copy is never the basis of a decision the owning service should make: Platform uses the OneRoster copies only to answer OneRoster requests and the LTI roster, never to decide enrolment.
 
@@ -678,7 +768,7 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 | Job | Schedule | What it does | Publishes | Progress |
 |---|---|---|---|---|
 | `PlanLimitAndTrialCheckJob` | daily 06:00 per tenant time zone (Appendix E jobs table) | Evaluates every `LimitState` against the plan (BR-PLT-001); trial reminders at 14, 7 and 1 days; moves an ended trial to read-only (WF-PLT-02 `Trialing` to `Expired`) | `platform.limit.approaching.v1`, `platform.trial.ending.v1`, `platform.tenant.suspended.v1` | none |
-| `TenantBillingRunJob` | daily 02:00 per tenant time zone, acts on each tenant's billing date | Counts active students from the headcount facts (BR-FIN-017), prorates, applies coupons, issues the invoice | `platform.invoice.due.v1` | job resource per run |
+| `TenantBillingRunJob` | daily 02:00 per tenant time zone, acts on each tenant's billing date | Counts active students from the headcount facts by REQ-PLT-009 (the Open Question 30 default; BR-FIN-017 conflicts until decided, open point 9), prorates, applies coupons, issues the invoice | `platform.invoice.due.v1` | job resource per run |
 | `DunningJob` | daily 07:00 per tenant time zone | Reminders at 7, 14 and 30 days past due; at 30 days suspends for non-payment into read-only | `platform.invoice.due.v1`, `platform.tenant.suspended.v1` | none |
 | `UsageAggregationJob` | daily 00:30 per tenant time zone | Rolls daily facts into `usage_monthly`: maximum for headcount meters, sum for event meters | none | none |
 | `UsageRecountJob` | monthly, second day, 03:00 UTC | Calls each service's `Usage/Recount` and supersedes differing facts with an audit entry (T-PLT-07) | `platform.audit.recorded.v1` | job resource: services done of total |
@@ -696,7 +786,7 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 | `DomainVerificationJob` | every 5 minutes | Checks DNS TXT records and certificate status for pending custom domains | none | none |
 | `MaintenanceWindowJob` | every minute | Activates and ends maintenance windows at their boundaries; evicts the maintenance entries | none | none |
 | `FailedMessageIndexJob` | every minute | Refreshes `FailedMessageIndex` from every `.parking` queue through the `nibras-console` broker user | none | none |
-| `FailedMessageAutoReplayJob` | every 5 minutes | Replays parked messages classified transient whose target dependency is healthy again (REQ-PLT-037); each message at most three automatic replays | `ReplayParkedMessages` commands | none |
+| `FailedMessageAutoReplayJob` | every 5 minutes | Replays parked messages classified transient whose target dependency is healthy again (REQ-PLT-037), inside the written replay policy of `11-messaging-architecture.md` section 4.4: never a permanent failure or a `.dlq` crash loop, each message at most three automatic replays, and never a message on any parent-facing queue listed in document 11 section 4.5 (every `notification-worker` queue, every `notification.events` queue, `notification.commands`, and any queue whose handler sends `RequestNotification`), which stays a console decision with a recorded reason. Each replay goes through the same `ReplayParkedMessages` command as a console replay, with the policy recorded as the actor and "transient cause cleared" as the reason (`TC-PLT-122`) | `ReplayParkedMessages` commands | none |
 | `SagaDeadlineJob` | every minute | Alerts on sagas beyond their deadline and on `Stuck` sagas (`13-workflows-and-sagas.md` §2) | `platform.audit.recorded.v1` with `action = saga.stuck`, `RequestNotification` to the operator group | none |
 | `DeletionCoolingOffReminderJob` | daily 09:00 per tenant time zone | Daily reminder to the owner through the 30-day cooling-off, with the cancel path and the export link | `RequestNotification` | none |
 | `OneRosterReconciliationJob` | nightly 01:45 per tenant time zone, OneRoster tenants only | Checksums the roster copies against School and repairs by snapshot | none; mismatches recorded in `platform.audit.recorded.v1` | job resource |
@@ -874,7 +964,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   ├── TenantInvoice.cs                                aggregate root: immutable once issued; waiver or credit line corrects
 │   │   ├── TenantInvoiceLine.cs                            plan, add-on, overage, coupon, proration line
 │   │   ├── TenantPayment.cs                                manual or gateway payment keyed by idempotency key
-│   │   ├── ActiveStudentCount.cs                           domain service: BR-FIN-017 counting on the billing date
+│   │   ├── ActiveStudentCount.cs                           domain service: REQ-PLT-009 counting on the billing date, prorated (Open Question 30 default)
 │   │   └── DunningLadder.cs                                value object: 7, 14 and 30 days, read-only at 30
 │   ├── Metering/                                           aggregates UsageRecord and LimitState
 │   │   ├── UsageRecord.cs                                  immutable daily fact, superseded never updated
@@ -945,7 +1035,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │       ├── ArabicNormalizationRule.cs                  BR-L10N-001: alef forms, alef maqsura, ta marbuta, tatweel, diacritics; display value untouched
 │   │       ├── NumeralRenderingRule.cs                     BR-L10N-002: stored Western digits, rendered per setting, identifiers never converted
 │   │       └── CultureInvarianceRule.cs                    BR-L10N-006: invariant culture for stored values, request culture for display only
-│   ├── References/                                         slim read-only copies for OneRoster, phase 4
+│   ├── References/                                         slim read-only copies for OneRoster, phase 3
 │   │   ├── OneRosterStudentReference.cs                    student id, numbers, names in both languages, section, status
 │   │   ├── OneRosterStaffReference.cs                      staff id, employee number, names, campuses
 │   │   ├── OneRosterClassReference.cs                      section with grade level, campus and term
@@ -1932,7 +2022,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │       ├── UpdateWebhookEndpointStateCommand.cs    immutable command record raised by a job, a consumer or a saga step, never by HTTP
 │   │   │       ├── UpdateWebhookEndpointStateHandler.cs    WebhookEndpointStateJob; publishes platform.webhook.delivery-failed.v1
 │   │   │       └── UpdateWebhookEndpointStateValidator.cs  FluentValidation guard on the internal command, so a malformed message fails loudly
-│   │   ├── OneRoster/                                      OneRoster 1.2 provider, phase 4 (section 5.13)
+│   │   ├── OneRoster/                                      OneRoster 1.2 provider, phase 3 (section 5.13)
 │   │   │   ├── GetOneRosterSettings/                       settings
 │   │   │   │   ├── GetOneRosterSettingsQuery.cs            immutable query record: route and filter parameters only
 │   │   │   │   ├── GetOneRosterSettingsHandler.cs          enablement and keys
@@ -2227,11 +2317,13 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | TC-PRV-901, TC-PRV-902 | Tenant deletion with certificate; legal hold blocks purge and notifies both parties | UAT, integration |
 | TC-INF-001 to TC-INF-006, TC-INF-011 to TC-INF-016, TC-INF-021 to TC-INF-026 | Transitions of WF-INF-01, WF-INF-02, WF-INF-03 as recorded by the release records | Integration with the pipeline fake |
 | `TC-DATA-010` (document 10) | Tier migration shared to dedicated and back, zero lost writes, window under 5 minutes | Load tier |
+| `TC-PLT-780` to `TC-PLT-782` (document 13) | Saga 1 compensations when step 3, step 4, or step 5 or 6 fails | Integration, `TenantProvisioningSagaTests` |
+| `TC-DATA-780` to `TC-DATA-788` (document 13) | Saga 10 scenarios: the happy path, each compensation, the 5-minute window exceeded, switch back, no purge before the cooling-off ends, a killed Api, a copy delivered twice | Integration, `TierMigrationSagaTests` |
 | TC-MSG-901 | A replayed failed message applies once, a second replay changes nothing (REQ-MSG-024) | Integration |
 | `TC-INT-660` (Gateway sheet) | Only tagged operations accept keys and tokens | Generated suite |
 | TC-INT-005, TC-INT-006, TC-INT-007 | Revocation within 5 s across services; no secret stored or logged; daily API meter | Integration |
 | TC-INT-010 to TC-INT-016 | Webhook challenge, replay window, signature vector, retry schedule, endpoint states, rotation overlap, eligibility | Integration |
-| TC-INT-031, TC-INT-032 | OneRoster 1.2 schema validation; LTI 1.3 launch | Integration, phase 4 |
+| TC-INT-031, TC-INT-032 | OneRoster 1.2 schema validation (phase 3); LTI 1.3 launch (phase 4) | Integration |
 | `TC-INT-002` (Appendix W) | Plug-in kit conformance with the sample | Pipeline |
 | TC-SEC-120 to TC-SEC-125 | T-PLT-03 to T-PLT-08 controls | Integration |
 | TC-SEC-055, TC-SEC-056 | Generated permission matrix and tenant-isolation attack suites over every Platform endpoint, gRPC method and consumer | Generated suites |
@@ -2239,7 +2331,7 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | `TC-PLT-801`, `TC-PLT-802`, `TC-PLT-803`, `TC-PLT-804` (Appendix W) | Demo reset, smart defaults, template exchange, configuration as code | End to end |
 | TC-PLT-101 | Region change refused with `PLATFORM_RESIDENCY_VIOLATION`; every storage location of a tenant in its region (BR-PLT-004) | Integration |
 | TC-PLT-102 | Upgrade prorates by day and applies at once; downgrade waits for renewal and deletes nothing (REQ-PLT-010) | Integration |
-| TC-PLT-103 | Active-student billing count with a day-16 joiner counts 0.5; a leaver counts for the month (REQ-PLT-009) | Unit and integration |
+| TC-PLT-103 | Active-student billing count with a day-16 joiner counts 0.5; a leaver counts for the month (REQ-PLT-009, the Open Question 30 default; open point 9) | Unit and integration |
 | TC-PLT-104 | Dunning reminders at 7, 14, 30 days and read-only at 30 with export still answering (REQ-PLT-013) | Integration with the fake clock |
 | TC-PLT-105 | A flag at 20% rollout across 100 tenants gives 15 to 25 enabled and a stable answer per tenant (REQ-PLT-014) | Unit |
 | TC-PLT-106 | Custom domain verified and resolving within 15 minutes with a valid certificate; unverified host never resolves (REQ-PLT-015) | Integration |
@@ -2258,10 +2350,24 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | TC-PLT-119 | `Tenants.GetConnectionOverride` returns a secret reference only and refuses a caller without the tenancy scope | Contract |
 | TC-PLT-120 | Query budgets of `21-performance-engineering.md` §3.2 and the five additional paths of section 12 | `QueryBudget.Tests` |
 | TC-PLT-121 | Maintenance window activation returns 503 for the tenant while health routes answer and other tenants are unaffected | Integration with the Gateway |
-| TC-PLT-122 | Auto-replay re-sends a transient parked message once its dependency is healthy and never a permanent one (REQ-PLT-037) | Integration |
+| TC-PLT-122 | Auto-replay re-sends a transient parked message once its dependency is healthy and never a permanent one, stops after three automatic replays, never replays a message parked on any parent-facing queue of document 11 section 4.5 (a transient message on `notification.commands` stays parked), and records the policy as the actor with reason "transient cause cleared" (REQ-PLT-037) | Integration |
 | TC-PLT-123 | Sandbox: `live` key refused, fake providers wired, reset once per hour, deletion after 90 idle days | Integration |
 | TC-PLT-124 | Payment callback received twice records one payment | Integration |
 | TC-PLT-125 | Every endpoint in section 5 has an OpenAPI operation with `x-nibras-permission` from Appendix B, `Self` or `Pipeline` | Contract, `TC-TST-201` generator |
+
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Platform's own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner exists for the three projects where path, culture and line-ending defects live (`BuildingBlocks`, `Documents`, `Localization`); Platform uses the first and the third as libraries and sends its documents to the second.
+
+| Concern | What Platform does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start | The Api host and its Quartz.NET jobs start under `aspire run` or the compose `dev` profile and report ready through `healthcheck.sh` | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing | Plan prices and invoice amounts travel as decimal strings (BR-FIN-011) and are parsed with the invariant culture; the tenant's culture is used for display only (BR-L10N-006) | `CultureInvarianceRulesTests` under `ar-SA`, `en-US` and `de-DE`; `TC-PLAT-007` (document 33) | `ubuntu-latest`, `windows-latest` |
+| Time zones | Billing, dunning, the pre-peak warm-up (REQ-PERF-025) and the maintenance window run in each tenant's IANA time zone, never the host's | `TC-PLAT-005` (document 33), inside the built image; TC-PLT-104 with the fake clock | `ubuntu-latest` |
+| Arabic search and collation | Settings and catalog search fold Arabic through BR-L10N-001, with the same fold in C# and in the database | `ArabicNormalizationRulesTests`; `TC-L10N-310` (document 24) inside the database image | `ubuntu-latest` |
+| Right to left | The operator console mirrors fully in Arabic; terminology overrides reach every surface in both languages; the deletion certificate and tenant invoice are rendered by Documents in both directions | `TC-L10N-901` (document 24), Playwright on Chromium, Firefox and WebKit; `TC-L10N-110` (document 24); `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
+| Mobile without Google services | A white-label flavour record (REQ-MOB-041) carries the push strategy; the no-Google build variant links no Firebase artefact and falls back as `09-mobile-structure.md` §4.3 states | `TC-PLAT-014` (document 33) for the paired artefacts of each flavour; `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | `ubuntu-latest`; the macOS runner of `ci-mobile-ios.yml` for the iOS twin; the device pass |
 
 ---
 
@@ -2275,14 +2381,16 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | Messaging | `platform.usage` sharded by tenant through a consistent-hash exchange; `platform.webhook-fanout` on the bulk lane | Usage consumer lag above 5 minutes |
 | Operator reads | Through `OperatorReadContext` on the read replica where staleness of seconds is acceptable | Console queries above 250 ms p95 |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A provisioning or deletion saga stuck halfway | med | high | Persisted state, deadlines, `Stuck` visible first in the monitor, idempotent steps, worker-kill tests | Platform lead |
-| A tenant deleted early or under a hold | low | critical | Cooling-off, signed confirmation, verified export, hold check before `DeletionScheduled` and again before step 6 | Platform lead |
-| Webhook secrets or provider keys leak | low | high | Encrypted per deployment, reveal once, rotation with overlap, never logged, `TC-SEC-121` | Security lead |
-| Server-side request forgery through webhook or LTI URLs | med | high | Address guard with pinned resolution, refused ranges, `TC-SEC-124` | Security lead |
-| Usage undercounted and revenue lost, or overcounted and a school blocked | med | med | Daily immutable facts, monthly recount, 402 only after grace, audit on correction | Product owner |
-| The operator bypass becomes a cross-tenant leak | low | critical | Flag set only by operator features, platform-tenant permission required, audited per transaction, isolation suite covers it | Architect |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A provisioning or deletion saga stuck halfway, delaying one tenant's start or deletion | 3 | 3 | 9 | Persisted state, deadlines, `Stuck` visible first in the monitor, idempotent steps, worker-kill tests | Platform lead | none |
+| A tenant deleted early or under a hold | 2 | 5 | 10 | Cooling-off, signed confirmation, verified export, hold check before `DeletionScheduled` and again before step 6 | Platform lead | none |
+| Webhook secrets or provider keys leak | 2 | 4 | 8 | Encrypted per deployment, reveal once, rotation with overlap, never logged, `TC-SEC-121` | Security lead | none |
+| Server-side request forgery through webhook or LTI URLs | 3 | 4 | 12 | Address guard with pinned resolution, refused ranges, `TC-SEC-124` | Security lead | RISK-21 |
+| Usage or the active-student count is wrong, so revenue is lost or a school is invoiced or blocked on the wrong figure | 3 | 4 | 12 | Daily immutable facts, monthly recount, 402 only after grace, audit on correction; one count definition once Open Question 30 is decided | Product owner | RISK-52 |
+| The operator bypass becomes a cross-tenant leak | 2 | 5 | 10 | Flag set only by operator features, platform-tenant permission required, audited per transaction, isolation suite covers it | Architect | RISK-20 |
 
 ---
 
@@ -2298,7 +2406,7 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | iCal feed tokens and feed content stay in Scheduling; Platform shows the URL pattern | Appendix L.5, `23-integrations-and-public-api.md` §6.1 | As stated | Storing feed tokens here would need a synchronous check from Scheduling |
 | The pipeline reports WF-INF-01 to WF-INF-03 transitions with its own client credential | `31-business-rules-and-workflows.md` assigns the workflows to Platform | As stated | Without it the state machines would have no writer |
 | Suspension for non-payment is read-only with sign-in allowed (master brief Section 36, BR-PLT-002); suspension for a policy breach limits sign-in to the owner (Appendix R WF-PLT-03 `Active` to `Suspended`) | Master brief Section 36, BR-PLT-002, Appendix R | As stated, `suspension_reason` decides | Blocking sign-in for non-payment would contradict the promise that data is never held hostage |
-| OneRoster is served from slim copies inside Platform, filled from School and Academics events | Appendix L.5 makes Platform the owner; master brief Section 7.3 forbids reading another service's database | As stated for phase 4 | Serving it from Reporting would split one standard across two owners |
+| OneRoster is served from slim copies inside Platform, filled from School and Academics events | Appendix L.5 makes Platform the owner; master brief Section 7.3 forbids reading another service's database | As stated for phase 3, where SL-INT-407 builds the copies | Serving it from Reporting would split one standard across two owners |
 
 ## Dependencies on other documents
 
@@ -2321,16 +2429,19 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 
 **Closed by ADR-0019 (brief v9.1).** Five points are answered by the brief and one is narrowed. Appendix C now carries the five platform lifecycle rows: signup confirmed with the welcome pack, the deletion cooling-off reminder, API key expiry and sandbox notices, the support SLA escalation and the subject-request acknowledgment, so section 11.2 lists them with their urgency and channels. Appendix E now carries `platform.upgrade.started.v1` (consumers Notification and Reporting) and Appendix R records the other upgrade, release, drill and failover steps as `platform.audit.recorded.v1`, which is what section 7.1 publishes. Appendix R's WF-PLT-02 guard now reads `platform.subscriptions.change-plan`, the Appendix B string this sheet already used. The product owner settled the tenant-deletion cooling-off at **30 days** with the export available throughout, so `DeletionCoolingOffReminderJob` and the Appendix C row say 30 days and Appendix R agrees with REQ-PLT-007, BR-PLT-003 and Appendix J. Appendix B gained `platform.tenants.export` (high, reason required, never plan-gated), the `platform.modules` and `platform.template-library` resources and `platform.jobs.replay`, so sections 5.1, 5.5, 5.7, 5.11, 11.1 and the folder tree declare those instead of borrowing `platform.tenants.view`, `platform.settings.*` and `platform.jobs.retry`. Reference architecture Section 8.0 now lists Platform's calls, including Identity `ApiKeyAdministration` and `PermissionLookup.GetRoleRisk`, School's directory for OneRoster and the job-only `Usage.Recount` of every service. Point 1 is what is left of the tenant-billing point; the rest are renumbered.
 
+**Closed since.** Point 2 (TC-PLT-002 to TC-PLT-005 meaning two things) is closed by ADR-0019 and ADR-0020: Appendix W's demo tests moved to TC-PLT-801 to TC-PLT-805, Appendix R keeps TC-PLT-001 to TC-PLT-006, and kit-lint R20 refuses a second definition. Its number is kept free so the other points keep theirs.
+
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Appendix R WF-PLT-02 still names `finance.invoice.issued.v1` and WF-FIN-02 for platform billing, although tenant invoices are Platform's own | Platform's own `TenantInvoice`; Finance is not involved in tenant billing | Architect, ADR on Appendix R | None at runtime; the appendix text mixes school fees with platform billing | 1 | 1 | 1 | RISK-43 |
-| 2 | TC-PLT-002 to TC-PLT-005 mean one thing in Appendix R (WF-PLT-01 transitions) and another in Appendix W (demo reset, smart defaults, template exchange, configuration as code) | Both meanings kept and both rows appear in the test plan, labelled by source | Test lead, ADR renumbering Appendix W | Closed by ADR-0019 and ADR-0020: Appendix W's demo tests moved to TC-PLT-801 to TC-PLT-804, Appendix R keeps TC-PLT-002 to TC-PLT-005, and kit-lint rule R20 refuses a second definition | 1 | 1 | 1 | none |
 | 3 | Subject-request collection needs a per-subject export; document 11 catalogs only the tenant-wide `ExportTenant` | `ExportTenant` with an additive optional `subjectId` filter, collected by Documents from each service | Documents sheet owner, document 11 | Without it WF-PRV-01 could only answer from a whole-tenant archive | 2 | 3 | 6 | none |
 | 4 | LTI Assignment and Grade Services scores must land in Assessment and deep-linked items in Academics, but no command exists for either | Phase 4 ships launch, deep-linking return to the picker and the roster from Platform's copies; score passback waits for a catalogued command | Academics and Assessment sheet owners | Teachers enter tool scores by hand until the command exists | 3 | 2 | 6 | none |
 | 5 | The webhook campus filter resolves events without a `campusId` "through Platform's slim reference copy" (document 23 §4.9), which reference architecture Section 8.0 does not list | Filter only on a payload `campusId`; events without one go to every subscribed endpoint of the tenant | Architect | A campus-scoped integrator receives other campuses' events that carry no campus | 3 | 4 | 12 | RISK-51 |
 | 6 | The OneRoster `users` resource for guardians needs guardian names that no event Platform consumes carries | Guardians excluded until `school.guardian.updated.v1` is added to the OneRoster copy with a directory lookup | Product owner | Rostering tools that expect parent users see none | 3 | 2 | 6 | RISK-42 |
 | 7 | Three localization rules (BR-L10N-001, BR-L10N-002, BR-L10N-006) are assigned to Platform's Domain while `Nibras.BuildingBlocks.Localization` implements the same technical behaviour for every service | Platform's rule classes are the tested reference; the building block runs the same Appendix S tables through a shared test data source | Architect | Two implementations can drift if the shared tables are not used | 2 | 2 | 4 | none |
 | 8 | Decisions in force states the operator cross-tenant read through the audited `app.platform_operator` flag "as stated, pending ADR"; no ADR in `docs/project/DECISIONS/` records it yet | The flag is set only by operator features, needs a platform-tenant permission, is audited per transaction and is attacked by the isolation suite (section 16) | Architect, ADR | A flag set outside an operator feature reads every tenant's rows; without it every operator list iterates tenants one query at a time | 2 | 5 | 10 | RISK-20 |
+| 9 | Open Question 30, still open: which count bills a tenant? | The default in force is the brief and REQ-PLT-009: students enrolled on the billing date, prorated by day, counted for the month of leaving; `ActiveStudentCount`, `TenantBillingRunJob` and TC-PLT-103 build it. BR-FIN-017 (any student enrolled for at least one day of the month, no proration) and SL-PLT-010, which cites BR-FIN-017, are in conflict with it until the product owner decides | Product owner, then an ADR with a brief change | A school is invoiced on a figure other than the one its contract states, or invoices are reissued after launch | 4 | 4 | 16 | RISK-52 |
+| 10 | Open Question 28, still open: do a read-only public API, the OneRoster export and iCal move from Tier 2 into Tier 1? | The default in force is where document 17 builds them: iCal feeds in phase 2 (Scheduling), the public API, the iCal subscription URLs and OneRoster in phase 3 under CAP-INT-01, as Tier 2 | Product owner, then an ADR | A first customer needs the API or OneRoster before phase 3, and CAP-INT-01 moves into the MVP | 3 | 3 | 9 | RISK-42 |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
 
@@ -2339,16 +2450,21 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Sections numbered from 1; Saga 1, 2 and 10 diagrams added to section 8; platform notes (section 15.1); signature features; risk table on document 18's scale; open point 2 closed; Open Questions 28 and 30 stated as open with their defaults; OneRoster moved to phase 3 as document 34 builds it. Awaiting Group C re-review |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every permission string exists in Appendix B | `/lint-plan` permission check | Lint |
+| Every permission string exists in Appendix B | kit-lint R19 checks every back-quoted permission in a column headed Permission against Appendix B; permissions named in prose are checked by the `plan-consistency-checker` agent at the Group C review | Lint (`/lint-plan`); Group C review |
 | Every routing key exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
-| Every error code exists in Appendix K | `/lint-plan` code check | Lint |
+| Every error code exists in Appendix K | kit-lint R19 checks every back-quoted `PLATFORM_` code against Appendix K, suffixes of K.1 included | Lint (`/lint-plan`) |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 (open points) and R24 (arithmetic and RISK identifiers, section 16 included) | Lint |
 | Every WF, BR and TC identifier reused exists | kit-lint R19 checks every WF against Appendix R and every BR against Appendix S; R20 checks every TC cited is defined in exactly one document | Lint |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |
 | The endpoint table matches the built service | `TC-PLT-125` once code exists | Pipeline, phase 1 |
 | Sagas lose and duplicate nothing | The worker-kill and deliver-twice tests of `13-workflows-and-sagas.md` Sagas 1, 2 and 10 | Integration suites |
-| The service can be built from this sheet | Group C review against the service-sheet skill | Review |
+| The three saga diagrams of section 8 equal their twins in document 13 §3 | R17 checks that each block is a known Mermaid type; the equality is a review step: the `plan-consistency-checker` agent compares each block line by line with document 13 at the Group C review and on every change to document 13 §3, and a difference is fixed here | Lint; Group C review |
+| Every Mermaid block declares a known type and every tree entry has a comment | kit-lint R17 and R18 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
+| The service can be built from this sheet | Review step: the Group C reviewer walks the `service-sheet` skill checklist over this sheet at the Group C review and records the outcome in the Review record | Group C review |

@@ -2,7 +2,9 @@
 
 Wellbeing holds the most sensitive facts the product knows about a child: clinic visits, medication given at school, counselling cases, safeguarding concerns, individual education plans and their accommodations, interventions, and the daily wellbeing check-in. It is **isolation level S** (Appendix J): its own database `nibras_wellbeing`, its own database role with credentials in its own secret path, its own per-tenant key-encryption key, encrypted columns for every clinical or pastoral field, its own connection pool, and a read log written in the same transaction as every read. Nothing it holds is ever cached, projected, placed on a device or sent in an event; its events carry identifiers and a category code, and Reporting receives counts, never rows. A staff member who is not in a record's audience cannot see it, cannot search for it and cannot learn that it exists, except through break-glass access, which requires a reason, is time-boxed, alerts the principal and the safeguarding lead, and is reviewed afterwards. **Behavior is parent-visible; Wellbeing is not.** A guardian learns that a clinic visit happened, that medication was given, or that a plan needs their consent, and never reads a counselling note or a safeguarding concern.
 
-**Group** C · **Requirement areas covered** WEL, with PRV, SEC, AUD, MOB and PERF rows that bind this service · **Last updated** 2026-09-21 by the planning session
+**Group** C · **Requirement areas covered** WEL, with PRV, SEC, AUD, MOB and PERF rows that bind this service · **Last updated** 2026-09-26 by the round-3 remediation (Open Question 29 stated alike everywhere, platform notes, signature features, risk scale, closed open points)
+
+**Open Question 29, the one open decision that touches the level S rule.** May a student's check-in answer wait in the phone's encrypted outbox until the next sync, or must the check-in be online only? The question is still open, with the privacy officer and then the product owner. **The default in force is the one the plan builds**: the device outbox of Appendix R WF-WEL-05 and SL-WEL-619, where the student's answer code (never a note) waits in the app's encrypted outbox until sync, write-only and never readable back. **Until the question is decided, that default contradicts the rule** that Wellbeing data never reaches a device (Appendix M.1, REQ-WEL-002, master brief Section 20). The recommended answer is online only, which withdraws the outbox path, the sync endpoint and TC-WEL-046. The risk is RISK-47, scored 20, the highest in the register; open point 8 carries the scoring. Every place in this sheet that touches the offline answer says the same.
 
 | Fact | Value | Source |
 |---|---|---|
@@ -23,6 +25,8 @@ Wellbeing holds the most sensitive facts the product knows about a child: clinic
 | Sensitivity | "isolation level S" | `05-service-catalog.md`, Appendix J.1 |
 | First-release merge option | Behavior may be hosted in this deployable; `nibras_behavior` and `nibras_wellbeing` stay separate and Wellbeing stays at level S | Appendix L, `05-service-catalog.md` part 5 |
 
+**Signature features.** Wellbeing owns Appendix W feature 30 (intervention playbooks) and receives the flag that feature 4 (early warning with explanation and an intervention, owned by Reporting) turns into a suggested intervention here (section 3.7). Each feature's rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
 ---
 
 ## 1. Responsibilities and non-responsibilities
@@ -39,7 +43,7 @@ Wellbeing holds the most sensitive facts the product knows about a child: clinic
 | Safeguarding | Named and anonymous concerns, triage, monitoring, investigation, external referral, chronology, closure; never deletable (REQ-WEL-009, WF-WEL-04) |
 | Education plans | Special-needs assessments, individual education plans with goals, reviews, guardian consent, and accommodations released as a flag and codes to exams and teaching (REQ-WEL-010, WF-WEL-01) |
 | Interventions | Interventions from early-warning flags, attendance thresholds, behavior incidents and check-ins, with an owner, a plan from the school's playbook library, actions, review dates and an outcome (REQ-WEL-011) |
-| Daily check-in | The student's one-tap check-in, the concern threshold, the silence pattern, escalation (REQ-WEL-015, WF-WEL-05) |
+| Daily check-in | The student's one-tap check-in, the concern threshold, the silence pattern, escalation (REQ-WEL-015, WF-WEL-05); the offline answer path exists only under the Open Question 29 default, which contradicts the no-device rule until decided (open point 8, RISK-47) |
 | Visibility levels | Every record at exactly one of clinic only, named care team, teaching staff summary, guardian visible; widening needs a named permission and a reason (BR-WEL-001) |
 | Break-glass | The tenant staff path of emergency access with a reason, a window, the alert and the post-use review (BR-WEL-002, REQ-WEL-013) |
 | Read log | One access-log row per read, in the read transaction, shipped to Audit as identifiers only (REQ-WEL-001, REQ-AUD-006, Appendix J rule 8) |
@@ -60,7 +64,7 @@ Wellbeing holds the most sensitive facts the product knows about a child: clinic
 | The platform operator's break-glass and consented impersonation | Identity (WF-SEC-02, WF-SEC-03, BR-IDN-009) | Wellbeing refuses any operator session and logs the elevation it hears about |
 | Delivery of any message, quiet-hour exceptions, lock-screen wording | Notification | Wellbeing's events and commands say what happened, never what is wrong (BR-WEL-003) |
 | The audit store and the guardian transparency panel | Audit | Wellbeing ships identifiers-only audit and access entries; Audit shows who read what (REQ-AUD-007) |
-| Rendering signed administration records and referral packs | Documents | Documents renders only what Wellbeing sends in a `GenerateDocument` whose owner class is Sensitive (Open point 11) |
+| Rendering signed administration records and referral packs | Not settled: Documents or a renderer inside Wellbeing, decided by the RISK-48 ADR (Open point 11) | Until the ADR exists, Documents refuses to render level S Wellbeing content (Documents sheet open point 13), `documents.commands` is not bound for `nibras.wellbeing`, and Wellbeing sends no `GenerateDocument` |
 | Settings definitions | Platform (ADR-0009) | Wellbeing reads the Appendix G values it needs |
 
 ---
@@ -75,7 +79,7 @@ Wellbeing holds the most sensitive facts the product knows about a child: clinic
 | REQ-RPT-009 | A flag opens an intervention here (TC-WEL-201) |
 | REQ-SEC-003 to REQ-SEC-006, REQ-SEC-009 | Object-level authorization per record and visibility level, generated permission and isolation suites, column encryption |
 | REQ-DATA-002, REQ-DATA-003 | `svc_wellbeing` owns no tables and has no `BYPASSRLS` |
-| REQ-MOB-007 | The one offline path, the student's own check-in answer, carries a UUID v7 key and replays once (Open point 8) |
+| REQ-MOB-007 | The one offline path, the student's own check-in answer code, carries a UUID v7 key and replays once. It exists only under the Open Question 29 default the plan builds (SL-WEL-619), which contradicts the no-device rule until decided; the recommended online-only answer withdraws it (open point 8, RISK-47) |
 | REQ-L10N-005, REQ-L10N-010 | Playbook, category and plan names as `LocalizedText`; deadlines in the campus work week and time zone |
 
 ---
@@ -211,7 +215,7 @@ Every table carries the base columns of `10-data-architecture.md` part 4, listed
 
 **`check_in_flags`**: `student_id uuid`, `reason smallint` (`LowAnswer`, `Silence`, `UrgentAnswer`), `raised_at timestamptz`, `status smallint` (`DailyWellbeingCheckInEscalationStatus` subset: `Flagged`, `TeacherNotified`, `CounsellorReferred`, `UrgentEscalated`, `Resolved`), `acknowledged_by uuid null`, `acknowledged_at timestamptz null`, `outcome_code text(32) null`. **`check_in_silence`**: `student_id uuid`, `skipped_on date`; rows kept only for students who skipped, deleted after 14 days.
 
-**Invariants.** An answer below the concern threshold raises one flag the same lesson (TC-WEL-042); an urgent answer pages the counsellor at once (TC-WEL-043); three skips in 14 days raise a silence flag (TC-WEL-044); an offline answer keeps its original timestamp and still raises the flag, with the escalation clock starting at sync (TC-WEL-046). Answers are visible to pastoral staff only; a homeroom teacher sees that a flag exists, not the answer (Open point 7).
+**Invariants.** An answer below the concern threshold raises one flag the same lesson (TC-WEL-042); an urgent answer pages the counsellor at once (TC-WEL-043); three skips in 14 days raise a silence flag (TC-WEL-044); under the Open Question 29 default only, an answer queued offline keeps its original timestamp and still raises the flag, with the escalation clock starting at sync (TC-WEL-046); if the question is answered online only, `device_occurred_at` stays null and the sync path is withdrawn (open point 8). Answers are visible to pastoral staff only; a homeroom teacher sees that a flag exists, not the answer (Open point 7).
 
 ### 3.9 Access, visibility and break-glass
 
@@ -319,7 +323,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 | POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/triage` | `wellbeing.safeguarding.edit` | `{ studentId (anonymous path), riskCode, next: monitor \| investigate \| refer }` | 200 `Triaged` then the chosen state; acknowledgment recorded | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/progress` | `wellbeing.safeguarding.edit` | `{ toState: Investigated \| ActionTaken \| Monitored, note }` | 200 | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/chronology` | `wellbeing.safeguarding.edit` | `{ occurredAt, entry }` | 201 append-only entry | none beyond K.1 | Yes, Key required |
-| POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/escalate` | `wellbeing.safeguarding.escalate` | `{ agencyCode, contact }` | 200 `Referred`; referral pack generated (TC-WEL-033) | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
+| POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/escalate` | `wellbeing.safeguarding.escalate` | `{ agencyCode, contact }` | 200 `Referred`, agency contact recorded; the referral pack is generated once the render-path ADR allows it (open point 11; TC-WEL-033) | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/agency-response` | `wellbeing.safeguarding.edit` | `{ response, respondedAt }` | 200 `AgencyResponded` | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/safeguarding/concerns/{id}/close` | `wellbeing.safeguarding.close` | `{ outcomeCode }` | 200 `Closed`; retained, never deletable | `WELLBEING_CONCERN_ESCALATION_REQUIRED` | Yes, state-guarded |
 
@@ -358,7 +362,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 |---|---|---|---|---|---|---|
 | GET | `/api/v1/wellbeing/check-ins/today` | none in Appendix B: the student for self when the stage has check-ins enabled (Open point 7) | none | Whether today's check-in is open and answered; never a previous answer | none beyond K.1 | Safe |
 | POST | `/api/v1/wellbeing/check-ins` | as above | `{ answerCode, riskFlagCode, note, clientToken }` | 201; flags evaluated at once | `WELLBEING_VALIDATION_FAILED` (window closed) | Yes, by `clientToken` |
-| POST | `/api/v1/wellbeing/check-ins/sync` | as above | queued answers with `occurredAt` and key, no note offline | 200 per-item results; original timestamp kept (TC-WEL-046) | per item as above | Yes, per key |
+| POST | `/api/v1/wellbeing/check-ins/sync` | as above | queued answer codes with `occurredAt` and key, never a note. Exists only under the Open Question 29 default (the device outbox, SL-WEL-619), which contradicts the no-device rule until decided; withdrawn if the answer is online only (open point 8, RISK-47) | 200 per-item results; original timestamp kept (TC-WEL-046) | per item as above | Yes, per key |
 | GET | `/api/v1/wellbeing/check-ins/flags?sectionId=&status=` | `wellbeing.interventions.view` (homeroom scope for the flag only, counsellor for the answer) | query | Flags; the answer is shown only to pastoral staff | none beyond K.1 | Safe; logged |
 | POST | `/api/v1/wellbeing/check-ins/flags/{id}/acknowledge` | `wellbeing.interventions.edit` | `{ conversationOutcome }` | 200 `Resolved` or `TeacherNotified` recorded | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
 | POST | `/api/v1/wellbeing/check-ins/flags/{id}/refer` | `wellbeing.counseling-cases.create` | `{ urgency }` | 201 referral; `CounsellorReferred` | `WELLBEING_CONCURRENCY_CONFLICT` | Yes, state-guarded |
@@ -447,7 +451,7 @@ Wellbeing orchestrates no saga, so `Application/Sagas/` is not generated. It own
 | WF-WEL-02 Clinic visit to sent home | Owner | Single | Transitions in `Features/ClinicVisitToSentHome/`; the pass and the release are Attendance's | `ClinicVisitToSentHomeStatus` in `Domain/Clinic/` |
 | WF-WEL-03 Medication authorization and administration | Owner | Effect (from Saga 6 `AuthorizeMedication`) | Transitions in `Features/MedicationAuthorizationAndAdministration/` | `MedicationAuthorizationAndAdministrationStatus` in `Domain/Medication/` |
 | WF-WEL-04 Safeguarding concern escalation | Owner | Single | Transitions in `Features/SafeguardingConcernEscalation/` | `SafeguardingConcernEscalationStatus` in `Domain/Safeguarding/` |
-| WF-WEL-05 Daily wellbeing check-in escalation | Owner | Single | Transitions in `Features/DailyWellbeingCheckInEscalation/` | `DailyWellbeingCheckInEscalationStatus` in `Domain/CheckIns/` |
+| WF-WEL-05 Daily wellbeing check-in escalation | Owner | Single | Transitions in `Features/DailyWellbeingCheckInEscalation/`. Appendix R marks it offline: under the Open Question 29 default the plan builds (the device outbox, SL-WEL-619) the answer code may be queued on the phone, which contradicts the no-device rule until decided; the recommended answer is online only (open point 8, RISK-47) | `DailyWellbeingCheckInEscalationStatus` in `Domain/CheckIns/` |
 | WF-ATT-01 Daily attendance to intervention | Participant | Single | `ThresholdReached → InterventionOpened → InterventionClosed` are Wellbeing's interventions | `InterventionStatus` (local) |
 | WF-BEH-01 Incident to intervention | Participant | Single | Suggested intervention from a serious incident | none local |
 | Saga 6 Request fulfilment | Participant | Saga | `AuthorizeMedication`, `RevokeMedicationAuthorization` | none local; per-step inbox |
@@ -603,7 +607,7 @@ The threat table is `12-security-privacy-safety.md` §2.17 (T-WEL-01 to T-WEL-08
 
 | Data class (Appendix J) | Held here | Handling |
 |---|---|---|
-| S | Clinic reason, observation, treatment, sent-home decision; medication dose, time, authorization; counselling reason, notes, risk; safeguarding text, reporter, chronology, referral; plan diagnosis, goals, accommodations; check-in answers; the student copy | Column-encrypted, `nibras_wellbeing` only, separate credentials and key-encryption key, never cached, never projected, never logged, never in an event, never on a device, every read logged in the read transaction |
+| S | Clinic reason, observation, treatment, sent-home decision; medication dose, time, authorization; counselling reason, notes, risk; safeguarding text, reporter, chronology, referral; plan diagnosis, goals, accommodations; check-in answers; the student copy | Column-encrypted, `nibras_wellbeing` only, separate credentials and key-encryption key, never cached, never projected, never logged, never in an event, never on a device except the check-in answer code under the Open Question 29 default (the "Sent to a device" row below), every read logged in the read transaction |
 | Sensitive, surfaced | The allergy alert | Read live on every view, logged, never cached; unavailable means block, never guess |
 | Confidential | Intervention owner, steps, dates, outcome (Appendix J) | Held here, encrypted where free text, access logged |
 
@@ -611,7 +615,7 @@ The threat table is `12-security-privacy-safety.md` §2.17 (T-WEL-01 to T-WEL-08
 |---|---|
 | Cached | Anything this service holds, including counts and the allergy alert |
 | Logged | Any field value, a student name next to a wellbeing record type, a break-glass reason; logs carry the correlation id and the record type only |
-| Sent to a device | Any wellbeing record; the mobile app has no offline wellbeing screen (Appendix M.1); the one exception is the student's own check-in answer sitting in the outbox until it syncs, write-only and never readable back, which contradicts the no-device rule until the privacy officer decides Open point 8 |
+| Sent to a device | Any wellbeing record; the mobile app has no offline wellbeing screen (Appendix M.1). The one exception is the Open Question 29 default the plan builds (Appendix R WF-WEL-05, SL-WEL-619): the student's own check-in answer code, never a note, waits in the app's encrypted outbox until it syncs, write-only and never readable back. Open Question 29 is still open; until it is decided this default contradicts the no-device rule (Appendix M.1, REQ-WEL-002, master brief Section 20), and the recommended answer is online only, which removes the exception (open point 8, RISK-47) |
 | In an event or an audit payload | Anything beyond identifiers, a category code, a severity or urgency and a timestamp |
 | In search, Student 360 or a report | Any record; Reporting receives counts through `Counts` only; a guardian sees notices, never records |
 
@@ -743,7 +747,7 @@ src/Services/Wellbeing/                                               Student We
 │   │   │   ├── TriageConcernHandler.cs                               risk, acknowledgment, next state
 │   │   │   ├── ProgressConcernHandler.cs                             monitored, investigated, action taken
 │   │   │   ├── AppendChronologyHandler.cs                            append-only entry
-│   │   │   ├── EscalateToAgencyHandler.cs                            referral pack through Documents
+│   │   │   ├── EscalateToAgencyHandler.cs                            agency contact; the referral pack request waits on open point 11
 │   │   │   ├── RecordAgencyResponseHandler.cs                        agency outcome
 │   │   │   ├── CloseConcernHandler.cs                                required escalation check
 │   │   │   ├── SafeguardingQueries.cs                                lead queue and one concern; named staff refused and alerted
@@ -771,7 +775,7 @@ src/Services/Wellbeing/                                               Student We
 │   │   │   └── InterventionEndpoints.cs                              /interventions and /playbooks routes
 │   │   ├── DailyWellbeingCheckInEscalation/                          WF-WEL-05 transitions
 │   │   │   ├── SubmitCheckInHandler.cs                               answer, thresholds, urgent path
-│   │   │   ├── SyncCheckInsHandler.cs                                offline answers with original timestamps
+│   │   │   ├── SyncCheckInsHandler.cs                                offline answer codes with original timestamps; exists only under the Open Question 29 default (open point 8)
 │   │   │   ├── AcknowledgeFlagHandler.cs                             teacher conversation outcome
 │   │   │   ├── ReferFromCheckInFlagHandler.cs                        referral from a flag
 │   │   │   ├── CheckInQueries.cs                                     today and flags; answers for pastoral staff only
@@ -821,7 +825,7 @@ src/Services/Wellbeing/                                               Student We
 │   │   ├── IRecordAudience.cs                                        evaluates level, care team, need-to-know, break-glass for every read
 │   │   ├── IAccessLog.cs                                             writes the read log and the audit outbox row in the read transaction
 │   │   ├── IStudentDirectory.cs                                      School over gRPC; refuses rather than guesses
-│   │   └── IDocumentRequests.cs                                      referral packs and signed administration records with a Sensitive owner class
+│   │   └── IDocumentRequests.cs                                      port for referral packs and signed administration records; no adapter wired until open point 11 is decided
 │   ├── Permissions/                                                  constants matching Appendix B
 │   │   └── WellbeingPermissions.cs                                   wellbeing.break-glass.use, wellbeing.safeguarding.view and every other, one constant each
 │   └── DependencyInjection.cs                                        AddWellbeingApplication(): handlers, validators, consumers, the access-log pipeline behaviour
@@ -864,7 +868,7 @@ src/Services/Wellbeing/                                               Student We
 │   ├── Grpc/                                                         the one synchronous client
 │   │   └── SchoolDirectoryClient.cs                                  StudentDirectory with timeout and breaker; no cached fallback
 │   ├── Documents/                                                    command adapter
-│   │   └── DocumentRequestPublisher.cs                               GenerateDocument with a Sensitive owner class (Open point 11)
+│   │   └── DocumentRequestPublisher.cs                               GenerateDocument with a Sensitive owner class; not wired, and nibras.wellbeing not bound, until open point 11 is decided
 │   ├── Reconciliation/                                               nightly check
 │   │   └── ReferenceCopyReconciler.cs                                copies of students with a record against School
 │   └── DependencyInjection.cs                                        AddWellbeingInfrastructure(): own connection string, key provider, topology, gRPC channel
@@ -915,7 +919,7 @@ src/Services/Wellbeing/                                               Student We
     │   │   ├── ClinicVisitTests.cs                                   invariants and transitions of WF-WEL-02
     │   │   ├── SafeguardingConcernTests.cs                           no delete, named staff refused, escalation before close
     │   │   ├── EducationPlanTests.cs                                 consent and need-to-know
-    │   │   └── CheckInTests.cs                                       thresholds, silence, offline timestamp
+    │   │   └── CheckInTests.cs                                       thresholds, silence, offline timestamp (the last only under the Open Question 29 default)
     │   └── Consumers/                                                idempotency
     │       └── ConsumerIdempotencyTests.cs                           every consumer delivered twice writes once
     ├── Nibras.Wellbeing.IntegrationTests/                            Testcontainers: PostgreSQL with a separate role, RabbitMQ; no Redis
@@ -951,7 +955,7 @@ Existing identifiers are reused; new ones are minted from `TC-WEL-310` upward (3
 | TC-WEL-011 to TC-WEL-016 | Workflow | WF-WEL-02: assessment with alerts shown, protocol treatment, guardian contacted, 15-minute escalation, release on a verified pass, failed verification keeps the child |
 | TC-WEL-021 to TC-WEL-026 | Workflow | WF-WEL-03: evidence pending, two approvals, signed administration, missed dose, expiry, no editing of a past dose |
 | TC-WEL-031 to TC-WEL-036 | Workflow, security | WF-WEL-04: leads only, anonymous with no identity stored, external referral, triage escalation, no deletion path, named staff refused and alerted |
-| TC-WEL-041 to TC-WEL-046 | Workflow | WF-WEL-05: answer stored for pastoral staff, low answer flag, urgent page, silence flag, 2-hour escalation, offline answer keeps its timestamp |
+| TC-WEL-041 to TC-WEL-046 | Workflow | WF-WEL-05: answer stored for pastoral staff, low answer flag, urgent page, silence flag, 2-hour escalation, offline answer keeps its timestamp (TC-WEL-046 proves the Open Question 29 default and is withdrawn if the answer is online only; open point 8) |
 | TC-WEL-101 | UAT | A counselling entry is shown as existing to a permitted viewer and does not open |
 | TC-WEL-201 | UAT | Intervention opened from a flag with owner and review date |
 | TC-WEL-202 | UAT | A teacher reading a counselling case is refused and existence is not confirmed |
@@ -996,6 +1000,19 @@ Existing identifiers are reused; new ones are minted from `TC-WEL-310` upward (3
 | TC-WEL-343 | Integration | A missed dose alerts the nurse at once and the guardian within 15 minutes; two missed doses reach the principal |
 | TC-WEL-344 | Integration | Medication authorization approved by the same person twice is refused; nurse plus principal authorizes |
 
+### 14.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Wellbeing's own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks` and `Localization`, which hold its encryption converter, culture handling and plural rules.
+
+| Concern | What Wellbeing does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start | The Api host, its separate pool and its own secret path start under `aspire run` or the compose `dev` profile and report ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing | Medication doses, screening values and deadlines are parsed and stored with the invariant culture; the nurse's culture is for display only (BR-L10N-006) | `CultureInvarianceRulesTests` and `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE` | `ubuntu-latest`, `windows-latest` |
+| Time zones and the work week | Triage deadlines, the 2-hour check-in escalation, the dose schedule and the 5-working-day exam arrangement run in the campus's IANA time zone and work week (REQ-L10N-010) | `TC-PLAT-005` (document 33) inside the built image; TC-WEL-320 | `ubuntu-latest` |
+| Right to left | A session note in Arabic with mixed-script text keeps its direction; referral packs and administration records, once open point 11 decides who renders them, are rendered in both directions | `TC-L10N-701` (document 08); `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
+| Mobile without Google services | The urgent check-in page and the missed-dose alert go through Notification, which reaches a device without Google services in-app while the app is open and falls back to SMS and email for urgent messages; the student's check-in screen needs no push. Under the Open Question 29 default the answer code waits in the app's outbox on every Android variant, with or without Google services, which is the contradiction open point 8 carries | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | the device pass |
+
 ---
 
 ## 15. Scaling, partitioning and risks
@@ -1008,16 +1025,19 @@ Existing identifiers are reused; new ones are minted from `TC-WEL-310` upward (3
 | Keys | Per-tenant data keys cached in process for 10 minutes under the tenant tag, never in Redis | Key service latency above 50 ms |
 | First-release merge | Behavior may share this deployable with its own database and classification (Appendix L) | The merge ADR |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A teacher or principal reads a counselling note | med | critical | Named care team, 404 on every audience failure, no template inherits `wellbeing.*`, TC-WEL-202, TC-SEC-280 | Security owner |
-| Clinical detail leaves on the bus or in Audit | low | critical | BR-WEL-003 contract test, identifiers-only audit mapping, TC-WEL-312, TC-WEL-333 | Wellbeing lead |
-| A child released on a failed verification after a clinic visit | low | critical | Release only through Attendance's verified pass, TC-WEL-015, TC-WEL-016 | Wellbeing lead with Attendance lead |
-| A stale allergy alert shown during an outage | low | critical | Live read, refuse on failure, TC-WEL-325 | Wellbeing lead |
-| Break-glass abused | med | critical | Four-eyes grant, reason, window, immediate alert, review, TC-WEL-311, TC-WEL-319 | Safeguarding lead |
-| A safeguarding concern lost or deleted | low | critical | No delete path, revoked grants, retention only by the job with holds, TC-WEL-035 | Safeguarding lead |
-| A named staff member reads a concern about themselves | med | critical | Named-staff refusal and alert, TC-WEL-036 | Safeguarding lead |
-| A compromised sibling credential reads the database | low | critical | Separate role, credentials, pool and key, TC-WEL-314, TC-SEC-283 | Security owner |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it. Every row here is impact 5, because each exposes a child's level S data or a child's safety. The likelihoods are 2 where the control is automatic and covered by a generated or contract test, and 4 only where the plan itself builds the exposure.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A student's check-in answer code rests on a lost, shared or compromised phone, because the Open Question 29 default queues it in the device outbox | 4 | 5 | 20 | Answer code only, never a note; write-only, encrypted, never readable back; if the exception is kept, RISK-47's conditions apply (an ADR with a DPIA entry, a device key, purge on sync or sign-out, an architecture test on the outbox); the recommended online-only answer removes the path (open point 8) | Privacy officer, product owner | RISK-47 |
+| A teacher or principal reads a counselling note | 2 | 5 | 10 | Named care team, 404 on every audience failure, no template inherits `wellbeing.*`, TC-WEL-202, TC-SEC-280, the generated permission matrix TC-WEL-336 | Security owner | RISK-24 |
+| Clinical detail leaves on the bus or in Audit | 2 | 5 | 10 | BR-WEL-003 contract test, identifiers-only audit mapping, TC-WEL-312, TC-WEL-333 | Wellbeing lead | RISK-24 |
+| A child released on a failed verification after a clinic visit | 2 | 5 | 10 | Release only through Attendance's verified pass, TC-WEL-015, TC-WEL-016 | Wellbeing lead with Attendance lead | none |
+| A stale allergy alert shown during an outage | 2 | 5 | 10 | Live read, refuse on failure, TC-WEL-325 | Wellbeing lead | none |
+| Break-glass abused | 2 | 5 | 10 | Four-eyes grant, reason, window, immediate alert to the principal and the safeguarding lead, review, TC-WEL-311, TC-WEL-319 | Safeguarding lead | none |
+| A safeguarding concern lost or deleted | 2 | 5 | 10 | No delete path, revoked grants, retention only by the job with holds, TC-WEL-035 | Safeguarding lead | none |
+| A named staff member reads a concern about themselves | 2 | 5 | 10 | Named-staff refusal and alert, TC-WEL-036 | Safeguarding lead | none |
+| A compromised sibling credential reads the database | 2 | 5 | 10 | Separate role, credentials, pool and key, TC-WEL-314, TC-SEC-283 | Security owner | RISK-24 |
 
 ---
 
@@ -1051,20 +1071,18 @@ Existing identifiers are reused; new ones are minted from `TC-WEL-310` upward (3
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Four points are answered and leave the table; their numbers stay free so the others keep theirs. Point 1: Appendix R now cites only catalogued keys for WF-WEL-01 to WF-WEL-05 (facts as `wellbeing.audit.recorded.v1`, the concern as `wellbeing.safeguarding.concern-raised.v1`, the exam arrangement through the Requests exam-accommodation effect). Point 5: Appendix E names Wellbeing as a consumer of `attendance.dismissal.processed.v1` and Attendance as the consumer of `wellbeing.clinic-visit.collection-arranged.v1`, so the WF-WEL-02 hand-off is observable both ways. Point 9: Appendix E names Wellbeing among the consumers of the reference-copy keys section 6.2 binds. Point 12: Appendix R WF-WEL-02 names `wellbeing.clinic-visits.create`, the Appendix B string.
+
 | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|
-| 1. Appendix R names events Appendix E lacks: `wellbeing.accommodation-plan.published.v1`, `wellbeing.medication-authorization.approved.v1`, `wellbeing.medication.missed.v1`, `wellbeing.safeguarding-concern.raised.v1` (Appendix E has `wellbeing.safeguarding.concern-raised.v1`), `wellbeing.check-in.recorded.v1`, `wellbeing.check-in.flagged.v1`, `assessment.exam-accommodation.applied.v1`, `audit.action.recorded.v1` | Section 6.1 publishes only catalogued keys; the other facts go through `RequestNotification` and `wellbeing.audit.recorded.v1` | Appendix E and R owners | Resolved 2026-09-22 (ADR-0019): Appendix R was corrected to this sheet's default. WF-WEL-01, WF-WEL-03 and WF-WEL-05 now record those facts as `wellbeing.audit.recorded.v1`, WF-WEL-04 uses `wellbeing.safeguarding.concern-raised.v1`, the exam arrangement reaches Assessment through the Requests exam-accommodation effect, and the shared audit key is gone: the audit entry is always the publishing service's own `<service>.audit.recorded.v1` | 1 | 1 | 1 | none |
 | 2. Table 8.0 lists no service with a synchronous dependency on Wellbeing, but `10-data-architecture.md` has Reporting call `Counts`, and document 22 names `AllergyAlerts` | Expose both; Reporting's call is job only under the definition Section 8.0 now carries, and Operations reads the allergy alert on the trip and cafeteria screens | Architect | Still open. ADR-0019 scoped its Section 8.0 edit to seven services and its change list records that the Wellbeing `Counts` and `AllergyAlerts` rows still need adding, so the table and this sheet still disagree | 1 | 1 | 1 | RISK-43 |
 | 3. The allergy badge must reach teachers (BR-WEL-001 "teaching staff summary"), but no `wellbeing.*` permission is held by teachers | `school.students.view` for staff assigned to the student, plus the record's `TeachingStaffSummary` audience, logged on every read | Appendix B owner | A `wellbeing.medical-alerts.view` permission would replace it | 3 | 2 | 6 | RISK-43 |
 | 4. Appendix C has no row for the missed-dose alert, consent request, medical-alert update, check-in flag, the tenant break-glass alert or the escalations | `RequestNotification` with template codes that say what happened without saying what is wrong | Appendix C owner | Still open. ADR-0019 added thirteen Appendix C rows, none of them Wellbeing's, so catalogued rows would still be the way to move these to event triggers | 2 | 1 | 2 | RISK-43 |
-| 5. Appendix E routes no Attendance event to Wellbeing, so the gate-pass use that ends WF-WEL-02 is not observable here | `DismissalProcessedConsumer` binds `attendance.dismissal.processed.v1` and moves the visit from `CollectionArranged` to `Released` on the verified handover; the nurse can still record the pass id by hand | Appendix E owner, Attendance lead | Resolved 2026-09-22 (ADR-0019): Appendix E added Wellbeing to the consumers of `attendance.dismissal.processed.v1`, and added `wellbeing.clinic-visit.collection-arranged.v1` with Attendance as its consumer, so the hand-off is observable in both directions with no clinical field | 1 | 1 | 1 | none |
 | 6. Guardians hold no `wellbeing.*` permission, yet WF-WEL-01 needs their consent | A single-use consent token for the signed-in guardian of that child, for that one action | Appendix B owner | A consent request type in Requests would be the alternative | 3 | 2 | 6 | none |
 | 7. Students answering the check-in and homeroom teachers seeing a flag have no Appendix B permission | Students act for `self` when the stage has check-ins enabled; homeroom teachers get `wellbeing.interventions.view` in `own-homeroom` for flags only when the tenant enables check-ins | Appendix B owner | New `wellbeing.check-ins.*` actions would replace both | 3 | 3 | 9 | RISK-24 |
-| 8. Appendix R marks WF-WEL-05 offline, while Appendix M and REQ-WEL-002 say Wellbeing data never reaches a device | The student's own answer code may wait in the encrypted outbox until sync, write-only and never readable back; no note offline | Privacy officer | Still open, and **until the privacy officer decides, this default contradicts the rule** that Wellbeing data never reaches a device (Appendix M.1, REQ-WEL-002, and the children's-data rule the project holds under master brief Section 20): a check-in answer is level S (section 12), and while it waits in the outbox it sits on the student's phone, where a lost, shared or compromised device holds it. ADR-0019 tightened Appendix M and I around the nurse (clinic entry, medication round and allergy lookup are online only, and M.1 gains "Record a medication administration: No") and left WF-WEL-05 alone as an open decision. The alternative that keeps the rule is an online-only check-in: no answer is taken without a connection, and REQ-MOB-007's one offline path is withdrawn | 4 | 5 | 20 | RISK-47; RISK-24 covers the other leak paths, not the device |
-| 9. Document 11 binds `school.guardian.updated.v1`, `identity.guardian-link.created.v1`, `school.section.created.v1` and `school.section.changed.v1` for Wellbeing, which Appendix E's consumer columns do not name | The four keys are bound on `wellbeing.reference-copies` as section 6.2 lists them, with no star | Appendix E owner | Resolved 2026-09-22 (ADR-0019): Appendix E added Wellbeing to the consumers of `school.guardian.updated.v1`, `identity.guardian-link.created.v1` and `school.section.created.v1`, and `school.section.changed.v1` keeps the created key's consumer set | 1 | 1 | 1 | none |
+| 8. Open Question 29, still open: may a student's level S check-in answer wait in the device's encrypted outbox until the next sync, or must the check-in be online only? Appendix R marks WF-WEL-05 offline, while Appendix M and REQ-WEL-002 say Wellbeing data never reaches a device | The default in force is the one the plan builds, the device outbox (Appendix R WF-WEL-05, SL-WEL-619): the student's own answer code may wait in the encrypted outbox until sync, write-only and never readable back; no note offline. The recommended answer is online only | Privacy officer, then the product owner | **Until Open Question 29 is decided, this default contradicts the rule** that Wellbeing data never reaches a device (Appendix M.1, REQ-WEL-002, and the children's-data rule the project holds under master brief Section 20): a check-in answer is level S (section 12), and while it waits in the outbox it sits on the student's phone, where a lost, shared or compromised device holds it. ADR-0019 tightened Appendix M and I around the nurse (clinic entry, medication round and allergy lookup are online only, and M.1 gains "Record a medication administration: No") and left WF-WEL-05 alone as an open decision. The alternative that keeps the rule is an online-only check-in: no answer is taken without a connection, and REQ-MOB-007's one offline path is withdrawn | 4 | 5 | 20 | RISK-47; RISK-24 covers the other leak paths, not the device |
 | 10. Appendix G has no row for check-in thresholds and windows, triage deadlines, first-aid protocols or the safeguarding framework | Appendix R values as defaults, held as Platform settings under `scope = wellbeing` | Appendix G owner | Values hard-coded until then | 3 | 2 | 6 | RISK-43 |
-| 11. Referral packs and signed administration records are rendered by Documents, which holds Confidential data, not level S | Documents renders them with a Sensitive owner class, per-tenant encryption, no share link, no OCR, and deletes the merge values after render; `documents.commands` must bind `nibras.wellbeing` | Architect, Documents lead | Rendering inside Wellbeing would need its own renderer. Until decided, level S merge values pass through Documents for the length of a render, which is an exception to the rule that Wellbeing data never leaves its service | 3 | 5 | 15 | RISK-48; RISK-24 |
-| 12. WF-WEL-02 uses the permission `wellbeing.clinic-visit.record`, which Appendix B does not have | `wellbeing.clinic-visits.create` and `.edit`, as section 5 already uses | Appendix R owner | Resolved 2026-09-22 (ADR-0019): Appendix R WF-WEL-02 `Arrived → Assessed` (TC-WEL-011) now names `wellbeing.clinic-visits.create`, the Appendix B name | 1 | 1 | 1 | none |
+| 11. Who renders referral packs and signed administration records: Documents, which holds Confidential data and not level S, or a renderer inside Wellbeing? Not settled: an ADR with the privacy officer decides the render path (RISK-48) | Interim default, the same as the Documents sheet's open point 13: Documents refuses to render level S Wellbeing content, and `documents.commands` is not bound for `nibras.wellbeing` (document 11 §2.5), until the ADR exists. The `DocumentRequestPublisher` is therefore not wired. Wellbeing publishes no `GenerateDocument`, so nothing waits in an unbound queue. If the ADR chooses Documents, the render runs under the controls RISK-48 lists (Sensitive owner class, per-tenant encryption, no share link, no OCR, no search index, merge values deleted after render and never logged), and the publisher is wired in the same change as the binding | Architect, privacy officer | Until the ADR, `Triaged → Referred` records the agency contact but produces no rendered pack, and signed administration records are not issued as PDFs, so the pack half of TC-WEL-033 waits on the ADR. If Documents is chosen, level S merge values pass through it for the length of a render. If a renderer inside Wellbeing is chosen, Wellbeing needs its own renderer | 3 | 5 | 15 | RISK-48; RISK-24 |
 | 13. `identity.break-glass.used.v1` is Identity's key, yet `06-services/identity.md` says both paths publish it | Wellbeing never publishes on `nibras.identity`; its tenant path alerts through `RequestNotification` and records `wellbeing.audit.recorded.v1` | Architect | A `wellbeing` break-glass key in Appendix E would replace the command | 2 | 1 | 2 | none |
 | 14. Knowing that an exam sitting is 5 working days away needs exam sessions, which Wellbeing does not copy | Readiness is checked when the exams officer's accommodation request is approved; no daily readiness job | Assessment lead | Late arrangements would be caught only by the exams officer | 3 | 2 | 6 | none |
 
@@ -1075,15 +1093,20 @@ Existing identifiers are reused; new ones are minted from `TC-WEL-310` upward (3
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Open Question 29 stated alike in the header, sections 1, 2, 3.8, 4.7, 7, 12, 13, 14 and open point 8, with the device outbox as the default in force, the contradiction and online-only as the recommended answer; platform notes (section 14.1); signature features; risk table on document 18's scale with the RISK-47 row; open points 1, 5, 9 and 12 closed. Awaiting Group C re-review |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every routing key here exists in Appendix E | `tools/kit-lint` rules R07 and R19, `/lint-plan` over `docs/plan/06-services/` | Lint |
-| Every permission and error code exists in Appendices B and K | `/lint-plan` cross-checks; TC-WEL-336 | Lint, pipeline |
-| Every Appendix R transition of WF-WEL-01 to WF-WEL-05 and every BR-WEL rule has a test | Section 14 against Appendix R and document 31; `[TestCase]` attributes once code exists | Review, pipeline |
-| Level S holds: own database, role, key, pool; no cache; no device; identifiers-only events and audit | TC-WEL-312, TC-WEL-314, TC-WEL-315, TC-WEL-316, TC-WEL-333, TC-WEL-341, TC-SEC-282, TC-SEC-283 | Integration, contract and architecture suites |
+| Every routing key here exists in Appendix E | kit-lint R07 and R19 | Lint (`/lint-plan`) |
+| Every permission and error code exists in Appendices B and K | kit-lint R19 checks back-quoted permissions in columns headed Permission and every back-quoted `WELLBEING_` code; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; TC-WEL-336 once code exists | Lint; Group C review; pipeline |
+| Every Appendix R transition of WF-WEL-01 to WF-WEL-05 has a test cited here | kit-lint R32 fails this sheet when section 14 omits a TC identifier Appendix R lists under a workflow document 13 assigns to Wellbeing | Lint |
+| Every BR-WEL rule has its test class | The `business-rules-reviewer` agent compares section 7's rule table with Appendix S and document 31 §2 at the Group C review | Group C review |
+| Level S holds: own database, role, key, pool; no cache; no device except the Open Question 29 default; identifiers-only events and audit | TC-WEL-312, TC-WEL-314, TC-WEL-315, TC-WEL-316, TC-WEL-333, TC-WEL-341, TC-SEC-282, TC-SEC-283 | Integration, contract and architecture suites |
+| The offline check-in path is stated alike wherever it appears (header, sections 1, 2, 3.8, 4.7, 7, 12, 13, 14 and open point 8) | The `privacy-auditor` agent reads every mention of the outbox, the sync endpoint and TC-WEL-046 against Open Question 29 at the Group C review and whenever the question's status changes | Group C review |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 14.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
 | Existence is never confirmed | TC-WEL-317, TC-WEL-202, TC-WEL-704 | Integration and UAT |
 | Break-glass behaves | TC-WEL-311, TC-WEL-319, TC-SEC-101, TC-SEC-281 | Unit and security suites |
 | The query budgets hold with the read log | TC-WEL-338, TC-WEL-339 | Integration suite |

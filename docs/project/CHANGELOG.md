@@ -1,5 +1,9 @@
 # Changelog
 
+## v9.4 brief, 2026-09-26
+
+Every signature feature runs its own demo test in the release gate (ADR-0023, proposed). Kit-lint R34 requires each of the 43 signature features to be shown by an Appendix O minute or reserve step whose Test cell runs the feature's Appendix W demo test; Appendix O's minutes 1, 2, 4, 5, 10, 11, 13 and 15 gained ten demo tests. Documents 15, 16 and 32 state the demo gate the same way: every step whose phase has shipped runs at each phase exit and release, through SL-TST-006. Document 32 recounted: 24 features shown in a minute, 18 only in a reserve step, feature 23 guarded by TC-UX-001, feature 39 moved to engineering.
+
 ## Plan risk honesty, 2026-09-25
 
 Every open point is scored, and the serious ones are register risks (ADR-0022, proposed; no brief change).

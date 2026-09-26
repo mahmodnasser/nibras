@@ -339,6 +339,8 @@ A feature above rung 1 ships only when its golden set passes in both languages. 
 
 #### 6.2 Thresholds
 
+Every row is asserted by `TC-AI-638` (Ai sheet), which runs each §6.1 golden set in both languages in the `ai-eval` stage that SL-AI-611 builds and fails the release candidate on any row below; the injection row is also `TC-SEC-320` (document 12). The regression rules of §6.3 are `TC-AI-800` and `TC-AI-801`, defined in this document's test table.
+
 | Measure | Threshold to release | Blocks the release when |
 |---|---|---|
 | Rubric pass rate, drafting features | 90 percent in each language | Either language is below 90 percent |
@@ -520,19 +522,30 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-22 | Group F review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | `ai.usage.recorded.v1` published by other services, a gRPC path to Ai and two names for the embedding table (Consistency); the §6.2 thresholds with no test-case identifier (Testability) |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | The round 1 consistency items were closed (§3 "no service but Ai publishes an `ai.*` key", REST only, `ai_index.embedding_chunk`). Still open: the quality row cited "§6.2 thresholds" with no identifier (Testability), and this record read "review pending" although round 1 had blocked the group (Risk honesty) |
+| 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | §6.2 and the quality row cite `TC-AI-638` (Ai sheet); §6.3 gains `TC-AI-800` and `TC-AI-801` in a new test table; the three rows that named a requirement's acceptance test now cite `TC-AI-601`, `TC-AI-607` and `TC-AI-608` (Ai sheet) |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Every feature is off by default and the product works with all off | REQ-AI-001 acceptance test on the demo tenant with every feature code disabled | Every pull request touching Ai or a feature above rung 1 |
+| Every feature is off by default and the product works with all off | `TC-AI-601` (Ai sheet) on the demo tenant with every feature code disabled | Every pull request touching Ai or a feature above rung 1 |
 | Nothing generated reaches a family unreviewed | `TC-AI-201`, `TC-SEC-324` | Every pull request touching Ai, Communication or Assessment |
-| Filter before rank; no cross-scope retrieval | `TC-SEC-321`; REQ-AI-006 acceptance test | Every pull request touching Ai |
+| Filter before rank; no cross-scope retrieval | `TC-SEC-321`; `TC-AI-607` (Ai sheet) | Every pull request touching Ai |
 | Prompt injection resisted | `TC-SEC-320`, the 14 fixtures of §5.2 in both languages | Nightly `ai-eval` and every release candidate |
 | Level S never in context or index | `TC-SEC-322` | Every pull request touching Ai |
 | Rung 4 only with consent | `TC-SEC-323` | Every pull request touching Ai |
 | Withdrawal purges the index | `TC-SEC-325` | Every pull request touching Ai |
-| Fallback is downward and never an error | REQ-AI-008 acceptance test with the model endpoint stopped, and with the provider stopped | Nightly |
-| Quality in both languages | §6.2 thresholds over the §6.1 golden sets | Nightly and every release candidate |
+| Fallback is downward and never an error | `TC-AI-608` (Ai sheet) with the model endpoint stopped, and with the provider stopped | Nightly |
+| Quality in both languages | `TC-AI-638` (Ai sheet) asserts every §6.2 threshold over the §6.1 golden sets in the `ai-eval` stage SL-AI-611 builds; `TC-AI-800` and `TC-AI-801` below assert the §6.3 regression rules | Nightly and every release candidate |
 | This document agrees with the catalogs | kit-lint R01, R02 and R17 for section and appendix references and Mermaid types, R30 for a comment on every column of a `CREATE TABLE`, and R31 for database and image names against Appendix L (R11 checks Appendix W's own register, not this document); `plan-consistency-checker` with `privacy-auditor` compares this document with `12-security-privacy-safety.md` and Appendix W | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |
+
+### Test cases
+
+This document defines the two regression tests of §6.3; the thresholds of §6.2 are `TC-AI-638` in the Ai sheet and are not restated. Both run in the `ai-eval` stage that SL-AI-611 builds, against the pinned local model of the `ai` compose profile and the demo tenant of Appendix H.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-AI-800 | Given the stored harness results of the previous release, in which `report-comment-draft` passed its rubric at 96 percent in Arabic, when a release candidate scores 92 percent in Arabic, above the 90 percent threshold of §6.2 but 4 points lower, then the `ai-eval` stage fails the candidate naming the feature code, the language and both scores, and a candidate at 94 percent, 2 points lower, passes | none |
+| TC-AI-801 | Given a tenant whose drafting features use the released model tag, when a new model tag or a new template version is registered and the harness has not yet passed for it, then the tenant setting refuses to select it, and after one harness run that passes every §6.2 row in both languages the setting accepts it | none |

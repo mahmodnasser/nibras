@@ -5,7 +5,7 @@ import { dirname as __dirOf, resolve as __resolve } from 'node:path';
 // Paths resolve from this file, so the script runs from any checkout on Windows or Linux.
 const __here = __dirOf(__toPath(import.meta.url)).split(String.fromCharCode(92)).join('/');
 const __kit = __resolve(__here, '../..').split(String.fromCharCode(92)).join('/') + '/';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { writeGenerated } from './write-generated.cjs';
 
 
@@ -24,6 +24,24 @@ for (const line of C05.split('\n')) {
   if (/^\d/.test(last) && !phase.has(m[1])) phase.set(m[1], /^\d+/.exec(last)[0]);
 }
 
+// ---- build phase per identifier from document 34 --------------------------------
+// A rule or workflow is built in the earliest phase of a document 34 slice whose
+// Covers column names it; the owning service's phase in document 05 is the
+// fallback for an identifier no slice names.
+const built = new Map();
+const D34 = K + 'docs/plan/34-work-breakdown.md';
+if (existsSync(D34)) {
+  let ph = null;
+  for (const line of readFileSync(D34, 'utf8').split(/\r?\n/)) {
+    const h = /^### \d+\. Phase (\d)/.exec(line);
+    if (h) ph = h[1];
+    if (!ph || !/^\| SL-/.test(line)) continue;
+    const covers = line.split('|')[5] || '';
+    for (const m of covers.matchAll(/(BR-[A-Z0-9]+-\d{3}|WF-[A-Z]+-\d{2})/g)) if (!built.has(m[1]) || +ph < +built.get(m[1])) built.set(m[1], ph);
+  }
+}
+const phaseOf = (id, owner) => built.get(id) || phase.get(owner) || '?';
+
 const pascal = (s) => s.replace(/[^A-Za-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean)
   .map((w) => w[0].toUpperCase() + w.slice(1)).join('');
 
@@ -39,7 +57,7 @@ for (const block of S.split(/\n(?=### BR-)/).slice(1)) {
   const base = test.replace(/Tests$/, '').replace(/Rules$/, 'Rule');
   const arithmetic = /\b(average|weight|round|pro[- ]?rat|fee|discount|allocat|gpa|percent|tax|\bcap\b|accru|amount|scholarship|refund|credit|prorat|rank|denominator|total|sum|balance|installment|instalment|boundar|score)/i
     .test(h[2] + ' ' + ruleText);
-  rules.push({ id: h[1], name: h[2].trim(), owner, params, test, impl: 'Nibras.' + owner + '.Domain.Rules.' + base, arithmetic, phase: phase.get(owner) || '?' });
+  rules.push({ id: h[1], name: h[2].trim(), owner, params, test, impl: 'Nibras.' + owner + '.Domain.Rules.' + base, arithmetic, phase: phaseOf(h[1], owner) });
 }
 
 // ---- workflows --------------------------------------------------------------
@@ -51,8 +69,17 @@ for (const block of R.split(/\n(?=### WF-)/).slice(1)) {
   const get = (k) => ((new RegExp('\\*\\*' + k + ':\\*\\*\\s*([^·\\n]+)').exec(meta) || [])[1] || '').trim();
   const owner = get('Owner').split(/\s/)[0];
   const name = h[2].trim();
-  flows.push({ id: h[1], name, owner, tier: get('Tier'), mobile: get('Mobile'), offline: get('Offline'),
-    state: pascal(name) + 'Status', folder: 'Application/Features/' + pascal(name) + '/', phase: phase.get(owner) || '?' });
+  // Transition tests: the Test column of the workflow's transition table in Appendix R.
+  const tests = [];
+  let testCol = -1;
+  for (const line of block.split(/\r?\n/)) {
+    if (!/^\|/.test(line)) { testCol = -1; continue; }
+    const cells = line.split('|').slice(1, -1).map((c) => c.trim());
+    if (/^Transition$/i.test(cells[0])) { testCol = cells.findIndex((c) => /^Test$/i.test(c)); continue; }
+    if (testCol >= 0 && !/^:?-{2,}/.test(cells[0])) for (const m of (cells[testCol] || '').match(/TC-[A-Z0-9]+-\d{3}/g) || []) if (!tests.includes(m)) tests.push(m);
+  }
+  flows.push({ id: h[1], name, owner, tier: get('Tier'), mobile: get('Mobile'), offline: get('Offline'), tests,
+    state: pascal(name) + 'Status', folder: 'Application/Features/' + pascal(name) + '/', phase: phaseOf(h[1], owner) });
 }
 
 // ---- checks -------------------------------------------------------------------
@@ -93,7 +120,7 @@ p('|---|---|---|---|');
 for (const [o, c] of [...byOwner.entries()].sort()) p('| ' + o + ' | ' + c.r + ' | ' + c.w + ' | ' + (phase.get(o) || '?') + ' |');
 p('| **Total** | **' + rules.length + '** | **' + flows.length + '** | |');
 p();
-p('Build phases are quoted from `05-service-catalog.md`, which quotes master brief Section 28.');
+p('The service table quotes each service\'s build phase from `05-service-catalog.md`, which quotes master brief Section 28. The Phase column of the rule and workflow tables below is the earliest phase of a `34-work-breakdown.md` slice whose Covers column names the identifier, so a rule a phase 1 slice builds reads phase 1 even when its owning service arrives later; an identifier no slice names falls back to its service\'s phase.');
 p();
 p('### 2. Business rules');
 p();
@@ -109,9 +136,21 @@ p('### 3. Workflows');
 p();
 p('**How to read the table.** The state type is an enumeration in the owning service\'s Domain project, never a set of booleans. The feature folder holds one sub-folder per transition command, following the anatomy in reference architecture Section 2. Transition tests are the rows of the workflow\'s test table in Appendix R, one test each.');
 p();
-p('| Workflow | Name | Owner | Tier | Mobile | Offline | State type | Feature folder | Phase |');
-p('|---|---|---|---|---|---|---|---|---|');
-for (const f of flows) p('| `' + f.id + '` | ' + f.name + ' | ' + f.owner + ' | ' + f.tier + ' | ' + f.mobile + ' | ' + f.offline + ' | `' + f.state + '` | `' + f.folder + '` | ' + f.phase + ' |');
+// Consecutive identifiers of one area collapse into a range: TC-ATT-001 to TC-ATT-006.
+const ranges = (ids) => {
+  const out = [];
+  for (let i = 0; i < ids.length; i++) {
+    const [, area, num] = /^TC-([A-Z0-9]+)-(\d{3})$/.exec(ids[i]);
+    let j = i;
+    while (j + 1 < ids.length && ids[j + 1] === 'TC-' + area + '-' + String(Number(/\d{3}$/.exec(ids[j])[0]) + 1).padStart(3, '0')) j++;
+    out.push(j - i >= 2 ? ids[i] + ' to ' + ids[j] : ids.slice(i, j + 1).join(', '));
+    i = j;
+  }
+  return out.join(', ');
+};
+p('| Workflow | Name | Owner | Tier | Mobile | Offline | State type | Feature folder | Phase | Transition tests (Appendix R) |');
+p('|---|---|---|---|---|---|---|---|---|---|');
+for (const f of flows) p('| `' + f.id + '` | ' + f.name + ' | ' + f.owner + ' | ' + f.tier + ' | ' + f.mobile + ' | ' + f.offline + ' | `' + f.state + '` | `' + f.folder + '` | ' + f.phase + ' | ' + (f.tests.length ? ranges(f.tests) : 'none') + ' |');
 p();
 p('### 4. The implementation contract');
 p();
@@ -161,6 +200,7 @@ p('| Rules with no owning service | ' + (ruleNoOwner.length ? ruleNoOwner.map((r
 p('| Rules with no named test class | ' + (ruleNoTest.length ? ruleNoTest.map((r) => r.id).join(', ') : 'none') + ' |');
 p('| Test class names used by more than one rule | ' + (dupTest.length ? dupTest.join(', ') : 'none') + ' |');
 p('| Workflows with no owning service | ' + (flowNoOwner.length ? flowNoOwner.map((f) => f.id).join(', ') : 'none') + ' |');
+p('| Workflows with no transition test in Appendix R | ' + (flows.filter((f) => !f.tests.length).map((f) => f.id).join(', ') || 'none') + ' |');
 p('| Owners with no build phase in document 05 | ' + (unknownPhase.length ? unknownPhase.join(', ') : 'none') + ' |');
 p('| Rules in Appendix S | ' + rules.length + ' |');
 p('| Workflows in Appendix R | ' + flows.length + ' |');

@@ -19,6 +19,8 @@ Academics owns what is taught and the coursework around it: subjects per grade w
 | Sensitivity (Appendix J) | internal; submissions are confidential |
 | Why the boundary exists | Scaling: an evening submission peak with file traffic through Documents, distinct from the end-of-period write bursts of Assessment |
 
+**Signature features.** Academics owns Appendix W feature 19, the kindergarten daily sheet (Tier 2; demo test `TC-ACA-810` (Appendix W)). Its aggregate, routes, job and folders are in sections 4.11, 5.10, 10 and 14, and only its Appendix B permission is still pending (open point 1). It also serves feature 34, the teacher five-minute mode (the submissions-to-grade count and the quick grade, composed by Bff.Mobile), and feature 12, offline-first mobile (offline grading with conflict detection, REQ-ACA-021). The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities
@@ -34,6 +36,7 @@ Academics owns what is taught and the coursework around it: subjects per grade w
 | Homework load | Load per section per day against the ceiling; publishing above it needs an override reason (REQ-ACA-011, REQ-ACA-012) |
 | Submissions and grading | File, text, link or phone photo; late flag and penalty; missing at closing; rubric grading, inline comments, return; offline grading with conflict detection (REQ-ACA-013 to REQ-ACA-021) |
 | Resource library | Per subject and grade, shared within a department (REQ-ACA-022) |
+| Kindergarten daily sheet | Tier 2 (REQ-ACA-028, Appendix W feature 19): meals, naps, mood, activities, consented photos and a note to guardians per child and day, sent once at the campus send time, corrected visibly (sections 4.11, 5.10) |
 | Question bank, quizzes, attempts, item analysis | Tier 2 (REQ-ACA-023 to REQ-ACA-026) |
 | QTI 3 import and export | Appendix L.5 |
 | LTI 1.3 launches from assignments and resources | Tier 2 (REQ-ACA-030); tool registration belongs to Platform |
@@ -239,7 +242,29 @@ erDiagram
     REF_STUDENT ||--o{ SUBMISSION : makes
     REF_SECTION ||--o{ ASSIGNMENT : "is assigned"
     REF_STAFF ||--o{ TEACHING_ASSIGNMENT : holds
+    REF_STUDENT ||--o{ DAILY_SHEET : "has one per day"
+    DAILY_SHEET ||--o{ DAILY_SHEET_ENTRY : records
+    DAILY_SHEET ||--o{ DAILY_SHEET_REVISION : "keeps after sending"
 ```
+
+### 4.11 Tier 2: `DailySheet` (REQ-ACA-028, Appendix W feature 19)
+
+The kindergarten daily sheet is one aggregate per child and day. A teacher fills it for a whole class in taps, on the web or offline on a tablet. Guardians receive it once, at the campus send time, and a correction after sending is shown as a correction. Appendix J classes it Confidential and keeps it until the child leaves plus 3 years.
+
+| Entity | Field | Type | Null | Class | Notes |
+|---|---|---|---|---|---|
+| DailySheet | (common), `student_id`, `section_id`, `sheet_date` | uuid, uuid, date | no | Internal | One per `(student_id, sheet_date)`; `section_id` is the child's section on that date from `ref_student_section_history` |
+| DailySheet | `status` | enum `DailySheetStatus` | no | Internal | Draft, Sent, Corrected |
+| DailySheet | `note_to_guardians` | text(1000) | yes | Confidential | As the teacher wrote it; never translated or rewritten |
+| DailySheet | `photo_file_ids` | uuid[] | no | Confidential | Documents file references, each scanned before it can be sent; shown only for a child whose School media consent is true at send time |
+| DailySheet | `sent_at`, `corrected_at` | timestamptz | yes | Internal | |
+| DailySheet | `device_version` | bigint | yes | Internal | The version an offline device held (Appendix M), as for grades |
+| DailySheetEntry | (common), `daily_sheet_id`, `kind`, `recorded_at` | uuid, enum, timestamptz | no | Confidential | `kind`: meal, nap, mood, activity |
+| DailySheetEntry | `value_code` | text(32) | no | Confidential | A code from the tenant's daily-sheet code list (meal portion, mood, activity), so the guardian reads it in their own language |
+| DailySheetEntry | `starts_at`, `ends_at` | time | yes | Confidential | Naps only |
+| DailySheetRevision | `daily_sheet_id`, `revision`, `snapshot`, `changed_by`, `changed_at` | uuid, int, jsonb, uuid, timestamptz | no | Confidential | Written when a sent sheet changes, so the guardian sees what was corrected |
+
+Invariants: a sheet exists only for a child whose grade level is in the tenant's daily-sheet grade levels (section 11), and only a teacher with a live teaching assignment for the child's section writes it. A sheet with no entry and no note is never sent. A change to a `Sent` sheet moves it to `Corrected`, writes a revision row and sends one correction notice; it never rewrites silently. An offline write whose `If-Match` version is older than the server's is returned as a conflict for the teacher, never applied over the newer sheet (the REQ-ACA-021 path). A photo of a child without media consent stays off that child's guardian sheet, and the teacher is told why. No event leaves Academics for a sheet: Appendix E has none, and nothing but the guardians' notification needs one.
 
 ---
 
@@ -383,6 +408,18 @@ Rubrics are their own Appendix B resource, `academics.rubrics` with view, create
 | GET | `/jobs/{id}` | the starting permission, or `platform.jobs.view` | none | `Job` resource | `ACADEMICS_NOT_FOUND` | safe |
 | POST | `/jobs/{id}/cancel` | the starter, or `platform.jobs.cancel` | none | 202 | `ACADEMICS_VALIDATION_FAILED` (terminal) | state check |
 
+### 5.10 Kindergarten daily sheet (Tier 2)
+
+This is the OpenAPI that SL-ACA-209 builds and that SL-ACA-400 to SL-ACA-404 consume. Appendix B has no daily-sheet resource yet, so the Permission column names none. The routes are specified in full, and only the permission waits on the Appendix B amendment of open point 1. Until it lands, the use-case folder is not deployed, as SL-ACA-209 says. The scopes are those of section 5: teachers `own-sections`, guardians `own-children`.
+
+| Method | Path | Permission | Request | Response | Errors | Idempotent |
+|---|---|---|---|---|---|---|
+| GET | `/daily-sheets?sectionId=&date=` | pending Appendix B (open point 1); teachers, `own-sections` | query | `DailySheetDto[]`: one per enrolled child of the section, an empty draft for a child with no sheet yet | none beyond K.1 | safe |
+| PUT | `/daily-sheets/{studentId}/{date}` | pending Appendix B (open point 1); teachers, `own-sections` | `DailySheetRequest`: entries, note, photo file ids; `If-Match` once the sheet exists | 200 `DailySheetDto`; a change to a `Sent` sheet returns it `Corrected` with its revision number | `ACADEMICS_CONCURRENCY_CONFLICT` (an older offline version), `ACADEMICS_VALIDATION_FAILED` (grade level without daily sheets, a photo not yet scanned) | `If-Match` |
+| POST | `/daily-sheets/bulk-entries` | pending Appendix B (open point 1); teachers, `own-sections` | `{ sectionId, date, studentIds[] (at most 40), entry }`, `Idempotency-Key` | 200 with one result per child, so many children are marked at once | `ACADEMICS_VALIDATION_FAILED` | `Idempotency-Key` |
+| GET | `/students/{id}/daily-sheets?from=&to=` | pending Appendix B (open point 1); guardians, `own-children`; teachers, `own-sections` | query, keyset, newest first | Sent and corrected sheets only, with the revision history; photos as 5-minute signed links from Documents, consented only | `ACADEMICS_NOT_FOUND` (a child outside scope) | safe |
+| GET | `/daily-sheets/changes?checkpoint=&limit=` | pending Appendix B (open point 1); the caller's scope | checkpoint from the previous page | Sheets changed in the caller's scope since the checkpoint, at most 500, with `nextCheckpoint` and `hasMore`; Bff.Mobile's delta pull wraps it (SL-ACA-402) | `ACADEMICS_VALIDATION_FAILED` (unknown or expired checkpoint) | safe |
+
 ---
 
 ## 6. gRPC
@@ -400,7 +437,7 @@ Reference architecture table 8.0 lists no service that calls Academics synchrono
 
 | Target | Method | Why | Deadline | Fallback |
 |---|---|---|---|---|
-| School `StudentDirectory` | `GetStudent`, `ListStudentsBySection` | A student referenced before its enrolled event arrived (`10-data-architecture.md` rule 4) | 2 s, 5 s | Local copy; the handler answers `ACADEMICS_DEPENDENCY_UNAVAILABLE` only when the copy is missing too |
+| School `StudentDirectory` | `GetStudent`, `ListStudentsBySection` | A student referenced before its enrolled event arrived (`10-data-architecture.md` rule 4); and, from `DailySheetSendJob` only, each child's media consent at send time, which School says is consulted at publishing (REQ-SCH-034) | 2 s, 5 s | Local copy; the handler answers `ACADEMICS_DEPENDENCY_UNAVAILABLE` only when the copy is missing too |
 | School `StaffDirectory`, `StructureDirectory` | `GetStaff`, `GetSection` | Names absent from the School events | 2 s | Show identifiers; refetch next read |
 | School `ReferenceReconciliation` | `Checksum`, `ListSnapshotPage` | Nightly | 30 s, 5 s | Retry next night |
 | Scheduling `Timetables` | `GetVersion`, `Checksum` | Entries of a published version, and nightly reconciliation (`10-data-architecture.md` section 6); table 8.0 (v9.1) lists this call on the Academics row | 5 s per page, 30 s | Keep the previous version's entries; coursework is not blocked |
@@ -426,7 +463,7 @@ Payload fields are owned by Appendix E, Academics section; cited, not restated.
 | `academics.usage.recorded.v1` | `tenantId` | Hourly: submissions, storage referenced | Platform |
 | `academics.audit.recorded.v1` | `tenantId` | Every write and every transition of WF-ACA-01 | Audit |
 
-Commands sent on `nibras.academics`: `RequestNotification` (`notification.commands.request-notification.v1`) for the assignment due reminder and the ungraded escalation, which is how the Appendix E jobs-table entry "Assignment due reminder → `notification.notification.requested.v1`" is realised (`11-messaging-architecture.md` section 2.4).
+Commands sent on `nibras.academics`: `RequestNotification` (`notification.commands.request-notification.v1`) for the assignment due reminder, the ungraded escalation, and the kindergarten daily sheet and its correction notice (one per child to its guardians; Appendix C has no daily-sheet row, open point 1), which is how the Appendix E jobs-table entry "Assignment due reminder → `notification.notification.requested.v1`" is realised (`11-messaging-architecture.md` section 2.4).
 
 ### 7.2 Consumed
 
@@ -462,6 +499,24 @@ Queues from `11-messaging-architecture.md` section 2.5 (Academics table).
 | WF-ASM-01 Exam to report card | Upstream | Graded submissions feed the gradebook; `assessment.grades.locked.v1` closes coursework grading |
 
 Every transition runs through the transition pipeline of `13-workflows-and-sagas.md` section 5.1 and writes `academics.audit.recorded.v1`. Academics orchestrates no saga.
+
+The WF-ACA-01 machine, copied from Appendix R without change so that this sheet can be built from on its own; Appendix R stays the source, and its transition tests are the WF-ACA-01 rows of section 15. `Draft` and `Published` are states of the `Assignment`; every state from `Submitted` onward is a state of one student's `Submission`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft: teacher drafts
+    Draft --> Published: visible to students, homework load checked
+    Published --> Submitted: student submits before the due time
+    Published --> LateSubmitted: student submits after the due time
+    Published --> Missing: closing time passed with no submission
+    Submitted --> Graded: teacher grades
+    LateSubmitted --> Graded: late policy applied
+    Missing --> Graded: zero or exemption recorded
+    Graded --> ResubmissionRequested: teacher asks for another attempt
+    ResubmissionRequested --> Submitted: student resubmits
+    Graded --> Returned: feedback released to the student
+    Returned --> [*]
+```
 
 ---
 
@@ -499,6 +554,8 @@ All run in the Api host through Quartz.NET and `Nibras.BuildingBlocks.Jobs`, per
 | `SubmissionPartitionJob` | `AcademicYearOpenedConsumer` | Creates the list partition for the new year and its indexes | none | Short |
 | `ReferenceCopyReconciliationJob` | Nightly, staggered 01:00 to 04:00 tenant time | Section 9 | `reporting.data-quality.issue-detected.v1` on mismatch | Long: per copy |
 | `UsageFlushJob` | Hourly | Usage meters | `academics.usage.recorded.v1` | Short |
+| `DailySheetSendJob` | Every 15 minutes (Tier 2) | Sends the day's sheets of each campus whose send time has passed: reads media consent per section, marks each sheet `Sent`, and sends one notification per child to its guardians. A later correction sends one correction notice (REQ-ACA-028, SL-ACA-400) | `RequestNotification`; `academics.audit.recorded.v1` per sheet | Short |
+| `LeaverRetentionJob` | Monthly | Deletes the daily sheets, entries, revisions and photo references of children who left more than 3 years ago (Appendix J; `10-data-architecture.md` §8) | `academics.audit.recorded.v1` per run | Short |
 
 ---
 
@@ -521,6 +578,8 @@ All run in the Api host through Quartz.NET and `Nibras.BuildingBlocks.Jobs`, per
 | `academics.quizzes.view`, `.create`, `.edit`, `.delete`, `academics.quizzes.publish`, `academics.quizzes.release-results` | Teachers; students view | own-sections, self |
 | `academics.resources.view`, `.create`, `.edit`, `.delete` | Teachers | department, own-sections |
 
+The kindergarten daily sheet (section 5.10) has no Appendix B resource. Its routes wait on the amendment of open point 1 and name no permission until it lands.
+
 **Notifications (Appendix C) triggered by Academics.**
 
 | Appendix C row | Trigger | Recipients | Urgency, channels |
@@ -538,7 +597,7 @@ All run in the Api host through Quartz.NET and `Nibras.BuildingBlocks.Jobs`, per
 | Academic | homework ceiling, comment length, publish windows | tenant values | Load check, feedback validation |
 | General | languages, time zone, work week, calendars | tenant values | Due times, working-day counts, week of a plan |
 | AI | enabled features | off | Drafting feedback through Ai, never here |
-| Academics-owned configuration, not Appendix G | submission size limit per tenant (default 25 MB), young-grade threshold for guardian copies (default grade 4), lesson-plan review required (default yes) | as stated | Section 4 of this sheet |
+| Academics-owned configuration, not Appendix G | submission size limit per tenant (default 25 MB), young-grade threshold for guardian copies (default grade 4), lesson-plan review required (default yes), daily-sheet grade levels (default none, so no sheet exists until the school names its nursery and kindergarten grades), daily-sheet send time (default 15:00 campus time), daily-sheet code list for meals, moods and activities (default: the bilingual list seeded with the tenant) | as stated | Section 4 of this sheet; section 10 for the send time |
 
 **Error codes (Appendix K, Academics).**
 
@@ -578,7 +637,7 @@ The threat table is `12-security-privacy-safety.md` section 2.5 (T-ACA-01 to T-A
 | Data class (Appendix J) | Held here | Handling |
 |---|---|---|
 | Internal | Curriculum, assignments, resources, teaching assignments, student names in copies | Cacheable with the tenant in the key |
-| Confidential | Submissions (content, files), marks and rubric scores before release to Assessment, feedback, quiz answers, answer keys | Never in an event beyond the Appendix E identifiers and mark; signed URLs bound to the caller for 5 minutes; submission files scanned before they are served |
+| Confidential | Submissions (content, files), marks and rubric scores before release to Assessment, feedback, quiz answers, answer keys; kindergarten daily sheets, their photos and notes (Appendix J), never cached | Never in an event beyond the Appendix E identifiers and mark; signed URLs bound to the caller for 5 minutes; submission files scanned before they are served |
 
 **Never cached, logged or sent to a device:** submission content and feedback text (except to the student's and teacher's own devices within their scope), quiz answer keys before results are released, attempt contents in progress. Offline grades on a teacher's device are encrypted in the device store, purged on sign-out and on permission loss (`12-security-privacy-safety.md` section 6.2). A student's view never contains another student's submission (T-ACA-01).
 
@@ -631,6 +690,11 @@ src/Services/Academics/                                                  Academi
 │   │   └── ItemAnalysis.cs                                              difficulty and discrimination
 │   ├── Lti/                                                             Tier 2 launches
 │   │   └── LtiLaunch.cs                                                 launch record and grade return
+│   ├── DailySheets/                                                     Tier 2 aggregate DailySheet (REQ-ACA-028, feature 19)
+│   │   ├── DailySheet.cs                                                one child and day; send, correct with a revision, offline version check
+│   │   ├── DailySheetEntry.cs                                           meal, nap, mood or activity with a code
+│   │   ├── DailySheetRevision.cs                                        snapshot kept when a sent sheet changes
+│   │   └── DailySheetStatus.cs                                          Draft, Sent, Corrected
 │   ├── References/                                                      slim copies rebuilt from events
 │   │   ├── StudentReference.cs                                          student with section and status
 │   │   ├── StudentSectionHistory.cs                                     past sections for prerequisites
@@ -722,6 +786,11 @@ src/Services/Academics/                                                  Academi
 │   │   │   ├── LaunchLtiToolHandler.cs                                  builds the launch with course and user context
 │   │   │   ├── LaunchLtiToolValidator.cs                                link registered by Platform
 │   │   │   └── LaunchLtiToolEndpoint.cs                                 POST /lti-launches
+│   │   ├── DailySheets/                                                 Tier 2 section 5.10; deployed with the Appendix B amendment (open point 1)
+│   │   │   ├── DailySheetsRequests.cs                                   class view, upsert, bulk entries, guardian history, changes records
+│   │   │   ├── DailySheetsHandler.cs                                    teaching-assignment scope, If-Match conflicts, revision on correction
+│   │   │   ├── DailySheetsValidator.cs                                  grade level configured, at most 40 children in bulk, photos scanned
+│   │   │   └── DailySheetsEndpoint.cs                                   /daily-sheets and /students/{id}/daily-sheets routes
 │   │   └── GetJob/                                                      job resource and cancel
 │   │       ├── GetJobRequests.cs                                        get and cancel records
 │   │       ├── GetJobHandler.cs                                         reads IJobStore
@@ -778,6 +847,7 @@ src/Services/Academics/                                                  Academi
 │   │   │   ├── SubmissionConfigurations.cs                              submissions list-partitioned by year, submission_contents, feedback
 │   │   │   ├── ResourceConfiguration.cs                                 resources
 │   │   │   ├── QuizConfigurations.cs                                    questions, question_bodies, quizzes, attempts, attempt_answers, lti_launches
+│   │   │   ├── DailySheetConfigurations.cs                              daily_sheets unique on student and date, daily_sheet_entries, daily_sheet_revisions
 │   │   │   └── ReferenceConfigurations.cs                               every ref_ table
 │   │   ├── Migrations/                                                  expand-and-contract
 │   │   │   ├── 20260901000000_Initial.cs                                first schema, first partition, row-level security
@@ -823,7 +893,9 @@ src/Services/Academics/                                                  Academi
 │   │   ├── TimetableFetchJob.cs                                         timetable copy pages
 │   │   ├── SubmissionPartitionJob.cs                                    yearly partition
 │   │   ├── ReferenceCopyReconciliationJob.cs                            nightly reconciliation
-│   │   └── UsageFlushJob.cs                                             usage meters
+│   │   ├── UsageFlushJob.cs                                             usage meters
+│   │   ├── DailySheetSendJob.cs                                         Tier 2 daily sheets at the campus send time, consented photos only
+│   │   └── LeaverRetentionJob.cs                                        daily sheets deleted 3 years after the child leaves
 │   ├── appsettings.json                                                 non-secret defaults
 │   ├── appsettings.Development.json                                     development values
 │   └── Dockerfile                                                       Debian aspnet image, non-root, ICU and tzdata
@@ -883,6 +955,20 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 | TC-ACA-421 | Query budgets for hot queries 1 to 9 | `QueryBudget.Tests` |
 | TC-ACA-422 | Reconciliation repairs a corrupted `ref_student` row and raises one issue; the teaching-assignment checksum matches after a replay | Integration |
 | TC-ACA-423 | A student section change keeps old-section work with the old section and shows new-section work from the effective date | Integration |
+| TC-ACA-424 | A teacher marks lunch "most" for 18 children of a kindergarten section in one bulk call and adds a nap for 3. Each child has one sheet for the day, and a child of a grade level without daily sheets is refused (REQ-ACA-028) | Integration, Tier 2 |
+| TC-ACA-425 | At the campus send time the send job marks each non-empty sheet `Sent` and sends one notification per child. A photo appears only on the sheets of children whose media consent is true when the job runs, and an empty sheet is not sent (REQ-ACA-028, SL-ACA-400) | Integration, Tier 2 |
+| TC-ACA-426 | A sent sheet changed by the teacher becomes `Corrected`, keeps a revision row and sends one correction notice. An offline change carrying the older version is returned as `ACADEMICS_CONCURRENCY_CONFLICT` and changes nothing (REQ-ACA-028, Appendix M) | Integration, Tier 2 |
+| TC-ACA-760 | With the process culture set to `ar-SA`, `en-US` and `de-DE` in turn, the homework-load minutes of one section's day, the late flag of a submission one second after the due instant and a rubric total of 8.5 out of 10 come out identical, and every stored value is written with the invariant culture (REQ-PLAT-019) | Unit |
+
+### 15.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Academics is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, integration, contract and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). The one-command start that brings it up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml` | ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture and time | Due and closing instants are stored in UTC and evaluated in the tenant's time zone; nothing is parsed or formatted with the machine's culture | TC-ACA-760; TC-ACA-416 (the evening reminder across three time zones); `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
+| Right-to-left output | Academics renders no document of its own; its screens (assignments, the grading grid, the homework load) are right-to-left in the web and mobile clients | The web end-to-end specs, TC-ACA-201 and TC-ACA-202 among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2) | Linux (Playwright; goldens are authoritative on Linux) |
+| Arabic search and collation | None here: Academics runs no name search, and student names come from School's copy, which carries the normalized search column | not applicable | not applicable |
+| Devices without Google services | A student submits from the phone and a teacher grades offline with no Google service involved; the evening reminder reaches such a device through Notification's fallback (in-app while the app is open, then email) | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | Device pass, per release |
 
 ---
 
@@ -895,13 +981,15 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 | Files | Uploads go straight to Documents; Academics handles only references, so the API does not carry file bytes | Documents upload p95 above 20 seconds for 5 MB |
 | Jobs | Reminder and closing jobs are per tenant and short; QTI jobs are bounded by the per-tenant concurrency limit | QTI import above 10 minutes for 1,000 items |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| Evening submission peak exhausts the connection pool | med | high | Writes are 3 commands; PgBouncer sized from the load test; attachments bypass the API | Academics team |
-| Offline grades silently overwrite newer grades | low | high | `If-Match` on every grade and the conflict path (TC-ACA-006, TC-ACA-409) | Academics and mobile teams |
-| Scope drift: a teacher keeps access after reassignment | med | med | Scope read from the cache entry invalidated by the teaching-assignment event; TC-SEC-201 | Academics team |
-| Weekly periods maintained twice (here and in Scheduling) | high | med | Open point 2 of the Scheduling sheet; propose `periodsPerWeek` on the teaching-assignment event | Architect |
-| Missing-work signal never reaches Reporting | low | med | `academics.submission.missing.v1` (Appendix E, ADR-0019), published per submission by `AssignmentClosingJob` | Architect |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| Evening submission peak exhausts the connection pool | 3 | 4 | 12 | Writes are 3 commands; PgBouncer sized from the load test; attachments bypass the API | Academics team | RISK-55 |
+| Offline grades silently overwrite newer grades | 2 | 4 | 8 | `If-Match` on every grade and the conflict path (TC-ACA-006, TC-ACA-409) | Academics and mobile teams | RISK-09 |
+| Scope drift: a teacher keeps access after reassignment | 3 | 3 | 9 | Scope read from the cache entry invalidated by the teaching-assignment event; TC-SEC-201 | Academics team | RISK-13 |
+| Weekly periods maintained twice (here and in Scheduling) | 4 | 3 | 12 | Open point 2 of the Scheduling sheet; propose `periodsPerWeek` on the teaching-assignment event | Architect | RISK-56 |
+| Missing-work signal never reaches Reporting | 2 | 3 | 6 | `academics.submission.missing.v1` (Appendix E, ADR-0019), published per submission by `AssignmentClosingJob` | Architect | none |
 
 ---
 
@@ -932,7 +1020,7 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Closed by ADR-0019 for student groups and rubrics: Appendix B now carries `academics.student-groups` and `academics.rubrics`, each with view, create, edit and delete, and sections 5.2 and 5.5 use them. Still open for elective choices, the kindergarten daily sheet (REQ-ACA-028) and online classes (REQ-ACA-027) | Elective choices stay under `academics.teaching-assignments.*`; the two Tier 2 features get no endpoint until Appendix B defines their permissions. No open question owns this; the change list records it as outside the logged defects, for a later ADR | Product owner, Appendix B amendment | Two Tier 2 features cannot ship without the amendment | 2 | 2 | 4 | none |
+| 1 | Closed by ADR-0019 for student groups and rubrics: Appendix B now carries `academics.student-groups` and `academics.rubrics`, each with view, create, edit and delete, and sections 5.2 and 5.5 use them. Still open, as a brief change for the product owner: Appendix B has no resource for the kindergarten daily sheet (REQ-ACA-028, the signature feature 19 of Appendix W), for online classes (REQ-ACA-027) or for elective choices, and Appendix C has no daily-sheet row | The daily sheet is specified in full (sections 4.11, 5.10, 10, 14 and 15), and only its permission is missing. The proposed amendment is a daily-sheet resource in Appendix B with view, create and edit, plus a daily-sheet row in Appendix C, made under an ADR with a version bump of the three briefs. This sheet names no permission string until then. Until then the daily-sheet folder is not deployed, and the guardian notice goes through `RequestNotification`. Elective choices stay under `academics.teaching-assignments.*`, and online classes wait with open point 4. No open question in `docs/project/OPEN_QUESTIONS.md` carries the amendment yet, and entering one there is the next step for the product owner | Product owner, Appendix B amendment | Feature 19 is gated on the amendment. If it has not landed by phase 2, SL-ACA-209 and SL-ACA-400 to SL-ACA-404 move to phase 5 (document 34), and the phase 4 reserve demo step R-08 (`TC-ACA-810`) cannot run, which qualifies a signature-feature promise | 3 | 3 | 9 | none |
 | 2 | Closed by ADR-0019. Appendix E now carries `academics.submission.missing.v1`, the name this sheet proposed, with Reporting as its consumer, and its jobs table lists `AssignmentClosingJob` (Academics, every 5 minutes) as the publisher | Section 10's `AssignmentClosingJob` publishes one event per submission it moves to `Missing`; the derive-from-absence workaround is withdrawn | Closed | None; early warning no longer counts a late-but-accepted submission as missing | 1 | 1 | 1 | none |
 | 3 | Closed by ADR-0019. Reference architecture table 8.0 (v9.1) adds Scheduling `Timetables` (published version entries, nightly checksum) to the Academics row, and states the one-hop rule and the meaning of "job only" in the same section | Section 6.2 stands as written | Closed | None; the timetable copy is allowed by the table it is read against | 1 | 1 | 1 | none |
 | 4 | Online classes (REQ-ACA-027) capture attendance, which Attendance owns, but no event or command carries participation to Attendance | Deferred with the Tier 2 feature; propose a command to Attendance | Architect | None until Tier 2 | 2 | 1 | 2 | none |
@@ -958,3 +1046,6 @@ Existing identifiers are reused; new ones are minted from `TC-ACA-401` upward.
 | Consumers are idempotent | TC-ACA-419 | Integration suite |
 | The tree matches the anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Academics and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (`TC-TST-124`), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | TC-ACA-421 with `EXPLAIN (ANALYZE, BUFFERS)` under `docs/perf/academics/` | Pipeline |
+| The WF-ACA-01 diagram of section 8 is Appendix R's | `plan-consistency-checker` compares it line by line with Appendix R WF-ACA-01 at the Group C review and on every change to either; kit-lint R17 (the block declares a known diagram type) | Review; lint |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 15.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares the feature numbers and demo tests with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 (each cited demo test is defined in exactly one document) | Review; lint |

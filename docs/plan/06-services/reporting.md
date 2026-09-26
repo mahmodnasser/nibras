@@ -2,7 +2,7 @@
 
 Reporting answers questions about the school without owning a single fact about it. It builds read models from the integration events of every other service, keeps a checkpoint per projection per tenant so that any read model can be rebuilt from its sources with one command, and serves from them the role dashboards of Appendix D, the Student 360 read model that the backends-for-frontends compose, the report library and the report builder with saved, shared and scheduled reports, the Data Quality Center with its rules, scores and fix actions, and the early-warning indicator that always says why a student was flagged in a Because panel and never shows a bare score. It reads from a streaming replica with lag awareness, falling back to the primary when replay lag passes 30 seconds. It holds no Wellbeing row: Wellbeing reaches it as identifiers and category codes that become counts, and even those counts are withheld from a Student 360 viewer who does not hold the explicit Wellbeing permission for that student.
 
-**Group** C · **Requirement areas covered** RPT, with DATA, PERF, SEC, PRV and WEL rows that bind this service · **Last updated** 2026-09-21 by the planning session
+**Group** C · **Requirement areas covered** RPT, with DATA, PERF, SEC, PRV and WEL rows that bind this service · **Last updated** 2026-09-26 by the round-3 remediation (flag state diagram, platform notes, signature features, risk scale, closed open points)
 
 | Fact | Value | Source |
 |---|---|---|
@@ -20,6 +20,8 @@ Reporting answers questions about the school without owning a single fact about 
 | Scaling profile | "Read-heavy; freshness within 60 s; 2 projection replicas as the Section 34 starting point" | `05-service-catalog.md` |
 | Build phase | 4 (master brief Section 28) | `05-service-catalog.md` |
 | Sensitivity | "confidential; excludes Wellbeing rows by design" | `05-service-catalog.md`, Appendix J.3 |
+
+**Signature features.** Reporting owns seven Appendix W features, more than any other service: 1 (Today dashboards where every card leads to an action), 4 (early warning with explanation and an intervention), 13 (data quality center), 21 (inspection and accreditation readiness), 25 (morning brief per role), 27 (explain this number) and 28 (Because panel on every automated action). It also serves the read model behind feature 2 (Student 360 timeline), which Bff.Web owns. Each feature's rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them, and section 14 cites the demo tests by their Appendix W identifiers.
 
 ---
 
@@ -394,6 +396,23 @@ sequenceDiagram
     API->>API: teacher opens the Because panel, reasons with drill links
     API->>API: override with a reason, or open intervention
     WEL->>PRJ: wellbeing.intervention.opened.v1 links the flag
+```
+
+**The early-warning flag's own states** (section 3.3, `status`). Reporting owns no Appendix R workflow, so this machine carries no WF identifier; its transitions are proved by TC-RPT-326 to TC-RPT-332.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Raised: rules or the model fire with one to five traceable reasons
+    Raised --> Raised: rescoring updates the band and the reasons
+    Raised --> Overridden: override with a reason, re-raise suppressed 14 days
+    Raised --> InterventionRequested: a teacher chooses to open an intervention
+    InterventionRequested --> InterventionOpened: wellbeing.intervention.opened.v1 for the student
+    Raised --> InterventionOpened: wellbeing.intervention.opened.v1 for the student
+    Raised --> Cleared: inputs back under the threshold, flag-cleared published once
+    InterventionRequested --> Cleared: inputs back under the threshold, the suggestion withdrawn
+    Overridden --> [*]
+    InterventionOpened --> [*]
+    Cleared --> [*]
 ```
 
 ---
@@ -902,6 +921,20 @@ Existing identifiers are reused; new ones are minted upward from `TC-RPT-310` in
 | TC-RPT-349 | Integration | Projection drift planted in a sample is found by `ProjectionConsistencyJob`, rebuilt, and reported once |
 | TC-RPT-350 | Integration | Morning brief assembled by 05:30 campus time on a working day and not on a weekend of the campus work week |
 
+### 14.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Reporting's own suites, the Api and the `Reporting.Projections` worker, run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks` and `Localization`, which hold its numeral, date and culture handling.
+
+| Concern | What Reporting does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| Load | N-05 with and without replay paused | TC-RPT-348, TC-PERF-027 (k6) | `ubuntu-latest`, load tier |
+| One-command local start | The Api and the `Reporting.Projections` worker start under `aspire run` or the compose `dev` profile, without a read replica, and report ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant values | Facts, figures and open-data exports are computed and serialized with the invariant culture; cards format in the viewer's culture with the tenant's numerals; CSV exports carry no bidi control characters | `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE`; TC-RPT-337 | `ubuntu-latest`, `windows-latest` for the shared rules |
+| Time zones and the work week | Scheduled reports and the morning brief run in the campus's IANA time zone and work week, never the host's | TC-RPT-320, TC-RPT-350; `TC-PLAT-005` (document 33) inside the built image | `ubuntu-latest` |
+| Right to left | Dashboards and charts mirror as `24-localization-and-calendars.md` §9.3 states; exported reports are rendered by Documents in both directions | The four-way snapshots of every screen family (`24-localization-and-calendars.md`, How verified); `TC-L10N-101` (document 08) for the principal's workspace in Arabic; `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
+| Mobile without Google services | The parent's child card and the morning brief reach phones through Bff.Mobile; the brief's push reaches a device without Google services in-app while the app is open, and by email | TC-RPT-501; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | `ubuntu-latest`; the device pass |
+
 ---
 
 ## 15. Scaling, partitioning and risks
@@ -915,15 +948,17 @@ Existing identifiers are reused; new ones are minted upward from `TC-RPT-310` in
 | Rebuild | Per tenant and projection, tenant-fair, outside the band's peak window | A full rebuild of a 20,000-student tenant above 30 minutes |
 | Scoring | Daily plus incremental; one linear model per tenant, milliseconds per student | Scoring job above 10 minutes for the largest tenant |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A Wellbeing count reaches a viewer without the permission | low | critical | One gate type, architecture test on column readers, block never cached, TC-RPT-310 to TC-RPT-313 | Security owner |
-| A flag without reasons, or a bare score, reaches a teacher | low | high | Reasons from the same computation, score never serialized, TC-RPT-326, TC-RPT-328 | Reporting lead |
-| Projection drift shows a principal a wrong number | med | high | Checkpoint in the same transaction, nightly consistency sample, rebuild, explain-this-number drill | Reporting lead |
-| Replica lag shows yesterday's attendance after a teacher marks | med | med | Read-your-writes header, 30 s routing, `asOf` on every response | Reporting lead |
-| Report builder leaks across scopes | med | high | Allow-list, scope before aggregation, 10-student floor, TC-RPT-321, TC-RPT-322 | Security owner |
-| Early-warning model bias against a group | med | high | Rung 2 only when it beats rules on the tenant's own data, override reasons reviewed monthly, reasons always shown | Product owner |
-| Governance records make Reporting a source of truth (Open point 1) | med | med | Separate schema excluded from rebuild, backed up as source data | Architect |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A Wellbeing count reaches a viewer without the permission | 2 | 5 | 10 | One gate type, architecture test on column readers, block never cached, TC-RPT-310 to TC-RPT-313 | Security owner | RISK-24 |
+| A flag without reasons, or a bare score, reaches a teacher | 2 | 4 | 8 | Reasons from the same computation, score never serialized, TC-RPT-326, TC-RPT-328 | Reporting lead | none |
+| Projection drift shows a principal a wrong number | 3 | 4 | 12 | Checkpoint in the same transaction, nightly consistency sample (TC-RPT-349), rebuild, explain-this-number drill | Reporting lead | RISK-15 |
+| Replica lag shows yesterday's attendance after a teacher marks | 3 | 3 | 9 | Read-your-writes header, 30 s routing, `asOf` on every response | Reporting lead | none |
+| Report builder leaks across scopes, or two overlapping reports are subtracted to reveal one child | 3 | 4 | 12 | Allow-list, scope before aggregation, 10-student floor, TC-RPT-321, TC-RPT-322 | Security owner | RISK-49 |
+| Early-warning model bias against a group | 3 | 4 | 12 | Rung 2 only when it beats rules on the tenant's own data, override reasons reviewed monthly, reasons always shown | Product owner | RISK-38 |
+| Governance records make Reporting a source of truth (Open point 1) | 3 | 3 | 9 | Separate schema excluded from rebuild, backed up as source data | Architect | none |
 
 ---
 
@@ -954,17 +989,17 @@ Existing identifiers are reused; new ones are minted upward from `TC-RPT-310` in
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Points 7 and 9 are answered and leave the table; their numbers stay free so the others keep theirs. Point 7: Appendix E names Reporting in the consumer column of all nine keys section 6.2 binds (`school.guardian.updated.v1`, `admissions.offer.made.v1`, `assessment.marks.overdue.v1`, `attendance.attendance.not-marked.v1`, `finance.account.restricted.v1`, `finance.account.cleared.v1`, `documents.export.completed.v1`, `scheduling.substitution.assigned.v1`, `audit.integrity-check.failed.v1`). Point 9: Appendix R WF-SCH-03 records the seal as `reporting.audit.recorded.v1`, and `YearSnapshotHandler` seals on `school.academic-year.closed.v1`.
+
 | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|
-| 1. Still open. ADR-0019 considered `reporting.governance.*` and did not apply it: the change list records it among the gaps named only in sheet open points and not in the defect log, left for a later ADR. Appendix B is unchanged for Reporting | Keep them in a `governance` schema of `nibras_reporting`, excluded from rebuild, under an ADR; `reporting.reports.*` gates them. No open question owns this | Architect, Appendix B owner | Moving them to Operations or Platform moves one schema and eleven endpoints | 3 | 2 | 6 | RISK-43 |
-| 2. Still open. ADR-0019 defined "job only" in table 8.0 and stated the one-hop rule there, but deliberately did not add a Reporting row: the change list scopes the 8.0 edit to School, Platform, Identity, Scheduling, Hr, Academics and Ai, and names the Reporting snapshot reads among the rows that still need adding | Job-only reads, never on a request path, as section 5 states; record them in table 8.0 under a later ADR. No open question owns this | Architect | Until then the table and this sheet disagree about Reporting's reads | 1 | 1 | 1 | RISK-43 |
-| 3. Still open. ADR-0019 considered `reporting.early-warning.override` and did not apply it, for the same reason as open point 1: it was named only in this sheet's open point and not in the defect log | `reporting.early-warning.open-intervention` gates both decisions on a flag. No open question owns this | Appendix B owner, later ADR | An override cannot be withheld from a role that may open an intervention | 3 | 2 | 6 | RISK-43 |
+| 1. Appendix B has no resource for the Tier 2 governance records (REQ-RPT-016, REQ-RPT-017). ADR-0019 considered `reporting.governance.*` and did not apply it: the change list records it among the gaps named only in sheet open points, left for a later ADR | Keep them in a `governance` schema of `nibras_reporting`, excluded from rebuild, under an ADR; `reporting.reports.*` gates them. No open question owns this | Architect, Appendix B owner | Moving them to Operations or Platform moves one schema and eleven endpoints | 3 | 2 | 6 | RISK-43 |
+| 2. Reference architecture table 8.0 has no row for Reporting's job-only snapshot reads. ADR-0019 defined "job only" there and stated the one-hop rule, but scoped its 8.0 edit to School, Platform, Identity, Scheduling, Hr, Academics and Ai, and names the Reporting reads among the rows that still need adding | Job-only reads, never on a request path, as section 5 states; record them in table 8.0 under a later ADR. No open question owns this | Architect | Until then the table and this sheet disagree about Reporting's reads | 1 | 1 | 1 | RISK-43 |
+| 3. Appendix B has no separate permission for overriding an early-warning flag. ADR-0019 considered `reporting.early-warning.override` and did not apply it, for the same reason as open point 1 | `reporting.early-warning.open-intervention` gates both decisions on a flag. No open question owns this | Appendix B owner, later ADR | An override cannot be withheld from a role that may open an intervention | 3 | 2 | 6 | RISK-43 |
 | 4. No command lets Reporting open an intervention, and `wellbeing.intervention.opened.v1` carries no flag id | The client follows a hand-off link to Wellbeing's create-intervention screen with the flag id; Reporting links by student and open flag | Wellbeing lead, Appendix E owner | An optional `sourceFlagId` on the event would make the link exact | 2 | 1 | 2 | none |
 | 5. Every service's reconciliation job "raises `reporting.data-quality.issue-detected.v1`", but document 11 §1.4 lets a service publish only on its own exchange | Services send `reporting.commands.record-data-quality-finding.v1` on their own exchange and Reporting publishes the catalogued event, as `RequestNotification` does for Notification | Document 11 owner | Without it the Data Quality Center only sees Reporting's own rules | 2 | 2 | 4 | RISK-15 |
 | 6. Appendix C has no row for scheduled-report delivery or the morning brief push | `RequestNotification` with a Reporting template code | Appendix C owner | Two catalogued rows would replace the command | 2 | 1 | 2 | RISK-43 |
-| 7. Closed by ADR-0019. Appendix E added Reporting to the consumer column of all nine keys: `school.guardian.updated.v1`, `admissions.offer.made.v1`, `assessment.marks.overdue.v1`, `attendance.attendance.not-marked.v1`, `finance.account.restricted.v1`, `finance.account.cleared.v1`, `documents.export.completed.v1`, `scheduling.substitution.assigned.v1` and `audit.integrity-check.failed.v1` | Section 6.2 binds all nine without a marking; the "not available" cards are withdrawn | Closed | None; every part 7.1 source is bound | 1 | 1 | 1 | none |
-| 8. Still open. ADR-0019 left WF-WEL-05 unchanged, and the change list says so: it still names `reporting.early-warning.flag-raised.v1` "when the pattern joins other signals", and the conflict with this sheet was not a logged defect | Reporting does nothing for WF-WEL-05; Wellbeing escalates within itself. No open question owns this | Appendix R owner | A check-in signal would have to be a count, never a response | 2 | 2 | 4 | RISK-24 |
-| 9. Closed by ADR-0019, the way this sheet proposed. Appendix R WF-SCH-03 now replaces `reporting.snapshot.sealed.v1` with `reporting.audit.recorded.v1`, and Reporting takes the seal on `school.academic-year.closed.v1`; no key was added to Appendix E | Section 6.2's `YearSnapshotHandler` seals on `school.academic-year.closed.v1` | Closed | None here; School cannot wait on the seal, which the school.md sheet records for a later Appendix E amendment | 1 | 1 | 1 | none |
+| 8. Appendix R WF-WEL-05 still has Reporting raise `reporting.early-warning.flag-raised.v1` "when the pattern joins other signals", although no check-in key exists and Reporting may hold no check-in data. ADR-0019 left WF-WEL-05 unchanged, and the conflict with this sheet was not a logged defect | Reporting does nothing for WF-WEL-05; Wellbeing escalates within itself. No open question owns this | Appendix R owner | A check-in signal would have to be a count, never a response | 2 | 2 | 4 | RISK-24 |
 | 10. The early-warning thresholds, bands, the 14-day override suppression and the scoring time have no Appendix G setting | Defaults as stated, held in `early_warning_rules` per tenant | Product owner | A settings row per value in Appendix G | 3 | 2 | 6 | RISK-43 |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -974,16 +1009,20 @@ Existing identifiers are reused; new ones are minted upward from `TC-RPT-310` in
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | The early-warning flag's state diagram added to section 7; platform notes (section 14.1); signature features; risk table on document 18's scale with RISK-15, RISK-38, RISK-49; open points 7 and 9 closed and points 1, 2, 3 and 8 restated as questions. Awaiting Group C re-review |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
-| Every permission and error code exists in Appendices B and K | `/lint-plan` cross-checks; TC-RPT-339 | Lint, pipeline |
+| Every permission and error code exists in Appendices B and K | kit-lint R19 checks back-quoted permissions in columns headed Permission and every back-quoted `REPORTING_` code; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; TC-RPT-339 once code exists | Lint (`/lint-plan`); Group C review; pipeline |
 | No Wellbeing value leaks | TC-RPT-310 to TC-RPT-313, TC-RPT-329, TC-RPT-345, TC-SEC-261, TC-SEC-263 | Integration and security suites |
 | Projections are fresh and rebuildable | TC-DATA-011, TC-DATA-012, TC-RPT-314 to TC-RPT-317 | Integration suite, nightly |
 | Replica routing holds | TC-DATA-013, TC-PERF-027 | Nightly, load tier |
 | The query budgets hold | TC-RPT-341, TC-RPT-342, TC-RPT-348 | Integration and load |
-| The tree follows document 07's anatomy with the `Projections` project | Group C review; TC-TST-124 once code exists | Review, `ci-kit.yml` |
-| Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |
+| The tree follows document 07's anatomy with the `Projections` project | The `plan-consistency-checker` agent compares the section 13 tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; `EveryServiceHas_TheAnatomy` (TC-TST-124) once code exists | Group C review; architecture tests |
+| Every tree entry has a purpose comment and every Mermaid block declares its type | kit-lint R17 and R18 | Lint |
+| The signature features named in the header are Reporting's in Appendix W | The `demo-director` agent compares the header line with Appendix W's Owner column and document 32's "Signature feature trace" at the Group C review; R34 checks each feature's demo test runs in an Appendix O step | Group C review; lint |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 14.1 against Appendix X.2 and document 33 at the Group C review | Group C review |

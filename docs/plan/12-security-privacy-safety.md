@@ -45,7 +45,7 @@
 
 | MASVS group | Control | Where | Test |
 |---|---|---|---|
-| STORAGE | Tokens in platform secure storage; Drift database encrypted with a key from the keystore; no level-S data on the device ever | `09-mobile-structure.md` offline design | `TC-SEC-041` |
+| STORAGE | Tokens in platform secure storage; Drift database encrypted with a key from the keystore; no level-S data on the device, with the one exception the plan builds until Open Question 29 is decided: a student's own check-in answer code in the outbox (T-WEL-09, §6.2, RISK-47) | `09-mobile-structure.md` offline design | `TC-SEC-041` |
 | CRYPTO | Platform keystore only; no home-grown cryptography | Flutter secure storage plugin pinned in `19-dependency-and-license-inventory.md` | `TC-SEC-042` |
 | AUTH | Biometric unlock gates the local session, never replaces the server token; session timeout from the tenant security policy | Identity token rules apply unchanged | `TC-SEC-043` |
 | NETWORK | TLS only; optional certificate pinning per flavor; no cleartext fallback | Bff.Mobile is the only endpoint the app talks to | `TC-SEC-044` |
@@ -109,7 +109,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 |---|---|---|---|---|---|---|---|---|---|---|
 | T-SCH-01 | `GET /students/{id}` | Information disclosure | A parent reaches another family's child by editing the identifier | high | critical | Data scope `own-children` in the query; refused with `SCHOOL_NOT_FOUND` so existence is not confirmed | `TC-SEC-501` | low | Quality engineer | none |
 | T-SCH-02 | Custody and medical summary | Information disclosure | Staff without the permission read custody text or medical detail | med | critical | `school.custody.view` and `school.medical-summary.view` are high risk; every read logged in the same transaction (Appendix J rule 8) | `TC-SEC-130` | low | Architect | none |
-| T-SCH-03 | Guardian link | Elevation of privilege | A guardian restricted by a court order is linked to a child | low | critical | `school.guardians.link` checks the custody record; WF-IDN-02 refuses and surfaces the safeguarding note | `TC-IDN-015` (Appendix R) | med | Architect | none |
+| T-SCH-03 | Guardian link | Elevation of privilege | A guardian restricted by a court order is linked to a child | low | critical | `school.guardians.link` checks the custody record; WF-IDN-02 refuses and surfaces the safeguarding note | `TC-IDN-015` (Appendix R) | med | Architect | RISK-54 |
 | T-SCH-04 | Student export | Information disclosure | Bulk export of identity numbers by an insider | med | high | `school.students.export` routes through WF-PRV-02 when the column set is sensitive or bulk | `TC-PRV-301`, `TC-PRV-013` | med | Architect | none |
 | T-SCH-05 | gRPC directory | Information disclosure | A sibling service asks for a field it may not hold | low | high | The directory contract returns name, section, number only; sensitive groups are never in a contract | `TC-SEC-131` | low | Architect | none |
 | T-SCH-06 | Student merge | Tampering | Merge used to move a child into a different family's view | low | critical | `school.students.merge` is elevated with a reason; both records' guardians re-verified after merge | `TC-SEC-132` | low | Architect | none |
@@ -158,8 +158,8 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T-ATT-01 | Gate pass verify | Spoofing | A gate pass QR replayed by a second collector | med | critical | One-time code, hashed at rest, validity window, collector photo shown to the officer (WF-ATT-02) | `TC-ATT-015` (Appendix R) | med | Mobile engineer | none |
-| T-ATT-02 | Pickup persons | Elevation of privilege | Guardian without pickup rights adds themselves as a collector | med | critical | `attendance.safety.pickup-persons.create` checks custody rights from School; `verify` needed before first use | `TC-SEC-180` | med | Architect | none |
+| T-ATT-01 | Gate pass verify | Spoofing | A gate pass QR replayed by a second collector | med | critical | One-time code, hashed at rest, validity window, collector photo shown to the officer (WF-ATT-02) | `TC-ATT-015` (Appendix R) | med | Mobile engineer | RISK-54 |
+| T-ATT-02 | Pickup persons | Elevation of privilege | Guardian without pickup rights adds themselves as a collector | med | critical | `attendance.safety.pickup-persons.create` checks custody rights from School; `verify` needed before first use | `TC-SEC-180` | med | Architect | RISK-54 |
 | T-ATT-03 | Mark after lock | Tampering | Attendance edited after the lock window to erase absences | med | med | BR-ATT-002; `edit-after-lock` is elevated with reason; BR-ATT-010 for offline marks | `TC-SEC-181` | low | Architect | none |
 | T-ATT-04 | Emergency broadcast | Denial of service | False emergency broadcast by a compromised account | low | high | `attendance.safety.emergency.broadcast` is high risk, needs 2FA step-up, is limited to campus scope | `TC-SEC-182` | low | Architect | none |
 | T-ATT-05 | Visitor watchlist | Information disclosure | Watchlist read by front-desk staff without the permission | med | high | `manage-watchlist` is high risk; matches are shown as a hold instruction, never the reason | `TC-SEC-183` | low | Architect | none |
@@ -182,9 +182,9 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T-COM-01 | Message send | Spoofing | Adult contacts a student outside the messaging policy | med | critical | Policy check with Identity over gRPC before send; `COMMUNICATION_RECIPIENT_NOT_ALLOWED`; student-to-student off by default | `TC-SEC-210` | med | Product owner | none |
+| T-COM-01 | Message send | Spoofing | Adult contacts a student outside the messaging policy | med | critical | Policy check with Identity over gRPC before send; `COMMUNICATION_RECIPIENT_NOT_ALLOWED`; student-to-student off by default | `TC-SEC-210` | med | Product owner | RISK-54 |
 | T-COM-02 | Oversight read | Repudiation | Safeguarding officer reads threads without a reason | low | high | `communication.messages.oversee-messages` is high risk; `COMMUNICATION_OVERSIGHT_REASON_REQUIRED`; every read logged | `TC-SEC-211` | low | Architect | none |
-| T-COM-03 | Attachment | Tampering | Malicious attachment delivered to a parent | med | med | Documents pipeline scan before the message is releasable; `COMMUNICATION_ATTACHMENT_REJECTED` | `TC-SEC-240` | med | Architect | none |
+| T-COM-03 | Attachment | Tampering | Malicious attachment delivered to a parent | med | med | Documents pipeline scan before the message is releasable; `COMMUNICATION_ATTACHMENT_REJECTED` | `TC-SEC-240` | med | Architect | RISK-60 |
 | T-COM-04 | Report and block | Denial of service | A reported thread is edited before review | low | high | Reported thread locks with `COMMUNICATION_MESSAGE_REPORTED_LOCK`; bodies flagged follow the wellbeing retention rule | `TC-SEC-212` | low | Architect | none |
 | T-COM-05 | Announcement audience | Information disclosure | Audience filter widened to the whole tenant by mistake | med | low | Audience is resolved server-side and previewed with a count; `COMMUNICATION_AUDIENCE_EMPTY` on the other extreme | `TC-SEC-213` | low | Architect | none |
 
@@ -210,11 +210,11 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T-DOC-01 | Upload | Tampering | Executable or polyglot file uploaded and served | high | high | Extension and magic-number allow-list, size limit, ClamAV in `Documents.Worker`, stored outside the web root, `DOCUMENTS_VIRUS_DETECTED` | `TC-SEC-240` | med | Platform engineering | none |
+| T-DOC-01 | Upload | Tampering | Executable or polyglot file uploaded and served | high | high | Extension and magic-number allow-list, size limit, ClamAV in `Documents.Worker`, stored outside the web root, `DOCUMENTS_VIRUS_DETECTED` | `TC-SEC-240` | med | Platform engineering | RISK-60 |
 | T-DOC-02 | Download | Information disclosure | Signed URL reused after expiry or by another user | high | high | 5-minute signed URL, bound to user and tenant, single content disposition; `DOCUMENTS_SIGNED_URL_EXPIRED` | `TC-SEC-241` | low | Architect | none |
 | T-DOC-03 | Share link | Information disclosure | `share-link` used to publish a confidential file | med | high | `documents.files.share-link` is elevated; links carry the owner's class and are refused for sensitive owners | `TC-SEC-242` | low | Architect | none |
-| T-DOC-04 | Sensitive export | Information disclosure | Mass export by an insider | med | high | `documents.exports.export-sensitive` is high risk; WF-PRV-02 with approver, watermark, single download, principal notified | `TC-PRV-014`, `TC-PRV-015` | med | Architect | none |
-| T-DOC-05 | Import commit | Tampering | Import used to overwrite guardians for many students | med | high | Dry run required inside 24 hours (WF-DATA-01); rollback window; `documents.imports.commit` elevated | `TC-DATA-004`, `TC-DATA-006` | low | Architect | none |
+| T-DOC-04 | Sensitive export | Information disclosure | Mass export by an insider | med | high | `documents.exports.export-sensitive` is high risk; WF-PRV-02 with approver, watermark, single download, principal notified | `TC-PRV-014`, `TC-PRV-015` | med | Architect | RISK-61 |
+| T-DOC-05 | Import commit | Tampering | Import used to overwrite guardians for many students | med | high | Dry run required inside 24 hours (WF-DATA-01); rollback window; `documents.imports.commit` elevated | `TC-DATA-004`, `TC-DATA-006` | low | Architect | RISK-57 |
 | T-DOC-06 | Template placeholders | Information disclosure | A template merges a field the generating user may not see | med | high | Merge resolves fields through the caller's permission set; unresolved or forbidden placeholders fail with `DOCUMENTS_TEMPLATE_PLACEHOLDER_UNRESOLVED` | `TC-SEC-243` | low | Architect | none |
 | T-DOC-07 | PDF renderer | Denial of service | Crafted HTML template causes runaway rendering | low | med | Renderer sandboxed, time and memory budget per job, no network from the renderer | `TC-SEC-244` | low | Platform engineering | none |
 | T-DOC-08 | Certificate verification page | Tampering | Revoked certificate still verifies | low | med | Verification reads live state; `DOCUMENTS_CERTIFICATE_REVOKED` | `TC-SEC-245` | low | Architect | none |
@@ -223,8 +223,8 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T-BEH-01 | Incident narrative | Information disclosure | Narrative and witnesses read by staff without the restricted permission | med | high | `behavior.incidents.view-restricted` is elevated and every use logged (Appendix J) | `TC-SEC-250` | low | Architect | none |
-| T-BEH-02 | Parent view | Information disclosure | Parent sees an incident naming another child | med | critical | Guardian projection strips other students' identifiers; `own-children` scope | `TC-SEC-251` | med | Architect | none |
+| T-BEH-01 | Incident narrative | Information disclosure | Narrative and witnesses read by staff without the restricted permission | med | high | `behavior.incidents.view-restricted` is elevated and every use logged (Appendix J) | `TC-SEC-250` | low | Architect | RISK-59 |
+| T-BEH-02 | Parent view | Information disclosure | Parent sees an incident naming another child | med | critical | Guardian projection strips other students' identifiers; `own-children` scope | `TC-SEC-251` | med | Architect | RISK-54 |
 | T-BEH-03 | Points | Tampering | Points revoked to punish without a record | low | low | `behavior.points.revoke` records the reason; WF-BEH-01 dismissal path | `TC-BEH-005` (Appendix R) | low | Architect | none |
 | T-BEH-04 | Open Badges export | Information disclosure | Badge assertion leaks the student's identity outside the tenant | low | med | `export-open-badge` uses a hashed recipient identifier and the student's consent flag | `TC-SEC-252` | low | Architect | none |
 
@@ -243,7 +243,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
 | T-AUD-01 | Entries table | Tampering | An insider with database access edits or deletes an entry | low | high | Append-only role for `svc_audit`, hash chain, nightly `audit.integrity-check.failed.v1`, `AUDIT_IMMUTABLE_RECORD` | `TC-SEC-270` | med | Platform engineering | none |
-| T-AUD-02 | Audit consumer | Repudiation | A write completes while its audit event is lost | med | high | Outbox on the producer; `AUDIT_WRITE_FAILED` fails a sensitive read in the same transaction (Appendix J rule 8) | `TC-SEC-271` | low | Architect | none |
+| T-AUD-02 | Audit consumer | Repudiation | A write completes while its audit event is lost | med | high | Outbox on the producer; `AUDIT_WRITE_FAILED` fails a sensitive read in the same transaction (Appendix J rule 8) | `TC-SEC-271` | low | Architect | RISK-59 |
 | T-AUD-03 | Export | Information disclosure | Audit export used to harvest before-and-after values | low | high | `audit.entries.export` is high risk with reason and four-eyes; reported to the principal | `TC-SEC-904` | low | Architect | none |
 | T-AUD-04 | Access log | Information disclosure | Access log read to learn who is under safeguarding review | low | critical | `audit.access-log.view` is high risk; wellbeing subjects are shown by existence with the record type only | `TC-SEC-272` | low | Architect | RISK-24 |
 | T-AUD-05 | Cold partitions | Tampering | Detached partition altered in cold storage | low | med | Partition hash recorded on detach; `audit.retention.partition-detached.v1` carries the hash; restore re-verifies | `TC-SEC-273` | low | Platform engineering | none |
@@ -253,13 +253,14 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
 | T-WEL-01 | Any read | Information disclosure | A principal or teacher reads a counseling note through Student 360 or search | med | critical | Isolation level S: no template inherits `wellbeing.*` (Appendix I rule 7); excluded from search and Student 360; `WELLBEING_ACCESS_DENIED` returns 404 | `TC-SEC-280` | low | Architect | RISK-24 |
-| T-WEL-02 | Break-glass | Repudiation | Break-glass used without a reason or beyond the window | med | critical | `wellbeing.break-glass.use` needs a reason, alerts the record owner and safeguarding lead, expires (BR-WEL-002); `WELLBEING_BREAK_GLASS_EXPIRED` | `TC-SEC-101`, `TC-SEC-281` | med | Product owner | none |
+| T-WEL-02 | Break-glass | Repudiation | Break-glass used without a reason or beyond the window | med | critical | `wellbeing.break-glass.use` needs a reason, alerts the record owner and safeguarding lead, expires (BR-WEL-002); `WELLBEING_BREAK_GLASS_EXPIRED` | `TC-SEC-101`, `TC-SEC-281` | med | Product owner | RISK-24 (a break-glass read outside its reason or window is a read of level S by a role outside the record's audience, which RISK-24's signal "the transparency panel shows a read by a role that should not hold it" watches) |
 | T-WEL-03 | Event bus | Information disclosure | Clinical detail leaves in an event payload | low | critical | BR-WEL-003 payload contract test; events carry identifiers, category, severity only | `TC-SEC-282` | low | Architect | RISK-24 |
 | T-WEL-04 | Database | Information disclosure | A compromised sibling service credential reads wellbeing tables | low | critical | Separate database `nibras_wellbeing`, separate `svc_wellbeing` user, per-tenant column keys | `TC-SEC-283` | low | Platform engineering | RISK-24 |
 | T-WEL-05 | Impersonation | Elevation of privilege | Platform operator reaches wellbeing through an impersonated session | low | critical | Impersonation can never carry `wellbeing.*` (BR-IDN-009); refused before the permission check | `TC-SEC-284` | low | Architect | RISK-24 |
 | T-WEL-06 | Safeguarding concern | Tampering | A staff member named in a concern opens or deletes it | med | critical | WF-WEL-04: named staff refused and alerted; no deletion path exists in any role | `TC-WEL-035`, `TC-WEL-036` | low | Architect | none |
 | T-WEL-07 | Allergy alert | Denial of service | Cached or stale allergy shown when Wellbeing is down | low | critical | Read live on every view, never cached; `WELLBEING_ALLERGY_ALERT_UNAVAILABLE` blocks the dependent action | `TC-SEC-285` | low | Architect | none |
-| T-WEL-08 | Medication | Tampering | Dose administered outside the guardian authorization | med | critical | BR-WEL-004; `WELLBEING_MEDICATION_NOT_AUTHORIZED`; every attempt including blocked ones recorded | `TC-SEC-286` | med | Product owner | none |
+| T-WEL-08 | Medication | Tampering | Dose administered outside the guardian authorization | med | critical | BR-WEL-004; `WELLBEING_MEDICATION_NOT_AUTHORIZED`; every attempt including blocked ones recorded | `TC-SEC-286` | med | Product owner | RISK-54 |
+| T-WEL-09 | Daily check-in on the student's phone (WF-WEL-05, SL-WEL-619) | Information disclosure | A lost, shared or compromised phone holds a student's level S check-in answer code while it waits in the outbox for sync | high | critical | On the default in force for Open Question 29 (the device outbox the plan builds): the answer code only, no note and no flag offline, one write-only `outbox_actions` row in the SQLCipher database, never rendered back, purged when the server accepts it and on sign-out; on the recommended answer (online only): no answer is taken without a connection and no outbox row exists | `TC-MOB-780` (document 09), `TC-MOB-704` (document 09) | high | Product owner | RISK-47 |
 
 ### 2.18 Hr
 
@@ -274,7 +275,7 @@ Common entry points are listed once: REST through Gateway and the backends-for-f
 
 | ID | Entry point | Category | Threat | Likelihood | Impact | Control | Test | Residual | Owner role | In the register |
 |---|---|---|---|---|---|---|---|---|---|---|
-| T-OPS-01 | Vehicle telemetry | Information disclosure | Vehicle location used to infer a child's location | med | critical | Location is tracked for vehicles never children (master brief Section 20); parents see the bus, not the child; 90-day retention | `TC-SEC-310` | med | Product owner | none |
+| T-OPS-01 | Vehicle telemetry | Information disclosure | Vehicle location used to infer a child's location | med | critical | Location is tracked for vehicles never children (master brief Section 20); parents see the bus, not the child; 90-day retention | `TC-SEC-310` | med | Product owner | RISK-54 |
 | T-OPS-02 | Boarding attendant mode | Spoofing | Attendant device used after the attendant left | med | high | Device enrolment bound to the account; WF-IDN-06 revokes devices; offline queue refuses writes after revocation on reconnect | `TC-IDN-051`, `TC-SEC-311` | low | Mobile engineer | none |
 | T-OPS-03 | Activity medical flag | Information disclosure | Medical flag copied into the trip roster export | low | critical | Flag is read live and never copied (Appendix J); export omits it | `TC-SEC-312` | low | Architect | none |
 | T-OPS-04 | Library fines waiver | Tampering | Fines waived for relatives | low | low | `operations.library.waive-fine` is elevated with reason | `TC-SEC-313` | low | Architect | none |
@@ -310,15 +311,30 @@ Not data owners, but they are the first hop for every threat above.
 | A-01 | Cross-tenant access | A logged-in user in tenant A | Swap the tenant header, a tenant-bound identifier, or a cached token | Gateway tenant match, tenant filter, row-level security, full tenant UUID in cache keys | `TC-SEC-056`, `TC-SEC-330` | low | Architect | RISK-14, RISK-20 |
 | A-02 | Parent reads another family's child by changing an identifier | A logged-in parent | Edit the student identifier in the address bar or the API call | `own-children` scope in the query, 404 with no hint | `TC-SEC-501` | low | Quality engineer | none |
 | A-03 | Privilege escalation through the role editor | A school administrator | Grant a high-risk permission to their own account or clone a template and add it | BR-IDN-004 four-eyes, self-approval refused, no wildcard grants | `TC-IDN-043`, `TC-SEC-340` | low | Architect | none |
-| A-04 | Stolen invitation or gate-pass link | Anyone holding the link | Open the link from another device or after use | Single use, expiry, tenant binding, collector photo for gate passes | `TC-IDN-006`, `TC-ATT-015` | med | Mobile engineer | none |
-| A-05 | Mass export by an insider | Registrar, accountant, counselor | Export a list with identity numbers or a caseload | WF-PRV-02 approval, watermark, single download, principal notified | `TC-PRV-301`, `TC-PRV-701` | med | Product owner | none |
+| A-04 | Stolen invitation or gate-pass link | Anyone holding the link | Open the link from another device or after use | Single use, expiry, tenant binding, collector photo for gate passes | `TC-IDN-006`, `TC-ATT-015` | med | Mobile engineer | RISK-54 |
+| A-05 | Mass export by an insider | Registrar, accountant, counselor | Export a list with identity numbers or a caseload | WF-PRV-02 approval, watermark, single download, principal notified | `TC-PRV-301`, `TC-PRV-701` | med | Product owner | RISK-61 |
 | A-06 | Grade tampering | Teacher or head of department | Change a mark after lock, or replay a mark event | `change-after-lock` high risk, new version, idempotent consumer | `TC-ASM-013`, `TC-SEC-162` | low | Architect | none |
 | A-07 | Payment tampering | Cashier | Reverse a posted payment, forge a gateway callback, self-approve a refund | Immutable posted documents, callback verification, four-eyes | `TC-SEC-190`, `TC-SEC-191`, `TC-FIN-014` | low | Architect | none |
-| A-08 | Malicious file upload | Any uploader | Upload a polyglot or infected file, or a template with scripts | Allow-list, ClamAV, storage outside the web root, sandboxed renderer | `TC-SEC-240`, `TC-SEC-244` | med | Platform engineering | none |
+| A-08 | Malicious file upload | Any uploader | Upload a polyglot or infected file, or a template with scripts | Allow-list, ClamAV, storage outside the web root, sandboxed renderer | `TC-SEC-240`, `TC-SEC-244` | med | Platform engineering | RISK-60 |
 | A-09 | Forged or replayed messages on RabbitMQ | A compromised service credential | Publish to another service's exchange or replay a consumed message | RabbitMQ user per service limited to its exchange; inbox idempotency; envelope carries producer identity | `TC-SEC-341`, `TC-SEC-162` | low | Platform engineering | RISK-22 |
 | A-10 | Prompt injection against the assistant | Any author of indexed content | Place instructions in a message body, a document, or a custom field | Content as data, tool calls bound to the caller, injection detection | `TC-SEC-320` | high | Architect | RISK-38 |
 | A-11 | Takeover of an administrator account | External attacker | Credential stuffing, second-factor fatigue, session theft | Lockout, passkeys enforced for administrators, refresh reuse detection, new-device alert, IP allowlist for admin routes | `TC-SEC-110`, `TC-SEC-111`, `TC-SEC-037` | med | Architect | none |
 | A-12 | Insider reads a safeguarding record | Principal or teacher | Student 360, search, Reporting, the Ai assistant, impersonation | Isolation level S at every one of those five doors | `TC-SEC-280`, `TC-SEC-261`, `TC-SEC-322`, `TC-SEC-284` | low | Architect | RISK-24 |
+
+**Critical-impact threats that keep a `med` residual.** Re-assessed in the third review round, against the Residual rule above. Eight threats of impact `critical` keep residual `med`, and none is lowered, because each control rests on something a generated test cannot prove on its own:
+
+| Threat | Why the residual stays `med` | In the register |
+|---|---|---|
+| T-SCH-03 | The refusal works only when the school has entered the court order as a custody record | RISK-54 |
+| T-ATT-01 | The officer must compare the collector's photo; two gates offline at once can each accept the same pass before either syncs, and the second use is reported only on sync (`09-mobile-structure.md` §6) | RISK-54 |
+| T-ATT-02 | The custody check reads a record the school enters, and `verify` before first use is a person's act | RISK-54 |
+| T-COM-01 | The messaging policy is a tenant setting the school configures; a permissive policy is allowed | RISK-54 |
+| T-BEH-02 | The guardian projection strips other students' identifiers, but a narrative a teacher types can still name a child in free text | RISK-54 |
+| T-WEL-02 | Break-glass is detected and reviewed after the fact: the reason is required, but whether it was a good reason is judged by people | RISK-24 |
+| T-WEL-08 | The system refuses to record an unauthorised dose, not the act of giving it | RISK-54 |
+| T-OPS-01 | No child position is stored, but a child's location can be inferred from the bus they boarded | RISK-54 |
+
+The seven rows that cite RISK-54 share one exposure: a child released to, contacted by, located by or shown to the wrong adult because a control rests on a person, on school-entered data or on detection after the fact. Open point 10 proposed it to document 18 as one risk, and `18-risk-register.md` now carries it as RISK-54 with the product owner as owner, the seven controls and tests named here, and a signal per threat; each of the seven threat rows, and abuse case A-04 for the gate pass, cites it.
 
 ---
 
@@ -413,7 +429,7 @@ sequenceDiagram
     MQ-->>ATT: consumer invalidates cached set for T
     MQ-->>COM: consumer on communication.tenant-lifecycle
     COM-->>Teacher: hub message permissions.changed to T's open clients
-    Teacher->>Web: GET /api/v1/bff-web/me/permissions
+    Teacher->>Web: GET /bff/web/v1/me/permissions
     Web-->>Teacher: new effective set; menus and guards re-rendered within 5 seconds
     Teacher->>ATT: request with token at version n
     ATT->>R: cached set version n is stale
@@ -512,7 +528,7 @@ Scopes on one role union; scopes across stages intersect; an empty scope means n
 | Aspect | How |
 |---|---|
 | Inputs | Appendix B (every permission, risk, scopes, dependencies) parsed from its tables; Appendix I (twenty-three templates, the groups G01 to G26, the `F V A S — 4` matrices); the aggregated OpenAPI from Gateway, where every operation carries an `x-nibras-permission` extension |
-| Generator | `tools/permission-matrix-gen` emits one xUnit class per service into `tests/<Service>.Authorization.Generated/`; regenerated in `ci-service.yml` before the integration stage so drift fails the build, never a human |
+| Generator | The `Generator/` folder of the cross-service suite `tests/PermissionMatrix.Tests/` (`07-solution-structure.md` part 4) reads the catalog and emits the allowed and denied twins for every role and endpoint into its committed `Generated/` folder; regenerated in `ci-service.yml` before the integration stage and diffed, so drift fails the build, never a human. Slice SL-IDN-014 of `34-work-breakdown.md` builds it ("every resource access is checked at object level by tests generated from the permission matrix"); no separate tool under `tools/` exists or is needed |
 | Per role and endpoint, allowed | A request as that role with a seeded in-scope object succeeds with the documented status |
 | Per role and endpoint, forbidden | The same request as a role without the permission returns `<SERVICE>_PERMISSION_DENIED` (Wellbeing: `WELLBEING_ACCESS_DENIED` with 404) and writes no row |
 | Scope | For `S` cells, the request against an out-of-scope object of the same tenant returns no rows or `_PERMISSION_DENIED` and never the object |
@@ -583,7 +599,7 @@ The field-level table (Appendix J.2), the owning-service table (J.3) and the nev
 | Application log | May appear | Identifiers only | Identifiers only, never values | Never, not even the identifier of the record in a message body; a correlation id instead | Never |
 | Exception message | May appear | Identifiers only | Never | Never | Never |
 | Export | Free | Free within the tenant | Logged; bulk routes through WF-PRV-02 | Always WF-PRV-02, watermark, reason, principal notified | Only the tenant deletion archive and WF-PRV-01, with the safeguarding officer named |
-| Mobile device store (Drift) | Yes | Yes, encrypted at rest | Yes for the user's own scope, encrypted, purged on sign-out and on permission loss | Never | Never |
+| Mobile device store (Drift) | Yes | Yes, encrypted at rest | Yes for the user's own scope, encrypted, purged on sign-out and on permission loss | Never | Never, except what the plan builds until Open Question 29 is decided: the student's own check-in answer code (no note, no flag, no history) may wait as one `outbox_actions` row until sync, write-only, never readable back by the app, and purged when it lands or on sign-out (WF-WEL-05, SL-WEL-619). That default contradicts this column's rule, master brief Section 20 and Appendix M.1 until the privacy officer and the product owner decide; the recommended answer is an online-only check-in, which removes the exception (T-WEL-09, RISK-47) |
 | Ai index | Yes | Yes with tenant tag | Yes with tenant, scope and source version tags | Never | Never, refused with `AI_SENSITIVE_CONTEXT_REFUSED` |
 | Reporting projection | Yes | Yes | Yes, scope-tagged, aggregates under 10 suppressed | Balance and count figures only | Counts only |
 | Event payload | Yes | Yes | Identifiers and the few fields needed | Never (Appendix E payload rule) | Never (BR-WEL-003) |
@@ -632,7 +648,7 @@ From master brief Section 10.2; every item is mandatory and has a test.
 | 5 | Seeder refuses to start when the configured password equals the documented default and the environment is not Development | Startup validation fails the host; the documented default lives in the brief and demo configuration only; the secret scan allows it under `docs/` and fails on it anywhere else | `TC-SEC-364`, Gitleaks rule in `security-scan.yml` |
 | 6 | Only a salted hash stored; the password never in logs, client code, test output or API responses | Argon2id; log scrubber; the test asserts on captured output | `TC-SEC-365` |
 | 7 | Lockout and rate limiting apply like any other account | No exemption in the lockout policy | `TC-SEC-366` |
-| 8 | Documented break-glass recovery command, CLI with server access, for a locked-out super administrator | `nibras-identity recover-super-admin --incident <ref>`; writes an audit entry and raises a Sev1 (reference architecture Section 12); runbook `docs/ops/runbooks/super-admin-recovery.md` | `TC-SEC-112` |
+| 8 | Documented break-glass recovery command, CLI with server access, for a locked-out super administrator | `nibras-identity recover-super-admin --incident <ref>`; writes an audit entry and raises a Sev1 (reference architecture Section 12); runbook `docs/runbooks/super-admin-recovery.md` | `TC-SEC-112` |
 | 9 | The last super administrator cannot be deleted, deactivated or stripped of the role | BR-IDN-005 in the same transaction; `IDENTITY_LAST_SUPER_ADMIN` | `LastSuperAdminRulesTests`, `TC-SEC-367` |
 | 10 | A new tenant never receives a shared password; its first administrator joins through a single-use invitation | WF-PLT-01 owner invitation | `TC-PLT-003`, `TC-IDN-001` |
 
@@ -640,7 +656,7 @@ From master brief Section 10.2; every item is mandatory and has a test.
 
 ## 9. Secrets and key inventory
 
-Quoted from reference architecture Section 12, with the runbook that rotates each one. Runbooks live in `docs/ops/runbooks/` following `docs/templates/runbook.md`, and each is executed in a game day within ninety days of being written (master brief Section 24).
+Quoted from reference architecture Section 12, with the runbook that rotates each one. Runbooks live in `docs/runbooks/`, the folder `15-deployment-and-operations.md` decides and documents 07 and 10 use, following `docs/templates/runbook.md` (whose header still says `docs/ops/runbooks/`; document 15 open point 3 corrects the template), and each is executed in a game day within ninety days of being written (master brief Section 24).
 
 | Secret | Scope | Store | Rotation | Runbook | Test |
 |---|---|---|---|---|---|
@@ -818,9 +834,12 @@ Tests: `TC-SEC-390` `security.txt` served, `TC-SEC-392` a report submitted throu
 | 6. From what age does a student decide their own consents (§10.1 "Who may consent")? | No age is shipped: a guardian with parental access and no custody restriction consents for every student until the tenant sets an age | Product owner | A target country's law gives older students a say over data about them; consent records are asked again of those students and the privacy notice of `TC-PRV-063` changes per country | 2 | 3 | 6 | RISK-23 |
 | 7. Open question 26: does a first customer require a formal certification such as SOC 2 or ISO 27001? | No. ASVS 5.0 Level 2 and MASVS 2 are targets evidenced by the generated suites and the independent penetration test (§1, §12), not certified | Product owner | A certification audit adds months of evidence collection and a budget line, and a customer that makes it a contract condition waits for it | 2 | 4 | 8 | none |
 | 8. Open question 13: OpenIddict or Keycloak? | OpenIddict with ASP.NET Core Identity (ADR-0008); the flows of §3, the signing and encryption keys of §9 and the T-IDN rows of §2.1 are written for it | Architect | Keycloak replaces the §3 flows, two rows of the §9 key inventory and the fixtures behind `TC-SEC-031` to `TC-SEC-040`; Identity changes materially | 2 | 4 | 8 | none |
-| 9. Runbook folder: §8 item 8 and §9 name `docs/ops/runbooks/`, the runbook template's path, while `15-deployment-and-operations.md` open point 3 defaults to `docs/runbooks/` | `docs/runbooks/`, as document 15 decides; the paths in §8 and §9 follow when that point closes | Architect | The rotation and recovery runbooks of §9 land in two folders and their game-day evidence is looked for in the wrong one | 4 | 1 | 4 | none |
+| 9. Open question 29: may a student's level S check-in answer wait in the device's encrypted outbox until the next sync, or must the check-in be online only? | The default in force is what the plan builds: the device outbox of WF-WEL-05 and SL-WEL-619, where the answer code alone waits on the phone until sync, write-only, never readable back and purged when it lands or on sign-out (§6.2, T-WEL-09). It contradicts the rule that Wellbeing data never reaches a device (master brief Section 20, Appendix M.1, REQ-WEL-002) until the question is decided; the recommended answer is online only | Privacy officer, then the product owner | A lost, shared or compromised phone holds a child's wellbeing answer, and the plan breaks its own no-device rule by design; choosing online only instead withdraws REQ-MOB-007's one offline path for this workflow, removes the exception from §6.2 and T-WEL-09, and turns `TC-MOB-780` into the proof that no outbox row is ever written | 4 | 5 | 20 | RISK-47 |
+| 10. Seven critical-impact child-safety threats keep a `med` residual (T-SCH-03, T-ATT-01, T-ATT-02, T-COM-01, T-BEH-02, T-WEL-08, T-OPS-01; §2.22 table) | Residual `med` accepted per threat, with the control and the test each row names, and carried in `18-risk-register.md` as one risk, RISK-54, with the product owner as owner: a child released to, contacted by, located by or shown to the wrong adult because a control rests on a person, on school-entered data or on detection after the fact. T-WEL-02, the eighth, is covered by RISK-24 | Product owner | A pickup, a message, an incident narrative or a bus position exposes a child to the wrong adult, and no phase review sees it because no register row carries a signal for it | 3 | 5 | 15 | RISK-54 (the seven threats); RISK-24 (T-WEL-02) |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier is named if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
+
+**Closed.** The runbook folder (formerly open point 9): §8 item 8 and §9 now use `docs/runbooks/`, the folder `15-deployment-and-operations.md` decides; only the runbook template's header still says `docs/ops/runbooks/`, which is document 15's open point 3.
 
 ---
 

@@ -36,12 +36,13 @@ for (const l of readFileSync(join(root, 'docs/plan/03-requirements-catalog.md'),
   if (m) reqText.set(m[1], m[2].trim());
 }
 
-const ids = new Set([...own.defs.keys(), ...own.cites.keys()]);
+const ids = new Set([...own.defs.keys(), ...[...own.cites].filter(([, list]) => list.some((c) => c.file !== OUT)).map(([id]) => id)]);
 const rows = [];
 const derived = [];
 const problems = [];
 for (const id of [...ids].sort((a, b) => a.localeCompare(b, 'en'))) {
-  const citedBy = [...new Set((own.cites.get(id) || []).map((c) => short(c.file)))].filter((s) => s !== 'document 16-annex');
+  // The annex never counts as a citation of itself, or each run would feed the next.
+  const citedBy = [...new Set((own.cites.get(id) || []).filter((c) => c.file !== OUT).map((c) => short(c.file)))];
   const req = own.derivedReq(id);
   if (req) { derived.push({ id, req, citedBy }); continue; }
   const defs = own.defs.get(id);

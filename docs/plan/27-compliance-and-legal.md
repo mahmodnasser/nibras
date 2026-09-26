@@ -192,12 +192,12 @@ A release with a new "does not support" row on a Tier 1 screen is not published 
 
 | Rule | Mechanism | Test |
 |---|---|---|
-| Every acceptance is a row | `LegalAcceptance`: document, version, user or tenant, time, hashed address (`06-services/platform.md` §4.9) through `POST /api/v1/platform/legal-acceptances` | REQ-PLT-033 acceptance test |
-| Publishing a version asks once | `POST /api/v1/platform/legal-documents/{documentId}/publish`; the next sign-in shows the new version in the user's language with a summary of changes | REQ-PLT-033 |
-| Material change notice | Terms and DPA changes are announced 30 days before they take effect; the owner may export and leave in that window under §7 | Platform announcement record |
+| Every acceptance is a row | `LegalAcceptance`: document, version, user or tenant, time, hashed address (`06-services/platform.md` §4.9) through `POST /api/v1/platform/legal-acceptances` | `TC-PLT-113` (Platform sheet) |
+| Publishing a version asks once | `POST /api/v1/platform/legal-documents/{documentId}/publish`; the next sign-in shows the new version in the user's language with a summary of changes | `TC-PLT-113` (Platform sheet); `TC-PRV-800` |
+| Material change notice | Terms and DPA changes are announced 30 days before they take effect; the owner may export and leave in that window under §7 | Review step: at every publish of a `terms` or `dpa` version, the data protection lead compares the Platform announcement record's date with the version's effective date, refuses the publish when fewer than 30 days separate them, and records the check in the release notes |
 | Arabic and English are equal | Both bodies are published together; neither is a translation of record unless the country's law requires one, in which case the country plug-in names it | `TC-PRV-063` (document 12) |
-| Nothing is used before acceptance | A user without acceptance of the current privacy policy reaches only the acceptance screen and sign-out | Identity sign-in integration test |
-| Evidence export | `GET /api/v1/platform/legal-acceptances` with the keyset envelope, exportable by the owner | REQ-PLT-033 |
+| Nothing is used before acceptance | A user without acceptance of the current privacy policy reaches only the acceptance screen and sign-out | `TC-PRV-800` |
+| Evidence export | `GET /api/v1/platform/legal-acceptances` with the keyset envelope, exportable by the owner | `TC-PRV-801` |
 
 ### 6. Child-safety commitments as contract clauses
 
@@ -405,7 +405,7 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 | 4. Publish a yearly transparency report on law-enforcement requests? | Yes, counts only | Product owner | Without it, schools cannot verify clause 12 | 2 | 1 | 2 | none |
 | 5. Open question 19: retention periods per country. §2 applies master brief Section 32's periods and marks the rows that vary by country law | The recorded default: the Section 32 periods, held as configuration so a country plug-in can override them | Product owner, with the data protection lead | A country that mandates a longer or shorter period for a data class puts every school there out of compliance until the override ships, and a longer period grows the storage line of `28-capacity-and-cost-model.md` part 2.8 | 3 | 3 | 9 | RISK-23 |
 | 6. Open question 26: does any first customer require a formal certification such as SOC 2 Type II or ISO 27001? §1.1 places both on the post-launch roadmap and §11 keeps their evidence base | The recorded default: no; compatibility yes, certification only when a customer pays for it, with the penetration-test summary and §1 offered in its place (§5.2 clause 11) | Product owner | A school group or procurement office that makes certification a contract condition is lost, because a Type II report needs an observation period that cannot be shortened | 2 | 4 | 8 | none |
-| 7. Open question 3: target countries for the first customers. §1 and §9 cover Saudi Arabia, the United Arab Emirates and Jordan, and §12 is the checklist for any other | The recorded default: those three | Product owner | A fourth country before launch runs the whole §12 checklist, counsel review of every legal document included, inside a delivery phase | 2 | 3 | 6 | none |
+| 7. Open question 3: target countries for the first customers. §1 and §9 cover Saudi Arabia, the United Arab Emirates and Jordan, and §12 is the checklist for any other | The recorded default: those three | Product owner | A fourth country before launch runs the whole §12 checklist, counsel review of every legal document included, inside a delivery phase | 2 | 3 | 6 | RISK-23 |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
 
@@ -413,7 +413,9 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-22 | Group F review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | `TC-PLT-001` meant residency here and other things in documents 26 and 32 (Consistency, Testability) |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | The collision was closed ("Residency holds" cites `TC-PLT-101`). Still open: "Legal acceptance is recorded and enforced" named a requirement's acceptance test, not a test (Testability) |
+| 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | §5.3 and the legal-acceptance row cite `TC-PLT-113` (Platform sheet) and the new `TC-PRV-800` and `TC-PRV-801`; the 30-day notice and the counsel review of the legal text are named review steps |
 
 ## How this document is verified
 
@@ -422,10 +424,19 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 | Every Section 32 row has a job that runs | `TC-PRV-068` to `TC-PRV-075`, `TC-PLT-026`; job reports on the privacy dashboard | Nightly, and every pull request touching a retention job |
 | Holds suspend deletion and pin backups | `TC-PRV-076`, `TC-PRV-077`, `TC-PRV-074`, `TC-PRV-902` | Every pull request touching retention |
 | Consent, subject rights, sub-processors and impact assessment behave as summarised | The tests cited in §3 | Per `12-security-privacy-safety.md` |
-| Legal acceptance is recorded and enforced | REQ-PLT-033 acceptance test; sign-in integration test for the acceptance gate | Every pull request touching Platform or Identity sign-in |
+| Legal acceptance is recorded and enforced | `TC-PLT-113` (Platform sheet) records one acceptance per version; `TC-PRV-800` proves the sign-in gate and `TC-PRV-801` the evidence export, both defined below; the 30-day material-change notice is the data protection lead's review step at every `terms` or `dpa` publish (§5.3); the legal text itself is reviewed by counsel for each country before its first publish and on every material change, and the data protection lead records that review in the release notes of the publish | Every pull request touching Platform or Identity sign-in; the two reviews at each publish |
 | Export is available at every stage | `TC-PLT-021` to `TC-PLT-026`, `TC-PLT-903` | Every pull request touching Platform |
 | Residency holds | `TC-PLT-101`; deployment review per region | Every pull request touching Platform; per region at release |
 | Child-safety clauses are true | The tests in §6 | Every pull request touching the owning services |
 | The accessibility statement is generated from real results | Release pipeline stage that assembles §4 from CI and the manual pass | Every release |
 | E-invoicing plug-ins meet §9 | Conformance suite in `Nibras.Plugins.Testing` per plug-in version | Plug-in certification |
 | This document agrees with the catalogs | kit-lint R01, R02, R05, R17 and R19; `plan-consistency-checker` with `privacy-auditor` compares this document with `12-security-privacy-safety.md`, `10-data-architecture.md` and `06-services/platform.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |
+
+### Test cases
+
+This document defines the two legal-acceptance tests below; recording one acceptance per version is `TC-PLT-113` in the Platform sheet and is not restated. Both run against Identity sign-in and the Platform legal endpoints with the clock pinned.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-PRV-800 | Given a guardian who accepted privacy policy version 2, when version 3 is published and the guardian signs in, then every request other than the acceptance screen, the acceptance call and sign-out is refused until version 3 is accepted, the acceptance screen shows version 3 in the guardian's language with its summary of changes, and after acceptance the next request succeeds and no second prompt appears for version 3 | REQ-PLT-033 |
+| TC-PRV-801 | Given 3 users who accepted privacy policy version 1 and 2 users who accepted version 2, when the tenant owner calls `GET /api/v1/platform/legal-acceptances` with a page size of 2, then the keyset walk returns the 5 rows exactly once each, every row carries the document, version, user or tenant, time and hashed address and none carries a clear address, and a caller who is not the owner is refused | REQ-PLT-033 |

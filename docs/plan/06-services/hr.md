@@ -21,6 +21,10 @@ Hr is the employment record of the school. It owns the staff file with its docum
 | Why the boundary exists | Security level: salary, contracts and bank details are sensitive employment data with their own access-review cycle |
 | First-release option | Deferred under the Appendix L merge option; its keys and namespaces stay reserved, so consumers bind to nothing until it is deployed |
 
+**Signature features.** Hr owns Appendix W feature 43 (workload balance for staff), at rung 2 degrading to load totals. The rung 2 strain model runs in Hr, next to the leave and cover data it reads, and SL-HR-616 builds it in the `Workload` feature (section 5.9). The cover suggestions and duty rosters behind it belong to Scheduling and Requests, and the teaching-load and grading-turnaround inputs are open point 7. Its rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
+**Last updated** 2026-09-26 by the round-3 remediation (workflow diagrams, platform notes, signature features, risk scale, closed open points)
+
 ---
 
 ## 1. Responsibilities
@@ -37,6 +41,7 @@ Hr is the employment record of the school. It owns the staff file with its docum
 | Recruitment and onboarding | Vacancies, applications, shortlists, interviews with panel scores, background and safeguarding checks, offers, the signed contract, the onboarding checklist and WF-HR-02 (REQ-HR-001) |
 | Offboarding | Resignation or end of contract, the offboarding checklist and clearance, final-period payroll flags (REQ-HR-011) |
 | HR home | Leave to approve, documents expiring, probation ending, vacancies (TC-HR-801) |
+| Workload balance (Appendix W feature 43) | The workload view per department, and the rung 2 strain suggestion at autonomy 2. It is an ML.NET model whose factors and weights are shown in the Because panel, and a person can override it with a reason. It falls back to cover and leave totals at rung 1 when the model or the tenant's `workload-balance` feature is off, and says so. It uses staff data only and never profiles a student (REQ-HR-012, SL-HR-616; inputs in open point 7) |
 
 ## 2. Not responsible for
 
@@ -53,7 +58,7 @@ Hr is the employment record of the school. It owns the staff file with its docum
 | Rendering offer letters, contracts, payslips and service certificates as PDF | Documents | Hr resolves the merge values and sends `GenerateDocument` (Documents sheet, section 2) |
 | Delivering any message | Notification | Hr publishes the catalogued events and sends `RequestNotification` for messages without a catalogued trigger |
 | Settings storage | Platform (ADR-0009) | Hr reads *General* and *Security* from its settings copy; Hr policies without an Appendix G category are open point 1 |
-| Cross-service workload analytics shown to coordinators | Reporting | Hr serves cover counts and leave totals; teaching load and grading turnaround live in Scheduling and Assessment (open point 7) |
+| Teaching periods and grading turnaround, the figures beside cover in the workload view | Scheduling and Academics (teaching periods), Assessment (grading turnaround) | Hr owns the workload view and its strain model (section 1) but copies neither figure today (open point 7) |
 | Duty rosters | Requests | REQ-RQS-019 |
 
 ---
@@ -443,7 +448,8 @@ A staff member reads their own payslips under `hr.payroll.view-salary` granted i
 | POST | `/api/v1/hr/offboarding-cases` | `hr.staff-files.edit` | `{ staffId, reason, noticeGivenOn, lastWorkingDay }` | 201 with the offboarding checklist and the final-period flags | `HR_VALIDATION_FAILED` (open case exists) | by `Idempotency-Key` |
 | GET | `/api/v1/hr/offboarding-cases/{id}` | `hr.staff-files.view` | none | case with checklist and clearance items | `HR_NOT_FOUND` | yes |
 | POST | `/api/v1/hr/offboarding-cases/{id}/clear` | `hr.staff-files.edit` | `{}` | `cleared` (REQ-HR-011) | `HR_VALIDATION_FAILED` (open items) | `Idempotency-Key` required |
-| GET | `/api/v1/hr/workload` | `hr.staff-files.view` | `departmentId`, `from`, `to` | cover given and received per staff member and leave taken; load totals only (REQ-HR-012 degraded form) | none specific | yes |
+| GET | `/api/v1/hr/workload` | `hr.staff-files.view` | `departmentId`, `from`, `to` | Cover given and received per staff member, cover against the BR-SCD-005 fairness score, and leave taken. When the tenant's `workload-balance` feature and the model are on, each row also carries the rung 2 strain suggestion (`assistRung = 2`) with its factors and weights for the Because panel. Otherwise the rows carry the load totals only, with `assistRung = 1` and the reason (REQ-HR-012, SL-HR-616) | none specific | yes |
+| POST | `/api/v1/hr/workload/{staffId}/override` | `hr.staff-files.edit` | `{ reason, markedWrong }` | 200; the override and its reason are kept beside the suggestion, and `markedWrong` queues the model for review (document 25 §1.3, rung 2) | `HR_VALIDATION_FAILED` (no reason) | by `Idempotency-Key` |
 | GET | `/api/v1/hr/jobs/{jobId}` | `platform.jobs.view`, or the starter | none | job resource with progress | `HR_NOT_FOUND` | yes |
 | POST | `/api/v1/hr/jobs/{jobId}/cancel` | `platform.jobs.cancel`, or the starter | `{}` | `cancelRequested` | `HR_VALIDATION_FAILED` for a terminal job | yes |
 
@@ -488,7 +494,7 @@ Payload fields are owned by Appendix E and are not restated here.
 | `hr.usage.recorded.v1` | `UsageRecordJob`, monthly active staff files | `tenantId` | Platform |
 | `hr.audit.recorded.v1` | Every transition, every salary, pay-term, bank-account and payslip read, every balance adjustment and every export | `tenantId` | Audit |
 
-Commands and replies Hr sends on `nibras.hr` (document 11 section 2.4): `GenerateDocument` to Documents (offer letter, contract, payslip, service certificate), `RequestNotification` to Notification (manager reminders, principal escalations, onboarding items, offer expiry, feedback requests), the reply `EffectFailed` to Requests when `ApproveLeave` is refused, the Saga 9 replies `ImportBatchValidated`, `ImportBatchPreviewed`, `ImportBatchCommitted`, `ImportRolledBack` to Documents, and the tenant-lifecycle replies to Platform. Neither `nibras.hr` binding into `documents.commands` nor into `notification.commands` exists in document 11 yet (open point 2).
+Commands and replies Hr sends on `nibras.hr` (document 11 section 2.4): `GenerateDocument` to Documents (offer letter, contract, payslip, service certificate), `RequestNotification` to Notification (manager reminders, principal escalations, onboarding items, offer expiry, feedback requests), the reply `EffectFailed` to Requests when `ApproveLeave` is refused, the Saga 9 replies `ImportBatchValidated`, `ImportBatchPreviewed`, `ImportBatchCommitted`, `ImportRolledBack` to Documents, and the tenant-lifecycle replies to Platform. Document 11 §2.5 binds `nibras.hr` into `documents.commands`; the binding into `notification.commands` does not exist yet (open point 2).
 
 ### 7.2 Consumed
 
@@ -505,7 +511,7 @@ Commands and replies Hr sends on `nibras.hr` (document 11 section 2.4): `Generat
 | `scheduling.substitution.assigned.v1` | `hr.reference-copies` | `SubstitutionAssignedConsumer` | Adds a `leave_substitutions` row to the approved leave covering `absentStaffId` on `date`; moves the leave `SubstitutionNeeded → SubstituteAssigned → TimetablePublished` (Scheduling publishes the timetable change in the same transaction, document 13 section 4); cover counts for workload |
 | `requests.request.approved.v1` | `hr.events` | `RequestApprovedConsumer` | Acts on HR request types without an effect command, by `typeCode`: overtime creates a `requests` overtime entry, hourly permission and remote-work day create an approved leave of that type, salary advance creates an advance in `active`, training records a planned PD entry, resignation opens an offboarding case, document update opens a renewal; keyed on `requestId`, so a replay creates nothing |
 | `documents.import.completed.v1` | `hr.events` | `ImportCompletedConsumer` | Clears `import_rows` staging for a committed or rolled-back staff import; re-runs the balance invariant for imported balances |
-| `documents.document.generated.v1` | `hr.events`, binding added with open point 2 | `DocumentGeneratedConsumer` | Stores `documentId` on the offer, contract, payslip or certificate it was requested for |
+| `documents.document.generated.v1` | `hr.events` (document 11 §2.5) | `DocumentGeneratedConsumer` | Stores `documentId` on the offer, contract, payslip or certificate it was requested for |
 | `ApproveLeave` on `hr.commands` from `nibras.requests` | `hr.commands` | `ApproveLeaveCommandHandler` | `UnderReview → Approved` with the balance re-checked; publishes `hr.leave.approved.v1` as the Saga 6 outcome; a refusal replies `EffectFailed` with `HR_LEAVE_BALANCE_INSUFFICIENT` or `HR_SUBSTITUTION_NOT_ARRANGED`; idempotent on `(sagaId, stepKey)` |
 | `CancelLeave` on `hr.commands` from `nibras.requests` | `hr.commands` | `CancelLeaveCommandHandler` | Saga 6 compensation: `→ Cancelled`, `hr.leave.cancelled.v1`; a second delivery is a no-op |
 | `ValidateImportBatch`, `DryRunImportBatch`, `CommitImportBatch`, `RollbackImport` from `nibras.documents` | `hr.commands` | `ImportBatchCommandHandler` | Saga 9 steps 2 to 4 for staff files, contracts without pay terms, leave balances; commit keyed on `(importId, rowNumber)` |
@@ -515,7 +521,7 @@ Commands and replies Hr sends on `nibras.hr` (document 11 section 2.4): `Generat
 
 ## 8. Sagas and workflows
 
-Hr orchestrates no saga (document 13 section 1: exactly ten sagas). Every Hr workflow is a state machine in `Nibras.Hr.Domain` driven through the transition pipeline, which validates the state, checks the permission, writes `hr.audit.recorded.v1` and publishes through the outbox in one transaction (document 13 section 5.1). The diagrams and the transition tables are Appendix R's and are not redrawn here.
+Hr orchestrates no saga (document 13 section 1: exactly ten sagas). Every Hr workflow is a state machine in `Nibras.Hr.Domain` driven through the transition pipeline, which validates the state, checks the permission, writes `hr.audit.recorded.v1` and publishes through the outbox in one transaction (document 13 section 5.1). The transition tables are Appendix R's; the four state machines are copied after the sequence diagram below, as Appendix R stands on 2026-09-26, so the workflows can be built from this sheet.
 
 | WF or saga | Role | Kind (document 13) | State type (document 31) | Feature folder | What Hr does |
 |---|---|---|---|---|---|
@@ -549,6 +555,85 @@ sequenceDiagram
 ```
 
 A rejected, withdrawn or expired Requests request leaves the Hr leave in `UnderReview`, because Hr does not bind `requests.request.rejected.v1`; `PendingLeaveExpiryJob` moves such a leave to `Rejected` with reason `not-decided` when its `from_date` passes and releases the reservation (open point 6). **Timeouts** from Appendix R: an unreviewed leave reminds the approver at 24 hours and escalates at 48 (`LeaveReviewReminderJob`); payroll managers are reminded 3 days and 1 day before the cut-off and unsigned teams escalate to the principal at the cut-off (`PayrollCutOffJob`); an offer expires after 7 days (`OfferExpiryJob`); background checks outstanding 14 days before the start date escalate to the principal and onboarding items overdue by 3 working days escalate to the HR officer (`OnboardingEscalationJob`); a licence warns at 90, 60, 30 and 7 days and alerts the principal daily from expiry (`LicenceComplianceJob`).
+
+**The four Hr state machines**, copied from Appendix R. Appendix R is binding and R29 checks it; a difference between a diagram here and its twin there is a defect in this sheet. Each state is a member of the state type named in the table above.
+
+WF-HR-01 Staff leave to substitution (`SubstituteProposed`, `Uncovered` and `SubstituteAssigned` are driven by Scheduling):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: leave dates and type submitted
+    Requested --> UnderReview: balance and conflicts checked
+    UnderReview --> Approved: line manager approves
+    UnderReview --> Rejected: refused with a reason
+    Approved --> SubstitutionNeeded: affected periods listed
+    SubstitutionNeeded --> SubstituteProposed: ranked suggestions produced
+    SubstituteProposed --> SubstituteAssigned: substitute accepts or is assigned
+    SubstituteProposed --> Uncovered: no substitute available
+    Uncovered --> SubstituteAssigned: manager assigns with an override
+    SubstituteAssigned --> TimetablePublished: change published to all affected users
+    TimetablePublished --> Completed: leave period ended
+    Approved --> Cancelled: leave cancelled before it starts
+    Completed --> [*]
+    Rejected --> [*]
+    Cancelled --> [*]
+```
+
+WF-HR-02 Staff hiring to onboarding:
+
+```mermaid
+stateDiagram-v2
+    [*] --> VacancyOpened: position and budget approved
+    VacancyOpened --> Applications: candidates applied
+    Applications --> Shortlisted: screening complete
+    Shortlisted --> Interviewed: interviews recorded
+    Interviewed --> Rejected: not selected
+    Interviewed --> ChecksPending: preferred candidate chosen
+    ChecksPending --> Offered: background and reference checks cleared
+    ChecksPending --> Rejected: checks not cleared
+    Offered --> OfferAccepted: candidate accepts
+    Offered --> OfferDeclined: candidate declines
+    OfferAccepted --> Contracted: contract signed and filed
+    Contracted --> Onboarded: account, checklist, and timetable in place
+    Onboarded --> [*]
+    Rejected --> [*]
+    OfferDeclined --> [*]
+```
+
+WF-HR-03 Teaching licence expiry compliance:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Valid: document recorded with an expiry date
+    Valid --> ExpiringSoon: warning window reached
+    ExpiringSoon --> RenewalSubmitted: staff member uploads the renewal
+    RenewalSubmitted --> Verified: hr officer verifies the document
+    Verified --> Valid: new expiry recorded
+    RenewalSubmitted --> RejectedDocument: document invalid or unreadable
+    RejectedDocument --> RenewalSubmitted: corrected upload
+    ExpiringSoon --> Expired: expiry date passed with no renewal
+    Expired --> Suspended: teaching assignments withdrawn
+    Suspended --> RenewalSubmitted: renewal finally supplied
+    Valid --> [*]
+```
+
+WF-HR-04 Payroll input cycle:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Opened: period opened for input
+    Opened --> Collecting: attendance, overtime, leave, and allowances gathered
+    Collecting --> ExceptionsRaised: missing or contradictory inputs found
+    ExceptionsRaised --> Collecting: exceptions resolved
+    Collecting --> ManagerApproved: line managers sign their teams
+    ManagerApproved --> FinanceApproved: finance officer signs the totals
+    FinanceApproved --> Frozen: period locked against further input
+    Frozen --> Exported: file produced for the payroll system
+    Exported --> Closed: export acknowledged
+    Opened --> Cancelled: period reopened for a correction before approval
+    Closed --> [*]
+    Cancelled --> [*]
+```
 
 ---
 
@@ -1075,11 +1160,12 @@ src/Services/Hr/                                                              Hu
 │   │   │   ├── HrHomeHandler.cs                                              cached counts and top rows
 │   │   │   ├── HrHomeValidator.cs                                            campus in scope
 │   │   │   └── HrHomeEndpoint.cs                                             GET /home
-│   │   ├── Workload/                                                         cover and leave totals
-│   │   │   ├── WorkloadQuery.cs                                              department and window
-│   │   │   ├── WorkloadHandler.cs                                            aggregates leave_substitutions and leave taken
-│   │   │   ├── WorkloadValidator.cs                                          window at most one term
-│   │   │   └── WorkloadEndpoint.cs                                           GET /workload
+│   │   ├── Workload/                                                         feature 43: cover and leave totals and the rung 2 strain suggestion (SL-HR-616)
+│   │   │   ├── WorkloadQuery.cs                                              department and window; override with reason
+│   │   │   ├── WorkloadHandler.cs                                            aggregates leave_substitutions and leave taken, then asks the scorer
+│   │   │   ├── WorkloadStrainScorer.cs                                       ML.NET strain model with per-factor contributions; totals at rung 1 when off or unavailable
+│   │   │   ├── WorkloadValidator.cs                                          window at most one term; an override needs a reason
+│   │   │   └── WorkloadEndpoint.cs                                           GET /workload and POST /workload/{staffId}/override
 │   │   ├── ImportBatches/                                                    Saga 9 target commands
 │   │   │   ├── ImportBatchesCommands.cs                                      validate, dry run, commit, rollback records
 │   │   │   ├── ImportBatchesHandler.cs                                       import_rows keyed on importId and rowNumber
@@ -1106,7 +1192,7 @@ src/Services/Hr/                                                              Hu
 │   │   ├── SubstitutionAssignedConsumer.cs                                   scheduling.substitution.assigned.v1
 │   │   ├── RequestApprovedConsumer.cs                                        requests.request.approved.v1 for HR types without a command
 │   │   ├── ImportCompletedConsumer.cs                                        documents.import.completed.v1
-│   │   └── DocumentGeneratedConsumer.cs                                      documents.document.generated.v1 once bound
+│   │   └── DocumentGeneratedConsumer.cs                                      documents.document.generated.v1 from hr.events
 │   ├── ReadModels/                                                           AsNoTracking projections and DTOs
 │   │   ├── StaffFileSummaryRow.cs                                            list row without salary
 │   │   ├── LeaveRequestRow.cs                                                list row with booking state
@@ -1280,6 +1366,20 @@ Existing identifiers are reused; new ones are minted from `TC-HR-601` upward, a 
 
 Hr has no Appendix S rule, so no rule test class exists (document 31 section 1). Query budgets are the `TC-PERF-2NN` rows generated from document 21 section 3.18 and section 12 of this sheet.
 
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Hr's own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks`, `Documents` and `Localization`, which hold Hr's money and culture handling and render its letters and payslips.
+
+| Concern | What Hr does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start | The Api host and its Quartz.NET jobs start under `aspire run` or the compose `dev` profile and report ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing and generated files | Salary components, leave days and overtime hours are parsed and stored with the invariant culture; the bank files (CSV and pain.001) are written with the invariant culture and UTF-8, and never take the decimal separator or line ending from the host | `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE`; TC-HR-615 and TC-HR-616 byte-for-byte against golden files | `ubuntu-latest`, `windows-latest` for the shared money handling |
+| Time zones, work week and Hijri | Accrual, the licence scan, the cut-off and every reminder run in the tenant's IANA time zone and work week; the service certificate prints Hijri and Gregorian dates | TC-HR-602, TC-HR-622; `TC-PLAT-005` and `TC-PLAT-006` (document 33) inside the built image | `ubuntu-latest` |
+| Arabic search and collation | Staff search uses `pg_trgm` over the BR-L10N-001 fold, the same fold as every other service | `TC-L10N-310` (document 24) inside the database image | `ubuntu-latest` |
+| Right to left | Letters, contracts and payslips are rendered by Documents in both directions, with the numerals the tenant chose | TC-L10N-801 (defined in this sheet); `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
+| Mobile without Google services | A teacher requests leave and reads a leave decision on the phone; decisions reach a device without Google services in-app while the app is open, and by email; no salary or payslip is stored on any device (section 13) | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | the device pass |
+
 ---
 
 ## 16. Scaling, partitioning and risks
@@ -1291,14 +1391,16 @@ Hr has no Appendix S rule, so no rule test class exists (document 31 section 1).
 | Partitions | `payslip_lines` list by payroll period; nothing else, because 1,800 staff and 22,000 payslip lines a month for the largest group stay small (document 21 section 3.18) | A tenant above 5,000 staff |
 | Jobs | Payroll jobs stream per tenant under the per-tenant job concurrency limit of REQ-DATA-028 | Job queue wait above 5 minutes |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| Salary disclosed to a principal or in a log | med | high | Permission-gated members, encryption, read audit, log scrubber, TC-SEC-801, TC-HR-612 | Security reviewer |
-| A frozen period silently changed | low | high | `HR_PAYROLL_PERIOD_LOCKED`, adjustment in the next period, TC-HR-036 | Hr lead |
-| Leave approved without cover, a class unsupervised | med | high | Cover gate, Scheduling's uncovered alert within 30 minutes, TC-HR-604 | Hr lead with Scheduling |
-| Hire and School staff record ping-pong | low | med | `StaffCreatedConsumer` is a no-op for an Hr-minted `staff_id`; TC-HR-617 | Hr lead |
-| An expired licence goes unnoticed because Academics hears nothing | med | high | Daily principal alert, coordinator task, eligibility check at the Bff.Web edge; open point 5 | Product owner |
-| Balance drift between ledger and totals | low | med | Balance as a ledger sum, nightly invariant audit, TC-HR-603 | Hr lead |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| Salary disclosed to a principal or in a log | 2 | 4 | 8 | Permission-gated members, encryption, read audit, log scrubber, TC-SEC-801, TC-HR-612, the generated response-shape suite TC-SEC-057 | Security reviewer | none |
+| A frozen period silently changed, so money is wrong for staff | 2 | 4 | 8 | `HR_PAYROLL_PERIOD_LOCKED`, adjustment in the next period, TC-HR-036 | Hr lead | none |
+| Leave approved without cover, a class unsupervised | 2 | 4 | 8 | Cover gate, Scheduling's uncovered alert within 30 minutes, TC-HR-604 | Hr lead with Scheduling | none |
+| Hire and School staff record ping-pong | 2 | 2 | 4 | `StaffCreatedConsumer` is a no-op for an Hr-minted `staff_id`; TC-HR-617 | Hr lead | none |
+| An expired licence goes unnoticed because Academics hears nothing | 3 | 3 | 9 | Daily principal alert, coordinator task, eligibility check at the Bff.Web edge; open point 5 | Product owner | none |
+| Balance drift between ledger and totals | 2 | 2 | 4 | Balance as a ledger sum, nightly invariant audit, TC-HR-603 | Hr lead | none |
 
 ---
 
@@ -1320,8 +1422,8 @@ Hr has no Appendix S rule, so no rule test class exists (document 31 section 1).
 |---|---|---|
 | Names, database, exchange, image | Appendix L | every lint run |
 | Event keys, payloads and partition keys | Appendix E | every lint run |
-| Permission strings | Appendix B | `/lint-plan` |
-| Error codes | Appendix K.19 | `/lint-plan` |
+| Permission strings | Appendix B | every lint run (kit-lint R19, Permission columns); the Group C review for prose |
+| Error codes | Appendix K.19 | every lint run (kit-lint R19) |
 | State types and feature folders | `31-business-rules-and-workflows.md` section 3 | Group F review |
 | WF-HR-01 to WF-HR-04 states and test rows | Appendix R | Group D review |
 | The `ApproveLeave` and `CancelLeave` effect row and Saga 9 | `13-workflows-and-sagas.md` sections 3 and 4 | Group D review |
@@ -1333,18 +1435,19 @@ Hr has no Appendix S rule, so no rule test class exists (document 31 section 1).
 
 ## Open points
 
+**Closed since the draft.** Point 10 is closed and leaves the table; its number stays free so the others keep theirs. ADR-0019 corrected Appendix R to catalogued names (WF-HR-04 names `hr.payroll.inputs-ready.v1` and `hr.audit.recorded.v1`, WF-HR-01 and WF-IDN-04 name `identity.delegation.started.v1`, and the audit entry is always the publishing service's own `<service>.audit.recorded.v1`), and Appendix W now gives feature 43 its own demo test, `TC-HR-810`, so `TC-HR-001` keeps only its Appendix R meaning. Point 5 keeps only the suspension and restoration event: Appendix R WF-HR-03 now names `hr.staff-document.expiring.v1`, which Appendix E has.
+
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Appendix G has no *HR* category for document types, warning thresholds, licence grace days, leave year start, notice days, payroll cut-off day, calculator and bank file format | Stored in Hr's `hr_policies` and edited under `hr.staff-files.edit` and `hr.payroll.edit`; propose an *HR* category in Appendix G so Platform owns them (ADR-0009) | Product owner | Still open. ADR-0019 touched only the Finance, Joining and AI groups of Appendix G, so two places hold tenant configuration until the category exists | 3 | 2 | 6 | RISK-43 |
-| 2 | Document 11 does not bind `nibras.hr` into `documents.commands` or `notification.commands`, and does not bind `documents.document.generated.v1` into `hr.events`; several Hr messages have no Appendix C row (leave rejected, review reminders, licence principal alert, cut-off reminders, offer and onboarding messages, probation, feedback requests) | Add the bindings as the Documents sheet open point 7 proposes; send the uncatalogued messages through `RequestNotification`; propose Appendix C rows | Document 11 owner, product owner | Still open. ADR-0019 added no Hr row to Appendix C and left document 11 to its own editor, so Hr could not render letters and payslips or send these messages | 2 | 3 | 6 | RISK-43 |
+| 2 | The render half is closed: document 11 §2.4 and §2.5 now bind `nibras.hr` into `documents.commands` and `documents.document.generated.v1` into `hr.events`, so letters, contracts, payslips and certificates render. Still open: document 11 does not bind `nibras.hr` into `notification.commands`, and several Hr messages have no Appendix C row (leave rejected, review reminders, licence principal alert, cut-off reminders, offer and onboarding messages, probation, feedback requests) | Send the uncatalogued messages through `RequestNotification` once `notification.commands` binds `nibras.hr`; propose Appendix C rows | Document 11 owner, product owner | Certain until the binding exists: ADR-0019 added no Hr row to Appendix C, so none of these messages is sent. The HR home still lists leave to approve, expiring documents, probation endings and vacancies (section 1), so those are found by looking rather than by being told | 5 | 2 | 10 | RISK-43 |
 | 3 | WF-HR-04 `Opened → Collecting` needs staff attendance, which Attendance owns and publishes no event for | Collection uses Hr's leave, overtime and contracts; lateness deductions are entered as manual inputs; propose an Attendance staff-attendance monthly summary event | Architect with Attendance | Lateness deductions are keyed by hand | 3 | 2 | 6 | none |
 | 4 | WF-HR-02 `Contracted → Onboarded` needs "account created", but Hr binds no Identity event | The `account-active` onboarding item is completed by the HR officer from the account status Bff.Web shows; propose binding `identity.user.activated.v1` into `hr.reference-copies` | Architect | Onboarding completes on a human confirmation | 2 | 1 | 2 | none |
-| 5 | WF-HR-03 `Expired → Suspended` withdraws teaching assignments, and Appendix R names `hr.document.expiring.v1` and `hr.document.expired.v1`, neither of which Appendix E has; no Hr event reaches Academics or Scheduling | Hr publishes `hr.staff-document.expiring.v1` at each threshold, Requests turns it into a coordinator task, and Bff.Web checks teaching eligibility before an assignment; a suspension and restoration event stays proposed | Product owner, Appendix E amendment | Partly resolved 2026-09-22 (ADR-0019): Appendix R WF-HR-03 now names `hr.staff-document.expiring.v1` at each warning threshold and records the expiry, the suspension and the restoration as `hr.audit.recorded.v1`. No key was added for suspension or restoration, so Academics and Scheduling still learn of it only through people and the edge check | 3 | 3 | 9 | none |
+| 5 | WF-HR-03 `Expired → Suspended` withdraws teaching assignments, but no catalogued Hr event for the suspension or the restoration reaches Academics or Scheduling (the expiring key is settled, see above) | Hr publishes `hr.staff-document.expiring.v1` at each threshold, Requests turns it into a coordinator task, and Bff.Web checks teaching eligibility before an assignment; a suspension and restoration event stays proposed | Product owner, Appendix E amendment | Partly resolved 2026-09-22 (ADR-0019): Appendix R WF-HR-03 now names `hr.staff-document.expiring.v1` at each warning threshold and records the expiry, the suspension and the restoration as `hr.audit.recorded.v1`. No key was added for suspension or restoration, so Academics and Scheduling still learn of it only through people and the edge check | 3 | 3 | 9 | none |
 | 6 | Hr does not bind `requests.request.rejected.v1`, and `SubstituteProposed` and `Uncovered` of WF-HR-01 produce no event Hr can observe | Undecided leave expires at its start date; Hr shows cover state from the substitutions it receives; `requests.request.rejected.v1` into `hr.events` and a Scheduling uncovered-period event stay proposed | Architect | Still open. ADR-0019 added Scheduling's `UncoveredPeriodEscalationJob` to Appendix E's job table and an Appendix C row for the uncovered period, but no event key and no Hr consumer, so a rejected request's reservation is still held until the start date | 3 | 2 | 6 | none |
-| 7 | REQ-HR-012 names Hr as owner of workload balance, but teaching load and grading turnaround belong to Scheduling and Assessment, and Hr runs no model | Hr serves cover and leave totals (the degraded rung); the coordinator card is a Reporting read model | Product owner | The rung 2 workload model needs a Reporting owner | 3 | 2 | 6 | none |
+| 7 | Hr owns feature 43 and its rung 2 strain model (section 1, section 5.9; SL-HR-616 builds it in Hr, next to the leave and cover data). REQ-HR-012 and SL-HR-616 also show teaching load and grading turnaround, but Hr copies neither. Teaching periods live in Scheduling and Academics, and grading turnaround in Assessment | The strain model's inputs are the ones Hr holds: cover given and received, cover against the BR-SCD-005 fairness score, and leave taken. Teaching load and grading turnaround are not model inputs, and the workload view says so, until a source is agreed. The proposal is to bind `academics.teaching-assignment.changed.v1` into `hr.reference-copies`, carrying the `periodsPerWeek` field that the Academics sheet's risk table already proposes for that event. Grading turnaround stays with the Reporting indicator on the teacher and principal homes | Architect | A teacher overloaded by teaching periods, with no cover or leave, is not flagged by the model until the teaching-load source exists | 3 | 2 | 6 | none |
 | 8 | Appendix B has no payroll approval action, and Appendix I grants the Accountant no Hr permission nor a staff member `self` scope on `hr.payroll.view-salary` for their own payslips | Finance approval under `hr.payroll.export`; own payslips under `hr.payroll.view-salary` in `self` scope, proposed for the staff templates | Product owner | Still open. ADR-0019's change list records the payroll approval action among the gaps it deliberately left for a later ADR, and Appendix I still lists `hr.payroll.view-salary` as a must-not for the Accountant, so staff cannot read their own payslips until a template grants it | 3 | 3 | 9 | RISK-43 |
 | 9 | Appendix E lists the Hr document expiry scan as weekly; Appendix R needs warnings at exact thresholds and a daily principal alert | Daily scan that publishes only on a threshold crossing | Product owner | Still open. ADR-0019 added ten rows to Appendix E's job table and did not change the Hr expiry scan's weekly cadence, so a weekly scan would still deliver the 7-day warning up to 6 days late | 2 | 2 | 4 | RISK-43 |
-| 10 | Appendix R names `audit.action.recorded.v1`, `hr.payroll-period.frozen.v1`, `hr.payroll-input.exported.v1` and `identity.delegation.activated.v1`, none of which Appendix E has; and `TC-HR-001` is used by both Appendix R WF-HR-01 and Appendix W feature 43 | Hr writes `hr.audit.recorded.v1` for the freeze and the export and publishes `hr.payroll.inputs-ready.v1` when the inputs are assembled; it consumes `identity.delegation.started.v1`. The test-identifier collision is still reported for an Appendix W renumber | Architect | Partly resolved 2026-09-22 (ADR-0019): Appendix R WF-HR-04 now names `hr.payroll.inputs-ready.v1` plus `hr.audit.recorded.v1`, WF-HR-01 and WF-IDN-04 name `identity.delegation.started.v1`, and the shared audit key is replaced everywhere by the publishing service's own `<service>.audit.recorded.v1`. The W renumbering did not reach feature 43, so traceability still shows one identifier for two tests | 2 | 1 | 2 | RISK-43 |
 | 11 | Whether the bank file counts as a sensitive export under WF-PRV-02 | The two-person sign-off of WF-HR-04 stands in for the WF-PRV-02 second approval; the download is audited with a reason | Security reviewer | A WF-PRV-02 route adds a Documents approval step to every payroll month | 3 | 2 | 6 | none |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -1354,6 +1457,7 @@ Hr has no Appendix S rule, so no rule test class exists (document 31 section 1).
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-22 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | WF-HR-01 to WF-HR-04 state diagrams added to section 8; platform notes (section 15.1); signature features; risk table on document 18's scale; open point 10 closed and point 5 narrowed. Awaiting Group C re-review |
 
 ## How this document is verified
 
@@ -1367,3 +1471,6 @@ Hr has no Appendix S rule, so no rule test class exists (document 31 section 1).
 | Every effect command and consumer is idempotent | TC-HR-605, TC-HR-617, TC-HR-618, TC-HR-625, TC-TST-203 | Integration suite |
 | The tree matches the service template anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Hr and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (TC-TST-124), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/hr/` | Pipeline |
+| The four state diagrams of section 8 equal their twins in Appendix R | R17 checks each block is a known Mermaid type; the `plan-consistency-checker` agent compares each block line by line with Appendix R at the Group C review and on every brief version bump, and a difference is fixed here | Lint; Group C review |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |

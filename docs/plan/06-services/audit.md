@@ -23,9 +23,11 @@ Audit is the evidence of record. Every data-owning service emits `<service>.audi
 | Scaling profile | Second-largest writer after Notification: about 40,000 entries per 1,000-student tenant per month, 20 million a month at the scale tier | `21-performance-engineering.md` §3.16 |
 | Why the boundary exists | Security level: evidence must live outside the services it describes, append-only, under its own database role | `05-service-catalog.md` |
 
+**Signature features.** Audit owns Appendix W feature 14, trust by design: audit, consent, export, erasure (demo test `TC-AUD-001` (Appendix W)), and feature 31, guardian transparency on sensitive access (`TC-AUD-002` (Appendix W)). The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
-## 2. Responsibilities
+## 1. Responsibilities
 
 | Audit owns | Detail |
 |---|---|
@@ -58,7 +60,7 @@ Audit is the evidence of record. Every data-owning service emits `<service>.audi
 
 ---
 
-## 3. Requirements covered
+## 2. Requirements covered
 
 | Range or identifier | What it binds here |
 |---|---|
@@ -71,13 +73,13 @@ Audit is the evidence of record. Every data-owning service emits `<service>.audi
 
 ---
 
-## 4. Aggregates and entities
+## 3. Aggregates and entities
 
-### 4.1 Base columns
+### 3.1 Base columns
 
 Entry tables are append-only: they carry `id` (uuid v7), `tenant_id`, `created_at` (the ingestion instant) and no `updated_*`, no `deleted_*` and no `xmin`-based updates, because nothing is ever updated. Mutable operational tables (chain heads, verifications, exports, restore requests) carry the full base columns of `10-data-architecture.md` §4 including `xmin`. Every table carries `tenant_id` first in every index and the `tenant_isolation` policy.
 
-### 4.2 Aggregate: AuditChain (ChainHead, AuditEntry, ChainAnchor)
+### 3.2 Aggregate: AuditChain (ChainHead, AuditEntry, ChainAnchor)
 
 | Entity | Field | Type | Null | Notes |
 |---|---|---|---|---|
@@ -109,7 +111,7 @@ Invariants:
 5. An `anchor` entry is written at every month boundary, every detach and every restore splice, so verification never needs a partition that is no longer hot.
 6. Entries of a tenant are never deleted by any job; after 7 years their partition is detached to cold storage with its hash, which is the only way an entry leaves the hot store.
 
-### 4.3 Entities routed from entries: LoginHistoryEntry, AccessLogEntry, EvidenceIndexEntry
+### 3.3 Entities routed from entries: LoginHistoryEntry, AccessLogEntry, EvidenceIndexEntry
 
 | Entity | Field | Type | Null | Notes |
 |---|---|---|---|---|
@@ -119,7 +121,7 @@ Invariants:
 
 Invariants: every routed row points at an existing chain entry of the same tenant; a register row is written in the same transaction as its chain entry.
 
-### 4.4 Operational aggregates: IntegrityVerification, AuditExport, PartitionRestoreRequest
+### 3.4 Operational aggregates: IntegrityVerification, AuditExport, PartitionRestoreRequest
 
 | Entity | Field | Type | Null | Notes |
 |---|---|---|---|---|
@@ -129,7 +131,7 @@ Invariants: every routed row points at an existing chain entry of the same tenan
 
 Invariants: an export never runs while the chain head is `exports-frozen`; an export without `audit.entries.export` is refused with `AUDIT_EXPORT_APPROVAL_REQUIRED` and routes to an approver; a restored partition is searchable only after its hash matches the anchor.
 
-### 4.5 Entity relationship diagram
+### 3.5 Entity relationship diagram
 
 ```mermaid
 erDiagram
@@ -145,7 +147,7 @@ erDiagram
 
 ---
 
-## 5. REST API
+## 4. REST API
 
 Conventions from `22-api-conventions-and-error-catalog.md`. There is no route that creates, edits or deletes an entry: entries arrive only through the consumer, and the Gateway answers any other verb on an entry path with 405. Every search, entry read, access-log read and export is itself written to the chain as a `read` entry in the same transaction; if that write fails, the read fails with `AUDIT_WRITE_FAILED` (Appendix J rule 8).
 
@@ -157,7 +159,7 @@ Conventions from `22-api-conventions-and-error-catalog.md`. There is no route th
 | GET | `/api/v1/audit/entries/{entryId}` | `audit.entries.view` | none | `AuditEntryDetail` with before and after; Sensitive values decrypted only for holders of the source permission | `AUDIT_ACTOR_UNRESOLVED` (422) when the actor no longer exists, with the retained id, `AUDIT_WRITE_FAILED` | safe |
 | GET | `/api/v1/audit/subjects/{subjectType}/{subjectId}/entries` | `audit.entries.view` | `from`, `to`, cursor | the record's history, newest first ("who touched this student") | same as the search | safe |
 | GET | `/api/v1/audit/actors/{userId}/entries` | `audit.entries.view` | `from`, `to`, cursor | what one user did | same | safe |
-| GET | `/api/v1/audit/registers/{register}` | `audit.entries.view` | `from`, `to`, cursor | evidence register rows (section 4.3) | `AUDIT_QUERY_RANGE_TOO_WIDE` | safe |
+| GET | `/api/v1/audit/registers/{register}` | `audit.entries.view` | `from`, `to`, cursor | evidence register rows (section 3.3) | `AUDIT_QUERY_RANGE_TOO_WIDE` | safe |
 | GET | `/api/v1/audit/oversight/summary` | `audit.entries.view` | period | principal oversight: sensitive exports, break-glass uses, grade changes after lock, reported messages, overdue access reviews | `AUDIT_ACCESS_REVIEW_OVERDUE` (200, informational item) | safe |
 | POST | `/api/v1/audit/exports` | `audit.entries.export` | filter, format (`csv`, `json`), reason | 202 job; principal notified | `AUDIT_EXPORT_APPROVAL_REQUIRED` without the permission, `AUDIT_REASON_REQUIRED`, `AUDIT_CHAIN_BROKEN` while exports are frozen | `Idempotency-Key` required |
 | GET | `/api/v1/audit/exports/{exportId}` | `audit.entries.export` | none | export job with a 5-minute signed file link when succeeded | none | safe |
@@ -177,7 +179,7 @@ Conventions from `22-api-conventions-and-error-catalog.md`. There is no route th
 
 ---
 
-## 6. gRPC
+## 5. gRPC
 
 | Direction | Service and method | Purpose | Deadline | Fallback |
 |---|---|---|---|---|
@@ -189,9 +191,9 @@ Audit exposes no query gRPC to other services: no service may read the audit log
 
 ---
 
-## 7. Events published and consumed
+## 6. Events published and consumed
 
-### 7.1 Published on `nibras.audit`
+### 6.1 Published on `nibras.audit`
 
 | Routing key | Partition key | Published when | Consumers (Appendix E) |
 |---|---|---|---|
@@ -201,7 +203,7 @@ Audit exposes no query gRPC to other services: no service may read the audit log
 
 Audit does not publish `audit.audit.recorded.v1`: reads of the audit log are appended to the chain in-process, in the same transaction as the read (Decisions in force).
 
-### 7.2 Consumed
+### 6.2 Consumed
 
 | Routing key | Queue | Handler | What it changes | Ordering |
 |---|---|---|---|---|
@@ -227,19 +229,19 @@ Commands received on `audit.commands`: `DetachTenantAuditPartition` (Saga 2 step
 
 ---
 
-## 8. Sagas and workflows
+## 7. Sagas and workflows
 
 Audit owns no workflow and orchestrates no saga. It takes part in Saga 1 (step 2 tenant rows), Saga 2 (step 8 `DetachTenantAuditPartition`, forward only, retried until confirmed and the certificate withheld until then) and Saga 10 (all copy steps). Every transition of every workflow in Appendix R lands here as one entry (REQ-AUD-008, `13-workflows-and-sagas.md` §5.1), including `saga.stuck` entries that the operator alert rule reads.
 
 ---
 
-## 9. Local reference copies
+## 8. Local reference copies
 
 None, by design: the audit log is the copy of record and Appendix J.3 allows no copy of its before and after values anywhere. Actor names are resolved at display time through Bff.Web.
 
 ---
 
-## 10. Background jobs
+## 9. Background jobs
 
 | Job | Schedule | What it does | Publishes | Progress |
 |---|---|---|---|---|
@@ -252,9 +254,9 @@ None, by design: the audit log is the copy of record and Appendix J.3 allows no 
 
 ---
 
-## 11. Permissions, notifications, settings, error codes
+## 10. Permissions, notifications, settings, error codes
 
-### 11.1 Permissions (Appendix B, Audit section)
+### 10.1 Permissions (Appendix B, Audit section)
 
 | Permission | Risk | Used by |
 |---|---|---|
@@ -265,7 +267,7 @@ None, by design: the audit log is the copy of record and Appendix J.3 allows no 
 | `audit.access-transparency.view` | normal, `own-children` or `self` scope only | the guardian transparency route: roles and times, never reader names |
 | `audit.integrity.view`, `audit.integrity.verify` | elevated | integrity, verifications, partitions |
 
-### 11.2 Notifications (Appendix C rows triggered by Audit)
+### 10.2 Notifications (Appendix C rows triggered by Audit)
 
 | Notification | Trigger | Recipients | Urgency, channels |
 |---|---|---|---|
@@ -274,7 +276,7 @@ None, by design: the audit log is the copy of record and Appendix J.3 allows no 
 
 The principal's notice of an audit export (T-AUD-03) is the second row: Appendix C now carries it, so the `RequestNotification` this sheet already sends is a catalogued row rather than an internal template.
 
-### 11.3 Settings (Appendix G)
+### 10.3 Settings (Appendix G)
 
 | Group → setting | Scope | Default | Used by |
 |---|---|---|---|
@@ -282,7 +284,7 @@ The principal's notice of an audit export (T-AUD-03) is the second row: Appendix
 | Security → export approval rules | tenant | Audit export always needs `audit.entries.export` and a reason | `AuditExportJob` |
 | General → time zone, numerals | tenant | from provisioning | Display of entries |
 
-### 11.4 Error codes (Appendix K)
+### 10.4 Error codes (Appendix K)
 
 | Code | HTTP | Raised here when |
 |---|---|---|
@@ -299,7 +301,7 @@ The principal's notice of an audit export (T-AUD-03) is the second row: Appendix
 
 ---
 
-## 12. Caching and hot queries
+## 11. Caching and hot queries
 
 Audit caches nothing: `21-performance-engineering.md` §1.16 is binding, and `TC-PERF-016` proves Audit writes zero cache keys. The hot queries, indexes and growth figures are §3.16 and are not restated. Service-specific additions:
 
@@ -311,7 +313,7 @@ Audit caches nothing: `21-performance-engineering.md` §1.16 is binding, and `TC
 
 ---
 
-## 13. Security
+## 12. Security
 
 The threat table is `12-security-privacy-safety.md` §2.16 (T-AUD-01 to T-AUD-05); the access-logging rule is Appendix J rule 8; the key inventory row for column encryption keys is §9.
 
@@ -331,7 +333,7 @@ Additional controls: `svc_audit` has no `UPDATE`, `DELETE` or `TRUNCATE` on entr
 
 ---
 
-## 14. Folder and file tree
+## 13. Folder and file tree
 
 ```text
 src/Services/Audit/                                         Audit: the append-only, hash-chained evidence store with search, export and integrity verification
@@ -353,7 +355,7 @@ src/Services/Audit/                                         Audit: the append-on
 │   │   ├── LoginHistoryEntry.cs                            sign-in row with outcome, method, device and new-device flag
 │   │   ├── AccessLogEntry.cs                               read of a sensitive record with reader role and purpose; Wellbeing by record type only
 │   │   ├── EvidenceIndexEntry.cs                           register row for the events Appendix E sends to Audit
-│   │   └── Register.cs                                     enum of the evidence registers of section 4.3
+│   │   └── Register.cs                                     enum of the evidence registers of section 3.3
 │   ├── Operations/                                         operational aggregates
 │   │   ├── IntegrityVerification.cs                        aggregate root: scope, range, result, first broken sequence
 │   │   ├── AuditExport.cs                                  aggregate root: requester, reason, filter, watermark, state
@@ -362,7 +364,7 @@ src/Services/Audit/                                         Audit: the append-on
 │   └── Shared/                                             errors used by more than one aggregate
 │       └── AuditErrors.cs                                  one Error per AUDIT_* code in Nibras.Contracts.Audit
 ├── Nibras.Audit.Application/                               ingestion, search, export, verification; references Domain, building-block abstractions and the contracts it consumes
-│   ├── Features/                                           vertical slices, one folder per endpoint of section 5
+│   ├── Features/                                           vertical slices, one folder per endpoint of section 4
 │   │   ├── Entries/                                        search and read the chain
 │   │   │   ├── SearchEntries/                              search inside a date range
 │   │   │   │   ├── SearchEntriesQuery.cs                   immutable query record: route and filter parameters only
@@ -498,9 +500,9 @@ src/Services/Audit/                                         Audit: the append-on
 │   │           ├── ReplayParkedMessagesCommand.cs          immutable command record raised by a job, a consumer or a saga step, never by HTTP
 │   │           ├── ReplayParkedMessagesHandler.cs          moves parked messages back or discards with a reason
 │   │           └── ReplayParkedMessagesValidator.cs        FluentValidation guard on the internal command, so a malformed message fails loudly
-│   ├── Consumers/                                          integration event handlers, idempotent through the inbox, named after section 7.2
+│   ├── Consumers/                                          integration event handlers, idempotent through the inbox, named after section 6.2
 │   │   ├── AuditRecordedConsumer.cs                        <service>.audit.recorded.v1 from all twenty exchanges, batched per tenant
-│   │   ├── EvidenceConsumer.cs                             the ten evidence events of section 7.2
+│   │   ├── EvidenceConsumer.cs                             the ten evidence events of section 6.2
 │   │   ├── TenantDeletedConsumer.cs                        platform.tenant.deleted.v1 register and head state
 │   │   ├── TenantProvisioningRequestedConsumer.cs          platform.tenant.provisioning-requested.v1 creates the head
 │   │   ├── TenantLifecycleConsumer.cs                      the other platform.* broadcasts recorded as evidence
@@ -587,7 +589,7 @@ src/Services/Audit/                                         Audit: the append-on
     │   └── Consumers/                                      idempotency and routing tests
     ├── Nibras.Audit.IntegrationTests/                      Testcontainers: PostgreSQL through PgBouncer, RabbitMQ
     │   ├── Fixtures/                                       AuditWebAppFactory with two tenants and a producer fake emitting audit events
-    │   ├── Endpoints/                                      each endpoint of section 5 against the real stack
+    │   ├── Endpoints/                                      each endpoint of section 4 against the real stack
     │   ├── Chain/                                          append-only grants, tamper detection, anchors across months and detaches, restore splice
     │   ├── Messaging/                                      shard ordering, batch redelivery, evidence dedup
     │   ├── Persistence/                                    row-level security, pooled connections, query budgets
@@ -599,7 +601,7 @@ src/Services/Audit/                                         Audit: the append-on
 
 ---
 
-## 15. Test plan
+## 14. Test plan
 
 Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, the read-is-a-write rule and the retention path.
 
@@ -625,18 +627,30 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 | TC-AUD-107 | A legal hold stops the detach of the held tenant's partition and the job records the skip | Integration |
 | TC-AUD-108 | `DetachTenantAuditPartition` delivered twice replies the earlier result | Integration |
 | TC-AUD-109 | Sign-in entries land in login history with device and method; a new-device event marks the row | Integration |
-| TC-AUD-110 | Every evidence consumer of section 7.2 delivered twice appends once | Integration, `TC-TST-203` generator |
+| TC-AUD-110 | Every evidence consumer of section 6.2 delivered twice appends once | Integration, `TC-TST-203` generator |
 | TC-AUD-111 | Ingestion continues for a suspended tenant | Integration |
 | TC-AUD-112 | Exports are refused while the chain head is `exports-frozen` | Integration |
 | TC-AUD-113 | A restore splice appends missing entries behind an anchor and the chain verifies | Restore drill `TC-DATA-020` |
 | TC-AUD-114 | One entry per Appendix R transition across the year-in-the-life simulation (REQ-AUD-008) | Simulation |
-| TC-AUD-115 | Query budgets of `21-performance-engineering.md` §3.16 and the three additional paths of section 12 | `QueryBudget.Tests` |
-| TC-AUD-116 | Every endpoint in section 5 carries `x-nibras-permission` from Appendix B or the `self` marker | Contract |
+| TC-AUD-115 | Query budgets of `21-performance-engineering.md` §3.16 and the three additional paths of section 11 | `QueryBudget.Tests` |
+| TC-AUD-116 | Every endpoint in section 4 carries `x-nibras-permission` from Appendix B or the `self` marker | Contract |
 | TC-SEC-055, TC-SEC-056 | Permission matrix and tenant-isolation attack suites over every Audit route and consumer | Generated suites |
+| TC-AUD-760 | The canonical form of an entry, and so its `entry_hash`, is byte-identical when computed with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn: instants in ISO 8601 UTC, numbers with the invariant culture, Arabic text in NFC UTF-8, keys in ordinal order; a chain written under one culture verifies under another | Unit, property |
+| TC-AUD-761 | An export requested by a user whose language is Arabic and whose tenant uses Arabic-Indic numerals writes CSV and JSON with invariant digits and ISO 8601 UTC instants, keeps Arabic reasons and actions intact in UTF-8, and gives the same file under the three process cultures of TC-AUD-760 | Integration |
+
+### 14.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Audit is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, integration, contract and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). The one-command start that brings it up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml` | ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture and time | The hash chain is the one place where a culture leak would be a false integrity failure, so the canonical form is invariant; entries are stored in UTC and shown in the tenant's time zone with its numerals by the clients (REQ-L10N-008) | TC-AUD-760, TC-AUD-761; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
+| Right-to-left output | Audit renders no document; the export is CSV or JSON. The viewer and the guardian transparency panel are right-to-left in the web client and the mobile app | The web end-to-end specs, `TC-AUD-001` and `TC-AUD-002` (Appendix W) among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2) | Linux |
+| Arabic search and collation | None: searches are by identifier, action, service and date range, never by name; actor names are resolved at display time through Bff.Web | not applicable | not applicable |
+| Devices without Google services | Nothing Audit does depends on a device: the transparency panel is read live through Bff.Mobile, and the integrity alert goes to operators by email as well as push | `TC-PLAT-009` (document 33), the device pass on one device without Google services, which opens the transparency panel | Device pass, per release |
 
 ---
 
-## 16. Scaling, partitioning and risks
+## 15. Scaling, partitioning and risks
 
 | Concern | Design | Trigger to revisit |
 |---|---|---|
@@ -645,13 +659,15 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 | Partitioning | `audit_entries`, `login_history`, `access_log_entries` by month on `occurred_at`; detach at 7 years (`10-data-architecture.md` §5) | Partition size above 100 GB |
 | Batching | Up to 50 entries per tenant per transaction, one head lock per batch (`21-performance-engineering.md` §3.16) | Head lock wait above 20 ms p95 |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| An audit event lost between producer and store | med | high | Producer outbox, inbox dedup, lag alarm, `TC-SEC-271` | Architect |
-| The chain corrupted by an insider or a bug | low | high | Append-only role, nightly verification, anchors, frozen exports on failure | Security lead |
-| The access log reveals who is under safeguarding review | low | critical | `audit.access-log.view` high risk, reason required, Wellbeing by record type only | Safeguarding lead |
-| Storage growth over 7 years | high | med | Monthly partitions, cold storage with object lock, restore on request | Platform operations |
-| A slow tenant shard delays another tenant's evidence | med | med | Consistent-hash shards, per-tenant batches, lag per shard | Platform operations |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| An audit event lost between producer and store | 3 | 4 | 12 | Producer outbox, inbox dedup, lag alarm, `TC-SEC-271` | Architect | RISK-59 |
+| The chain corrupted by an insider or a bug | 2 | 4 | 8 | Append-only role, nightly verification, anchors, frozen exports on failure | Security lead | none |
+| The access log reveals who is under safeguarding review | 2 | 5 | 10 | `audit.access-log.view` high risk, reason required, Wellbeing by record type only | Safeguarding lead | RISK-24 |
+| Storage growth over 7 years | 4 | 3 | 12 | Monthly partitions, cold storage with object lock, restore on request | Platform operations | RISK-63 |
+| A slow tenant shard delays another tenant's evidence | 3 | 3 | 9 | Consistent-hash shards, per-tenant batches, lag per shard | Platform operations | RISK-19 |
 
 ---
 
@@ -681,7 +697,7 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 
 ## Open points
 
-**Closed by ADR-0019 (brief v9.1).** Four of the five points this sheet raised are answered by the brief. Appendix C now carries the row "Audit export performed" to the principal (normal, email), so section 11.2 lists it. Appendix B now carries `audit.access-transparency` (view, normal, own-children or self scope, roles and times, never reader names) and Appendix I gives it to the Parent / Guardian template, so the transparency route in section 5 declares it instead of the high-risk `audit.access-log.view`; `08-web-structure.md` has to follow. Appendix E now states that there is no shared audit routing key and that an audit entry named in Appendix R is the publishing service's own `<service>.audit.recorded.v1`, and Appendix R was rewritten to that form, so the form this sheet binds is the brief's. Reference architecture Section 8.0 now states under "Calls every service makes" that every service may read Platform `Settings.GetSettings` and `Retention.ListActiveHolds`, which is exactly what the detach job uses, so section 6 no longer adds anything to the table. The one point left is renumbered.
+**Closed by ADR-0019 (brief v9.1).** Four of the five points this sheet raised are answered by the brief. Appendix C now carries the row "Audit export performed" to the principal (normal, email), so section 10.2 lists it. Appendix B now carries `audit.access-transparency` (view, normal, own-children or self scope, roles and times, never reader names) and Appendix I gives it to the Parent / Guardian template, so the transparency route in section 4 declares it instead of the high-risk `audit.access-log.view`; `08-web-structure.md` has to follow. Appendix E now states that there is no shared audit routing key and that an audit entry named in Appendix R is the publishing service's own `<service>.audit.recorded.v1`, and Appendix R was rewritten to that form, so the form this sheet binds is the brief's. Reference architecture Section 8.0 now states under "Calls every service makes" that every service may read Platform `Settings.GetSettings` and `Retention.ListActiveHolds`, which is exactly what the detach job uses, so section 5 no longer adds anything to the table. The one point left is renumbered.
 
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
@@ -701,4 +717,7 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |
 | Nothing can edit the log | `TC-SEC-270` and the role grants checked by the migration lint | Integration, pipeline |
 | Every read of evidence is itself evidence | `TC-AUD-104` | Integration |
-| The service can be built from this sheet | Group C review against the service-sheet skill | Review |
+| The service can be built from this sheet | `architecture-reviewer` walks the sheet against the service-sheet skill (`.claude/skills/service-sheet/`) at the Group C review and on every change to this sheet | Review |
+| The sections are numbered from 1 and every in-sheet section reference resolves | `plan-consistency-checker` checks the headings and every "section N" of this sheet at the Group C review and on every change to this sheet | Review |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 14.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 and R34 (each demo test defined once and run by its demo step) | Review; lint |

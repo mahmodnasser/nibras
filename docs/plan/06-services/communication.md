@@ -21,6 +21,8 @@ Communication is how the school talks with its families and staff, and how that 
 | Synchronous dependency | Identity (permission check for a message policy) |
 | Why the boundary exists | Scaling: long-lived SignalR connections on a Redis backplane scale on connection count, not on requests |
 
+**Signature features.** Communication owns Appendix W feature 17, photo and media consent enforced at publishing (demo test `TC-COM-001` (Appendix W)), and feature 22, policy and handbook acknowledgment (Tier 2; `TC-COM-002` (Appendix W)). Its hubs are also the in-app channel of feature 7, the parent experience that respects attention, for a device without Google services while the app is open. The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities
@@ -902,8 +904,23 @@ Existing identifiers are reused; new ones are minted from `TC-COM-701` upward, a
 | TC-COM-719 | A policy rule that needs Identity's check refuses the send when Identity is unavailable | Integration |
 | TC-COM-720 | A flagged message older than 2 years is moved to `messages_held` before its partition is dropped (REQ-PRV-008) | Integration, `Persistence/` |
 | TC-COM-721 | An offline message replayed with the same `clientMessageId` is stored once | Integration |
+| TC-COM-760 | A message search for a guardian's name typed without hamza and with ha in place of taa marbuta finds the message written with both, through the normalized body and `ix_messages_search_trgm`; the displayed body is unchanged, and the same search typed with Arabic-Indic digits for a date finds the message written with Latin digits (REQ-L10N-009) | Integration |
+| TC-COM-761 | With the app open on a device registered without Google services, a new message, an announcement and a meeting change reach it through the `notifications` and `messaging` hubs and no push is attempted; with the app closed, an urgent announcement goes to Notification's urgent fallback | Integration, `Hubs/` |
+| TC-COM-762 | Office hours and quiet hours are evaluated in the recipient's campus time zone with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn, and the conference-day slot count of TC-COM-710 is 144 under each; every stored instant is UTC (REQ-PLAT-019) | Unit, property |
 
 Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10 and section 12 of this sheet.
+
+### 15.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Communication is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, integration, hub, contract and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). The one-command start that brings it and its Redis backplane up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml` | ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture and time | Scheduled announcements, office hours and quiet hours are evaluated in the campus time zone and stored in UTC; no value is parsed with the machine's culture | TC-COM-701 (07:00 scheduling), TC-COM-705, TC-COM-762; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
+| Arabic search and collation | Message search runs on a body normalized by the fold of `24-localization-and-calendars.md` §3 with a trigram index, and needs `pg_trgm` in the database image | TC-COM-760; `TC-L10N-310` (document 24), Arabic trigrams inside the database image | Linux |
+| Right-to-left output | Messages, announcements and policies hold mixed Arabic and English text, shown right-to-left with each message's own direction in the web client and the mobile app; policy documents and consent forms are rendered by Documents in both languages | The web end-to-end specs, TC-COM-201, TC-COM-601 and TC-COM-602 among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2); `TC-TST-208` (document 16) for rendered documents | Linux |
+| Translation | Message translation (REQ-COM-011) has no provider in the approved stack; it stays off and returns `COMMUNICATION_TRANSLATION_UNAVAILABLE` (open point 6, RISK-46) | TC-L10N-501 cannot pass until a provider is chosen | not run until then |
+| Devices without Google services | The hubs are the in-app channel that serves such a device while the app is open; when it is closed, urgent items take Notification's fallback (email, and SMS once Open Question 22 names a provider) | TC-COM-761; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services, which checks the in-app channel | Linux; device pass, per release |
+
 
 ---
 
@@ -916,14 +933,16 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 | Partitions | `messages` by month on `sent_at`, detached at 2 years with flagged rows moved first | Planning time above 2 ms |
 | Large audiences | Recipients written by binary `COPY`; fan-out to Notification is one event | Publish of a 3,000-recipient announcement above 2 s |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| An adult contacts a student outside policy | med | critical | Compiled policy, Identity check refusing on failure, student-to-student off; TC-COM-601, TC-COM-719 | Safeguarding lead |
-| Oversight abused to read private conversations | low | high | High-risk grant with four-eyes, reason required, every read logged; TC-COM-713 | Security reviewer |
-| An anonymous reporter is re-identified | low | critical | No identity persisted, 24-hour salted hash in `redis-state` only; TC-COM-712 | Security reviewer |
-| A photo of a child without consent is published | med | high | Consent checked at publish with a fresh copy; TC-COM-001 | Product owner |
-| A hub leaks another tenant's events | low | critical | Tenant in every group and channel; relay tenant check; TC-COM-718 | Tech lead |
-| Backplane outage stops real-time delivery | med | med | Clients poll on reconnect; messages and inbox are durable in the database | Operations |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| An adult contacts a student outside policy | 3 | 5 | 15 | Compiled policy, Identity check refusing on failure, student-to-student off; TC-COM-601, TC-COM-719 | Safeguarding lead | RISK-54 |
+| Oversight abused to read private conversations | 2 | 4 | 8 | High-risk grant with four-eyes, reason required, every read logged; TC-COM-713 | Security reviewer | none |
+| An anonymous reporter is re-identified | 2 | 5 | 10 | No identity persisted, 24-hour salted hash in `redis-state` only; TC-COM-712 | Security reviewer | none |
+| A photo of a child without consent is published | 3 | 4 | 12 | Consent checked at publish with a fresh copy; TC-COM-001 | Product owner | RISK-62 |
+| A hub leaks another tenant's events | 2 | 5 | 10 | Tenant in every group and channel; relay tenant check; TC-COM-718 | Tech lead | RISK-20 |
+| Backplane outage stops real-time delivery, and with it the in-app channel of devices without Google services | 3 | 3 | 9 | Clients poll on reconnect; messages and inbox are durable in the database | Operations | none |
 
 ---
 
@@ -944,8 +963,8 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 |---|---|---|
 | Names, database, exchange, image | Appendix L | every lint run |
 | Event keys, payloads and partition keys | Appendix E | every lint run |
-| Permission strings | Appendix B | `/lint-plan` |
-| Error codes | Appendix K.11 | `/lint-plan` |
+| Permission strings | Appendix B | every lint run (kit-lint R19, Permission columns) and the Group C review for prose |
+| Error codes | Appendix K.11 | every lint run (kit-lint R19) |
 | Queues and the permission refresh route | `11-messaging-architecture.md` sections 2.5 and 10 | Group C review |
 | Hub client events and stores | `08-web-structure.md` sections 3.2 and 3.3 | Group D review |
 | Job progress and hub contract | `22-api-conventions-and-error-catalog.md` section 6.3 | Group F review |
@@ -983,3 +1002,5 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 | Every consumer and the meeting effect are idempotent | TC-TST-203, TC-COM-716, TC-COM-721 | Integration suite |
 | The tree matches the service template anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Communication and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (TC-TST-124), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | Budgets hold | `TC-PERF-1NN` rows with evidence under `docs/perf/communication/` | Pipeline |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 15.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture, search and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 and R34 (each demo test defined once and run by its demo step) | Review; lint |

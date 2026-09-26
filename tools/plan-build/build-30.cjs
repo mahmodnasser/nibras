@@ -1,4 +1,5 @@
-// Assemble docs/plan/30-plan-scorecard.md from the six group scorecards.
+// Assemble docs/plan/30-plan-scorecard.md from the group scorecards of every
+// scoring round: parts/round1/, parts/round2/ ... and the current round in parts/.
 const fs = require('fs');
 const path = require('path');
 const { writeGenerated } = require('./write-generated.cjs');
@@ -7,97 +8,117 @@ const SP = path.join(__dirname, 'parts') + path.sep;
 const OUT = path.join(__dirname, '..', '..', 'docs', 'plan', '30-plan-scorecard.md');
 const AXES = ['Completeness', 'Consistency', 'Feasibility', 'Risk honesty', 'Testability', 'Distinctiveness', 'Portability'];
 const G = ['A', 'B', 'C', 'D', 'E', 'F'];
-const scores = {};
-const bodies = {};
-for (const g of G) {
-  const t = fs.readFileSync(SP + 'score-' + g + '.md', 'utf8').replace(/\r/g, '');
-  bodies[g] = t.replace(/^#### Group [A-F]\s*\n/, '').trim();
-  scores[g] = {};
-  for (const a of AXES) {
-    const m = new RegExp('^\\| ' + a + ' \\| (\\d)', 'm').exec(t);
-    if (!m) throw new Error(g + ' missing ' + a);
-    scores[g][a] = Number(m[1]);
+// The date each round was scored. The current round is the last one.
+const ROUND_DATES = ['2026-09-22', '2026-09-26', '2026-09-26'];
+
+const readRound = (dir) => {
+  const scores = {};
+  const bodies = {};
+  for (const g of G) {
+    const f = dir + 'score-' + g + '.md';
+    if (!fs.existsSync(f)) return null;
+    const t = fs.readFileSync(f, 'utf8').replace(/\r/g, '');
+    bodies[g] = t.replace(/^#### Group [A-F]\s*\n/, '').trim();
+    scores[g] = {};
+    for (const a of AXES) {
+      const m = new RegExp('^\\| ' + a + ' \\| (\\d)', 'm').exec(t);
+      if (!m) throw new Error(dir + ' ' + g + ' missing ' + a);
+      scores[g][a] = Number(m[1]);
+    }
   }
-}
+  return { scores, bodies };
+};
+const rounds = [];
+for (let n = 1; fs.existsSync(SP + 'round' + n); n++) rounds.push(readRound(SP + 'round' + n + path.sep));
+const current = readRound(SP);
+const archived = rounds.length && JSON.stringify(rounds[rounds.length - 1].scores) === JSON.stringify(current.scores) && rounds[rounds.length - 1].bodies.A === current.bodies.A;
+if (!archived) rounds.push(current);
+const last = rounds[rounds.length - 1];
+const R = rounds.length;
+const blocked = (g) => AXES.filter((a) => last.scores[g][a] < 4);
+const approvedGroups = G.filter((g) => !blocked(g).length);
+
 const L = [];
 const p = (x = '') => L.push(x);
-const date = new Date().toISOString().slice(0, 10);
 p('# 30. Plan Scorecard');
 p();
 p('## Purpose');
 p();
-p('This document records how good the plan is, group by group, against the seven-axis rubric in `PLAN_SPEC.md` ("The scorecard"), with quoted evidence for every score. **A group is approved only at 4 or better on every axis; an average never substitutes for a low score.** It exists so the product owner approves the plan on evidence, and so the remaining work before approval is a named, sized list rather than a feeling.');
+p('This document records how good the plan is, group by group, against the seven-axis rubric in `PLAN_SPEC.md` ("The scorecard"), with quoted evidence for every score. **A group is approved only at 4 or better on every axis; an average never substitutes for a low score.** It exists so the product owner approves the plan on evidence, and so the work left before approval is a named, sized list rather than a feeling. It keeps every scoring round, so the progress is visible and a score cannot quietly improve.');
 p();
 p('## Scope');
 p();
 p('| In scope | Owned elsewhere |');
 p('|---|---|');
-p('| Scores for Groups A to F with evidence, the verdict per group, the gaps and the shortest path to approval | The rubric: `PLAN_SPEC.md`; the procedure: `/score-plan` and `docs/templates/scorecard.md` |');
-p('| The consolidated remediation plan across groups | The brief corrections themselves: ADR-0019 and the v9.1 briefs |');
-p('| | Document 30 does not score itself, and document 00 is scored after it is written |');
+p('| Scores for Groups A to F in every round, with evidence, the verdict per group and the gaps | The rubric: `PLAN_SPEC.md`; the procedure: `/score-plan` and `docs/templates/scorecard.md` |');
+p('| What each remediation round changed, and what is left | The changes themselves: the documents, ADR-0019 to ADR-0024 and `docs/project/CHANGELOG.md` |');
+p('| | Document 30 does not score itself, and document 00 is written after the last round |');
 p();
 p('## Content');
 p();
-p('**Status of this scorecard.** The scores and the quoted evidence are as of the scoring date in the review record. Remediation is under way: the themes closed so far are marked in `docs/project/PROJECT_STATE.md`, and some quoted lines have since been corrected, which is the point of them. Each group is re-scored, and this document regenerated, when the themes that touch it are closed.');
-p();
 p('### 1. Method');
 p();
-p('Each group was scored by an independent reviewer instructed to be adversarial, to quote the document with file and line for every score, and to reserve 5 for work that needs no change. Every reviewer was given the same established facts: `kit-lint` is clean including rule R19 (every cited identifier exists in its catalog); document 03 holds 860 requirements; document 34 builds 858 of them in 718 slices and explains the other 2; document 20 gives every requirement a test identifier. The reviewers were then asked to find what tooling cannot: contradictions of meaning, thin sections, unowned unknowns, claims with no test. The four most consequential findings were re-checked by hand before this document was written (Section 4).');
+p('In every round each group was scored by an independent reviewer instructed to be adversarial, to quote the document with file and line for every score, and to reserve 5 for work that needs no change. From round 2 on, each reviewer also received the previous round\'s scorecard for its group and was told not to take the remediation on trust: every earlier gap is marked Closed, Partly closed or Open with evidence. Every reviewer was given the same facts established by tooling (the kit lint and its rules, the generated documents, the requirement and slice counts) and asked to find what tooling cannot: contradictions of meaning, thin sections, unowned unknowns, claims with no test, and defects the remediation itself introduced.');
 p();
-p('### 2. Summary');
+p('### 2. Summary, round ' + R + ' (' + ROUND_DATES[R - 1] + ')');
 p();
 p('| Group | ' + AXES.join(' | ') + ' | Lowest | Verdict |');
 p('|---|' + AXES.map(() => '---|').join('') + '---|---|');
 for (const g of G) {
-  const v = AXES.map((a) => scores[g][a]);
-  const blocked = AXES.filter((a) => scores[g][a] < 4);
-  p('| ' + g + ' | ' + v.join(' | ') + ' | ' + Math.min(...v) + ' | ' + (blocked.length ? 'Blocked (' + blocked.length + ' axes)' : 'Approved') + ' |');
+  const v = AXES.map((a) => last.scores[g][a]);
+  const b = blocked(g);
+  p('| ' + g + ' | ' + v.join(' | ') + ' | ' + Math.min(...v) + ' | ' + (b.length ? 'Blocked (' + b.join(', ') + ')' : 'Approved') + ' |');
 }
-const axisMin = AXES.map((a) => Math.min(...G.map((g) => scores[g][a])));
+const axisMin = AXES.map((a) => Math.min(...G.map((g) => last.scores[g][a])));
 p('| **Lowest per axis** | ' + axisMin.map((x) => '**' + x + '**').join(' | ') + ' | | |');
 p();
-p('**Verdict: no group is approved yet.** Portability is the one axis at 4 or better almost everywhere. The plan is complete in coverage (every requirement is specified, built by a slice and tested) but not yet consistent in meaning, and its schedule does not match its own work breakdown. Every gap below is sized; none requires rethinking the architecture.');
+p(approvedGroups.length === G.length
+  ? '**Verdict: every group is approved at 4 or better on every axis.** The plan is ready for the product owner\'s approval, subject to the decisions listed in document 00.'
+  : '**Verdict: ' + approvedGroups.length + ' of 6 groups approved' + (approvedGroups.length ? ' (' + approvedGroups.join(', ') + ')' : '') + '.** The groups still blocked, and the axes that block them, are in the table above; Section 6 lists what closes each.');
 p();
-p('### 3. Scores by group');
+p('### 3. Score history');
+p();
+p('Each cell reads round 1 → round 2' + (R > 2 ? ' → round ' + R : '') + '. A group moves to approved only when every axis reaches 4.');
+p();
+p('| Group | ' + AXES.join(' | ') + ' |');
+p('|---|' + AXES.map(() => '---|').join(''));
+for (const g of G) p('| ' + g + ' | ' + AXES.map((a) => rounds.map((r) => r.scores[g][a]).join(' → ')).join(' | ') + ' |');
+p();
+p('| Round | Date | Lowest axis score | Axes below 4 | Groups approved |');
+p('|---|---|---|---|---|');
+rounds.forEach((r, k) => {
+  const below = G.reduce((t, g) => t + AXES.filter((a) => r.scores[g][a] < 4).length, 0);
+  const ok = G.filter((g) => AXES.every((a) => r.scores[g][a] >= 4)).length;
+  p('| ' + (k + 1) + ' | ' + ROUND_DATES[k] + ' | ' + Math.min(...G.flatMap((g) => AXES.map((a) => r.scores[g][a]))) + ' | ' + below + ' of 42 | ' + ok + ' of 6 |');
+});
+p();
+p('### 4. What each remediation round changed');
+p();
+p('| Round | Theme | What changed | Record |');
+p('|---|---|---|---|');
+p('| After round 1 | 1. Product-owner decisions | Four conflicting values settled (cooling-off 30 days, invitations 14 days, deduplication 5 minutes, feature 39 to engineering); the open ones recorded as Open Questions 27 to 30 with defaults, scores and register risks | ADR-0019; `OPEN_QUESTIONS.md` |');
+p('| After round 1 | 2. Schedule matches the work | Phase ranges derived from document 34 by `schedule-34.mjs`: phase 1 14 to 22 weeks, launch 61 to 93 weeks, MVP 33 to 50 weeks | Document 17 Section 1 |');
+p('| After round 1 | 3. Brief corrections | 317 logged brief defects applied; brief v9.1 | ADR-0019 |');
+p('| After round 1 | 4. One meaning per fact | Named contradictions removed across the plan and all 23 sheets; the revoked-user mark readable by the Gateway; two Integrations capabilities added | Documents 04 to 34 |');
+p('| After round 1 | 5. One test-case registry | Every test defined in exactly one document; kit-lint R20; the registry annex generated | ADR-0020; brief v9.2 |');
+p('| After round 1 | 6. Verification claims that run | Twelve kit-lint rules (R21 to R32); every verification row names a rule, a named review or a slice; generators gain `--check` | ADR-0021; brief v9.3 |');
+p('| After round 1 | 7. Risk honesty | Every open point scored on the register\'s scales; 12 or more registered; threats owned; kit-lint R33 | ADR-0022 |');
+p('| After round 1 | 8. Signature features on the stage | Every signature feature runs its own demo test in the release gate; kit-lint R34 | ADR-0023; brief v9.4 |');
+p('| After round 2 | Round-2 gaps | The "Signature feature trace" in document 32; Platform notes and saga diagrams in the sheets; macOS in dev-smoke; Tier 2 requirements built early listed with reasons and checked by R35; open decisions no longer stated as settled; risk rows of 12 or more registered wherever they appear (R24) | ADR-0024 |');
+p();
+p('### 5. Scores by group, round ' + R);
 p();
 const names = { A: 'Understanding (01, 02; 00 last)', B: 'Requirements and architecture (03, 04, 05, 07)', C: 'Services, data, messaging, performance (06, 10, 11, 21)', D: 'Web, mobile, security, workflows, design (08, 09, 12, 13, 14)', E: 'Operations, testing, roadmap, risk, dependencies, traceability (15 to 20)', F: 'Conventions to work breakdown (22 to 29, 31 to 34)' };
 let n = 1;
 for (const g of G) {
-  p('#### 3.' + n++ + ' Group ' + g + ': ' + names[g]);
+  p('#### 5.' + n++ + ' Group ' + g + ': ' + names[g]);
   p();
-  p(bodies[g]);
+  p(last.bodies[g]);
   p();
 }
-p('### 4. Findings re-checked by hand');
+p('### 6. Round 1 findings re-checked by hand');
 p();
-p('| Finding | Checked against | Result |');
-p('|---|---|---|');
-p('| Document 02 says seven of ten competitors publish an API | `02-competitive-gap-analysis.md` lines 69, 96, 119 and its matrix | Confirmed: the text says seven, the matrix supports six |');
-p('| The Gateway cannot read the revoked-user mark, so a signed-out leaver keeps a working token | `06-services/identity.md` open point 13 and `21-performance-engineering.md` Section 2.3 | Confirmed: Identity writes `state:revoked:`, document 21 grants `svc_gateway` no read on it |');
-p('| Every load gate depends on k6, which the dependency inventory does not allow | `19-dependency-and-license-inventory.md` line 224 | Confirmed: k6 2.3.0, AGPL-3.0, "not-allowed until a Section 6.4 row and ADR exist" |');
-p('| Phase 1 is 423 slice-days against a roadmap range of 8 to 10 weeks | Master brief Section 29 team shape (two to four backend, one to two web, one mobile, one quality engineer) and document 34 Section 2 | Confirmed: 423 × 1.3 / (5 to 8 builders × 5 days) is 14 to 22 weeks |');
-p('| Documents 10 and 21 name the AI index `embeddings`; document 25 names `embedding_chunk` | `10-data-architecture.md` line 266 | Confirmed |');
-p();
-p('### 5. What blocks approval, across groups');
-p();
-p('The group gap lists overlap. Consolidated, the work before approval is eight themes, in the order they should be done because later ones depend on earlier ones.');
-p();
-p('| # | Theme | Groups | What closes it | Effort |');
-p('|---|---|---|---|---|');
-p('| 1 | **Product-owner decisions** | A, B, D, E, F | Absence-alert timing; public API, OneRoster and iCal in Tier 1; target countries, Apple build capacity and certifications. Each is recorded in `OPEN_QUESTIONS.md`, document 01 and a RISK row in document 18 until answered | 1 hour of the owner\'s time; 3 hours to record |');
-p('| 2 | **Schedule matches the work breakdown** | E, F | Re-range every phase in document 17 from document 34\'s slice-days at the Section 29 team shape, recompute the MVP line, and state the team size each range assumes | 1 day |');
-p('| 3 | **Brief corrections (v9.1)** | all | ADR-0019 applies the logged appendix defects (`tools/plan-build/parts/brief-findings.md`): missing events, permissions and error codes, the k6 Section 6.4 row, the proposed CAP-INT-02 and CAP-INT-03 in the roadmap, the conflicting values (cooling-off, invitation expiry, dedupe window), JOD decimals, Appendix W\'s autonomy column | 3 days |');
-p('| 4 | **One meaning per fact across plan documents** | A to F | Fix the named contradictions: the synchronous-call graph in 04, 05 and 07; `embedding_chunk` in 10 and 21; the Gateway\'s Redis reads in 21; the permission-refresh owner in 08, 11 and 12; OneRoster\'s and WF-INF-01\'s phase; webhooks\' tier; Finance\'s numeric precision; the API count in 02 and 32 | 3 days |');
-p('| 5 | **One test-identifier registry** | A, B, D, E, F | Make document 16 the registry of every `TC-` identifier, resolve the collisions (TC-PLT-001 to 005, TC-DOC-002), register the locally minted ones, and add a kit-lint rule that every cited `TC-` identifier is registered exactly once | 2 to 3 days |');
-p('| 6 | **Verification claims that run** | A, D, E, F | Every "How this document is verified" row either names a check that exists or is restated as a review step; the missing kit-lint rules worth having are built (open questions compared with document 01, risk-table arithmetic) | 2 days |');
-p('| 7 | **Risk honesty everywhere** | A to F | Every Open point carries likelihood and a RISK identifier; documents without an Open points or risk section get one (03, 08, 09, 10, 11, 12, 14, 21, 29, 33); document 18 re-scored (RISK-03, RISK-07, RISK-34) and extended (AI, k6, pending decisions, the brief backlog) | 1.5 days |');
-p('| 8 | **Every signature feature proven on the stage** | A, C, E, F | The 23 of 44 features without a release-gated demo step get one in Appendix O and document 32; feature 39 gets its proof; the phase 2 demo minutes that cannot run as scripted are re-scripted | 1.5 days |');
-p();
-p('**Total: about 14 to 15 working days of plan work**, plus the product owner\'s decisions. Themes 2, 4, 5 and 6 lift Consistency, Feasibility and Testability, the three lowest axes.');
-p();
-p('### 6. Re-score');
-p();
-p('Each group is re-scored with `/score-plan` after the themes that touch it are closed, and the new scores replace Section 2 with the old ones kept in the review record. The plan is approved when every group is at 4 or better on every axis, and document 00 is then written and scored last.');
+p('The five most consequential round-1 findings were checked by hand before the first remediation, and all were real. Each is closed: the API count (document 02 now says six of ten), the Gateway\'s read of the revoked-user mark (document 21 Section 2.3), k6 (master brief Section 6.4 and `allow.json`), the phase 1 range (document 17 Section 1) and the AI index name (`ai_index.embedding_chunk` everywhere).');
 p();
 p('## Decisions in force');
 p();
@@ -105,7 +126,7 @@ p('| Decision | Record |');
 p('|---|---|');
 p('| Approve only at 4 or better on every axis | `PLAN_SPEC.md`, "The scorecard" |');
 p('| Scores need quoted evidence; a score without evidence is not a score | `.claude/commands/score-plan.md` |');
-p('| Brief defects are corrected together under one ADR and a version bump | CLAUDE.md working rules; ADR-0019 (to be written) |');
+p('| Every round is kept; a later round checks every earlier gap | This document |');
 p();
 p('## Dependencies on other documents');
 p();
@@ -113,30 +134,31 @@ p('| Document | What this one takes |');
 p('|---|---|');
 p('| `PLAN_SPEC.md` | The rubric and the approval rule |');
 p('| Every plan document in Groups A to F | The evidence |');
-p('| `34-work-breakdown.md` | The slice-days behind the feasibility scores |');
-p('| `20-traceability-matrix.md` | The test coverage behind the testability scores |');
+p('| `docs/project/CHANGELOG.md`, ADR-0019 to ADR-0024 | What each remediation changed |');
 p();
 p('## Open points');
 p();
 p('| Point | Default | Owner | L | I | Score | In the register |');
 p('|---|---|---|---|---|---|---|');
-p('| The three product-owner decisions in Section 5 theme 1 | The plan follows the requirement as written until decided | Product owner | 3 | 3 | 9 | RISK-41, RISK-42 |');
+p('| The product-owner decisions the plan states as open (Open Questions 27 to 30, 3, 14, 26) and the Proposed ADRs | The defaults in force until decided; document 00 lists them | Product owner | 3 | 4 | 12 | RISK-44 |');
 p();
 p('## Review record');
 p();
 p('| Date | Reviewer | Result |');
 p('|---|---|---|');
-p('| ' + date + ' | Six independent adversarial reviewers, one per group; four findings re-checked by hand | Groups A to F blocked; lowest axes Consistency (' + axisMin[1] + ') and Feasibility (' + axisMin[2] + '); remediation of about 14 to 15 days in eight themes |');
+rounds.forEach((r, k) => {
+  const ok = G.filter((g) => AXES.every((a) => r.scores[g][a] >= 4));
+  p('| ' + ROUND_DATES[k] + ' | Round ' + (k + 1) + ': six independent adversarial reviewers, one per group | ' + (ok.length === 6 ? 'All groups approved' : ok.length + ' of 6 groups approved' + (ok.length ? ' (' + ok.join(', ') + ')' : '')) + '; lowest axis score ' + Math.min(...G.flatMap((g) => AXES.map((a) => r.scores[g][a]))) + ' |');
+});
 p();
 p('## How this document is verified');
 p();
 p('| Claim | Proof |');
 p('|---|---|');
-p('| Every score has evidence | Each row of Section 3 quotes a document with file and line; a row without one is invalid |');
-p('| The summary table matches the group scores | Section 2 is computed from Section 3 by the assembly script, not typed |');
-p('| The most consequential findings are real | Section 4 records the hand check of each |');
+p('| Every score has evidence | Each row of Section 5 quotes a document with file and line; a row without one is invalid |');
+p('| The summary and history tables match the group scores | Computed from the group scorecards of every round by `build-30.cjs`, not typed |');
 p('| The verdict follows the rule | A group with any axis below 4 is shown blocked; the script applies the rule |');
 p('| The document is current | Kit-lint rule R23 reruns `build-30.cjs --check` and fails when a group scorecard changed since this document was built |');
 p();
 writeGenerated(OUT, L.join('\n'));
-console.log('written; mins per axis', axisMin.join(','));
+console.log('rounds ' + R + '; approved ' + approvedGroups.length + ' of 6; lowest per axis ' + axisMin.join(','));

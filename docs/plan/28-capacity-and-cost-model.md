@@ -280,7 +280,7 @@ Quoted from `11-messaging-architecture.md` §7, which owns the queues and the nu
 
 | Unit | Illustrative price (USD) | Used by |
 |---|---|---|
-| General-purpose node, 8 vCPU / 32 GB | 240 per month (0.329 per node-hour) | Application pool, observability pool |
+| General-purpose node, 8 vCPU / 32 GB | 240 per month, so 240 ÷ 730 per node-hour (about 0.329; the worked examples use the exact quotient) | Application pool, observability pool |
 | Memory-optimised database node, 8 vCPU / 64 GB | 360 per month | PostgreSQL, load-tier region |
 | Memory-optimised database node, 32 vCPU / 256 GB | 1,440 per month | PostgreSQL, scale-tier region |
 | SSD block storage | 0.10 per GB-month | Database volumes, observability volumes |
@@ -350,20 +350,20 @@ The load-tier region of part 2: 50 tenants, three time-zone bands, rung 3 off.
 
 | Line | Working | Year one (USD/month) | Steady state (USD/month) |
 |---|---|---|---|
-| Compute | (10 nodes × 88 h + 9 nodes × 642 h) × 0.329 | 2,188.93 | 2,188.93 |
+| Compute | (10 nodes × 88 h + 9 nodes × 642 h) × 240 ÷ 730 | 2,188.93 | 2,188.93 |
 | Database, instances | 3 × 360 | 1,080.00 | 1,080.00 |
 | Database, volumes | Year one 3 × 500 GB; steady 3 × 1,000 GB; × 0.10 | 150.00 | 300.00 |
 | Storage | Year one 925 GB; steady 7,195 GB; × 3 replicas × 0.04 | 111.00 | 863.40 |
 | Egress | 50,000 × 75 MB = 3,750 GB × 0.08 | 300.00 | 300.00 |
 | Observability | 2 nodes × 240 + 500 GB × 0.10 | 530.00 | 530.00 |
-| Backups | Year one 4.5 × 111.5 GB + 1.15 × 925 GB = 1,565.6 GB; steady 4.5 × 423 GB + 1.15 × 7,195 GB = 10,178 GB; × 0.02 | 31.31 | 203.56 |
+| Backups | Year one 4.5 × 111.5 GB + 1.15 × 925 GB = 1,565.5 GB; steady 4.5 × 423 GB + 1.15 × 7,195 GB = 10,178 GB; × 0.02 | 31.31 | 203.56 |
 | Network | 2 × 25 + 75 + 20 | 145.00 | 145.00 |
 | Cold standby | 75 | 75.00 | 75.00 |
 | **Total** | | **4,611.24** | **5,685.89** |
 | **Per 1,000 students** | Total ÷ 50 | **92.22** | **113.72** |
 | Per student per year | Total × 12 ÷ 50,000 | 1.11 | 1.36 |
 
-Had the peak minimums run all day, compute would be 10 × 730 × 0.329 = USD 2,400, so calendar-aware scaling saves USD 211 a month at this size (part 2.5 explains why it is small here).
+Had the peak minimums run all day, compute would be 10 × 730 h × 240 ÷ 730 = USD 2,400, so calendar-aware scaling saves USD 211 a month at this size (part 2.5 explains why it is small here).
 
 #### 4.5 Comparison and the scale-tier indication
 
@@ -371,9 +371,9 @@ Had the peak minimums run all day, compute would be 10 × 730 × 0.329 = USD 2,4
 |---|---|---|---|
 | A: 600 students, single server | USD 191.63 | USD 195.07 | The host (94%) |
 | B: 50,000 students, scale mode | USD 92.22 | USD 113.72 | Compute (38%), then database instances and volumes (24%) and storage (15%) |
-| Scale-tier region, 500,000 students (indication only, not a worked example) | not computed | about USD 50.60 | Storage (34%): 71,950 GB × 3 × 0.04 = USD 8,634 of about USD 25,300 |
+| Scale-tier region, 500,000 students (indication only, not a worked example) | not computed | about USD 50.50 | Storage (34%): 71,950 GB × 3 × 0.04 = USD 8,634 of about USD 25,250 |
 
-The indication uses the scale-tier rows of part 2: compute USD 3,380 (22 and 13 nodes), database USD 4,320 plus USD 2,400 of 8 TB volumes, backups USD 2,036, egress USD 3,000, observability USD 1,260 (four nodes and 3 TB), network and standby USD 270. Against USD 5,280 had peak minimums run all day, calendar-aware scaling saves USD 1,900 a month at the scale tier, 36 percent of compute.
+The indication uses the scale-tier rows of part 2: compute USD 3,380 (22 and 13 nodes), database USD 4,320 plus USD 2,400 of 8 TB volumes, backups USD 2,036, egress USD 3,000, observability USD 1,260 (four nodes and 3 TB), network and standby USD 220 (the part 4.2 formula: two load balancers, the control plane, the status page and the standby control plane). Against USD 5,280 had peak minimums run all day, calendar-aware scaling saves USD 1,900 a month at the scale tier, 36 percent of compute.
 
 Two conclusions for the price list. First, a single server costs roughly twice as much per student as a shared region, so the on-premises price is set by the host band, not by the per-student rate. Second, at every size storage is the line that grows without anyone deciding to grow it (master brief Section 30), and at the scale tier it becomes the largest line; the storage limit per plan (master brief Section 22) is a cost control, not only a commercial term.
 
@@ -504,6 +504,7 @@ Every Kubernetes object in the umbrella chart and every cloud resource created b
 | 9. Egress of 75 MB per student-month | As stated, measured in the first term | Platform engineer | Egress is 5% of example B; an error of two times moves the total by 5% | 3 | 1 | 3 | none |
 | 10. Open question 14: a Mac build host, or hosted macOS runner minutes? Part 5 prices the Apple build line | The recorded default: hosted runner minutes, budgeted in master brief Section 30, at 80 USD a month per flavour in part 5 | Product owner | With no budget line or host, iOS is not built when phase 2 needs it; Android and mobile web are unaffected | 3 | 4 | 12 | RISK-04 |
 | 11. Open question 22: which SMS provider first? Part 5 prices SMS at USD 48 per 1,000 students a month, sold as credits | The recorded default: none; email and push cover everything except the urgent fallback | Product owner | Without a provider the urgent fallback does not exist at launch; with one, SMS is the largest per-student line of part 5 and moves with each country's rate | 3 | 3 | 9 | RISK-30 |
+| 12. The scale-tier off-peak row of part 2.5 (52 API replicas, 9 worker replicas, 72.1 vCPU) does not recompute from part 2.3, which gives off-peak minima only for the load tier; the load-tier peak minima with the off-peak workers give 72.6 vCPU | Kept as printed; the architect states the scale-tier off-peak replica set in part 2.3 at the next revision | Architect | None on the node count: 72.1 and 72.6 vCPU both need 13 nodes at 5.6 vCPU per node, so the compute line of part 4.5 does not move | 3 | 1 | 3 | none |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022). Point 1 scores likelihood 5 because the prices are illustrative by construction; its impact stays 2 because replacing part 4.1 re-prices every table from the same formulas.
 
@@ -511,16 +512,26 @@ Every Kubernetes object in the umbrella chart and every cloud resource created b
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-22 | Group F review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | The arithmetic and the calendar-aware scaling claims had no test-case identifier (Testability) |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | Unchanged: "a reviewer re-running any row gets the same figure" named no identifier, and the document contained no `TC-` identifier at all (Testability) |
+| 2026-09-26 | Round 3 remediation, `TC-PERF-800` run by hand | Amended; awaiting the round 3 score | Every figure of parts 2.5, 2.8, 4.3, 4.4, 4.5 and 5 was recomputed. Three differences were found and corrected: example B's compute working said × 0.329 while its figure used 240 ÷ 730; example B's year-one backup volume read 1,565.6 GB for 1,565.5 GB; the scale-tier indication carried USD 270 for network and standby where the part 4.2 formula gives USD 220, so its total is about USD 25,250 and USD 50.50 per 1,000 students. Every other figure reproduced to the cent except the scale-tier off-peak row of part 2.5 (open point 12) |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| The arithmetic of parts 2.5, 2.8, 4.3, 4.4 and 4.5 | Every total recomputes from the unit prices in part 4.1 and the tables in part 2; a reviewer re-running any row gets the same figure to the cent | Group F review; again at each price-list change |
+| The arithmetic of parts 2.5, 2.8, 4.3, 4.4, 4.5 and 5 | `TC-PERF-800`, defined below: every figure recomputes from the unit prices of part 4.1, the formulas of part 4.2 and the tables of part 2, to the cent. It is a review step, run by `performance-reviewer`, until the product builds a recomputation script; the round 3 run is in the review record | Group F review; again at every change to part 2, part 4 or part 5 |
 | Every starting point is replaced by evidence | Each row of part 6 names its scenario and tier; the phase 6 exit (CAP-PERF-02) is not met while a row still reads "starting point" or "estimate" | Phase 6 exit review |
 | The sizes hold at the scale targets of master brief Section 21 | N-01, N-05, N-06, N-07 and N-11 at the scale tier on production-shaped infrastructure (Appendix N, N.3 rule 5) | Weekly, and before every general-availability release |
 | Calendar-aware scaling saves what part 2.5 claims | Node-hours per band from the cluster autoscaler against the 88 and 642 hour split; `CalendarScaleUpMissed` never fires | Monthly review, part 7.2 |
 | Storage per student matches part 2.8 | Measured bytes per data class per student from N-07 at scale, then from production each month | N-07 weekly; monthly review |
 | Every resource carries the FinOps labels | Chart lint and the OpenTofu plan check refuse an unlabelled resource | Every pull request touching `deploy/` |
 | This document agrees with the catalogs | kit-lint R01, R02, R05 and R17 for section and appendix references, forbidden words and Mermaid types; `plan-consistency-checker` with `performance-reviewer` compares this document with documents 11, 15, 21 and 25 | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |
+
+### Test cases
+
+This document defines the recomputation check below. Until a script performs it, it is a review step with an identifier: `performance-reviewer` runs it at every group review and at every change to part 2, part 4 or part 5, and records the result in the review record.
+
+| Test case | What it proves | Covers |
+|---|---|---|
+| TC-PERF-800 | Given the unit prices of part 4.1 (the node-hour as 240 ÷ 730, unrounded), the formulas of part 4.2 and the tables of part 2, when every figure of parts 2.5, 2.8, 4.3, 4.4, 4.5 and 5 is recomputed, then each replica, vCPU and node count of part 2.5, each total and steady state of part 2.8, and each line, total, per-1,000 and per-student-year figure of parts 4.3 to 5 equals the printed value to the cent (to one decimal for volumes and vCPU), and any difference is either corrected or carried as an open point before the review closes | none |

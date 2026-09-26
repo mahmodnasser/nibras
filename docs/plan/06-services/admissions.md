@@ -19,6 +19,8 @@ Admissions is the front door of the product. It captures inquiries from every so
 | Sensitivity (Appendix J) | confidential |
 | Why the boundary exists | Scaling: a seasonal peak and a public application form with bot protection and OTP, unlike the steady internal load of School |
 
+**Signature features.** Admissions owns no Appendix W feature. Its events feed feature 1, Today dashboards where every card leads to an action (the registrar home, REQ-ADM-024, built by Reporting and Bff.Web). The requirements, capabilities, slices, Appendix O step and demo test of that feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities
@@ -415,6 +417,74 @@ Queues from `11-messaging-architecture.md` section 2.5 (Admissions table).
 | WF-ADM-02 Re-enrollment with fee settlement check | Owner, single-service choreography | State type `ReEnrollmentWithFeeSettlementCheckStatus`, feature folder `Application/Features/ReEnrollmentWithFeeSettlementCheck/`. Timeouts: 21-day window, reminders at days 7 and 14; `BlockedOnFees` escalates to the finance manager at 14 days and the principal at 30, then releases the seat. `SettlementChecked` reads the account standing from `finance.account.restricted.v1` and `finance.account.cleared.v1`, which Appendix E routes here. `SeatReserved → Enrolled` is recorded on `school.student.promoted.v1` when School's rollover writes the next-year enrolment |
 | WF-RQS-01 Service request lifecycle | Effect owner | `ConfirmReEnrollment`, `DeclineReEnrollment` (doc 13 section 4) |
 | WF-FIN-01 Fee plan to collection | Participant | `finance.invoice.overdue.v1` flags unpaid deposits |
+
+**WF-ADM-01 and WF-ADM-02 as Appendix R draws them**, copied without change so that this sheet can be built from on its own; Appendix R stays the source. WF-ADM-01 as drawn has no `Withdrawn` or `Declined` state, which this sheet adds to `InquiryToEnrollmentStatus` as terminal states (open point 3); its last transition, `DepositPaid → Enrolled`, is Saga 3 below.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Inquiry: inquiry captured
+    Inquiry --> Applied: application submitted
+    Applied --> UnderReview: documents checked
+    UnderReview --> NeedsInformation: something missing
+    NeedsInformation --> UnderReview: parent supplies it
+    UnderReview --> Assessed: assessment and interview recorded
+    Assessed --> Offered: decision is an offer
+    Assessed --> Rejected: decision is a refusal
+    Assessed --> Waitlisted: no seat at this time
+    Waitlisted --> Offered: a seat opens
+    Offered --> DepositPaid: deposit received
+    Offered --> OfferExpired: acceptance window passed
+    DepositPaid --> Enrolled: section assigned and accounts created
+    Enrolled --> [*]
+    Rejected --> [*]
+    OfferExpired --> [*]
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> Invited: campaign sends the invitation
+    Invited --> Confirmed: guardian confirms the intention to return
+    Invited --> Declined: guardian declines
+    Invited --> NoResponse: invitation window closed
+    Confirmed --> SettlementChecked: outstanding balance evaluated
+    SettlementChecked --> BlockedOnFees: balance above the policy threshold
+    BlockedOnFees --> SettlementChecked: payment or waiver recorded
+    BlockedOnFees --> SeatReleased: escalation exhausted
+    SettlementChecked --> SeatReserved: account clear or waiver approved
+    SeatReserved --> Enrolled: next-year enrollment written
+    Declined --> SeatReleased: seat returned to admissions
+    NoResponse --> SeatReleased: seat returned to admissions
+    Enrolled --> [*]
+    SeatReleased --> [*]
+```
+
+**Saga 3 state machine.** Admissions orchestrates Saga 3, so its states are drawn here as well as in `13-workflows-and-sagas.md` section 3, from which this diagram is copied without change; document 13 stays the source, and a change there is copied here in the same pull request. Every transition carries its label, and both ends of the saga (`WelcomeSent` and `Compensated`) reach the terminal state. `Stuck` is not an end: it waits for the operator, who sees it in the officer's step strip and the platform console. `TimedOut --> SeatConfirmed` stands for "retry the step that timed out"; the persisted `CurrentStep` decides which command is re-sent.
+
+```mermaid
+stateDiagram-v2
+    [*] --> SeatConfirmed: deposit matched
+    SeatConfirmed --> StudentEnrolled: school.student.enrolled.v1
+    SeatConfirmed --> TimedOut: School silent 15 min
+    StudentEnrolled --> FeePlanAssigned: finance.fee-plan.assigned.v1
+    StudentEnrolled --> Compensating: Finance refused
+    StudentEnrolled --> TimedOut: Finance silent 15 min
+    FeePlanAssigned --> GuardiansLinked: identity.guardian-link.created.v1
+    FeePlanAssigned --> Compensating: Identity refused
+    FeePlanAssigned --> TimedOut: Identity silent 15 min
+    GuardiansLinked --> LetterGenerated: documents.document.generated.v1
+    GuardiansLinked --> Compensating: Documents refused
+    LetterGenerated --> Enrolled: stage changed
+    Enrolled --> WelcomeSent: notification requested
+    TimedOut --> SeatConfirmed: retry, attempts under 3
+    TimedOut --> Compensating: attempts exhausted
+    Compensating --> Compensated: reverse steps acknowledged, seat still held
+    Compensating --> Stuck: a reverse step failed
+    Stuck --> Compensating: operator retries
+    WelcomeSent --> [*]
+    Compensated --> [*]
+```
+
+The saga's scenario tests are the Saga 3 rows of section 15: `TC-ADM-005` and `TC-ADM-006` (Appendix R) for the happy path and the Identity-step failure, and TC-ADM-414 to TC-ADM-419 for the other failures, the timeout, the duplicate outcome and the killed Api.
 
 ---
 
@@ -822,6 +892,17 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 | TC-ADM-426 | Query budgets for hot queries 1 to 7 and the public submit path | `QueryBudget.Tests` |
 | TC-ADM-427 | Twelve declined families with reasons appear grouped by category in the export (REQ-ADM-023) | Integration |
 | TC-ADM-428 | The applicant identifier is stored encrypted, compared only by HMAC, and destroyed by the retention job | Integration |
+| TC-ADM-760 | Given the public form in Arabic, when a guardian types the phone number and the national identifier in Arabic-Indic digits, then the phone is stored in E.164 with Latin digits, the identifier's HMAC equals the HMAC of the same number typed in Latin digits so that BR-ADM-006 still matches the duplicate, and the result is the same with the process culture set to `ar-SA`, `en-US` or `de-DE` | Integration |
+
+### 15.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Admissions is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, integration, contract, load and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). The one-command start that brings it up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml` | ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture and calendars | A Hijri date of birth is converted to Gregorian before the age cut-off (BR-ADM-001); offer expiry is evaluated in the campus time zone; digits typed in Arabic are normalized before validation and matching | TC-ADM-401 (Hijri input), TC-ADM-404 (expiry at 23:59:59 Asia/Riyadh), TC-ADM-760; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image, including the Um Al Qura calendar | Linux; the image test runs on Linux only |
+| Arabic search and matching | Duplicate applicants are found through Arabic normalization of names (BR-ADM-006, REQ-L10N-009), the same fold `24-localization-and-calendars.md` §3 defines | TC-ADM-406; `TC-L10N-310` (document 24), Arabic trigrams inside the database image | Linux |
+| Right-to-left output | The offer letter and the enrolment letter are rendered by Documents in both languages; the public form and the registrar screens are right-to-left in the web client | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries; the web end-to-end specs TC-ADM-301 to TC-ADM-305 run in all four theme and direction combinations (document 33 part 2) | Linux |
+| Devices without Google services | The offer reaches the family by email as well as push, and the OTP of the public form goes to the phone or the email the applicant chose (email only until Open Question 22 names an SMS provider), so no step of the funnel needs Google services; a push to such a device arrives in-app while the app is open | `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services | Device pass, per release |
 
 ---
 
@@ -834,13 +915,15 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 | Partitioning | None; about 4,000 applications a season at a 20,000-student group | A tenant above 100,000 applications a year |
 | Seat contention | One row lock per grade and campus, 4 commands inside the lock | Lock wait p95 above 50 ms |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| Deposit payments cannot be matched to offers | low | high | `sourceRefs` on `finance.payment.received.v1` (Appendix E, ADR-0019); `POST /offers/{id}/confirm-deposit` remains as the manual repair | Architect, Finance team |
-| Oversubscription under concurrent offers | low | high | Row lock and TC-ADM-407 | Admissions team |
-| A half-created student after a failed saga | low | high | Saga 3 compensation with the seat held, operator `Stuck` visibility, TC-ADM-414 to TC-ADM-419 | Admissions team |
-| Bot floods exhaust SMS credits through OTP | med | med | OTP per contact and per address limits, proof-of-work, SMS credit check in Notification | Security reviewer |
-| Re-enrolment block cannot read balances because Admissions holds no Finance data | low | med | `finance.account.restricted.v1` and `finance.account.cleared.v1` are bound (Appendix E, ADR-0019); amounts composed by Bff.Web from Finance | Architect |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or `none`.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| Deposit payments cannot be matched to offers | 2 | 4 | 8 | `sourceRefs` on `finance.payment.received.v1` (Appendix E, ADR-0019); `POST /offers/{id}/confirm-deposit` remains as the manual repair | Architect, Finance team | none |
+| Oversubscription under concurrent offers | 2 | 4 | 8 | Row lock and TC-ADM-407 | Admissions team | none |
+| A half-created student after a failed saga | 2 | 4 | 8 | Saga 3 compensation with the seat held, operator `Stuck` visibility, TC-ADM-414 to TC-ADM-419 | Admissions team | none |
+| Bot floods exhaust SMS credits through OTP | 3 | 3 | 9 | OTP per contact and per address limits, proof-of-work, SMS credit check in Notification | Security reviewer | RISK-30 |
+| Re-enrolment block cannot read balances because Admissions holds no Finance data | 2 | 3 | 6 | `finance.account.restricted.v1` and `finance.account.cleared.v1` are bound (Appendix E, ADR-0019); amounts composed by Bff.Web from Finance | Architect | none |
 
 ---
 
@@ -902,3 +985,7 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 | Capacity is never oversubscribed | TC-ADM-407 | Integration suite |
 | The tree matches the anatomy | `plan-consistency-checker` compares the section 14 tree with the projects document 07 §2.4 lists for Admissions and the template folders of document 07 §9, at the Group C review and on every change to this sheet or document 07; kit-lint R18 (every tree entry has a purpose comment); once code exists `EveryServiceHas_TheAnatomy` (`TC-TST-124`), planned in document 07 §10.3 under `tests/Architecture.Tests/` and built with the SL-TST-003 architecture test pack | Review; lint; architecture tests |
 | The public surge holds | TC-ADM-420 on scenario N-10 | Load suite, before each release |
+| The WF-ADM-01 and WF-ADM-02 diagrams of section 8 are Appendix R's | `plan-consistency-checker` compares them line by line with Appendix R at the Group C review and on every change to either; kit-lint R17 (each block declares a known diagram type) | Review; lint |
+| The Saga 3 diagram of section 8 is document 13's, with a terminal state and a label on every transition | kit-lint R29 checks both properties on document 13's copy, the source; `plan-consistency-checker` compares this copy with it line by line at the Group C review and on every change to either, because R29 reads only Appendix R and document 13 | Lint; review |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 15.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture, calendar and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either | Review |

@@ -20,6 +20,10 @@ Requests is the one engine behind every form in the school (master brief Section
 | Synchronous dependency | none (reference architecture table 8.0) |
 | Why the boundary exists | Release: request types, forms and approval chains change per school without releasing the services whose effects they orchestrate |
 
+**Signature features.** Requests owns no Appendix W feature. It carries two that other services own: feature 10 (configurable without code, Platform's), whose request types, forms and approval chains a school designs itself here, and feature 26 (exception-only attendance, Attendance's), whose approved-leave source is a completed request. Each feature's rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
+**Last updated** 2026-09-26 by the round-3 remediation (Saga 6 diagram, platform notes, signature features, risk scale, closed open points)
+
 ---
 
 ## 1. Responsibilities
@@ -442,6 +446,34 @@ stateDiagram-v2
 ```
 
 The `Submitted → Approved` edge for auto-approval (BR-RQS-004) and the `NeedsInformation → Expired` lapse are shown because the engine implements them; Appendix R's diagram routes auto-approval through `UnderReview` and has no lapse edge (open point 6).
+
+**Saga 6. Request fulfilment, `FulfilmentState`**, the saga Requests orchestrates from `Approved` onward, copied from `13-workflows-and-sagas.md` §3 as it stands on 2026-09-26 so the saga can be built from this sheet. The steps, commands, timeouts and compensations stay in document 13, which is binding; a difference between this diagram and its twin there is a defect in this sheet.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Approved: chain completed
+    Approved --> InProgress: effect saga started with a correlation id
+    InProgress --> FeePosted: finance.invoice.issued.v1
+    InProgress --> FeeSkipped: type has no fee
+    FeePosted --> EffectApplied: owning service outcome event
+    FeeSkipped --> EffectApplied: owning service outcome event
+    FeePosted --> TimedOut: owning service silent 15 min
+    FeePosted --> Compensating: owning service refused
+    EffectApplied --> EffectApplied: next effect in the list
+    EffectApplied --> DocumentReady: documents.document.generated.v1
+    EffectApplied --> Compensating: Documents refused
+    DocumentReady --> Delivered: notification requested
+    Delivered --> Completed: requests.request.completed.v1
+    TimedOut --> FeePosted: retry, attempts under 3
+    TimedOut --> Compensating: attempts exhausted
+    Compensating --> EffectFailed: completed effects reversed, failing step named
+    Compensating --> Stuck: a compensation failed
+    Stuck --> Compensating: operator retries
+    EffectFailed --> InProgress: retried after the fix
+    EffectFailed --> Cancelled: operator cancels, fee already reversed
+    Completed --> [*]
+    Cancelled --> [*]
+```
 
 **Approver resolution.** A step's approver is resolved from `ref_approvers`: `role-in-scope` finds the active holders of the role whose Identity data scope covers the subject (the homeroom teacher of the student's section through `own-homeroom`, the head of the staff member's department through `department`, the principal through `campus`); `named-user` is one user; `requester-role-in-scope` resolves relative to the requester. A holder on delegation is replaced by the delegate (WF-IDN-04). No holder, or only the requester, means `REQUESTS_APPROVER_UNAVAILABLE` and escalation to the step's escalation role.
 
@@ -957,6 +989,20 @@ Existing identifiers are reused; new ones are minted from `TC-RQS-601` upward, a
 
 Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaCalendarRulesTests`, `AutoApprovalRulesTests`, `SlaEscalationRulesTests`, `RequestEffectSagaRulesTests`, each with every Appendix S example as a theory row. Query budgets are the `TC-PERF-2NN` rows generated from document 21 section 3.12 and section 12 of this sheet.
 
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Requests' own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks` and `Localization`, which hold its money, calendar and culture handling.
+
+| Concern | What Requests does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated, saga and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start | The Api host, Saga 6 and the Quartz.NET jobs start under `aspire run` or the compose `dev` profile and report ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing | Form answers, fee amounts routed by BR-RQS-001 and durations routed by BR-RQS-002 are parsed and stored with the invariant culture; request references are formatted with invariant digits | `AmountRoutingRulesTests` and `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE`; TC-RQS-602 | `ubuntu-latest`, `windows-latest` for the shared rules |
+| Time zones, work week and holidays | SLA clocks run in the campus's IANA time zone over its work week and holidays (BR-RQS-003) | TC-RQS-606; `SlaCalendarRulesTests`; `TC-PLAT-005` (document 33) inside the built image | `ubuntu-latest` |
+| Right to left | Forms render right to left in Arabic, conditional fields included; the printable summary prints in the tenant language | TC-RQS-617, TC-RQS-614 | `ubuntu-latest` |
+| Offline devices and clocks | A task completed on two devices offline is completed once, ordered by the server's `receivedAt` | TC-RQS-603; `TC-PLAT-012` (document 33) for the wrong-clock case | `ubuntu-latest` |
+| Mobile without Google services | A guardian submits and follows a request on the phone; decisions and information requests reach a device without Google services in-app while the app is open, and by email | TC-RQS-501; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | `ubuntu-latest`; the device pass |
+
 ---
 
 ## 16. Scaling, partitioning and risks
@@ -968,14 +1014,16 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 | Partitions | `requests` list by `academic_year_id`; `request_tasks` unpartitioned (open tasks in the low hundreds per tenant) | Open tasks above 10,000 per tenant |
 | Saga load | One saga per approved request; steps in flight bounded by the owners' command queues | Saga timeouts above 1 percent per day |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| An effect half-applied after a failure | med | high | Saga 6 compensation in reverse order, idempotent commands, `Stuck` to an operator; TC-RQS-004, TC-RQS-608, TC-RQS-623 | Requests lead |
-| A requester approves their own request through chain design or delegation | low | high | Resolver excludes the requester; TC-RQS-619 | Security reviewer |
-| An approver who lost a role still decides | low | med | Role changes applied within seconds from `identity.role.changed.v1`; decision re-checks the role in the transaction | Requests lead |
-| Sensitive answers leak to approvers or logs | med | high | Per-field classification, encryption, read logging, restricted display; TC-RQS-626 | Security reviewer |
-| SLA clock wrong across time zones and holidays | med | med | Named time zone, per-campus calendar, property tests of BR-RQS-003 | Requests lead |
-| Orphaned approvals when staff leave | med | med | Leaver inventory and reassignment; TC-IDN-052, TC-RQS-003 | Requests lead |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| An effect half-applied after a failure | 2 | 4 | 8 | Saga 6 compensation in reverse order, idempotent commands, `Stuck` to an operator; TC-RQS-004, TC-RQS-608, TC-RQS-623, the chaos test TC-RQS-624 | Requests lead | none |
+| A requester approves their own request through chain design or delegation | 2 | 4 | 8 | Resolver excludes the requester; TC-RQS-619 | Security reviewer | none |
+| An approver who lost a role still decides | 2 | 3 | 6 | Role changes applied within seconds from `identity.role.changed.v1`; decision re-checks the role in the transaction | Requests lead | none |
+| Sensitive answers leak to approvers or logs | 2 | 4 | 8 | Per-field classification, encryption, read logging, restricted display; TC-RQS-626 | Security reviewer | none |
+| SLA clock wrong across time zones and holidays | 3 | 3 | 9 | Named time zone, per-campus calendar, property tests of BR-RQS-003 | Requests lead | RISK-16 |
+| Orphaned approvals when staff leave | 3 | 3 | 9 | Leaver inventory and reassignment; TC-IDN-052, TC-RQS-003 | Requests lead | none |
 
 ---
 
@@ -996,8 +1044,8 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 |---|---|---|
 | Names, database, exchange, image | Appendix L | every lint run |
 | Event keys, payloads and partition keys | Appendix E | every lint run |
-| Permission strings | Appendix B | `/lint-plan` |
-| Error codes | Appendix K.13 | `/lint-plan` |
+| Permission strings | Appendix B | every lint run (kit-lint R19, Permission columns); the Group C review for prose |
+| Error codes | Appendix K.13 | every lint run (kit-lint R19) |
 | Rules, test classes, state type and feature folder | `31-business-rules-and-workflows.md` | Group F review |
 | WF-RQS-01 states and test rows | Appendix R | Group D review |
 | Saga 6 and the effects table | `13-workflows-and-sagas.md` sections 3 and 4 | Group D review |
@@ -1008,15 +1056,15 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Points 3 and 7 are answered and leave the table; their numbers stay free so the others keep theirs. Point 3: Appendix E carries `school.calendar-day.changed.v1` with Requests among its consumers, so `CalendarDayChangedConsumer` keeps `sla_calendar_holidays` and holidays are not maintained twice. Point 7: Appendix B carries `requests.duty-rosters` with view, create, edit, delete, `publish` and `assign`. Points 1 and 5 keep only what ADR-0019 left open: Appendix E gained the reassigned, withdrawn and expired keys, and Appendix C the one-time code row that covers the public-link OTP.
+
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
-| 1 | REQ-RQS-006 and master brief Section 11.1 say every transition is published as an event, but Appendix E has no event for withdrawn, cancelled, expired, in-progress or effect-failed, and Appendix R WF-IDN-06 names `requests.request.reassigned.v1`, which Appendix E lacks | Section 7.1 publishes `requests.request.reassigned.v1`, `.withdrawn.v1` and `.expired.v1`. A cancelled draft, `InProgress` and a failed effect still write `requests.audit.recorded.v1` and send `RequestNotification` | Architect, Appendix E amendment | Partly resolved 2026-09-22 (ADR-0019): Appendix E carries the reassigned, withdrawn and expired keys with Notification and Reporting as consumers, and its job table lists `RequestExpiryJob` as the publisher of the expiry key. `requests.request.effect-failed.v1` and a cancelled key were deliberately not added, so REQ-RQS-006's acceptance still holds only for the catalogued transitions | 2 | 2 | 4 | RISK-43 |
+| 1 | REQ-RQS-006 and master brief Section 11.1 say every transition is published as an event, but Appendix E has no event for a cancelled draft, `InProgress` or a failed effect (the reassigned, withdrawn and expired keys now exist, see above) | Section 7.1 publishes `requests.request.reassigned.v1`, `.withdrawn.v1` and `.expired.v1`. A cancelled draft, `InProgress` and a failed effect still write `requests.audit.recorded.v1` and send `RequestNotification` | Architect, Appendix E amendment | Partly resolved 2026-09-22 (ADR-0019): Appendix E carries the reassigned, withdrawn and expired keys with Notification and Reporting as consumers, and its job table lists `RequestExpiryJob` as the publisher of the expiry key. `requests.request.effect-failed.v1` and a cancelled key were deliberately not added, so REQ-RQS-006's acceptance still holds only for the catalogued transitions | 2 | 2 | 4 | RISK-43 |
 | 2 | REQ-RQS-002 hands forms to Admissions, consent forms and surveys, but no event or synchronous dependency carries a form to them | The web client reads the published snapshot from `GET /forms/{id}/versions/{version}` and the owning service stores it with its own record; propose `requests.form.published.v1` | Architect | Admissions and Communication hold a copy that is not reconciled | 3 | 2 | 6 | RISK-15 |
-| 3 | BR-RQS-002 and BR-RQS-003 need campus holidays, which School owns and publishes no event for (School sheet open point 2) | `CalendarDayChangedConsumer` keeps `sla_calendar_holidays` from `school.calendar-day.changed.v1` with `source = school-import`; the manual rows stay for holidays a campus adds itself | Architect | Resolved 2026-09-22 (ADR-0019): Appendix E carries `school.calendar-day.changed.v1` for holidays and non-teaching days, with Scheduling, Attendance and Requests as consumers, so holidays are no longer maintained twice | 1 | 1 | 1 | none |
 | 4 | BR-RQS-004 conditions on a leave balance that Hr owns and publishes no change event for | The balance is a form field filled from Hr through the backends-for-frontends at submission; Hr re-verifies it when `ApproveLeave` runs and an insufficient balance fails the effect and compensates; `hr.leave-balance.changed.v1` stays proposed | Product owner, with Hr | Still open. ADR-0019 did not add the key, so an auto-approved leave can still fail at the effect instead of routing to a human | 3 | 2 | 6 | none |
-| 5 | The half-SLA reminder, expiry notice, task reminder, public-link OTP and on-behalf notice have no Appendix C row | The public-link OTP runs on the Appendix C row "One-time code or password reset link", which names Requests. The half-SLA reminder, the expiry notice, task reminders and the on-behalf notice still go through `RequestNotification` with templates in Notification | Product owner | Partly resolved 2026-09-22 (ADR-0019): Appendix C added the one-time code row, urgent and never deduplicated, covering Requests public-form OTP. The other four rows were not added, so kit-lint R12 still cannot check them | 2 | 1 | 2 | RISK-43 |
+| 5 | The half-SLA reminder, expiry notice, task reminder and on-behalf notice have no Appendix C row (the public-link OTP now runs on one) | The public-link OTP runs on the Appendix C row "One-time code or password reset link", which names Requests. The half-SLA reminder, the expiry notice, task reminders and the on-behalf notice still go through `RequestNotification` with templates in Notification | Product owner | Partly resolved 2026-09-22 (ADR-0019): Appendix C added the one-time code row, urgent and never deduplicated, covering Requests public-form OTP. The other four rows were not added, so kit-lint R12 still cannot check them | 2 | 1 | 2 | RISK-43 |
 | 6 | Appendix R WF-RQS-01 has no `NeedsInformation → Expired` edge though it states the 14-day lapse, and routes auto-approval through `UnderReview` | The engine implements both edges shown in section 8; Appendix R's diagram is aligned in the next revision | Architect | Transition tests and the diagram disagree | 2 | 1 | 2 | RISK-43 |
-| 7 | Appendix B has no permission for duty rosters (REQ-RQS-019) | The `/duty-rosters` routes run under `requests.duty-rosters.view` and `.edit`, with `publish` and `assign` for the Tier 2 slot tasks | Product owner | Resolved 2026-09-22 (ADR-0019): Appendix B carries `requests.duty-rosters` with view, create, edit, delete and the special actions `publish` and `assign`, so a roster editor no longer needs task-assign rights | 1 | 1 | 1 | none |
 | 8 | Reference architecture table 8.0 lists "request-type definitions" among Requests' local copies, but they are Requests' own data | Treated as owned data | Architect | None | 1 | 1 | 1 | none |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -1026,17 +1074,21 @@ Rule test classes: `AmountRoutingRulesTests`, `DurationRoutingRulesTests`, `SlaC
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Saga 6 diagram added to section 8 beside WF-RQS-01; platform notes (section 15.1); signature features; risk table on document 18's scale; open points 3 and 7 closed and points 1 and 5 narrowed. Awaiting Group C re-review |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names; publisher contract tests once code exists | Lint; pipeline |
-| Every permission string exists in Appendix B | `/lint-plan`; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
-| Every error code exists in Appendix K | `/lint-plan`; endpoint contract tests (TC-TST-201) | Lint; pipeline |
+| Every permission string exists in Appendix B | kit-lint R19 checks every back-quoted permission in a column headed Permission against Appendix B; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; `PermissionMatrix.Tests` (TC-SEC-055) once code exists | Lint (`/lint-plan`); Group C review; every pull request |
+| Every error code exists in Appendix K | kit-lint R19 checks every back-quoted `REQUESTS_` code against Appendix K; endpoint contract tests (TC-TST-201) once code exists | Lint (`/lint-plan`); pipeline |
 | Every test Appendix R gives WF-RQS-01 is cited in section 15 | kit-lint R32 fails this sheet when section 15 omits any TC identifier Appendix R lists under a workflow document 13 assigns to Requests | Lint |
 | Every WF-RQS-01 transition row in Appendix R has its own test | `test-strategist` compares each transition row of WF-RQS-01 with the test it names and with section 15 at the Group C review and on every change to this sheet or to Appendix R; the tests themselves run in the integration suite | Review; integration suite |
-| Every BR-RQS rule has its named test class and examples | Architecture test on `BR-` comments; `/simulate-year` | Pipeline |
+| Every BR-RQS rule has its named test class and examples | kit-lint R09 checks that every Appendix S rule has three worked examples and a test class, and R10 that the year-in-the-life simulation exercises it; the `business-rules-reviewer` agent compares the class list of section 15 with document 31 §2 at the Group C review | Lint; Group C review |
+| The Saga 6 diagram of section 8 equals its twin in document 13 §3 | R17 checks the block is a known Mermaid type; the `plan-consistency-checker` agent compares it line by line with document 13 at the Group C review and on every change to document 13 §3, and a difference is fixed here | Lint; Group C review |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
 | Every Saga 6 step is idempotent and compensable | TC-RQS-623, TC-RQS-624, `RequestFulfilmentSagaTests` | Integration suite |
 | The tree matches the service template anatomy | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (TC-TST-124, planned in document 07 under `tests/Architecture.Tests/`, run on every pull request by SL-TST-001) fails the build on a drift | Lint; review; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/requests/` | Pipeline |

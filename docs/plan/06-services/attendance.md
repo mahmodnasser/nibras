@@ -20,6 +20,8 @@ Attendance and Safety records who was where and who took them home. It owns stud
 | Build phase | 2 (master brief Section 28) | `05-service-catalog.md` |
 | Sensitivity | "confidential; medical excuse detail, gate-pass material and visitor identity references are sensitive" | `05-service-catalog.md`, Appendix J.3 |
 
+**Signature features.** Attendance owns five Appendix W features: 3, sixty-second attendance (demo test `TC-ATT-810` (Appendix W)); 8, safety and dismissal with gate passes (`TC-ATT-811` (Appendix W)); 12, offline-first mobile (`TC-MOB-001` (Appendix W)); 26, exception-only attendance (`TC-ATT-812` (Appendix W)); and 32, emergency mode with reunification (`TC-ATT-813` (Appendix W)). It also serves feature 34, the teacher five-minute mode, whose first region is the register to mark. The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities and non-responsibilities
@@ -517,6 +519,27 @@ Attendance orchestrates no saga (`07-solution-structure.md` part 3; master brief
 | Sagas 1, 2 and 10 | Participant | Saga | Tenant lifecycle commands | none local |
 
 **WF-ATT-01 transitions and where they run.** `Open → Marked`: `MarkAttendanceHandler`. `Open → NotMarked`: `UnmarkedClassReminderJob` at start plus the grace period. `NotMarked → Marked`: `MarkAttendanceHandler` with a reason. `Marked → AbsenceAlerted`: set on the record when `attendance.student.absent.v1` is committed to the outbox; delivery is Notification's (Open point 5). `AbsenceAlerted → ExcuseSubmitted`: `SubmitExcuseHandler`. `ExcuseSubmitted → ExcuseApproved → Excused`: `ApproveExcuseHandler` in one transaction. `ExcuseSubmitted → ExcuseRejected`: `RejectExcuseHandler`. `Marked → ThresholdReached`: `ThresholdEvaluator` inside the mark transaction. `ThresholdReached → InterventionOpened → InterventionClosed`: Wellbeing owns the decision; Attendance sets the two states from `wellbeing.intervention.opened.v1` and `wellbeing.intervention.closed.v1`, which Appendix E routes here under ADR-0019. Neither payload carries a category, symptom or reason, and an intervention event without `sourceRuleId` is discarded because it did not come from an attendance threshold. `Marked → Marked` offline conflict: `SyncOfflineMarksHandler` with `OfflineConflictRule`.
+
+**WF-ATT-01 as Appendix R draws it**, copied without change so this sheet can be built from on its own; Appendix R stays the source. The diagram carries no timing. The moment `Marked --> AbsenceAlerted` fires is Open Question 27, still open: the default in force is within 30 seconds of the mark (REQ-ATT-017, SL-ATT-203), while Appendix R's timeouts say 30 minutes after the register closes (open point 5, RISK-41).
+
+```mermaid
+stateDiagram-v2
+    [*] --> Open: session opened for marking
+    Open --> Marked: teacher submits the register
+    Open --> NotMarked: grace period passed
+    NotMarked --> Marked: late marking with a reason
+    Marked --> AbsenceAlerted: absentees notified to guardians
+    AbsenceAlerted --> ExcuseSubmitted: guardian submits an excuse
+    ExcuseSubmitted --> ExcuseApproved: attendance officer approves
+    ExcuseSubmitted --> ExcuseRejected: evidence insufficient
+    ExcuseApproved --> Excused: record changed to excused
+    Marked --> ThresholdReached: absence rate crossed the policy limit
+    ThresholdReached --> InterventionOpened: owner and plan assigned
+    InterventionOpened --> InterventionClosed: outcome recorded
+    Excused --> [*]
+    ExcuseRejected --> [*]
+    InterventionClosed --> [*]
+```
 
 **WF-ATT-02 as Attendance implements it**
 
@@ -1120,7 +1143,7 @@ Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in
 |---|---|---|
 | `TC-ATT-001` (Appendix R) | Workflow | `Open → Marked`: a teacher holding the assignment saves the register; absentees queued for alerting |
 | `TC-ATT-002` (Appendix R) | Workflow, job | `Open → NotMarked`: grace passed, escalation raised, still markable with a reason (BR-ATT-011) |
-| `TC-ATT-003` (Appendix R) | Workflow, end to end | `Marked → AbsenceAlerted` and the pre-filled register from gate and leave; alert enqueued within 30 s |
+| `TC-ATT-003` (Appendix R) | Workflow, end to end | `Marked → AbsenceAlerted`: the alert is delivered or deferred, never silently dropped (the Appendix R row), and the register is pre-filled from gate and leave. **The timing clause is conditional on Open Question 27**, which is still open: under the default in force (within 30 seconds of the mark, REQ-ATT-017, built by SL-ATT-203) the test also asserts the alert is enqueued within 30 s of the mark; if the product owner answers "30 minutes after the register closes", the assertion becomes that delay and this row changes with WF-ATT-01 (open point 5, RISK-41) |
 | `TC-ATT-004` (Appendix R) | Workflow | `ExcuseSubmitted → ExcuseApproved`: day excused, counters recalculated |
 | `TC-ATT-005` (Appendix R) | Workflow | `Marked → ThresholdReached`: flag raised with its reasons |
 | `TC-ATT-006` (Appendix R) | Workflow | `Marked → Marked` offline conflict: both values shown, no silent overwrite |
@@ -1183,6 +1206,18 @@ Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in
 | TC-MOB-701 to TC-MOB-710 | Integration (Offline folder) | The Appendix M.5 tests on the attendance entity group |
 | TC-SEC-180 to TC-SEC-184 | Security | T-ATT-02 to T-ATT-06 |
 | TC-PERF-021 to TC-PERF-023 | Load, nightly | Detach under traffic, plans after detach, interrupted detach |
+| TC-ATT-760 | Unit, property | Every Appendix S example of BR-ATT-001 to BR-ATT-011 gives the same result with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn: the percentages 95.00, 91.67 and 97.14 of BR-ATT-008 and the 09:39 and 09:41 lock-window cases of BR-ATT-002 in Riyadh and Dubai are unchanged, and every value stored or published is written with the invariant culture (REQ-PLAT-019) |
+| TC-ATT-761 | Integration | Given a guardian whose device is registered without Google services and whose app is closed, when their child is marked absent, then the alert is not dropped: it goes to the urgent fallback of Notification (SMS where a provider is configured, email otherwise, Open Question 22) and appears in-app when the app next opens; the timing follows `TC-ATT-003` (Appendix R) and so Open Question 27 |
+
+### 14.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Attendance is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, integration, contract, load and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). Its gate, front-desk and kiosk self check-in screens also ship in the Flutter desktop kiosk build, whose goldens run on the Windows runner and the Linux runner (`ci-mobile.yml`). The one-command start that brings it up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `ci-mobile.yml`, `dev-smoke.yml` | ubuntu; kiosk goldens on windows and ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture, calendars and time | Session dates, the lock window, the grace period and the first-period band are evaluated in the campus time zone and stored in UTC; an offline mark keeps the device's `occurredAt` but is ordered by the server's `receivedAt`; percentages are `decimal`, formatted with the tenant's numerals only for display | TC-ATT-302 (Riyadh and Dubai), TC-ATT-308, TC-ATT-760; `TC-PLAT-012` (document 33), a device clock wrong by hours; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
+| Right-to-left output | Attendance renders no document of its own; the register, gate pass and emergency screens are right-to-left in the web client, the mobile app and the kiosk build | The web end-to-end specs, TC-ATT-201 to TC-ATT-207 among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2), with the kiosk goldens on Windows and Linux; `TC-PLAT-009` (document 33), three Arabic screens on each device of the device pass | Linux; kiosk goldens on Windows and Linux; device pass |
+| Arabic search and collation | None here: Attendance runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language (`ar-x-icu` or `en-x-icu`) | `TC-PLAT-004` (document 33), the culture test inside the built image, which checks the collations exist | Linux |
+| Devices without Google services | Offline marking, gate verification and roll call use no Google service; the absence alert and the emergency broadcast reach such a device in-app while the app is open and through Notification's urgent fallback when it is closed (Open Question 22 decides whether that fallback includes SMS) | TC-ATT-761; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services, which includes offline attendance sync | Linux; device pass, per release |
 
 ---
 
@@ -1196,15 +1231,17 @@ Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in
 | Messaging | Absence events on Notification's urgent lane; Reporting through the hash exchange; one outbox row per absentee | Outbox lag above 5 s at 08:00 |
 | Warm-up | Teacher "today" entries and timetable copy warmed before first period per band | Hit ratio under 95 percent in the five minutes after first period |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A child released to an unauthorised adult | low | critical | Single-use derived codes, live pickup-eligibility check that refuses on failure, no `Released` transition without a used pass or verified match, TC-ATT-013 to TC-ATT-016, TC-ATT-323 | Attendance lead |
-| Silent loss of an offline register | med | high | Appendix M per-student merge, review queue that never expires silently, banner rule, TC-ATT-006, TC-MOB-701 to TC-MOB-710 | Attendance lead with mobile lead |
-| First-period saturation | med | high | Warm-up, compiled queries, term counters, 4 replicas, N-01 gate | Performance owner |
-| Reference copy drift makes a teacher see the wrong roster | med | med | Nightly reconciliation, gRPC fallback for a missing student, `ATTENDANCE_STUDENT_NOT_IN_SECTION` with roster refresh | Attendance lead |
-| False emergency broadcast | low | high | High-risk permission with step-up and campus scope, drill flag, audit | Security owner |
-| Threshold double-fire after a correction | med | med | Unique hit key per rung and run, corrections never re-fire, TC-ATT-307 | Attendance lead |
-| Gate key compromise | low | critical | Key in the secret store, rotation with overlap published through `/gate-passes/keys`, short validity windows | Security owner |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A child released to an unauthorised adult | 2 | 5 | 10 | Single-use derived codes, live pickup-eligibility check that refuses on failure, no `Released` transition without a used pass or verified match, TC-ATT-013 to TC-ATT-016, TC-ATT-323 | Attendance lead | none |
+| Silent loss of an offline register | 3 | 4 | 12 | Appendix M per-student merge, review queue that never expires silently, banner rule, TC-ATT-006, TC-MOB-701 to TC-MOB-710 | Attendance lead with mobile lead | RISK-09 |
+| First-period saturation | 3 | 4 | 12 | Warm-up, compiled queries, term counters, 4 replicas, N-01 gate | Performance owner | RISK-55 |
+| Reference copy drift makes a teacher see the wrong roster | 3 | 3 | 9 | Nightly reconciliation, gRPC fallback for a missing student, `ATTENDANCE_STUDENT_NOT_IN_SECTION` with roster refresh | Attendance lead | RISK-15 |
+| False emergency broadcast | 2 | 4 | 8 | High-risk permission with step-up and campus scope, drill flag, audit | Security owner | none |
+| Threshold double-fire after a correction | 3 | 3 | 9 | Unique hit key per rung and run, corrections never re-fire, TC-ATT-307 | Attendance lead | none |
+| Gate key compromise | 2 | 5 | 10 | Key in the secret store, rotation with overlap published through `/gate-passes/keys`, short validity windows | Security owner | RISK-22 |
 
 ---
 
@@ -1263,8 +1300,12 @@ Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in
 | Every routing key here exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
 | Every permission string exists in Appendix B | `tools/kit-lint` rule R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; the generated permission-matrix suite once code exists (TC-ATT-312) | Lint, review, pipeline |
 | Every error code exists in Appendix K | `tools/kit-lint` rule R19 (every back-quoted service-prefixed error code is in Appendix K or ends in a K.1 suffix); generated authorization and validation tests assert the exact code | Lint, pipeline |
-| The tree matches document 07 part 3 entry for entry | Diff of the two trees ignoring "(extension)" rows at Group C review; the service-template smoke test once code exists | Review, `ci-kit.yml` |
-| Every Appendix R transition and every BR-ATT rule has a test | Section 14 against Appendix R and document 31 §2; `tools/kit-lint` rule R32 for the transitions (every test case in the WF-ATT-01 and WF-ATT-02 entries of Appendix R is cited in section 14, ranges expanded); `[TestCase]` attributes compared once code exists | Review, lint, pipeline |
+| The tree matches document 07 part 3 entry for entry | `plan-consistency-checker` diffs the two trees, ignoring "(extension)" rows, at the Group C review and on every change to this sheet or document 07; the service-template smoke test in `ci-kit.yml` once code exists | Review, `ci-kit.yml` |
+| Every Appendix R transition and every BR-ATT rule has a test | `tools/kit-lint` rule R32 for the transitions (every test case in the WF-ATT-01 and WF-ATT-02 entries of Appendix R is cited in section 14, ranges expanded) and R09 for the rules (three examples and a class ending in `Tests`); `test-strategist` compares the rule rows of section 14 with document 31 §2 at the Group C review and on every change to either; `[TestCase]` attributes compared once code exists | Review, lint, pipeline |
+| The WF-ATT-01 diagram of section 7 is Appendix R's | `plan-consistency-checker` compares it line by line with Appendix R WF-ATT-01 at the Group C review and on every change to either; kit-lint R17 (the block declares a known diagram type) | Review; lint |
+| The absence-alert timing is not stated as settled | `plan-consistency-checker` checks that every statement of the 30-second alert in this sheet names Open Question 27 as open, at the Group C review and whenever the question's status changes in `docs/project/OPEN_QUESTIONS.md`; kit-lint R26 keeps document 01 and the register of open questions in step | Review; lint |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 14.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture, calendar and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 (each cited demo test is defined in exactly one document) and R34 (each feature's demo step runs its demo test) | Review; lint |
 | The query budgets hold | `TC-ATT-315`, `TC-ATT-316` with the command counter and plan capture | Integration suite |
 | Every consumer is idempotent | `TC-ATT-317`, `TC-ATT-318` | Integration suite |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |

@@ -2,7 +2,7 @@
 
 > Service sheet, plan document 06, Group C. Names from Appendix L; events from Appendix E; permissions from Appendix B; error codes from Appendix K; settings categories from Appendix G. This sheet adds detail to reference architecture section 8.13 and never contradicts its table 8.0. The queues, lanes and worker scaling are already fixed by `11-messaging-architecture.md`; this sheet cites them and adds what happens inside each handler.
 
-Notification turns business events into messages people actually receive, and does it calmly: one urgent absence alert within 30 seconds, one digest instead of twelve homework pings, nothing at 23:00 unless it is an emergency. It owns channels (in-app, email, push, the SMS adapter and the Tier 3 WhatsApp adapter), templates per event, language and channel, preferences per user, child, category and channel, quiet hours, digests, deduplication, the SMS credit check, the channel fallback order of Appendix C, the urgent, standard and bulk lanes, the delivery log with bounce and complaint handling, per-tenant sender domains, and the delivery of the unified inbox whose tasks Requests owns (Appendix L.5). It is the highest-volume service in the product (reference architecture section 8.13) and it decides nothing about the business facts it announces.
+Notification turns business events into messages people actually receive, and does it calmly: one urgent absence alert dispatched within 30 seconds of the absence event (whether Attendance raises that event at the mark or when the register closes is Open Question 27, still open, whose default is at the mark; RISK-41), one digest instead of twelve homework pings, nothing at 23:00 unless it is an emergency. It owns channels (in-app, email, push, the SMS adapter and the Tier 3 WhatsApp adapter), templates per event, language and channel, preferences per user, child, category and channel, quiet hours, digests, deduplication, the SMS credit check, the channel fallback order of Appendix C, the urgent, standard and bulk lanes, the delivery log with bounce and complaint handling, per-tenant sender domains, and the delivery of the unified inbox whose tasks Requests owns (Appendix L.5). It is the highest-volume service in the product (reference architecture section 8.13) and it decides nothing about the business facts it announces.
 
 | Fact | Value (quoted from `05-service-catalog.md` and Appendix L) |
 |---|---|
@@ -19,6 +19,10 @@ Notification turns business events into messages people actually receive, and do
 | Sensitivity (Appendix J) | confidential |
 | Synchronous dependency | none (reference architecture table 8.0) |
 | Why the boundary exists | Scaling: the highest message volume in the system, with urgent and bulk lanes scaled independently on queue depth |
+
+**Signature features.** Notification owns Appendix W feature 7 (parent experience that respects attention): digests, deduplication and quiet hours are this service's rules. Its rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
+**Last updated** 2026-09-26 by the round-3 remediation (platform notes, signature features, risk scale, Open Question 27 stated)
 
 ---
 
@@ -836,6 +840,22 @@ Existing identifiers are reused; new ones are minted from `TC-NOT-601` upward, a
 
 Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestEligibilityRulesTests`, `NotificationDeduplicationRulesTests`, `SmsCreditRulesTests`, `PreferenceResolutionRulesTests`, `ArabicPluralRulesTests`. Query budgets are the `TC-PERF-2NN` rows generated from document 21 section 3.11 and section 12 of this sheet.
 
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Notification's own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks` and `Localization`, which hold its plural rules, numeral rendering and culture handling. Notification is the service where device differences matter most, because push is the one path that depends on the phone's vendor services.
+
+| Concern | What Notification does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated, lane and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start | The Api and both worker deployments start under `aspire run` or the compose `dev` profile with fake channel adapters and report ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Load | The Appendix N morning peak | TC-NOT-615 (k6) | `ubuntu-latest`, load tier |
+| Culture and plurals | Template parameters are formatted in the recipient's culture with the tenant's numerals; stored parameters use the invariant culture; Arabic uses all six plural categories | `ArabicPluralRulesTests`; TC-NOT-604; `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE` | `ubuntu-latest`, `windows-latest` for the shared rules |
+| Time zones | Quiet hours, digest windows and the 07:00 homework release are evaluated in the recipient's IANA time zone, never the host's | TC-NOT-607; `TC-PLAT-005` (document 33) inside the built image | `ubuntu-latest` |
+| Right to left | Push, SMS, email and inbox bodies follow `24-localization-and-calendars.md` §9.5: first-strong isolates around interpolated values, an Arabic SMS starting with an Arabic word, `dir` and `lang` on every email block; SMS segments are counted on the UCS-2 length | TC-NOT-604, TC-NOT-618 | `ubuntu-latest` |
+| Mobile without Google services | A device registered without Google services receives push in-app while the app is open; urgent messages fall back to SMS and email (Appendix C fallback row 6); the no-Google build variant links no Firebase artefact (`09-mobile-structure.md` §4.3) | TC-NOT-610; `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | `ubuntu-latest`; the device pass |
+| iOS and Android background limits | iOS may suspend the app for days and Android battery optimisation may stop the sync worker; urgent messages still arrive by push, and sync runs on open and on silent push | `TC-PLAT-010` and `TC-PLAT-011` (document 33) | `ubuntu-latest` (unit and widget); the device pass |
+| Provider SDKs | Only the two `IPushSender` adapter classes reference a provider SDK, so a vendor-free build is a configuration, not a fork | TC-NOT-603 architecture test | `ubuntu-latest` |
+
 ---
 
 ## 16. Scaling, partitioning and risks
@@ -849,15 +869,17 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 | Dispatcher | One outbox dispatcher leader per service (document 11 open point 5) | Oldest pending outbox row above 5 s at the peak |
 | Provider limits | Send-rate buckets per tenant and channel; provider failover on rejection | Provider throttling responses above 1 percent |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| An urgent alert waits behind bulk traffic | low | critical | Separate queues, replicas and dead-letter paths; TC-NOT-614, TC-NOT-615 | Notification lead |
-| A lock-screen preview discloses a child's health or marks | low | critical | Neutral lock-screen text per template, contract check; TC-NOT-623 | Security reviewer |
-| A restricted guardian is notified about a child | low | critical | Suspend-on-doubt link copy, immediate reconciliation; TC-NOT-621 | Product owner |
-| SMS costs run away or an urgent message is blocked by credit | med | high | Reservation ledger, overdraft for urgent only, low-credit alert; TC-NOT-606, TC-NOT-618 | Notification lead |
-| Email lands in spam or bounces silently | med | med | Per-tenant subdomain with SPF, DKIM, DMARC; bounce and complaint processing; TC-NOT-617, TC-NOT-608 | Operations |
-| Parents muted by too many messages | med | med | Digests, deduplication, quiet hours; TC-NOT-001, TC-NOT-612 | Product owner |
-| Contact addresses unavailable for a recipient | med | high | Identity's contact-point events fill `contact_endpoints` as soon as a person verifies an address; until then `NOTIFICATION_NO_REACHABLE_CHANNEL` is raised to the Data Quality Center and in-app is always delivered | Architect |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| An urgent alert waits behind bulk traffic | 2 | 5 | 10 | Separate queues, replicas and dead-letter paths; TC-NOT-614, TC-NOT-615, TC-NOT-626 | Notification lead | RISK-19 |
+| A lock-screen preview discloses a child's health or marks | 2 | 5 | 10 | Neutral lock-screen text per template, contract check; TC-NOT-623 | Security reviewer | none |
+| A restricted guardian is notified about a child | 2 | 5 | 10 | Suspend-on-doubt link copy, immediate reconciliation; TC-NOT-621 | Product owner | none |
+| SMS costs run away or an urgent message is blocked by credit | 3 | 4 | 12 | Reservation ledger, overdraft for urgent only, low-credit alert; TC-NOT-606, TC-NOT-618 | Notification lead | RISK-30 |
+| Email lands in spam or bounces silently | 3 | 3 | 9 | Per-tenant subdomain with SPF, DKIM, DMARC; bounce and complaint processing; TC-NOT-617, TC-NOT-608 | Operations | none |
+| Parents muted by too many messages | 3 | 3 | 9 | Digests, deduplication, quiet hours; TC-NOT-001, TC-NOT-612 | Product owner | none |
+| Contact addresses unavailable for a recipient, so only in-app reaches them | 3 | 3 | 9 | Identity's contact-point events fill `contact_endpoints` as soon as a person verifies an address; until then `NOTIFICATION_NO_REACHABLE_CHANNEL` is raised to the Data Quality Center and in-app is always delivered | Architect | none |
 
 ---
 
@@ -880,8 +902,9 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 | Names, database, exchange, images | Appendix L | every lint run |
 | Every trigger, recipient, urgency and channel | Appendix C | kit-lint R12; TC-NOT-601 |
 | Event keys, payloads and partition keys | Appendix E | every lint run |
-| Permission strings | Appendix B | `/lint-plan` |
-| Error codes | Appendix K.12 | `/lint-plan` |
+| Permission strings | Appendix B | every lint run (kit-lint R19, Permission columns); the Group C review for prose |
+| Error codes | Appendix K.12 | every lint run (kit-lint R19) |
+| The absence-alert timing | Open Question 27, `06-services/attendance.md` | when the question is decided |
 | Rules and test classes | `31-business-rules-and-workflows.md` | Group F review |
 | Queues, lanes, fairness numbers, worker scaling, `RequestNotification` | `11-messaging-architecture.md` sections 1, 2.4, 2.5, 5, 7 | Group C review |
 | Partitions and retention | `10-data-architecture.md` sections 5 and 8 | Group C review |
@@ -898,6 +921,7 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 | 2 | Appendix C now carries the one-time code, password reset and invitation rows, but the low-credit alert, sender-domain verification, test sends and the workflow messages other services send through `RequestNotification` still have no row | Internal templates in the platform library; rows proposed for Appendix C | Product owner | kit-lint R12 cannot check these messages | 3 | 1 | 3 | RISK-43 |
 | 3 | BR-NOT-005 sends the low-credit alert to "the finance administrator", a role Appendix I does not define | Sent to holders of `notification.channels.edit` and to the Accountant role | Product owner | The alert reaches IT rather than the budget owner | 3 | 2 | 6 | RISK-30 |
 | 4 | The Appendix C fallback table says push falls back to email and only urgent falls back to SMS, while BR-NOT-002's example falls through to SMS for any message | Appendix C governs: non-urgent never falls back to SMS unless the template's default channels include SMS | Product owner | SMS spend on non-urgent messages | 2 | 2 | 4 | RISK-30 |
+| 5 | Open Question 27, still open: does a parent receive the absence alert within 30 seconds of the mark, or 30 minutes after the register closes? | The default in force is within 30 seconds of the mark, as REQ-ATT-017 and master brief Section 31 require; Notification dispatches on the urgent lane within 30 s of the absence event whenever Attendance publishes it, so only Attendance's trigger moves if the answer changes | Product owner | A register-close answer moves the absence wave later in the morning peak and changes the urgent-lane volume and SMS spend TC-NOT-615 measures | 3 | 3 | 9 | RISK-41 |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
 
@@ -906,6 +930,7 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Platform notes (section 15.1) with runners, the no-Google path and background limits; signature features; the absence-alert timing tied to Open Question 27; risk table on document 18's scale. No open point was stale. Awaiting Group C re-review |
 
 ## How this document is verified
 
@@ -913,10 +938,12 @@ Rule test classes: `QuietHoursRulesTests`, `ChannelFallbackRulesTests`, `DigestE
 |---|---|---|
 | Every Appendix C row is implemented with its trigger, recipients, urgency and channels | TC-NOT-601 reads Appendix C; kit-lint R12 checks every row names a trigger | Integration suite; lint |
 | Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
-| Every permission and error code exists in Appendices B and K | `/lint-plan`; TC-SEC-055; TC-TST-201 | Lint; pipeline |
+| Every permission and error code exists in Appendices B and K | kit-lint R19 checks back-quoted permissions in columns headed Permission and every back-quoted `NOTIFICATION_` code; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; TC-SEC-055 and TC-TST-201 once code exists | Lint (`/lint-plan`); Group C review; pipeline |
 | Urgent traffic never waits behind bulk | TC-NOT-614, TC-NOT-615, `MessagingConventions.UrgentHostsBindOnlyUrgentQueues` | Integration, load and architecture tests |
 | The fallback and credit table holds | TC-NOT-605 to TC-NOT-610 | Integration suite |
-| Every rule has its named test class and examples | Architecture test on `BR-` comments; `/simulate-year` | Pipeline |
+| Every rule has its named test class and examples | kit-lint R09 checks that every Appendix S rule has three worked examples and a test class, and R10 that the year-in-the-life simulation exercises it; the `business-rules-reviewer` agent compares the class list of section 15 with document 31 §2 at the Group C review | Lint; Group C review |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
 | Nothing sensitive leaves in a preview, log or response | TC-NOT-623, TC-NOT-624, TC-SEC-220 to TC-SEC-222 | Contract and integration suites |
 | The tree matches the service template anatomy | kit-lint R18 fails any entry of the section 14 tree without a purpose comment; `plan-consistency-checker` compares the tree with document 07's service anatomy at the Group C review and on every change to this sheet or to document 07; once code exists, `EveryServiceHas_TheAnatomy` (TC-TST-124, planned in document 07 under `tests/Architecture.Tests/`, run on every pull request by SL-TST-001) fails the build on a drift | Lint; review; architecture tests |
 | Budgets hold | `TC-PERF-2NN` rows with evidence under `docs/perf/notification/` | Pipeline |

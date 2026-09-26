@@ -1,8 +1,8 @@
 # 24. Localization and Calendars
 
-> Plan document for the Nibras platform. Group D. It refines master brief Section 17 (localization and regional fit), the time and money lines of Section 19, the seven BR-L10N rules of Appendix S, the General group of Appendix G and the ownership of terminology in Appendix L.5; it does not re-derive them. Wire shapes for bilingual text, money and dates are owned by `22-api-conventions-and-error-catalog.md` §1.3 and §1.4 and are cited, not restated. Where this document and the brief disagree, an ADR records the deviation.
+> Plan document for the Nibras platform. Group F. It refines master brief Section 17 (localization and regional fit), the time and money lines of Section 19, the seven BR-L10N rules of Appendix S, the General group of Appendix G and the ownership of terminology in Appendix L.5; it does not re-derive them. Wire shapes for bilingual text, money and dates are owned by `22-api-conventions-and-error-catalog.md` §1.3 and §1.4 and are cited, not restated. Where this document and the brief disagree, an ADR records the deviation.
 
-**Group** D · **Requirement areas covered** L10N (all of it), UX (right-to-left and bidirectional rules), PLAT (culture and time-zone determinism), FIN (amounts in words and rounding only) · **Last updated** 2026-09-21 by the platform plan
+**Group** F · **Requirement areas covered** L10N (all of it), UX (right-to-left and bidirectional rules), PLAT (culture and time-zone determinism), FIN (amounts in words and rounding only) · **Last updated** 2026-09-21 by the platform plan
 
 ## Purpose
 
@@ -778,16 +778,16 @@ BR-L10N-006: every culture-sensitive operation names its culture; the invariant 
 | This document assumes | Stated in | Checked on |
 |---|---|---|
 | The seven BR-L10N rules and their test classes | Appendix S | Every lint run |
-| The General group of settings and the Finance rounding setting | Appendix G | Group D review |
+| The General group of settings and the Finance rounding setting | Appendix G | Group F review |
 | Terminology ownership by Platform and `platform.terminology.changed.v1` | Appendix L.5, Appendix E | Every lint run |
-| Wire shapes for `LocalizedText`, money, dates and the validation catalog | `22-api-conventions-and-error-catalog.md` §1.3, §1.4, §8 | Group D review |
-| Folder layout for `i18n/` and `l10n/`, the reference store | `08-web-structure.md`, `09-mobile-structure.md` | Group B review |
+| Wire shapes for `LocalizedText`, money, dates and the validation catalog | `22-api-conventions-and-error-catalog.md` §1.3, §1.4, §8 | Group F review |
+| Folder layout for `i18n/` and `l10n/`, the reference store | `08-web-structure.md`, `09-mobile-structure.md` | Group F review |
 | The name of the value object in `Nibras.BuildingBlocks.Localization` | `07-solution-structure.md` | Open point 1 |
 | Database creation settings, collations and the migration bundle | `10-data-architecture.md` | Group C review |
-| Four-way snapshots, icon flags, motion direction tokens | `14-design-system-and-ux.md` | Group D review |
+| Four-way snapshots, icon flags, motion direction tokens | `14-design-system-and-ux.md` | Group F review |
 | `UseCultureAttribute` and the test data tiers | `16-test-strategy.md` | Group E review |
-| Image checks G1 to G10 and the pinned ICU and tzdata versions | `33-platform-support-and-dev-environments.md` | Group E review |
-| Plug-in conformance under three cultures, iCal and OneRoster labels | `23-integrations-and-public-api.md` | Group D review |
+| Image checks G1 to G10 and the pinned ICU and tzdata versions | `33-platform-support-and-dev-environments.md` | Group F review |
+| Plug-in conformance under three cultures, iCal and OneRoster labels | `23-integrations-and-public-api.md` | Group F review |
 
 ## Open points
 
@@ -806,7 +806,9 @@ Two points that stood here in v9 are settled by the v9.1 brief and now sit in De
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-21 | Group D review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | None of the group's blocking gaps was in this document |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | This document was labelled Group D and its dependency checks pointed at Group B, D and E reviews for documents that belong to Groups D and F (Consistency) |
+| 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | Relabelled Group F; the checks on Appendix G and on documents 08, 09, 14, 22, 23 and 33 now happen at the Group F review |
 
 ## How this document is verified
 

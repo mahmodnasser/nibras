@@ -38,7 +38,7 @@ Saga designs for the multi-service workflows are in `13-workflows-and-sagas.md`.
 | Wellbeing | 4 | 5 | 5 |
 | **Total** | **95** | **52** | |
 
-Build phases are quoted from `05-service-catalog.md`, which quotes master brief Section 28.
+The service table quotes each service's build phase from `05-service-catalog.md`, which quotes master brief Section 28. The Phase column of the rule and workflow tables below is the earliest phase of a `34-work-breakdown.md` slice whose Covers column names the identifier, so a rule a phase 1 slice builds reads phase 1 even when its owning service arrives later; an identifier no slice names falls back to its service's phase.
 
 ### 2. Business rules
 
@@ -81,14 +81,14 @@ Build phases are quoted from `05-service-catalog.md`, which quotes master brief 
 | `BR-FIN-008` | Payment allocation order | Finance | `PaymentAllocationRulesTests` | `Nibras.Finance.Domain.Rules.PaymentAllocationRule` | Finance → allocation order | yes | 3 |
 | `BR-FIN-009` | Overpayment becomes credit | Finance | `OverpaymentCreditRulesTests` | `Nibras.Finance.Domain.Rules.OverpaymentCreditRule` | Finance → allocation order | yes | 3 |
 | `BR-FIN-010` | Refund from credit versus from payment | Finance | `RefundSourceRulesTests` | `Nibras.Finance.Domain.Rules.RefundSourceRule` | Finance → payment methods | yes | 3 |
-| `BR-FIN-011` | Rounding per currency | Finance | `CurrencyRoundingRulesTests` | `Nibras.Finance.Domain.Rules.CurrencyRoundingRule` | General → currency | yes | 3 |
+| `BR-FIN-011` | Rounding per currency | Finance | `CurrencyRoundingRulesTests` | `Nibras.Finance.Domain.Rules.CurrencyRoundingRule` | General → currency | yes | 1 |
 | `BR-FIN-012` | Tax inclusive versus exclusive per item | Finance | `TaxInclusiveExclusiveRulesTests` | `Nibras.Finance.Domain.Rules.TaxInclusiveExclusiveRule` | Finance → tax | yes | 3 |
 | `BR-FIN-013` | Gapless numbering per series under concurrency | Finance | `GaplessNumberingRulesTests` | `Nibras.Finance.Domain.Rules.GaplessNumberingRule` | Finance → numbering series | no | 3 |
 | `BR-FIN-014` | Posted documents are immutable | Finance | `PostedDocumentImmutabilityRulesTests` | `Nibras.Finance.Domain.Rules.PostedDocumentImmutabilityRule` | none | yes | 3 |
 | `BR-FIN-015` | Cheque bounce reversal and fee | Finance | `ChequeBounceRulesTests` | `Nibras.Finance.Domain.Rules.ChequeBounceRule` | Finance → payment methods, late fee rules | yes | 3 |
 | `BR-FIN-016` | Service restriction rules | Finance | `ServiceRestrictionRulesTests` | `Nibras.Finance.Domain.Rules.ServiceRestrictionRule` | Finance → restriction rules | yes | 3 |
-| `BR-FIN-017` | Active student definition for SaaS billing | Finance | `ActiveStudentCountRulesTests` | `Nibras.Finance.Domain.Rules.ActiveStudentCountRule` | none | no | 3 |
-| `BR-FIN-018` | Proration on a plan change | Finance | `PlanChangeProrationRulesTests` | `Nibras.Finance.Domain.Rules.PlanChangeProrationRule` | none | yes | 3 |
+| `BR-FIN-017` | Active student definition for SaaS billing | Finance | `ActiveStudentCountRulesTests` | `Nibras.Finance.Domain.Rules.ActiveStudentCountRule` | none | no | 1 |
+| `BR-FIN-018` | Proration on a plan change | Finance | `PlanChangeProrationRulesTests` | `Nibras.Finance.Domain.Rules.PlanChangeProrationRule` | none | yes | 1 |
 | `BR-FIN-019` | Split payers by percentage | Finance | `SplitPayerRulesTests` | `Nibras.Finance.Domain.Rules.SplitPayerRule` | General → currency | yes | 3 |
 | `BR-SCD-001` | Hard versus soft constraints | Scheduling | `TimetableConstraintRulesTests` | `Nibras.Scheduling.Domain.Rules.TimetableConstraintRule` | none | yes | 2 |
 | `BR-SCD-002` | Consecutive-period limit | Scheduling | `ConsecutivePeriodRulesTests` | `Nibras.Scheduling.Domain.Rules.ConsecutivePeriodRule` | General → work week | no | 2 |
@@ -124,7 +124,7 @@ Build phases are quoted from `05-service-catalog.md`, which quotes master brief 
 | `BR-RQS-004` | Auto-approval conditions | Requests | `AutoApprovalRulesTests` | `Nibras.Requests.Domain.Rules.AutoApprovalRule` | Requests → approval chains | yes | 3 |
 | `BR-RQS-005` | Escalation on breach | Requests | `SlaEscalationRulesTests` | `Nibras.Requests.Domain.Rules.SlaEscalationRule` | Requests → SLAs | no | 3 |
 | `BR-RQS-006` | Effect execution and compensation | Requests | `RequestEffectSagaRulesTests` | `Nibras.Requests.Domain.Rules.RequestEffectSagaRule` | Requests → fees | no | 3 |
-| `BR-WEL-001` | Visibility levels | Wellbeing | `WellbeingVisibilityRulesTests` | `Nibras.Wellbeing.Domain.Rules.WellbeingVisibilityRule` | none | yes | 5 |
+| `BR-WEL-001` | Visibility levels | Wellbeing | `WellbeingVisibilityRulesTests` | `Nibras.Wellbeing.Domain.Rules.WellbeingVisibilityRule` | none | yes | 1 |
 | `BR-WEL-002` | Break-glass access | Wellbeing | `BreakGlassRulesTests` | `Nibras.Wellbeing.Domain.Rules.BreakGlassRule` | Security → session timeout | no | 5 |
 | `BR-WEL-003` | Events carry no clinical detail | Wellbeing | `WellbeingEventPayloadRulesTests` | `Nibras.Wellbeing.Domain.Rules.WellbeingEventPayloadRule` | none | no | 5 |
 | `BR-WEL-004` | Medication authorization and sending home | Wellbeing | `MedicationAuthorizationRulesTests` | `Nibras.Wellbeing.Domain.Rules.MedicationAuthorizationRule` | none | no | 5 |
@@ -136,11 +136,11 @@ Build phases are quoted from `05-service-catalog.md`, which quotes master brief 
 | `BR-PLT-006` | Tenant export completeness | Platform | `TenantExportRulesTests` | `Nibras.Platform.Domain.Rules.TenantExportRule` | Security → export approval rules | no | 1 |
 | `BR-L10N-001` | Arabic search normalization | Platform | `ArabicNormalizationRulesTests` | `Nibras.Platform.Domain.Rules.ArabicNormalizationRule` | General → languages | no | 1 |
 | `BR-L10N-002` | Numeral rendering | Platform | `NumeralRenderingRulesTests` | `Nibras.Platform.Domain.Rules.NumeralRenderingRule` | General → numerals | no | 1 |
-| `BR-L10N-003` | Hijri display, Gregorian source of truth | Scheduling | `HijriDisplayRulesTests` | `Nibras.Scheduling.Domain.Rules.HijriDisplayRule` | General → calendars, time zone | no | 2 |
+| `BR-L10N-003` | Hijri display, Gregorian source of truth | Scheduling | `HijriDisplayRulesTests` | `Nibras.Scheduling.Domain.Rules.HijriDisplayRule` | General → calendars, time zone | no | 1 |
 | `BR-L10N-004` | Amounts in words in both languages | Finance | `AmountInWordsRulesTests` | `Nibras.Finance.Domain.Rules.AmountInWordsRule` | Finance → receipt layout | yes | 3 |
 | `BR-L10N-005` | Arabic plural forms | Notification | `ArabicPluralRulesTests` | `Nibras.Notification.Domain.Rules.ArabicPluralRule` | Notifications → templates | no | 1 |
 | `BR-L10N-006` | Pinned culture on every host | Platform | `CultureInvarianceRulesTests` | `Nibras.Platform.Domain.Rules.CultureInvarianceRule` | none | no | 1 |
-| `BR-L10N-007` | Bilingual names and fallback | School | `BilingualNameRulesTests` | `Nibras.School.Domain.Rules.BilingualNameRule` | General → languages | no | 2 |
+| `BR-L10N-007` | Bilingual names and fallback | School | `BilingualNameRulesTests` | `Nibras.School.Domain.Rules.BilingualNameRule` | General → languages | no | 1 |
 
 **Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification is derived from the rule text and is confirmed or corrected by the business-rules-reviewer agent during Group F review.
 
@@ -148,60 +148,60 @@ Build phases are quoted from `05-service-catalog.md`, which quotes master brief 
 
 **How to read the table.** The state type is an enumeration in the owning service's Domain project, never a set of booleans. The feature folder holds one sub-folder per transition command, following the anatomy in reference architecture Section 2. Transition tests are the rows of the workflow's test table in Appendix R, one test each.
 
-| Workflow | Name | Owner | Tier | Mobile | Offline | State type | Feature folder | Phase |
-|---|---|---|---|---|---|---|---|---|
-| `WF-IDN-01` | Invitation or join-code joining | Identity | 1 | yes | no | `InvitationOrJoinCodeJoiningStatus` | `Application/Features/InvitationOrJoinCodeJoining/` | 1 |
-| `WF-IDN-02` | Parent self-registration and child linking | Identity | 1 | yes | no | `ParentSelfRegistrationAndChildLinkingStatus` | `Application/Features/ParentSelfRegistrationAndChildLinking/` | 1 |
-| `WF-IDN-03` | Duplicate account merge | Identity | 1 | no | no | `DuplicateAccountMergeStatus` | `Application/Features/DuplicateAccountMerge/` | 1 |
-| `WF-IDN-04` | Delegation during absence | Identity | 1 | yes | no | `DelegationDuringAbsenceStatus` | `Application/Features/DelegationDuringAbsence/` | 1 |
-| `WF-IDN-05` | Role change with four-eyes approval | Identity | 1 | yes | no | `RoleChangeWithFourEyesApprovalStatus` | `Application/Features/RoleChangeWithFourEyesApproval/` | 1 |
-| `WF-IDN-06` | Offboarding and access revocation | Identity | 1 | no | no | `OffboardingAndAccessRevocationStatus` | `Application/Features/OffboardingAndAccessRevocation/` | 1 |
-| `WF-SEC-01` | Access review campaign | Identity | 1 | no | no | `AccessReviewCampaignStatus` | `Application/Features/AccessReviewCampaign/` | 1 |
-| `WF-SEC-02` | Break-glass access | Identity | 1 | no | no | `BreakGlassAccessStatus` | `Application/Features/BreakGlassAccess/` | 1 |
-| `WF-SEC-03` | Consented impersonation | Identity | 1 | no | no | `ConsentedImpersonationStatus` | `Application/Features/ConsentedImpersonation/` | 1 |
-| `WF-PLT-01` | Tenant signup to live | Platform | 1 | no | no | `TenantSignupToLiveStatus` | `Application/Features/TenantSignupToLive/` | 1 |
-| `WF-PLT-02` | Trial conversion and plan change | Platform | 1 | no | no | `TrialConversionAndPlanChangeStatus` | `Application/Features/TrialConversionAndPlanChange/` | 1 |
-| `WF-PLT-03` | Suspension, export, and deletion | Platform | 1 | no | no | `SuspensionExportAndDeletionStatus` | `Application/Features/SuspensionExportAndDeletion/` | 1 |
-| `WF-SCH-01` | Transfer or withdrawal with clearance | School | 1 | no | no | `TransferOrWithdrawalWithClearanceStatus` | `Application/Features/TransferOrWithdrawalWithClearance/` | 2 |
-| `WF-SCH-02` | End of year close and rollover | School | 1 | no | no | `EndOfYearCloseAndRolloverStatus` | `Application/Features/EndOfYearCloseAndRollover/` | 2 |
-| `WF-SCH-03` | Year archival and reopen | School | 1 | no | no | `YearArchivalAndReopenStatus` | `Application/Features/YearArchivalAndReopen/` | 2 |
-| `WF-SCH-04` | Mid-year campus transfer | School | 1 | no | no | `MidYearCampusTransferStatus` | `Application/Features/MidYearCampusTransfer/` | 2 |
-| `WF-ADM-01` | Inquiry to enrollment | Admissions | 1 | yes | no | `InquiryToEnrollmentStatus` | `Application/Features/InquiryToEnrollment/` | 4 |
-| `WF-ADM-02` | Re-enrollment with fee settlement check | Admissions | 1 | yes | no | `ReEnrollmentWithFeeSettlementCheckStatus` | `Application/Features/ReEnrollmentWithFeeSettlementCheck/` | 4 |
-| `WF-ACA-01` | Assignment lifecycle | Academics | 1 | yes | yes | `AssignmentLifecycleStatus` | `Application/Features/AssignmentLifecycle/` | 2 |
-| `WF-ASM-01` | Exam to report card | Assessment | 1 | yes | yes | `ExamToReportCardStatus` | `Application/Features/ExamToReportCard/` | 2 |
-| `WF-ASM-02` | Grade appeal and post-lock change | Assessment | 1 | yes | no | `GradeAppealAndPostLockChangeStatus` | `Application/Features/GradeAppealAndPostLockChange/` | 2 |
-| `WF-ASM-03` | Exam paper setting, review, and printing | Assessment | 1 | no | no | `ExamPaperSettingReviewAndPrintingStatus` | `Application/Features/ExamPaperSettingReviewAndPrinting/` | 2 |
-| `WF-ATT-01` | Daily attendance to intervention | Attendance | 1 | yes | yes | `DailyAttendanceToInterventionStatus` | `Application/Features/DailyAttendanceToIntervention/` | 2 |
-| `WF-ATT-02` | Early dismissal and gate pickup | Attendance | 1 | yes | no | `EarlyDismissalAndGatePickupStatus` | `Application/Features/EarlyDismissalAndGatePickup/` | 2 |
-| `WF-FIN-01` | Fee plan to collection and escalation | Finance | 1 | yes | no | `FeePlanToCollectionAndEscalationStatus` | `Application/Features/FeePlanToCollectionAndEscalation/` | 3 |
-| `WF-FIN-02` | Invoice reversal, credit note, and refund | Finance | 1 | no | no | `InvoiceReversalCreditNoteAndRefundStatus` | `Application/Features/InvoiceReversalCreditNoteAndRefund/` | 3 |
-| `WF-FIN-03` | Cheque receipt and bounce | Finance | 1 | no | no | `ChequeReceiptAndBounceStatus` | `Application/Features/ChequeReceiptAndBounce/` | 3 |
-| `WF-FIN-04` | Scholarship award | Finance | 1 | yes | no | `ScholarshipAwardStatus` | `Application/Features/ScholarshipAward/` | 3 |
-| `WF-FIN-05` | Payer change to sponsor | Finance | 1 | yes | no | `PayerChangeToSponsorStatus` | `Application/Features/PayerChangeToSponsor/` | 3 |
-| `WF-FIN-06` | Cashier day close | Finance | 1 | no | no | `CashierDayCloseStatus` | `Application/Features/CashierDayClose/` | 3 |
-| `WF-RQS-01` | Service request lifecycle | Requests | 1 | yes | no | `ServiceRequestLifecycleStatus` | `Application/Features/ServiceRequestLifecycle/` | 3 |
-| `WF-BEH-01` | Incident to intervention | Behavior | 1 | yes | no | `IncidentToInterventionStatus` | `Application/Features/IncidentToIntervention/` | 4 |
-| `WF-WEL-01` | Accommodation plan to exam sitting | Wellbeing | 2 | no | no | `AccommodationPlanToExamSittingStatus` | `Application/Features/AccommodationPlanToExamSitting/` | 5 |
-| `WF-WEL-02` | Clinic visit to sent home | Wellbeing | 2 | yes | no | `ClinicVisitToSentHomeStatus` | `Application/Features/ClinicVisitToSentHome/` | 5 |
-| `WF-WEL-03` | Medication authorization and administration | Wellbeing | 2 | yes | no | `MedicationAuthorizationAndAdministrationStatus` | `Application/Features/MedicationAuthorizationAndAdministration/` | 5 |
-| `WF-WEL-04` | Safeguarding concern escalation | Wellbeing | 2 | yes | no | `SafeguardingConcernEscalationStatus` | `Application/Features/SafeguardingConcernEscalation/` | 5 |
-| `WF-WEL-05` | Daily wellbeing check-in escalation | Wellbeing | 2 | yes | yes | `DailyWellbeingCheckInEscalationStatus` | `Application/Features/DailyWellbeingCheckInEscalation/` | 5 |
-| `WF-HR-01` | Staff leave to substitution | Hr | 2 | yes | no | `StaffLeaveToSubstitutionStatus` | `Application/Features/StaffLeaveToSubstitution/` | 5 |
-| `WF-HR-02` | Staff hiring to onboarding | Hr | 2 | no | no | `StaffHiringToOnboardingStatus` | `Application/Features/StaffHiringToOnboarding/` | 5 |
-| `WF-HR-03` | Teaching licence expiry compliance | Hr | 2 | no | no | `TeachingLicenceExpiryComplianceStatus` | `Application/Features/TeachingLicenceExpiryCompliance/` | 5 |
-| `WF-HR-04` | Payroll input cycle | Hr | 2 | no | no | `PayrollInputCycleStatus` | `Application/Features/PayrollInputCycle/` | 5 |
-| `WF-OPS-01` | Purchase requisition to asset | Operations | 2 | yes | no | `PurchaseRequisitionToAssetStatus` | `Application/Features/PurchaseRequisitionToAsset/` | 5 |
-| `WF-OPS-02` | Library lending and fines | Operations | 2 | yes | yes | `LibraryLendingAndFinesStatus` | `Application/Features/LibraryLendingAndFines/` | 5 |
-| `WF-OPS-03` | Transport subscription change | Operations | 2 | yes | no | `TransportSubscriptionChangeStatus` | `Application/Features/TransportSubscriptionChange/` | 5 |
-| `WF-OPS-04` | Facility booking approval | Operations | 2 | yes | no | `FacilityBookingApprovalStatus` | `Application/Features/FacilityBookingApproval/` | 5 |
-| `WF-OPS-05` | Safety incident and drill logging | Operations | 2 | yes | yes | `SafetyIncidentAndDrillLoggingStatus` | `Application/Features/SafetyIncidentAndDrillLogging/` | 5 |
-| `WF-PRV-01` | Data subject access request | Platform | 1 | no | no | `DataSubjectAccessRequestStatus` | `Application/Features/DataSubjectAccessRequest/` | 1 |
-| `WF-PRV-02` | Sensitive export approval | Documents | 1 | no | no | `SensitiveExportApprovalStatus` | `Application/Features/SensitiveExportApproval/` | 3 |
-| `WF-DATA-01` | Legacy import with dry run and rollback | Documents | 1 | no | no | `LegacyImportWithDryRunAndRollbackStatus` | `Application/Features/LegacyImportWithDryRunAndRollback/` | 3 |
-| `WF-INF-01` | On-premises upgrade with rollback | Platform | 1 | no | no | `OnPremisesUpgradeWithRollbackStatus` | `Application/Features/OnPremisesUpgradeWithRollback/` | 1 |
-| `WF-INF-02` | Release rollout with canary and rollback | Platform | 1 | no | no | `ReleaseRolloutWithCanaryAndRollbackStatus` | `Application/Features/ReleaseRolloutWithCanaryAndRollback/` | 1 |
-| `WF-INF-03` | Restore and failover drill | Platform | 1 | no | no | `RestoreAndFailoverDrillStatus` | `Application/Features/RestoreAndFailoverDrill/` | 1 |
+| Workflow | Name | Owner | Tier | Mobile | Offline | State type | Feature folder | Phase | Transition tests (Appendix R) |
+|---|---|---|---|---|---|---|---|---|---|
+| `WF-IDN-01` | Invitation or join-code joining | Identity | 1 | yes | no | `InvitationOrJoinCodeJoiningStatus` | `Application/Features/InvitationOrJoinCodeJoining/` | 1 | TC-IDN-001 to TC-IDN-006 |
+| `WF-IDN-02` | Parent self-registration and child linking | Identity | 1 | yes | no | `ParentSelfRegistrationAndChildLinkingStatus` | `Application/Features/ParentSelfRegistrationAndChildLinking/` | 1 | TC-IDN-011 to TC-IDN-016 |
+| `WF-IDN-03` | Duplicate account merge | Identity | 1 | no | no | `DuplicateAccountMergeStatus` | `Application/Features/DuplicateAccountMerge/` | 1 | TC-IDN-021 to TC-IDN-026 |
+| `WF-IDN-04` | Delegation during absence | Identity | 1 | yes | no | `DelegationDuringAbsenceStatus` | `Application/Features/DelegationDuringAbsence/` | 1 | TC-IDN-031 to TC-IDN-036 |
+| `WF-IDN-05` | Role change with four-eyes approval | Identity | 1 | yes | no | `RoleChangeWithFourEyesApprovalStatus` | `Application/Features/RoleChangeWithFourEyesApproval/` | 1 | TC-IDN-041 to TC-IDN-046 |
+| `WF-IDN-06` | Offboarding and access revocation | Identity | 1 | no | no | `OffboardingAndAccessRevocationStatus` | `Application/Features/OffboardingAndAccessRevocation/` | 1 | TC-IDN-051 to TC-IDN-056 |
+| `WF-SEC-01` | Access review campaign | Identity | 1 | no | no | `AccessReviewCampaignStatus` | `Application/Features/AccessReviewCampaign/` | 1 | TC-SEC-001 to TC-SEC-006 |
+| `WF-SEC-02` | Break-glass access | Identity | 1 | no | no | `BreakGlassAccessStatus` | `Application/Features/BreakGlassAccess/` | 1 | TC-SEC-011 to TC-SEC-016 |
+| `WF-SEC-03` | Consented impersonation | Identity | 1 | no | no | `ConsentedImpersonationStatus` | `Application/Features/ConsentedImpersonation/` | 1 | TC-SEC-021 to TC-SEC-026 |
+| `WF-PLT-01` | Tenant signup to live | Platform | 1 | no | no | `TenantSignupToLiveStatus` | `Application/Features/TenantSignupToLive/` | 1 | TC-PLT-001 to TC-PLT-006 |
+| `WF-PLT-02` | Trial conversion and plan change | Platform | 1 | no | no | `TrialConversionAndPlanChangeStatus` | `Application/Features/TrialConversionAndPlanChange/` | 1 | TC-PLT-011 to TC-PLT-016 |
+| `WF-PLT-03` | Suspension, export, and deletion | Platform | 1 | no | no | `SuspensionExportAndDeletionStatus` | `Application/Features/SuspensionExportAndDeletion/` | 1 | TC-PLT-021 to TC-PLT-026 |
+| `WF-SCH-01` | Transfer or withdrawal with clearance | School | 1 | no | no | `TransferOrWithdrawalWithClearanceStatus` | `Application/Features/TransferOrWithdrawalWithClearance/` | 2 | TC-SCH-001 to TC-SCH-006 |
+| `WF-SCH-02` | End of year close and rollover | School | 1 | no | no | `EndOfYearCloseAndRolloverStatus` | `Application/Features/EndOfYearCloseAndRollover/` | 2 | TC-SCH-011 to TC-SCH-016 |
+| `WF-SCH-03` | Year archival and reopen | School | 1 | no | no | `YearArchivalAndReopenStatus` | `Application/Features/YearArchivalAndReopen/` | 2 | TC-SCH-021 to TC-SCH-026 |
+| `WF-SCH-04` | Mid-year campus transfer | School | 1 | no | no | `MidYearCampusTransferStatus` | `Application/Features/MidYearCampusTransfer/` | 2 | TC-SCH-031 to TC-SCH-036 |
+| `WF-ADM-01` | Inquiry to enrollment | Admissions | 1 | yes | no | `InquiryToEnrollmentStatus` | `Application/Features/InquiryToEnrollment/` | 4 | TC-ADM-001 to TC-ADM-006 |
+| `WF-ADM-02` | Re-enrollment with fee settlement check | Admissions | 1 | yes | no | `ReEnrollmentWithFeeSettlementCheckStatus` | `Application/Features/ReEnrollmentWithFeeSettlementCheck/` | 4 | TC-ADM-011 to TC-ADM-016 |
+| `WF-ACA-01` | Assignment lifecycle | Academics | 1 | yes | yes | `AssignmentLifecycleStatus` | `Application/Features/AssignmentLifecycle/` | 2 | TC-ACA-001 to TC-ACA-006 |
+| `WF-ASM-01` | Exam to report card | Assessment | 1 | yes | yes | `ExamToReportCardStatus` | `Application/Features/ExamToReportCard/` | 2 | TC-ASM-001 to TC-ASM-006 |
+| `WF-ASM-02` | Grade appeal and post-lock change | Assessment | 1 | yes | no | `GradeAppealAndPostLockChangeStatus` | `Application/Features/GradeAppealAndPostLockChange/` | 2 | TC-ASM-011 to TC-ASM-016 |
+| `WF-ASM-03` | Exam paper setting, review, and printing | Assessment | 1 | no | no | `ExamPaperSettingReviewAndPrintingStatus` | `Application/Features/ExamPaperSettingReviewAndPrinting/` | 2 | TC-ASM-021 to TC-ASM-026 |
+| `WF-ATT-01` | Daily attendance to intervention | Attendance | 1 | yes | yes | `DailyAttendanceToInterventionStatus` | `Application/Features/DailyAttendanceToIntervention/` | 2 | TC-ATT-001 to TC-ATT-006 |
+| `WF-ATT-02` | Early dismissal and gate pickup | Attendance | 1 | yes | no | `EarlyDismissalAndGatePickupStatus` | `Application/Features/EarlyDismissalAndGatePickup/` | 2 | TC-ATT-011 to TC-ATT-016 |
+| `WF-FIN-01` | Fee plan to collection and escalation | Finance | 1 | yes | no | `FeePlanToCollectionAndEscalationStatus` | `Application/Features/FeePlanToCollectionAndEscalation/` | 3 | TC-FIN-001 to TC-FIN-006 |
+| `WF-FIN-02` | Invoice reversal, credit note, and refund | Finance | 1 | no | no | `InvoiceReversalCreditNoteAndRefundStatus` | `Application/Features/InvoiceReversalCreditNoteAndRefund/` | 3 | TC-FIN-011 to TC-FIN-016 |
+| `WF-FIN-03` | Cheque receipt and bounce | Finance | 1 | no | no | `ChequeReceiptAndBounceStatus` | `Application/Features/ChequeReceiptAndBounce/` | 3 | TC-FIN-021 to TC-FIN-026 |
+| `WF-FIN-04` | Scholarship award | Finance | 1 | yes | no | `ScholarshipAwardStatus` | `Application/Features/ScholarshipAward/` | 3 | TC-FIN-031 to TC-FIN-036 |
+| `WF-FIN-05` | Payer change to sponsor | Finance | 1 | yes | no | `PayerChangeToSponsorStatus` | `Application/Features/PayerChangeToSponsor/` | 3 | TC-FIN-041 to TC-FIN-046 |
+| `WF-FIN-06` | Cashier day close | Finance | 1 | no | no | `CashierDayCloseStatus` | `Application/Features/CashierDayClose/` | 3 | TC-FIN-051 to TC-FIN-056 |
+| `WF-RQS-01` | Service request lifecycle | Requests | 1 | yes | no | `ServiceRequestLifecycleStatus` | `Application/Features/ServiceRequestLifecycle/` | 2 | TC-RQS-001 to TC-RQS-006 |
+| `WF-BEH-01` | Incident to intervention | Behavior | 1 | yes | no | `IncidentToInterventionStatus` | `Application/Features/IncidentToIntervention/` | 4 | TC-BEH-001 to TC-BEH-006 |
+| `WF-WEL-01` | Accommodation plan to exam sitting | Wellbeing | 2 | no | no | `AccommodationPlanToExamSittingStatus` | `Application/Features/AccommodationPlanToExamSitting/` | 2 | TC-WEL-001 to TC-WEL-006 |
+| `WF-WEL-02` | Clinic visit to sent home | Wellbeing | 2 | yes | no | `ClinicVisitToSentHomeStatus` | `Application/Features/ClinicVisitToSentHome/` | 2 | TC-WEL-011 to TC-WEL-016 |
+| `WF-WEL-03` | Medication authorization and administration | Wellbeing | 2 | yes | no | `MedicationAuthorizationAndAdministrationStatus` | `Application/Features/MedicationAuthorizationAndAdministration/` | 5 | TC-WEL-021 to TC-WEL-026 |
+| `WF-WEL-04` | Safeguarding concern escalation | Wellbeing | 2 | yes | no | `SafeguardingConcernEscalationStatus` | `Application/Features/SafeguardingConcernEscalation/` | 3 | TC-WEL-031 to TC-WEL-036 |
+| `WF-WEL-05` | Daily wellbeing check-in escalation | Wellbeing | 2 | yes | yes | `DailyWellbeingCheckInEscalationStatus` | `Application/Features/DailyWellbeingCheckInEscalation/` | 5 | TC-WEL-041 to TC-WEL-046 |
+| `WF-HR-01` | Staff leave to substitution | Hr | 2 | yes | no | `StaffLeaveToSubstitutionStatus` | `Application/Features/StaffLeaveToSubstitution/` | 2 | TC-HR-001 to TC-HR-006 |
+| `WF-HR-02` | Staff hiring to onboarding | Hr | 2 | no | no | `StaffHiringToOnboardingStatus` | `Application/Features/StaffHiringToOnboarding/` | 5 | TC-HR-011 to TC-HR-016 |
+| `WF-HR-03` | Teaching licence expiry compliance | Hr | 2 | no | no | `TeachingLicenceExpiryComplianceStatus` | `Application/Features/TeachingLicenceExpiryCompliance/` | 5 | TC-HR-021 to TC-HR-026 |
+| `WF-HR-04` | Payroll input cycle | Hr | 2 | no | no | `PayrollInputCycleStatus` | `Application/Features/PayrollInputCycle/` | 5 | TC-HR-031 to TC-HR-036 |
+| `WF-OPS-01` | Purchase requisition to asset | Operations | 2 | yes | no | `PurchaseRequisitionToAssetStatus` | `Application/Features/PurchaseRequisitionToAsset/` | 3 | TC-OPS-001 to TC-OPS-006 |
+| `WF-OPS-02` | Library lending and fines | Operations | 2 | yes | yes | `LibraryLendingAndFinesStatus` | `Application/Features/LibraryLendingAndFines/` | 5 | TC-OPS-011 to TC-OPS-016 |
+| `WF-OPS-03` | Transport subscription change | Operations | 2 | yes | no | `TransportSubscriptionChangeStatus` | `Application/Features/TransportSubscriptionChange/` | 5 | TC-OPS-021 to TC-OPS-026 |
+| `WF-OPS-04` | Facility booking approval | Operations | 2 | yes | no | `FacilityBookingApprovalStatus` | `Application/Features/FacilityBookingApproval/` | 5 | TC-OPS-031 to TC-OPS-036 |
+| `WF-OPS-05` | Safety incident and drill logging | Operations | 2 | yes | yes | `SafetyIncidentAndDrillLoggingStatus` | `Application/Features/SafetyIncidentAndDrillLogging/` | 5 | TC-OPS-041 to TC-OPS-046 |
+| `WF-PRV-01` | Data subject access request | Platform | 1 | no | no | `DataSubjectAccessRequestStatus` | `Application/Features/DataSubjectAccessRequest/` | 1 | TC-PRV-001 to TC-PRV-006 |
+| `WF-PRV-02` | Sensitive export approval | Documents | 1 | no | no | `SensitiveExportApprovalStatus` | `Application/Features/SensitiveExportApproval/` | 3 | TC-PRV-011 to TC-PRV-016 |
+| `WF-DATA-01` | Legacy import with dry run and rollback | Documents | 1 | no | no | `LegacyImportWithDryRunAndRollbackStatus` | `Application/Features/LegacyImportWithDryRunAndRollback/` | 1 | TC-DATA-001 to TC-DATA-006 |
+| `WF-INF-01` | On-premises upgrade with rollback | Platform | 1 | no | no | `OnPremisesUpgradeWithRollbackStatus` | `Application/Features/OnPremisesUpgradeWithRollback/` | 6 | TC-INF-001 to TC-INF-006 |
+| `WF-INF-02` | Release rollout with canary and rollback | Platform | 1 | no | no | `ReleaseRolloutWithCanaryAndRollbackStatus` | `Application/Features/ReleaseRolloutWithCanaryAndRollback/` | 1 | TC-INF-011 to TC-INF-016 |
+| `WF-INF-03` | Restore and failover drill | Platform | 1 | no | no | `RestoreAndFailoverDrillStatus` | `Application/Features/RestoreAndFailoverDrill/` | 6 | TC-INF-021 to TC-INF-026 |
 
 ### 4. The implementation contract
 
@@ -251,6 +251,7 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 | Rules with no named test class | none |
 | Test class names used by more than one rule | none |
 | Workflows with no owning service | none |
+| Workflows with no transition test in Appendix R | none |
 | Owners with no build phase in document 05 | none |
 | Rules in Appendix S | 95 |
 | Workflows in Appendix R | 52 |

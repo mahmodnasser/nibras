@@ -21,6 +21,10 @@ Operations runs the school's physical and extracurricular life: the library, tra
 | Why the boundary exists | Release: six Tier 2 sub-domains that deploy together today, each in its own schema so that a later split is mechanical (ADR-0002) |
 | First-release option | Deferred under the Appendix L merge option; its keys and namespaces stay reserved |
 
+**Signature features.** Operations owns Appendix W feature 33 (campus digital twin), composed by Bff.Web (`GET /bff/web/v1/campus/digital-twin`, SL-OPS-624) from Operations' floor plans and tickets, Scheduling's room availability and Attendance roll-call counts (open point 10). Its rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
+**Last updated** 2026-09-26 by the round-3 remediation (workflow diagrams, platform notes, signature features, risk scale, closed open points)
+
 ---
 
 ## 1. Responsibilities
@@ -413,7 +417,7 @@ Payload fields are owned by Appendix E and are not restated here. Appendix E sta
 | `operations.usage.recorded.v1` | `operations` | `UsageRecordJob` monthly | `tenantId` | Platform |
 | `operations.audit.recorded.v1` | every schema | Every transition, waiver, blocklist change, preemption, export, identity-reference read | `tenantId` | Audit |
 
-Commands and replies Operations sends on `nibras.operations`: `GenerateDocument` to Documents (purchase orders, drill and incident reports, participant lists), `RequestNotification` to Notification (hold ready, delivery arrived, booking reminders and escalations, overdue safety actions, waitlist reconfirmation, crew document expiry), the reply `EffectApplied` or `EffectFailed` to Requests for `ApproveRequisition`, `CancelRequisition` and a refused `ApplyTransportSubscriptionChange`, the Saga 5 replies `ClearanceSignedOff`, `ClearanceBlocked` and `ClearanceItemCancelled` to School, and the tenant-lifecycle replies to Platform. The `nibras.operations` bindings into `documents.commands` and `notification.commands` are proposed by the Documents sheet open point 7 and open point 2 here.
+Commands and replies Operations sends on `nibras.operations`: `GenerateDocument` to Documents (purchase orders, drill and incident reports, participant lists), `RequestNotification` to Notification (hold ready, delivery arrived, booking reminders and escalations, overdue safety actions, waitlist reconfirmation, crew document expiry), the reply `EffectApplied` or `EffectFailed` to Requests for `ApproveRequisition`, `CancelRequisition` and a refused `ApplyTransportSubscriptionChange`, the Saga 5 replies `ClearanceSignedOff`, `ClearanceBlocked` and `ClearanceItemCancelled` to School, and the tenant-lifecycle replies to Platform. Document 11 §2.5 binds `nibras.operations` into `documents.commands`; the binding into `notification.commands` is still open (open point 2).
 
 ### 7.2 Consumed
 
@@ -441,7 +445,7 @@ Commands and replies Operations sends on `nibras.operations`: `GenerateDocument`
 
 ## 8. Sagas and workflows
 
-Operations orchestrates no saga. Every workflow is a state machine in `Nibras.Operations.Domain.<SubDomain>` driven through the transition pipeline (document 13 section 5.1). The diagrams and transition tables are Appendix R's.
+Operations orchestrates no saga. Every workflow is a state machine in `Nibras.Operations.Domain.<SubDomain>` driven through the transition pipeline (document 13 section 5.1). The transition tables are Appendix R's; the five state machines are copied at the end of this section, as Appendix R stands on 2026-09-26, so the workflows can be built from this sheet.
 
 | WF or saga | Schema | Role | Kind (document 13) | State type (document 31) | Feature folder | What Operations does |
 |---|---|---|---|---|---|---|
@@ -456,6 +460,107 @@ Operations orchestrates no saga. Every workflow is a state machine in `Nibras.Op
 | Saga 1, 2, 10 | every schema | Participant | Saga | none here | `Application/Features/TenantLifecycle/` | Provision, delete tenant data, tier migration |
 
 **Effect timing for a transport change.** The outcome event of Saga 6 is `operations.transport.subscription-changed.v1`, published at `Approved → Scheduled` with `effectiveFrom`, not on the effective date, so the Saga 6 step completes within its 15-minute timeout and Finance pro-rates from the effective date it is given. `SubscriptionEffectiveJob` applies the manifest on the day; a failure there rolls the change back to `Scheduled` with the old stop active and alerts the officer (TC-OPS-025), which is the Appendix R compensation, and needs no second event because the payload already carried the effective date.
+
+**The five Operations state machines**, copied from Appendix R. Appendix R is binding and R29 checks it; a difference between a diagram here and its twin there is a defect in this sheet. Each state is a member of the state type named in the table above.
+
+WF-OPS-01 Purchase requisition to asset (`inventory`):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Drafted: items, quantities, and justification entered
+    Drafted --> Submitted: requester submits
+    Submitted --> BudgetChecked: budget line and remaining balance evaluated
+    BudgetChecked --> Blocked: insufficient budget
+    Blocked --> Submitted: amount reduced or budget reallocated
+    BudgetChecked --> UnderApproval: within budget
+    UnderApproval --> Approved: approval chain completed
+    UnderApproval --> Rejected: refused with a reason
+    Approved --> Ordered: purchase order issued to the supplier
+    Ordered --> Received: goods received and checked
+    Ordered --> PartiallyReceived: some lines outstanding
+    PartiallyReceived --> Received: remaining lines delivered
+    Received --> AssetRegistered: capital items tagged and registered
+    Received --> Closed: consumables issued to the store
+    AssetRegistered --> Closed: requisition closed
+    Closed --> [*]
+    Rejected --> [*]
+```
+
+WF-OPS-02 Library lending and fines (`library`):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Available: item on the shelf
+    Available --> Reserved: borrower places a hold
+    Reserved --> Available: hold expired
+    Available --> Loaned: item issued to a borrower
+    Reserved --> Loaned: held item collected
+    Loaned --> Returned: item checked back in
+    Loaned --> Renewed: renewal allowed and requested
+    Renewed --> Returned: item checked back in
+    Loaned --> Overdue: due date passed
+    Overdue --> Returned: item returned late, fine raised
+    Overdue --> Lost: declared lost after the policy period
+    Returned --> Available: item back on the shelf
+    Lost --> Replaced: replacement charge settled
+    Replaced --> [*]
+```
+
+WF-OPS-03 Transport subscription change (`transport`):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: route, stop, and effective date chosen
+    Requested --> CapacityChecked: seat availability on the route evaluated
+    CapacityChecked --> Waitlisted: route full
+    Waitlisted --> CapacityChecked: a seat is released
+    CapacityChecked --> FeeCalculated: pro-rata charge or credit computed
+    FeeCalculated --> Approved: transport officer approves
+    Approved --> Scheduled: change queued for the effective date
+    Scheduled --> Effective: manifest and fee applied
+    Effective --> Completed: driver and guardian confirmed
+    Requested --> Cancelled: family withdraws
+    Completed --> [*]
+    Cancelled --> [*]
+```
+
+WF-OPS-04 Facility booking approval (`facilities`; rooms enter at `Approved` from Scheduling):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: facility, date, and purpose submitted
+    Requested --> ClashChecked: timetable and existing bookings compared
+    ClashChecked --> Conflicted: clash with a lesson or a booking
+    Conflicted --> Requested: alternative slot chosen
+    ClashChecked --> PendingApproval: slot free
+    PendingApproval --> Approved: facility owner approves
+    PendingApproval --> Rejected: refused with a reason
+    Approved --> Confirmed: setup and equipment arranged
+    Confirmed --> Held: event took place
+    Confirmed --> Preempted: curriculum need claims the room
+    Preempted --> Requested: alternative offered to the requester
+    Held --> [*]
+    Rejected --> [*]
+```
+
+WF-OPS-05 Safety incident and drill logging (`facilities`):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Logged: incident recorded
+    [*] --> DrillScheduled: drill planned
+    DrillScheduled --> DrillExecuted: drill run and timings captured
+    DrillExecuted --> Logged: drill outcome logged as a record
+    Logged --> UnderReview: safety officer reviews
+    UnderReview --> ActionsRaised: corrective actions assigned
+    UnderReview --> Closed: no action required
+    ActionsRaised --> ActionsInProgress: owners working the actions
+    ActionsInProgress --> Verified: safety officer verifies completion
+    ActionsInProgress --> Overdue: action past its due date
+    Overdue --> ActionsInProgress: action completed late
+    Verified --> Closed: record signed and filed
+    Closed --> [*]
+```
 
 ---
 
@@ -1185,7 +1290,7 @@ Existing identifiers are reused; new ones are minted from `TC-OPS-601` upward, a
 | TC-OPS-021 to TC-OPS-026 | Every WF-OPS-03 transition in Appendix R, including the effective-date rollback | Integration, `TransportSubscriptionChangeWorkflowTests` |
 | TC-OPS-031 to TC-OPS-036 | Every WF-OPS-04 transition in Appendix R; rooms from `ClashChecked` to `Approved` are asserted in the Scheduling suite | Integration, `FacilityBookingApprovalWorkflowTests` |
 | TC-OPS-041 to TC-OPS-046 | Every WF-OPS-05 transition in Appendix R | Integration, `SafetyIncidentAndDrillLoggingWorkflowTests` |
-| TC-OPS-001 (Appendix W feature 33) | The campus digital twin shows rooms with occupancy and tickets on a floor plan, rooms and never children (open point 10) | End-to-end |
+| `TC-OPS-810` (Appendix W) | Feature 33's demo test: the campus digital twin shows rooms with occupancy and tickets on a floor plan, rooms and never children (open point 10) | End-to-end |
 | TC-SEC-310 to TC-SEC-313, TC-IDN-051, TC-PRV-046 | T-OPS-01 to T-OPS-05 | Security suite |
 | TC-SEC-055, TC-SEC-056, TC-SEC-057 | Generated permission-matrix, tenant-isolation and response-shape suites over every endpoint of section 5 | Generated |
 | TC-TST-201, TC-TST-202, TC-TST-203 | Endpoint contracts, cache entries, deliver-twice for every consumer and command handler | Generated |
@@ -1215,6 +1320,21 @@ Existing identifiers are reused; new ones are minted from `TC-OPS-601` upward, a
 
 Operations has no Appendix S rule, so no rule test class exists (document 31 section 1). Query budgets are the `TC-PERF-2NN` rows generated from document 21 section 3.19 and section 12 of this sheet.
 
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Operations' own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks`, `Documents` and `Localization`, which hold its money and culture handling and render its purchase orders and reports.
+
+| Concern | What Operations does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated and query-budget suites, the split rehearsal | Run as Appendix X.2 lists them for every service; the six DbContexts migrate alone into an empty database | This section's tests; TC-OPS-602 | `ubuntu-latest` |
+| One-command local start | The Api host with its six schemas and Quartz.NET jobs starts under `aspire run` or the compose `dev` profile and reports ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing | Fines, sale prices, programme fees and asset costs are parsed and stored with the invariant culture and the tenant currency's decimals (REQ-L10N-012) | `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE`; TC-OPS-614 | `ubuntu-latest`, `windows-latest` for the shared money handling |
+| Arabic search and collation | Catalogue search runs over `search_normalized` with the BR-L10N-001 fold and a trigram index; titles sort by `title_sort` per language | `TC-L10N-310` (document 24) inside the database image | `ubuntu-latest` |
+| Offline devices and clocks | Circulation, stock-take scans, boarding and safety records replay by idempotency key with the device `occurredAt` kept beside the server `receivedAt` (open point 12) | TC-OPS-605, TC-OPS-016, TC-OPS-046; `TC-PLAT-012` (document 33) for the wrong-clock case | `ubuntu-latest`; the device pass |
+| Time zones | The effective date of a transport change, the overdue scan and the drill frequency run in the campus's IANA time zone | `TC-PLAT-005` (document 33) inside the built image; TC-OPS-024, TC-OPS-603 | `ubuntu-latest` |
+| Right to left | Purchase orders, drill and incident reports and the asset register are rendered by Documents in both directions | `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
+| Mobile without Google services | Bus attendant mode on Android phones and tablets records boarding offline and needs no push; guardians' bus notices reach a device without Google services in-app while the app is open and by email | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | the device pass |
+
 ---
 
 ## 16. Scaling, partitioning and risks
@@ -1226,14 +1346,16 @@ Operations has no Appendix S rule, so no rule test class exists (document 31 sec
 | Partitions | `transport.vehicle_locations` by day (about 2,500 rows per vehicle per school day, 90 days kept) and `transport.boarding_events` by month (`10-data-architecture.md` section 5); nothing else | A tenant above 200 vehicles |
 | Split | A sub-domain splits when its load profile or release cadence diverges; the procedure is section 4.0 and TC-OPS-602 rehearses it on every build | Transport location ingest above 30 percent of the service's CPU |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A child's location inferred from vehicle data | med | critical | No student column near a location, parents see the bus only, 90-day retention; TC-SEC-310, TC-OPS-607 | Security reviewer |
-| A child waiting at a stop no driver expects | low | high | Manifest and fee move together on the effective date, rollback keeps the old stop, driver acknowledgement; TC-OPS-024, TC-OPS-025 | Operations lead |
-| A split turns into a rewrite because a query crossed schemas | med | med | No cross-schema foreign key, one DbContext per schema, the split rehearsal TC-OPS-602 | Architect |
-| Fines and fees cannot be marked paid automatically | high | low | Librarian settlement from the receipt; open point 5 | Product owner |
-| A revoked attendant device keeps recording boarding | med | high | Device session bound to the account, refusal on reconnect; TC-IDN-051, TC-SEC-311 | Operations lead |
-| Stock drift from offline or concurrent movements | low | med | Movements append-only, level updated in the same transaction with `xmin`, nightly invariant audit; TC-OPS-623 | Operations lead |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A child's location inferred from vehicle data | 2 | 5 | 10 | No student column near a location, parents see the bus only, 90-day retention; TC-SEC-310, TC-OPS-607 | Security reviewer | none |
+| A child waiting at a stop no driver expects | 2 | 4 | 8 | Manifest and fee move together on the effective date, rollback keeps the old stop, driver acknowledgement; TC-OPS-024, TC-OPS-025 | Operations lead | none |
+| A split turns into a rewrite because a query crossed schemas | 3 | 3 | 9 | No cross-schema foreign key, one DbContext per schema, the split rehearsal TC-OPS-602 | Architect | none |
+| Fines and fees cannot be marked paid automatically | 4 | 1 | 4 | Librarian settlement from the receipt; open point 5 | Product owner | none |
+| A revoked attendant device keeps recording boarding until it reconnects | 2 | 3 | 6 | Device session bound to the account, refusal on reconnect; TC-IDN-051, TC-SEC-311 | Operations lead | RISK-09 |
+| Stock drift from offline or concurrent movements | 2 | 2 | 4 | Movements append-only, level updated in the same transaction with `xmin`, nightly invariant audit; TC-OPS-623 | Operations lead | none |
 
 ---
 
@@ -1256,8 +1378,8 @@ Operations has no Appendix S rule, so no rule test class exists (document 31 sec
 |---|---|---|
 | Names, database, exchange, image | Appendix L | every lint run |
 | Event keys, payloads and partition keys | Appendix E | every lint run |
-| Permission strings | Appendix B | `/lint-plan` |
-| Error codes | Appendix K.20 | `/lint-plan` |
+| Permission strings | Appendix B | every lint run (kit-lint R19, Permission columns); the Group C review for prose |
+| Error codes | Appendix K.20 | every lint run (kit-lint R19) |
 | State types and feature folders | `31-business-rules-and-workflows.md` section 3 | Group F review |
 | WF-OPS-01 to WF-OPS-05 states and test rows | Appendix R | Group D review |
 | Effect rows, Saga 5 step 2 | `13-workflows-and-sagas.md` sections 3 and 4 | Group D review |
@@ -1269,18 +1391,18 @@ Operations has no Appendix S rule, so no rule test class exists (document 31 sec
 
 ## Open points
 
+**Closed since the draft.** Points 6 and 8 are closed by ADR-0019 and leave the table; their numbers stay free so the others keep theirs. Point 6: Appendix R now cites only catalogued keys for WF-OPS-01 to WF-OPS-05 and records every other transition as `operations.audit.recorded.v1`. Point 8: reference architecture Section 8.0 lists Scheduling `Timetables.Checksum` as job only on the Operations row. Point 10 has lost its test-identifier half: Appendix W now gives feature 33 its own demo test, `TC-OPS-810`, so `TC-OPS-001` keeps only its Appendix R meaning.
+
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Appendix G has no *Operations* category for loan limits, fine rates, hold and lost periods, transport notice, capitalisation threshold, ticket SLAs, drill frequency, complaint SLAs and lost-and-found retention | Held in `ops_policies` per sub-domain; propose an Appendix G category so Platform owns them (ADR-0009) | Product owner | Still open. ADR-0019 touched only the Finance, Joining and AI groups of Appendix G, so two places hold tenant configuration | 3 | 2 | 6 | RISK-43 |
-| 2 | Document 11 binds no `nibras.operations` key into `documents.commands` or `notification.commands`; many Operations messages have no Appendix C row | Add both bindings (Documents sheet open point 7); send the listed messages through `RequestNotification`; propose Appendix C rows | Document 11 owner, product owner | Still open. ADR-0019 added no Operations row to Appendix C and left document 11 to its own editor, so purchase orders, reports and reminders cannot be sent | 2 | 3 | 6 | RISK-43 |
+| 2 | The render half is closed: document 11 §2.4 and §2.5 now bind `nibras.operations` into `documents.commands`, so purchase orders, drill and incident reports and participant lists render. Still open: document 11 binds no `nibras.operations` key into `notification.commands`, and many Operations messages have no Appendix C row | Send the listed messages through `RequestNotification` once `notification.commands` binds `nibras.operations`; propose Appendix C rows | Document 11 owner, product owner | Certain until the binding exists: ADR-0019 added no Operations row to Appendix C, so the reminders and escalations of section 11 are not sent, and staff find them on their Operations screens instead of being told | 5 | 2 | 10 | RISK-43 |
 | 3 | Appendix B `operations.frontdesk.check-in`, Appendix K `OPERATIONS_VISITOR_BLOCKLISTED`, T-OPS-05 and document 10's "visitor identity references" place visitors in Operations, while Appendix F and REQ-ATT-030 place them in Attendance | Attendance owns visitors; `check-in` covers deliveries and the blocklist covers couriers, suppliers and contractors; T-OPS-05's retention job is Attendance's `VisitorRetentionJob` | Architect | A visitor log in both services | 2 | 2 | 4 | RISK-43 |
 | 4 | A complaint is logged at the desk and then owned by a Requests case, so two records exist | The desk record closes as `routed` once published; `resolve-complaint` is used only for complaints settled at first contact, which are still published so the Requests case records them | Product owner | Two statuses for one complaint | 2 | 1 | 2 | none |
 | 5 | Operations cannot correlate `finance.payment.received.v1` (invoice ids) with the fine or enrollment that caused the invoice, and does not bind `finance.account.restricted.v1` | Fines settle by the librarian from the receipt; activity payment state is composed by Bff.Web from Finance; `finance.invoice.issued.v1` into `operations.events` stays proposed | Architect with Finance | Still open. ADR-0019 added the optional `sourceRefs` to `finance.payment.received.v1`, but its `kind` is `offer` or `application` only, so a loan fine or an activity place is still not correlatable and payment states stay manual | 4 | 2 | 8 | none |
-| 6 | Appendix R names events Appendix E lacks: `operations.requisition.approved.v1`, `operations.purchase-order.issued.v1`, `operations.goods.received.v1`, `operations.asset.registered.v1`, `operations.loan.issued.v1`, `operations.loan.returned.v1`, `operations.loan.overdue.v1`, `operations.item.lost.v1`, `operations.transport-subscription.changed.v1`, `operations.route-manifest.updated.v1`, `operations.facility-booking.confirmed.v1`, `operations.maintenance-ticket.created.v1`, `operations.safety-incident.logged.v1`, `operations.drill.executed.v1`, `operations.corrective-action.raised.v1`, `audit.action.recorded.v1` | Only the catalogued keys of section 7.1 are published; every other transition writes `operations.audit.recorded.v1` | Architect, Appendix E and R amendment | Resolved 2026-09-22 (ADR-0019): Appendix R was aligned to these names. WF-OPS-02 now uses `operations.library.loan-recorded.v1` and `operations.library.loan-overdue.v1`, WF-SCH-04 and WF-OPS-03 use `operations.transport.subscription-changed.v1`, WF-OPS-04 uses `operations.facility.ticket-raised.v1`, and the requisition, purchase-order, goods-received, asset-registered, returned, lost, route-manifest, facility-booking, safety-incident, drill and corrective-action transitions, plus WF-SCH-01's library returns, are recorded as `operations.audit.recorded.v1`. The shared audit key is gone: the audit entry is always the publishing service's own `<service>.audit.recorded.v1` | 1 | 1 | 1 | none |
 | 7 | Appendix B has no permission for requisitions raised by teaching staff, safety records, sales, budget lines or the digital twin | Requisitions under `operations.inventory.create` proposed in `self` scope for staff templates; safety records under `operations.facilities.create` and `.approve`; sales under `operations.inventory.issue`; budget lines under `operations.inventory.edit` | Product owner | Still open. ADR-0019's change list names the Operations requisitions among the gaps it deliberately left for a later ADR, so a teacher still raises a requisition only through the Requests type | 3 | 2 | 6 | RISK-43 |
-| 8 | Table 8.0 gives Operations only School as a synchronous dependency, but the nightly room-booking reconciliation calls Scheduling `Timetables.Checksum` | The call is nightly, off the request path, and section 6 names it job only | Architect | Resolved 2026-09-22 (ADR-0019): reference architecture Section 8.0 adds Scheduling `Timetables.Checksum` as job only to the Operations row, and the text after the table defines "job only" and states the one-hop rule, so the table and this sheet agree | 1 | 1 | 1 | none |
 | 9 | Document 21 section 1.19 lists kindergarten daily sheets under Operations; Academics owns them (REQ-ACA-028) | Treated as an error in document 21 | Document 21 owner | None in code | 1 | 1 | 1 | none |
-| 10 | `TC-OPS-001` is used by both Appendix R WF-OPS-01 and Appendix W feature 33 (digital twin); the twin's live occupancy needs timetable entries and roll call that Operations does not copy | The twin is composed by Bff.Web from Scheduling room availability and Operations floor plans and tickets; the collision is reported for an Appendix W renumber | Architect | Traceability shows one identifier for two tests | 2 | 1 | 2 | RISK-43 |
+| 10 | Feature 33's live occupancy needs timetable entries and roll call that Operations does not copy | The twin is composed by Bff.Web (`GET /bff/web/v1/campus/digital-twin`, built by SL-OPS-624). It reads Operations' floor plans and tickets, Scheduling's room availability, and Attendance roll-call counts from the daily register, as numbers per section and period only. Operations stores no occupancy, and no student identity reaches the map | Architect | If the roll-call read is slow or Attendance is down, the twin shows the timetabled room use without the present count and marks that region `partial` | 2 | 2 | 4 | none |
 | 11 | Bff.Mobile sends bus boarding taps as attendance actions, while Appendix E and document 21 make Operations the recorder of boarding | Operations records boarding through `transport/boarding-events`; Attendance pre-fills from the event | Bff.Mobile owner | Bus presence recorded twice | 3 | 2 | 6 | none |
 | 12 | Appendix M has no conflict rule for library circulation or boarding | Circulation replays in `receivedAt` order with the device `occurredAt` kept, a return before a fine cancels it (Appendix R WF-OPS-02 compensation); boarding is append-only | Product owner | Still open. The only Appendix M row ADR-0019 added is "Record a medication administration: No", so offline behaviour for circulation and boarding is specified only here | 3 | 2 | 6 | RISK-09 |
 
@@ -1291,14 +1413,18 @@ Operations has no Appendix S rule, so no rule test class exists (document 31 sec
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-22 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | WF-OPS-01 to WF-OPS-05 state diagrams added to section 8; platform notes (section 15.1); signature features; feature 33's demo test cited as `TC-OPS-810`; risk table on document 18's scale; open points 6 and 8 closed and point 10 narrowed. Awaiting Group C re-review |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names; publisher contract tests once code exists | Lint; pipeline |
-| Every permission string exists in Appendix B | `/lint-plan`; `PermissionMatrix.Tests` (TC-SEC-055) | Lint; every pull request |
-| Every error code exists in Appendix K | `/lint-plan`; endpoint contract tests (TC-TST-201) | Lint; pipeline |
+| Every permission string exists in Appendix B | kit-lint R19 checks every back-quoted permission in a column headed Permission against Appendix B; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; `PermissionMatrix.Tests` (TC-SEC-055) once code exists | Lint (`/lint-plan`); Group C review; every pull request |
+| Every error code exists in Appendix K | kit-lint R19 checks every back-quoted `OPERATIONS_` code against Appendix K; endpoint contract tests (TC-TST-201) once code exists | Lint (`/lint-plan`); pipeline |
+| The five state diagrams of section 8 equal their twins in Appendix R | R17 checks each block is a known Mermaid type; the `plan-consistency-checker` agent compares each block line by line with Appendix R at the Group C review and on every brief version bump, and a difference is fixed here | Lint; Group C review |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
 | Every test Appendix R gives WF-OPS-01 to WF-OPS-05 is cited in section 15 | kit-lint R32 fails this sheet when section 15 omits any TC identifier Appendix R lists under a workflow document 13 assigns to Operations | Lint |
 | Every WF-OPS transition row in Appendix R has its own test | `test-strategist` compares each transition row of WF-OPS-01 to WF-OPS-05 with the test it names and with section 15 at the Group C review and on every change to this sheet or to Appendix R; the tests themselves run in the integration suite | Review; integration suite |
 | A sub-domain can be split mechanically | TC-OPS-601 no cross-schema foreign key; TC-OPS-602 each DbContext alone | Integration suite, every build |

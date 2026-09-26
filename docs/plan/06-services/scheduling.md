@@ -19,6 +19,10 @@ Scheduling decides when and where teaching happens. It owns periods and bell sch
 | Sensitivity (Appendix J) | internal |
 | Why the boundary exists | Scaling: the CP-SAT solve is a CPU-heavy cancellable job scaled by queue depth, while timetable reads are cached and read-heavy |
 
+**Signature features.** Scheduling owns Appendix W feature 5 (smart timetable with live conflict detection). It also carries parts of three features other services own: the iCal feeds of feature 24 (Platform's), the room bookings and availability behind feature 33 (Operations'), and the cover and teaching-load totals that feature 43 (Hr's) degrades to. Each feature's rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
+**Last updated** 2026-09-26 by the round-3 remediation (internal state diagrams, platform notes, signature features, risk scale, closed open points)
+
 ---
 
 ## 1. Responsibilities
@@ -471,6 +475,42 @@ Scheduling owns no workflow in Appendix R (document 31: 8 rules, 0 workflows). I
 | WF-SCH-04 Mid-year campus transfer | Unaffected | A student's timetable follows the section; nothing changes in Scheduling |
 
 Every transition of the internal machines runs through the transition pipeline of `13-workflows-and-sagas.md` section 5.1 and writes `scheduling.audit.recorded.v1`.
+
+The two internal machines that other services depend on are drawn below from the states of section 4 and the routes of section 5; they carry no Appendix R identifier until open point 8 is decided, so their transition tests are TC-SCD-106, TC-SCD-112, TC-SCD-118, TC-SCD-119 and TC-SCD-134 rather than Appendix R rows.
+
+`TimetableVersionStatus` (section 4.3; the solve is `SolverRun`, section 4.4):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft: version created empty, from a version, or as a skeleton
+    Draft --> Generating: generate accepted, solve command sent
+    Generating --> Generated: solver succeeded, entries written
+    Generating --> Draft: solve cancelled or failed, previous entries intact
+    Generated --> Generating: generate again
+    Draft --> Published: publish with no hard conflict, or with an override and a reason
+    Generated --> Published: publish with no hard conflict, or with an override and a reason
+    Published --> Superseded: a later version or change set published for the campus
+    Published --> Archived: school.academic-year.closed.v1
+    Superseded --> Archived: school.academic-year.closed.v1
+    Draft --> [*]
+    Archived --> [*]
+```
+
+`SubstitutionStatus` (section 4.5; the Scheduling half of WF-HR-01):
+
+```mermaid
+stateDiagram-v2
+    [*] --> Proposed: ranked candidates for an affected period
+    [*] --> Uncovered: no candidate free for the period
+    Proposed --> Assigned: officer assigns a candidate
+    Proposed --> Uncovered: every candidate declined or unavailable
+    Uncovered --> Assigned: manager assigns with an override
+    Assigned --> Accepted: substitute accepts
+    Assigned --> Released: leave cancelled or absence removed before the period
+    Accepted --> Released: leave cancelled or absence removed before the period
+    Accepted --> [*]
+    Released --> [*]
+```
 
 ---
 
@@ -939,6 +979,20 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 | TC-SCD-133 | Reconciliation repairs a corrupted `ref_staff` row and raises one data-quality issue | Integration |
 | TC-SCD-134 | `hr.leave.cancelled.v1` after one covered period restores the rest and keeps the taught period attributed | Integration |
 
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). Scheduling's own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks` and `Localization`, which hold its calendar, Hijri and culture handling. Scheduling is the one service with a native dependency, the OR-Tools CP-SAT solver, so it is also the one where a developer's operating system can break a local start.
+
+| Concern | What Scheduling does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated, solver and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start, native solver included | The Api and `Scheduling.Worker` start under `aspire run` or the compose `dev` profile and report ready; the worker loads the OR-Tools native runtime of the pinned package for the host's operating system and architecture | The `dev-smoke` job; the solver smoke test of section 16 on the pinned package before phase 2 | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing | Period times, durations, travel minutes and solver scores are parsed and stored with the invariant culture; the viewer's culture is for display only | `TC-PLAT-007` (document 33) under `ar-SA`, `en-US` and `de-DE` | `ubuntu-latest`, `windows-latest` for the shared rules |
+| Time zones, Hijri and Ramadan | Bell schedules and cut-offs run in each campus's IANA time zone; Hijri is display only with Gregorian stored; a Ramadan schedule switches at the right local time per campus | TC-SCD-108, TC-SCD-120; `TC-L10N-620` (document 24); `TC-PLAT-005` and `TC-PLAT-006` (document 33) inside the built image | `ubuntu-latest` |
+| iCal feeds | Feeds are written as RFC 5545 text with CRLF line endings and zoned times, never with the host's newline, so every calendar client on every system reads them | TC-SCD-121 | `ubuntu-latest` |
+| Right to left | The timetable grid mirrors in Arabic; days and periods keep their order | `TC-L10N-601` (document 08) | `ubuntu-latest` |
+| Mobile without Google services | A substitute is told of cover urgently; on a device without Google services the message arrives in-app while the app is open and falls back to SMS and email; an iCal subscription needs no vendor service at all | TC-SCD-801; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | `ubuntu-latest`; the device pass |
+
 ---
 
 ## 16. Scaling, partitioning and risks
@@ -950,13 +1004,15 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 | Partitioning | None; entries grow per version (about 32,000 per version at a 4-campus group) and old versions archive with the year | A tenant above 200,000 live entries |
 | Timetabling season | Most tenants generate in the same weeks before the year starts | Queue wait metric and the calendar-aware scaling of doc 21 section 9 |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| The solver cannot find a feasible timetable for real constraints | med | high | Infeasibility core names the conflicting set; soft constraints never block; manual refinement always available; TC-SCD-113 | Scheduling team |
-| OR-Tools native libraries or licence differ on the pinned version | low | med | Licence scan and a Linux and Windows solver smoke test on the pinned package before phase 2 | Tech lead |
-| Weekly periods per subject are entered twice (Academics and here) | high | med | Open point 2; the requirement rows are seeded from the copy and flagged when Academics changes | Architect |
-| Substitution alert is missed because Scheduling cannot send a notification request | med | high | Open point 9; until resolved the uncovered list is on the principal's Today dashboard | Architect |
-| A published change reaches Attendance late and the register shows the wrong teacher | low | high | Partition by `timetableVersionId`; Attendance's daily attendance-against-timetable job is the second check | Scheduling and Attendance teams |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| The solver cannot find a feasible timetable for real constraints | 3 | 4 | 12 | Infeasibility core names the conflicting set; soft constraints never block; manual refinement always available; TC-SCD-113 | Scheduling team | RISK-10 |
+| OR-Tools native libraries or licence differ on the pinned version, or fail to load on a developer's system | 2 | 3 | 6 | Licence scan; a Linux and Windows solver smoke test on the pinned package before phase 2; the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | Tech lead | RISK-26 |
+| Weekly periods per subject are entered twice (Academics and here) | 4 | 2 | 8 | Open point 2; the requirement rows are seeded from the copy and flagged when Academics changes | Architect | none |
+| Substitution alert is missed because Scheduling cannot send a notification request | 3 | 3 | 9 | Open point 9; until resolved the uncovered list is on the principal's Today dashboard | Architect | none |
+| A published change reaches Attendance late and the register shows the wrong teacher | 2 | 4 | 8 | Partition by `timetableVersionId`; Attendance's daily attendance-against-timetable job is the second check | Scheduling and Attendance teams | RISK-13 |
 
 ---
 
@@ -985,17 +1041,17 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Points 3 and 4 are answered and leave the table; their numbers stay free so the others keep theirs. Point 3: reference architecture table 8.0 gives Scheduling the School directories and, job only, Academics `TeachingAssignments.Checksum` and Hr `Leave.Checksum`, adds Scheduling `Timetables` to the Academics and Attendance rows and `Timetables.Checksum`, job only, to the Operations row, and defines "job only" once, so section 6 matches it. Point 4: Appendix K.8 defines `SCHEDULING_SOLVER_RUNNING` (409), raised by sections 5.3, 5.8 and 10.1 with `params.runningJobId`. Point 1 keeps only what ADR-0019 left without a resource, and point 9 only its document 11 and Appendix C parts: Appendix C has the row "Period still uncovered 30 minutes before it starts" and Appendix E's job table lists `UncoveredPeriodEscalationJob`.
+
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Closed by ADR-0019 for constraints: Appendix B now carries `scheduling.constraints` with view, create, edit and delete, and section 5.2 uses it. Travel times and lesson requirements still have no resource, and staff absences still have none | Travel times and lesson requirements stay under `scheduling.timetable.*`, absences under `scheduling.substitutions.*`. No open question owns the remainder; it was not in the defect log and needs its own ADR | Product owner, Appendix B amendment | Travel-time editing cannot be delegated apart from timetable editing | 2 | 1 | 2 | RISK-43 |
+| 1 | Travel times, lesson requirements and staff absences have no Appendix B resource of their own (constraints gained `scheduling.constraints` under ADR-0019, see above) | Travel times and lesson requirements stay under `scheduling.timetable.*`, absences under `scheduling.substitutions.*`. No open question owns the remainder; it was not in the defect log and needs its own ADR | Product owner, Appendix B amendment | Travel-time editing cannot be delegated apart from timetable editing | 2 | 1 | 2 | RISK-43 |
 | 2 | Weekly periods per subject belong to Academics (REQ-ACA-001) but no event carries them; `academics.teaching-assignment.changed.v1` has staff, section, subject and date only | `LessonRequirement.periods_per_week` is entered in Scheduling; propose an optional `periodsPerWeek` field on the Academics event (additive, not breaking) | Architect | Two places to maintain weekly periods | 4 | 2 | 8 | none |
-| 3 | Closed by ADR-0019. Reference architecture table 8.0 (v9.1) gives Scheduling the School staff, structure and student directories and, job only, Academics `TeachingAssignments.Checksum` and Hr `Leave.Checksum`; it adds Scheduling `Timetables` to the Academics and Attendance rows and `Timetables.Checksum`, job only, to the Operations row. Table 8.0 also now defines "job only" and states the one-hop rule once | Section 6 stands as written and matches the table | Closed | None; a reviewer applying table 8.0 literally now allows the seating job and the timetable fetch | 1 | 1 | 1 | none |
-| 4 | Closed by ADR-0019. Appendix K.8 now defines `SCHEDULING_SOLVER_RUNNING` (409), the name this sheet proposed | Sections 5.3, 5.8 and 10.1 raise it with `params.runningJobId`; the `SCHEDULING_CONCURRENCY_CONFLICT` workaround is withdrawn | Closed | None; a client can tell a stale edit from a running solve | 1 | 1 | 1 | none |
 | 5 | Print and PDF of timetables (REQ-SCD-012): `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a sender of `GenerateDocument` | Browser print stylesheet for print; PDF through Documents once the binding is added | Architect | No server-side PDF until then | 2 | 2 | 4 | none |
 | 6 | Invigilator assignment exists both as `assessment.exams.assign-invigilators` and here | Scheduling places invigilators on sessions under `scheduling.exam-timetable.edit`; Assessment's permission governs paper duties | Product owner | Two screens for one roster | 3 | 1 | 3 | none |
 | 7 | Appendix R WF-SCH-02 lists `scheduling.timetable.published.v1` for the skeleton, while Saga 4 says the skeleton is unpublished | Unpublished; the reply `TimetableSkeletonCreated` is the outcome | Architect, Appendix R correction | Consumers would build registers from a draft | 1 | 3 | 3 | RISK-43 |
 | 8 | Timetable publication, substitution and room booking are state machines with no WF identifier in Appendix R | Internal state enums with transition tests; propose WF-SCD entries | Architect | Transition tests cannot carry Appendix R TC identifiers | 2 | 1 | 2 | RISK-43 |
-| 9 | Half closed by ADR-0019. Appendix C now has the row "Period still uncovered 30 minutes before it starts" and Appendix E's job table now lists `UncoveredPeriodEscalationJob` (Scheduling, every 5 minutes from 06:00 to the last period on school days). Still open: `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a `RequestNotification` sender, and the booking cancellation notice of BR-SCD-007 still has no Appendix C row | Until document 11 gains the sender, the alert is on the principal's Today dashboard and the cancellation notice is in-app. No open question owns either; the change list records the sender as plan-level work outside the brief | Architect, document 11 owner | The 30-minute principal alert of TC-HR-004 is not delivered by push | 3 | 3 | 9 | none |
+| 9 | `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a `RequestNotification` sender, and the booking cancellation notice of BR-SCD-007 has no Appendix C row (the uncovered-period row and its job are settled, see above) | Until document 11 gains the sender, the alert is on the principal's Today dashboard and the cancellation notice is in-app. No open question owns either; the change list records the sender as plan-level work outside the brief | Architect, document 11 owner | The 30-minute principal alert of TC-HR-004 is not delivered by push | 3 | 3 | 9 | none |
 | 10 | `SCHEDULING_BOOKING_OUTSIDE_WINDOW` describes a parent meeting booking, which Communication owns | Not raised here; Appendix K amendment moves or renames it | Architect | None | 1 | 1 | 1 | none |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -1005,13 +1061,17 @@ Existing identifiers are reused; new ones are minted from `TC-SCD-101` upward (T
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Platform notes (section 15.1) with the native solver on the three developer runners; signature features; risk table on document 18's scale; open points 3 and 4 closed and points 1 and 9 narrowed. Scheduling owns no Appendix R workflow; its two internal machines, `TimetableVersionStatus` and `SubstitutionStatus`, are drawn in section 8 from the sheet's own states (open point 8). Awaiting Group C re-review |
 
 ## How this document is verified
 
 | Claim | Proof | Where it runs |
 |---|---|---|
 | Every routing key exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names; TC-SCD-131 once code exists | Lint; contract suite |
-| Every permission and error code is catalogued | `/lint-plan`; TC-SCD-127 | Lint; generated suite |
+| Every permission and error code is catalogued | kit-lint R19 checks back-quoted permissions in columns headed Permission and every back-quoted `SCHEDULING_` code; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; TC-SCD-127 once code exists | Lint (`/lint-plan`); Group C review; generated suite |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| The two state diagrams of section 8 match the states of section 4 and every transition has a test | R17 checks each block is a known Mermaid type; the `test-strategist` agent maps each transition to TC-SCD-106, TC-SCD-112, TC-SCD-118, TC-SCD-119, TC-SCD-134 or TC-HR-003 to TC-HR-006 at the Group C review | Lint; Group C review |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
 | Every rule has its test class | `test-strategist` compares section 15 rows TC-SCD-101 to TC-SCD-108 with every Scheduling rule document 31 assigns, one named test class per rule, at the Group C review and on every change to this sheet or to Appendix S; kit-lint R23 fails when document 31 is not what its generator produces from Appendix S today | Review; lint; unit suite |
 | The solver is cancellable, reports progress and survives a killed worker | TC-SCD-112, TC-SCD-115, TC-SCD-117 | Integration and chaos suites |
 | Publishing never rewrites recorded attendance | TC-SCD-106, TC-SCD-119 | Integration suite |

@@ -19,6 +19,10 @@ School is the source of truth for the structure of a school and the people in it
 | Sensitivity (Appendix J) | confidential; custody and medical summary are sensitive |
 | Why the boundary exists | Release: the most-replicated data in the system changes at its own cadence, and every other service keeps a slim copy of it rather than a dependency on its release |
 
+**Signature features.** School owns Appendix W feature 20 (balanced class formation) and feeds feature 2 (Student 360 timeline filtered by the viewer's permissions), whose timeline is composed by Bff.Web from School's student record and the other services' answers. Each feature's rung, autonomy, requirements, capabilities, slices, Appendix O step and demo test are in the "Signature feature trace" of `32-product-differentiation-and-demo.md`; this sheet does not copy them.
+
+**Last updated** 2026-09-26 by the round-3 remediation (saga diagrams, platform notes, signature features, risk scale, closed open points)
+
 ---
 
 ## 1. Responsibilities
@@ -613,6 +617,64 @@ Commands School sends, all on `nibras.school`: `ConfirmYearResultsLocked`, `Comp
 
 Status changes are a workflow, not a field (REQ-SCH-020): the transition table for `StudentStatus` lives in `Nibras.School.Domain/Students/StudentStatusTransitions.cs` and every transition runs through the transition pipeline (validate state, check permission, apply, audit, outbox) of `13-workflows-and-sagas.md` section 5.1.
 
+School orchestrates two sagas. Their state machines follow, copied from `13-workflows-and-sagas.md` §3 as they stand on 2026-09-26 so each saga can be built from this sheet; the steps, commands, timeouts and compensations stay in document 13, which is binding. A difference between a diagram here and its twin there is a defect in this sheet, and each state is a member of the saga's state enum in `Nibras.School.Domain`.
+
+**Saga 4. Year-end rollover (WF-SCH-02), `RolloverState` in `Nibras.School.Domain.AcademicYears`**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Initiated: registrar starts the close
+    Initiated --> ResultsFinalized: YearResultsLocked reply
+    Initiated --> Aborted: YearResultsNotLocked reply
+    ResultsFinalized --> DecisionsDrafted: PromotionDecisionsComputed reply
+    ResultsFinalized --> TimedOut: Assessment silent 30 min
+    DecisionsDrafted --> DecisionsDrafted: principal overrides one student
+    DecisionsDrafted --> DecisionsApproved: principal approves the cohort
+    DecisionsDrafted --> Aborted: registrar aborts
+    DecisionsApproved --> Applying: batch started
+    Applying --> Applying: checkpoint every 200 students
+    Applying --> Applied: last batch written
+    Applying --> Stalled: no progress 15 min
+    Stalled --> Applying: worker resumes from checkpoint
+    Applied --> StructureOpened: next year and sections created
+    StructureOpened --> FeePlansAssigned: finance.fee-plan.assigned.v1 for every student
+    StructureOpened --> Compensating: Finance refused
+    FeePlansAssigned --> SkeletonCopied: TimetableSkeletonCreated reply
+    FeePlansAssigned --> Compensating: Scheduling refused
+    SkeletonCopied --> Closed: school.academic-year.closed.v1
+    TimedOut --> ResultsFinalized: retry
+    TimedOut --> Aborted: attempts exhausted
+    Compensating --> Aborted: next-year rows removed, closing year untouched
+    Closed --> [*]
+    Aborted --> [*]
+```
+
+**Saga 5. Withdrawal clearance (WF-SCH-01), `WithdrawalState` in `Nibras.School.Domain.Students`**
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: withdrawal requested
+    Requested --> ClearancePending: items raised in parallel
+    Requested --> Cancelled: guardian withdraws the request
+    ClearancePending --> ClearanceBlocked: Finance or Operations replied Blocked
+    ClearanceBlocked --> ClearancePending: obligation settled
+    ClearanceBlocked --> Cancelled: 60 days without settlement
+    ClearancePending --> Cleared: finance.account.cleared.v1 and Operations signed off
+    Cleared --> TranscriptIssued: TranscriptIssued reply
+    Cleared --> Compensating: Assessment refused
+    TranscriptIssued --> DocumentsIssued: documents.document.generated.v1
+    TranscriptIssued --> Compensating: Documents refused
+    DocumentsIssued --> Withdrawn: registrar confirms the leaving date
+    Withdrawn --> AccountDeactivated: identity.user.deactivated.v1
+    AccountDeactivated --> PackSent: notification requested
+    PackSent --> Archived: retention job runs
+    Compensating --> Cleared: documents revoked, student still enrolled
+    Archived --> [*]
+    Cancelled --> [*]
+```
+
+WF-SCH-03 and WF-SCH-04 are single-service machines; their diagrams are in Appendix R, which R29 checks, and the tests of every transition are cited in section 15.
+
 ---
 
 ## 9. Local reference copies
@@ -1185,6 +1247,20 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 | TC-SCH-428 | Killing the Api during `RolloverApplyJob` loses and duplicates nothing (`WorkerKilledMidBatch_Resumes_NoDuplicates`) | Chaos, integration |
 | TC-SCH-429 | Duplicate-person check raises one proposal for a guardian created by admissions who self-registers (REQ-SCH-037) | Integration |
 
+### 15.1 Platform notes
+
+What this service does on each operating system, runtime and device class, and the runner that proves it (Appendix X.2, `33-platform-support-and-dev-environments.md`). School's own suites run where Appendix X.2 puts every service: the Linux runner. The Windows runner covers `BuildingBlocks` and `Localization`, which hold School's name folding, numbering format and culture handling.
+
+| Concern | What School does | Proven by | Runner |
+|---|---|---|---|
+| Unit, integration, architecture, generated and query-budget suites | Run as Appendix X.2 lists them for every service | This section's tests | `ubuntu-latest` |
+| One-command local start | The Api host, its jobs and the `nibras.school.v1` gRPC surface start under `aspire run` or the compose `dev` profile and report ready | The `dev-smoke` job | `ubuntu-latest`, `windows-latest` and `macos-latest` |
+| Culture-invariant parsing and formatting | Student numbers (`STU-{yy}-{0000}`), dates of birth and enrolment dates are formatted and parsed with the invariant culture; the tenant's culture is for display only (BR-L10N-006) | `CultureInvarianceRulesTests` under `ar-SA`, `en-US` and `de-DE`; `TC-PLAT-007` (document 33); TC-SCH-406 | `ubuntu-latest`, `windows-latest` |
+| Arabic search and collation | Student, guardian and staff search folds hamza, alef and taa marbuta with BR-L10N-001, the same fold in C# and in the database, and sorts per language by the database collation | `TC-L10N-310` (document 24) inside the database image; `TC-L10N-311` (document 32); TC-SCH-401 for bilingual names | `ubuntu-latest` |
+| Time zones and calendars | Term start, document expiry and the rollover run in each campus's IANA time zone; calendar days are stored Gregorian | TC-SCH-425 across three time zones; `TC-PLAT-005` and `TC-PLAT-006` (document 33) inside the built image | `ubuntu-latest` |
+| Right to left | The class list prints right to left with the photo column on the right; the transfer certificate is rendered by Documents in both directions | `TC-L10N-202` (document 08); `TC-L10N-301` (Documents sheet) | `ubuntu-latest` |
+| Mobile without Google services | School has no mobile path of its own: its data reaches phones through Bff.Mobile, and nothing School sends depends on push | The Bff.Mobile sheet; `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | the device pass |
+
 ---
 
 ## 16. Scaling, partitioning and risks
@@ -1197,14 +1273,16 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 | Nightly reconciliation | About 13 consumers × up to 9 entity kinds call `Checksum` per tenant; consumers stagger by a hash of `tenantId` across 01:00 to 04:00 tenant time | Checksum p95 above 500 ms (query 5 moves to a per-section chunked walk) |
 | Rollover | Batch of 200 per checkpoint; one rollover per academic year; runs in the Api host with per-tenant concurrency of one | A rollover above 30 minutes for 2,400 students |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| School slips and every phase 2 service waits (critical path) | med | high | Contracts and proto in week 1 of phase 2; `SampleDataJob` seeds through the real events so consumers start before School's screens exist | Platform stream lead |
-| An event payload changes and breaks 13 consumers | med | high | Publisher contract tests (TC-SCH-419), `buf breaking` on the proto, additive-only changes within V1 | Architect |
-| Consumers display stale names between a change event and its consumption | low | med | `school.staff.changed.v1` and `school.room.changed.v1` (Appendix E, ADR-0019) carry the change within seconds; the gRPC fetch and the nightly snapshot remain the repair path | Architect |
-| Directory outage stops attendance marking | low | high | Consumers fall back to their local copy (doc 22 section 10.2); the directory is never on the marking write path | School team |
-| Sensitive value leaks through a log, cache or event | low | critical | Classification attribute per property, log scrubber (`TC-PRV-041`), payload contract (`TC-PRV-048`), cache refusal (`TC-PRV-040`) | Security reviewer |
-| Rollover leaves a half-promoted cohort | low | high | One transaction per student, checkpoint, compensation stamped by `RolloverId`, chaos test TC-SCH-428 | School team |
+Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact, 1 to 5; Score is L x I); a row at 12 or more names the register risk that carries it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| School slips and every phase 2 service waits (critical path) | 3 | 4 | 12 | Contracts and proto in week 1 of phase 2; `SampleDataJob` seeds through the real events so consumers start before School's screens exist | Platform stream lead | RISK-07 |
+| An event payload changes and breaks 13 consumers | 2 | 3 | 6 | Publisher contract tests (TC-SCH-419), `buf breaking` on the proto, additive-only changes within V1 | Architect | none |
+| Consumers display stale names between a change event and its consumption | 2 | 2 | 4 | `school.staff.changed.v1` and `school.room.changed.v1` (Appendix E, ADR-0019) carry the change within seconds; the gRPC fetch and the nightly snapshot remain the repair path | Architect | RISK-15 |
+| Directory outage stops attendance marking | 2 | 4 | 8 | Consumers fall back to their local copy (doc 22 section 10.2); the directory is never on the marking write path | School team | none |
+| Sensitive value leaks through a log, cache or event | 2 | 5 | 10 | Classification attribute per property, log scrubber (`TC-PRV-041`), payload contract (`TC-PRV-048`), cache refusal (`TC-PRV-040`) | Security reviewer | none |
+| Rollover leaves a half-promoted cohort | 2 | 4 | 8 | One transaction per student, checkpoint, compensation stamped by `RolloverId`, chaos test TC-SCH-428 | School team | none |
 
 ---
 
@@ -1234,19 +1312,17 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 
 ## Open points
 
+**Closed by ADR-0019 (brief v9.1).** Four points are answered and leave the table; their numbers stay free so the others keep theirs. Point 2: Appendix E (School) carries `nameEn` and `nameAr` on `school.section.created.v1`, `namesEnAr` on `school.staff.created.v1`, and the change keys this sheet proposed (`school.staff.changed.v1`, `school.room.changed.v1`, `school.grade-level.changed.v1`, `school.grading-period.changed.v1`, `school.calendar-day.changed.v1`, `school.department.changed.v1`, `school.sibling.linked.v1` and `school.sibling.unlinked.v1`), so section 7.1 publishes them and the nightly snapshot is repair only. Point 4: Appendix R now cites only catalogued keys for WF-SCH-01, WF-SCH-03 and WF-SCH-04, with `<service>.audit.recorded.v1` as the only audit form; that Reporting cannot mark reports superseded on a reopen is Reporting's and Appendix E's, not this sheet's. Point 8: Appendix K.4 defines `SCHOOL_CONFIGURATION_IN_USE` (409), raised by every delete in sections 5.2, 5.4 and 5.7. Point 11: Appendix R WF-IDN-02 guards on `school.guardians.link`, the Appendix B name section 5.6 checks. Point 1 keeps only what ADR-0019 left open.
+
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Closed by ADR-0019 for departments and houses. Appendix B now carries `school.departments` and `school.houses`, each with view, create, edit and delete, and section 5.4 uses them; Appendix I gives the head of department `school.departments.view` and `.edit` in department scope. Buildings, grading periods and calendar days still have no resource of their own | Buildings stay under `school.campuses.*`, grading periods and calendar days under `school.terms.*`, as section 5.2 and section 5.3 show. No open question owns this; it was not in the defect log, so it needs its own ADR | Product owner, Appendix B amendment under an ADR | Building or calendar editing cannot be delegated apart from campus and term editing | 2 | 1 | 2 | RISK-43 |
-| 2 | Closed by ADR-0019. Appendix E (School) now carries `nameEn` and `nameAr` on `school.section.created.v1`, `namesEnAr` on `school.staff.created.v1`, and the seven keys this sheet proposed: `school.staff.changed.v1`, `school.room.changed.v1`, `school.grade-level.changed.v1`, `school.grading-period.changed.v1`, `school.calendar-day.changed.v1`, `school.department.changed.v1` and `school.sibling.linked.v1`, plus `school.sibling.unlinked.v1` so a removed link ends the sibling discount (BR-FIN-005) | Section 7.1 publishes all of them; the nightly-snapshot workaround is withdrawn and the snapshot is repair only | Closed | None; REQ-SCH-002's 60-second acceptance is met by `school.room.changed.v1` | 1 | 1 | 1 | none |
+| 1 | Buildings, grading periods and calendar days have no Appendix B resource of their own (departments and houses gained theirs under ADR-0019, see above) | Buildings stay under `school.campuses.*`, grading periods and calendar days under `school.terms.*`, as section 5.2 and section 5.3 show. No open question owns this; it was not in the defect log, so it needs its own ADR | Product owner, Appendix B amendment under an ADR | Building or calendar editing cannot be delegated apart from campus and term editing | 2 | 1 | 2 | RISK-43 |
 | 3 | REQ-SCH-010 assigns bell schedules to School, while reference architecture section 8.9 and `07-solution-structure.md` place `BellSchedule` in Scheduling | Scheduling owns bell schedules; REQ-SCH-010 is re-assigned to Scheduling in the next revision of document 03 | Architect | None functionally; traceability shows the requirement under the wrong service | 1 | 1 | 1 | none |
-| 4 | Closed by ADR-0019, the way this sheet proposed: Appendix R was corrected to catalogued names rather than Appendix E gaining keys. WF-SCH-03 now records archival and reopen as `school.audit.recorded.v1` and the seal as `reporting.audit.recorded.v1`; WF-SCH-01 uses `operations.audit.recorded.v1` for a returned loan; WF-SCH-04 uses `operations.transport.subscription-changed.v1`; and `audit.action.recorded.v1` is gone from Appendix R, since Appendix E states that `<service>.audit.recorded.v1` is the only audit form. Reporting takes the seal on `school.academic-year.closed.v1`. The one cost the correction leaves standing is that Reporting still cannot mark reports superseded on a reopen, because no reopen event exists; that is Appendix E work for a later ADR | This sheet publishes only catalogued keys, which is what Appendix R now cites | Closed | None here; Reporting still cannot mark reports superseded on a reopen, which the change list records as a later Appendix E item | 1 | 2 | 2 | none |
 | 5 | Where the allergy alert is authored | Wellbeing (Appendix J.4, doc 21 section 1.3); School's `MedicalSummary.has_alert` only mirrors that an alert exists | Product owner with the nurse persona | Nurses maintain health data in two screens | 2 | 2 | 4 | none |
 | 6 | `21-performance-engineering.md` section 1.3 caches pickup authorization under `school:pickup`, but `PickupPerson` belongs to Attendance | Attendance owns and caches it; doc 21 row moves to section 1.8 | Architect | None if the row moves; a stale cache owner otherwise | 1 | 1 | 1 | none |
 | 7 | No Appendix C row exists for the leaving pack, rollover stall, decision escalation or clearance escalation messages | Sent through the `RequestNotification` command with templates in Notification; rows proposed for Appendix C | Product owner | Messages exist without a catalog row, so kit-lint R12 cannot check them | 2 | 1 | 2 | RISK-43 |
-| 8 | Closed by ADR-0019. Appendix K.4 now defines `SCHOOL_CONFIGURATION_IN_USE` (409), the name this sheet proposed. Every delete of a campus, building, room, grade level, section, subject, department or house raises it with the dependants in `params`, and the client shows the archive offer (REQ-SCH-007). | The code is raised by every delete in section 5.2, 5.4 and 5.7; the `SCHOOL_VALIDATION_FAILED` workaround is withdrawn from section 5 and section 11 | Closed | None; clients get the archive offer REQ-SCH-007 asks for | 1 | 1 | 1 | none |
 | 9 | `10-data-architecture.md` section 6 names the checksum methods `Directory/<Entity>Checksum` and `Directory/Rooms` | Mapped as stated in section 6.1; doc 10 wording aligned in its next revision | Architect | Two names for one method in the plan | 1 | 1 | 1 | none |
 | 10 | BR-ADM-006 matches applicants on national identifier against students, but no identifier may cross a contract | `FindDuplicateCandidates` takes an HMAC of the identifier under a per-tenant matching key held by School and Admissions only (key inventory in document 12 section 9) | Security reviewer | Without the key, identifier matching falls back to name and date of birth only | 2 | 3 | 6 | none |
-| 11 | Closed by ADR-0019. Appendix R WF-IDN-02 (`MatchProposed → LinkApproved`) now guards on `school.guardians.link`, Appendix B's existing name, which is the permission this sheet checks in section 5.6 | Appendix B kept its existing name and gained no near-duplicate | Closed | None; a generated permission test now targets a string that exists | 1 | 1 | 1 | none |
 | 12 | `05-service-catalog.md` diagram 4.1 draws `assessment.grades.locked.v1` into School, but Appendix E does not list School as a consumer and Saga 4 uses the `ConfirmYearResultsLocked` command instead | No binding; the command is the mechanism | Architect | None | 1 | 1 | 1 | none |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -1256,6 +1332,7 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Saga 4 and Saga 5 diagrams added to section 8; platform notes (section 15.1); signature features; risk table on document 18's scale; open points 2, 4, 8 and 11 closed and point 1 narrowed. Awaiting Group C re-review |
 
 ## How this document is verified
 
@@ -1263,8 +1340,11 @@ Existing identifiers are reused; new ones are minted from `TC-SCH-401` upward, a
 |---|---|---|
 | Every routing key here exists in Appendix E, or is a command or reply document 11 names | kit-lint R19 checks every back-quoted routing key here against Appendix E and document 11, and R27 checks that every key document 11 uses is in Appendix E or is a command or reply it names | Lint |
 | Every event here carries the fields Appendix E quotes for it | `messaging-reviewer` compares the payload fields in section 7 with Appendix E at the Group C review and on every change to this sheet or to Appendix E; TC-SCH-419 once code exists | Review; publisher contract tests |
-| Every permission string exists in Appendix B | `/lint-plan` permission check; `PermissionMatrix.Tests` (TC-SCH-415) | Lint; every pull request |
-| Every error code exists in Appendix K | `/lint-plan` error-code check | Lint |
+| Every permission string exists in Appendix B | kit-lint R19 checks every back-quoted permission in a column headed Permission against Appendix B; the `plan-consistency-checker` agent checks permissions named in prose at the Group C review; `PermissionMatrix.Tests` (TC-SCH-415) once code exists | Lint (`/lint-plan`); Group C review; every pull request |
+| Every error code exists in Appendix K | kit-lint R19 checks every back-quoted `SCHOOL_` code against Appendix K | Lint (`/lint-plan`) |
+| The two saga diagrams of section 8 equal their twins in document 13 §3 | R17 checks each block is a known Mermaid type; the `plan-consistency-checker` agent compares each block line by line with document 13 at the Group C review and on every change to document 13 §3, and a difference is fixed here | Lint; Group C review |
+| Every open point and risk row is scored on document 18's scale, and a score of 12 or more names a register risk that exists | kit-lint R33 and R24 | Lint |
+| Platform notes name a runner for every claim | The `portability-reviewer` agent reads section 15.1 against Appendix X.2 and document 33 at the Group C review | Group C review |
 | The gRPC contract never carries a sensitive field | TC-SCH-418 and `TC-SEC-131` | Contract suite |
 | Every test Appendix R gives WF-SCH-01 to WF-SCH-04 is cited in section 15 | kit-lint R32 fails this sheet when section 15 omits any TC identifier Appendix R lists under a workflow document 13 assigns to School | Lint |
 | Every Appendix R transition of WF-SCH-01 to WF-SCH-04 has its own test | `test-strategist` compares each transition row of WF-SCH-01 to WF-SCH-04 with the test it names and with section 15 at the Group C review and on every change to this sheet or to Appendix R; the tests themselves run in the integration suites | Review; integration suites |

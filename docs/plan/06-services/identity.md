@@ -2,7 +2,9 @@
 
 > Service sheet, plan document 06. Group C. It refines reference architecture Section 8.3 and the Identity row of `05-service-catalog.md`; names come from Appendix L, permissions from Appendix B, events from Appendix E, error codes from Appendix K, workflows from Appendix R and rules from Appendix S. Where this sheet adds something the brief does not state, the addition is listed under Decisions in force or Open points.
 
-**Group** C · **Requirement areas covered** IDN (all 47 rows), plus the credential rows of INT and the authorization rows of SEC · **Last updated** 2026-09-21 by the platform plan
+**Group** C · **Requirement areas covered** IDN (all 47 rows), plus the credential rows of INT and the authorization rows of SEC · **Last updated** 2026-09-26 by the platform plan
+
+## 1. Service at a glance
 
 Identity answers two questions for every request in the product: who is this, and what may they do here. It owns the people who can sign in (staff, guardians, students, platform operators and the seeded super administrator), every credential they hold, the OpenIddict token server that turns those credentials into small tokens, and the authorization model that every other service enforces locally: roles as bundles of Appendix B permissions, one data scope per grant, per-user overrides, time-boxed delegation, four-eyes approval for high-risk grants, access reviews, break-glass and consented impersonation. It also owns every way a person joins a school (invitation, join code, parent self-registration, bulk import, SSO just in time, from Admissions and from Hr) and every way they leave (offboarding with immediate revocation). It is the only issuer of credentials in the system, including tenant API keys and personal access tokens (`23-integrations-and-public-api.md` §2.2).
 
@@ -709,6 +711,160 @@ Identity orchestrates no saga (`13-workflows-and-sagas.md` §1). It owns nine wo
 | Saga 10 Tier migration | Steps 1, 2, 3, 5, 8 for the `identity` schema | `DropDedicatedDatabase` |
 
 Every transition runs through the transition pipeline of `Nibras.BuildingBlocks.Application` and writes `identity.audit.recorded.v1` (`13-workflows-and-sagas.md` §5.1). Timeouts and escalations from Appendix R are the jobs of section 10.
+
+**The nine state machines.** Copied from Appendix R so that the sheet can be built without opening the brief; Appendix R stays the source, and a difference between a copy and its source is a defect in the copy. The guards, expected results and transition tests are Appendix R's tables, cited by range in the table above and in section 15.
+
+**WF-IDN-01 Invitation or join-code joining** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Invited: administrator invites
+    [*] --> CodeEntered: join code entered
+    Invited --> Registered: credentials set
+    CodeEntered --> Registered: credentials set
+    Registered --> Verified: email or mobile proven
+    Verified --> PendingApproval: role and scope requested
+    PendingApproval --> Approved: approver confirms identity
+    PendingApproval --> Rejected: no match in school records
+    Approved --> Activated: role and scope granted
+    Activated --> [*]
+    Rejected --> [*]
+    Invited --> Expired: invitation validity passed
+    CodeEntered --> Expired: code revoked or exhausted
+    Expired --> [*]
+```
+
+**WF-IDN-02 Parent self-registration and child linking** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Registered: parent creates account
+    Registered --> Verified: email and mobile proven
+    Verified --> ClaimSubmitted: child details and evidence supplied
+    ClaimSubmitted --> MatchProposed: candidate student found
+    ClaimSubmitted --> Unmatched: no candidate found
+    Unmatched --> ClaimSubmitted: parent corrects details
+    MatchProposed --> LinkApproved: registrar confirms custody
+    MatchProposed --> LinkRejected: evidence insufficient
+    LinkApproved --> Linked: guardian scope granted
+    Linked --> [*]
+    LinkRejected --> [*]
+```
+
+**WF-IDN-03 Duplicate account merge** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Detected: duplicate candidate raised
+    Detected --> Reviewed: operator compares the accounts
+    Reviewed --> Dismissed: different people
+    Reviewed --> Planned: survivor and victim chosen
+    Planned --> Simulated: dry-run impact produced
+    Simulated --> Merged: operator confirms
+    Simulated --> Planned: plan corrected
+    Merged --> Confirmed: reversal window passed
+    Merged --> Reverted: reversal requested inside the window
+    Confirmed --> [*]
+    Reverted --> [*]
+    Dismissed --> [*]
+```
+
+**WF-IDN-04 Delegation during absence** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Drafted: period and scope chosen
+    Drafted --> Accepted: delegate accepts
+    Drafted --> Declined: delegate refuses
+    Accepted --> Active: start date reached
+    Active --> Ended: end date reached
+    Active --> Revoked: delegator or administrator cancels
+    Ended --> [*]
+    Revoked --> [*]
+    Declined --> [*]
+```
+
+**WF-IDN-05 Role change with four-eyes approval** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: role or scope proposed
+    Requested --> UnderReview: risk classified
+    UnderReview --> Approved: low risk, one approver
+    UnderReview --> AwaitingSecondApproval: high risk
+    AwaitingSecondApproval --> Approved: second approver confirms
+    AwaitingSecondApproval --> Rejected: second approver refuses
+    UnderReview --> Rejected: refused at first review
+    Approved --> Propagated: permissions pushed and sessions refreshed
+    Requested --> Withdrawn: requester cancels
+    Propagated --> [*]
+    Rejected --> [*]
+    Withdrawn --> [*]
+```
+
+**WF-IDN-06 Offboarding and access revocation** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Triggered: leaving date reached or offboarding requested
+    Triggered --> Revoked: sessions and tokens killed
+    Revoked --> ReassignmentPending: classes, tasks, approvals listed
+    ReassignmentPending --> Reassigned: every item has a new owner
+    ReassignmentPending --> Escalated: items unclaimed past the deadline
+    Escalated --> Reassigned: administrator assigns
+    Reassigned --> Archived: profile closed, history retained
+    Archived --> [*]
+```
+
+**WF-SEC-01 Access review campaign** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Scheduled: scope and deadline set
+    Scheduled --> Opened: reviewer packets distributed
+    Opened --> InProgress: first decision recorded
+    InProgress --> Completed: all items decided
+    InProgress --> Overdue: deadline passed with items open
+    Overdue --> Completed: undecided access revoked
+    Completed --> Certified: report signed and stored
+    Scheduled --> Cancelled: campaign withdrawn
+    Certified --> [*]
+    Cancelled --> [*]
+```
+
+**WF-SEC-02 Break-glass access** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: reason and incident reference given
+    Requested --> Granted: policy conditions met
+    Requested --> Denied: conditions not met
+    Granted --> Active: elevated session opened
+    Active --> Expired: time box reached
+    Active --> Revoked: security administrator closes it early
+    Expired --> UnderReview: mandatory post-use review
+    Revoked --> UnderReview: mandatory post-use review
+    UnderReview --> Closed: review signed off
+    Closed --> [*]
+    Denied --> [*]
+```
+
+**WF-SEC-03 Consented impersonation** (Appendix R, copied)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Requested: agent states reason and duration
+    Requested --> ConsentPending: user asked in-app
+    ConsentPending --> Consented: user agrees
+    ConsentPending --> Refused: user declines or ignores
+    Consented --> Active: impersonated session opened
+    Active --> Ended: agent closes or duration reached
+    Active --> Terminated: user revokes consent mid-session
+    Ended --> Logged: session transcript sealed
+    Terminated --> Logged: session transcript sealed
+    Logged --> [*]
+    Refused --> [*]
+```
 
 ---
 
@@ -1946,7 +2102,7 @@ src/Services/Identity/                                                Identity a
 │   │   ├── IIdentityRepository.cs                                    load and save tenant aggregates
 │   │   ├── IIdentityRegistry.cs                                      persons, identifiers, credentials; used only by the sign-in, credential and chooser features
 │   │   ├── IIdentityReadContext.cs                                   AsNoTracking sources for read models
-│   │   ├── IPasswordHasher.cs                                        Argon2id with pinned parameters and rehash on raise
+│   │   ├── IPasswordHasher.cs                                        Argon2id with pinned parameters and rehash on raise; the password is NFKC-normalized first
 │   │   ├── IBreachedPasswordList.cs                                  offline breached-password lookup
 │   │   ├── ITotpVerifier.cs                                          TOTP code check with single-use windows
 │   │   ├── IPasskeyVerifier.cs                                       WebAuthn attestation and assertion checks
@@ -2130,6 +2286,19 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 | TC-IDN-123 | `SeedGuard` fails start-up in Staging with the documented default configured and leaves the database untouched | Integration |
 | TC-IDN-124 | Reference-copy reconciliation repairs a missing staff row and records the mismatch | Integration |
 | TC-IDN-125 | Every endpoint in section 5 has an OpenAPI operation with `x-nibras-permission` from Appendix B or the documented `self` marker | Contract, `TC-TST-201` generator |
+| TC-IDN-750 | A guardian's mobile number entered with Arabic-Indic digits (٠-٩), Eastern Arabic-Indic digits (۰-۹) or Latin digits, with or without spaces and a leading zero, is stored once in E.164 and resolves to the same account; a one-time code typed in Arabic-Indic digits verifies; both hold with the process culture set to `ar-SA` and to `en-US` (REQ-L10N-013, REQ-PLAT-019) | Integration |
+| TC-IDN-751 | A password that contains Arabic letters, set from one client, verifies when the same characters arrive from a client whose keyboard emits a different Unicode normalization form, because the password is normalized (NFKC) before Argon2id; a password differing only by an Arabic diacritic stays a different password | Unit and integration |
+
+### Platform notes
+
+| Concern | What holds here | Proof and runner |
+|---|---|---|
+| Runner | Unit, integration, contract and generated suites run on the Linux runner (`ubuntu-latest`); Identity is not among the projects document 33 part 4 runs on Windows (`BuildingBlocks`, `Documents`, `Localization`), and the authorization building block it relies on is tested there. `dev-smoke` on `ubuntu-latest`, `windows-latest` and `macos-latest` starts it with every other service and waits for it to report ready | Document 33 part 4; `15-deployment-and-operations.md` §4.4 |
+| Culture-sensitive values | Contacts, codes, tokens, key prefixes and permission strings are machine-facing: digits are normalized before validation, comparisons are ordinal, and dates in tokens are Unix seconds; the permission catalog's Arabic search folds with `nibras_ar_fold` | `TC-IDN-750`, `TC-IDN-751`, `TC-IDN-113` |
+| Right-to-left output | Identity renders no document; its sign-in, consent and joining screens are the web and mobile clients' (documents 08 and 09), and its messages (invitation, one-time code, new-device alert) are rendered by Notification in the person's language | `TC-NOT-604` and `TC-NOT-618` (Notification sheet), the Arabic template and SMS tests that the Notification sheet's right-to-left row cites, on `ubuntu-latest` |
+| Devices without Google services | Sign-in never depends on them: passkeys are offered but never required, so a device without the Google credential services signs in with a password and TOTP or the parent's one-time code (`TC-IDN-104`); the new-device alert reaches such a device in-app while it is open and otherwise by email | `TC-NOT-610` (Notification sheet) for the alert; `TC-IDN-104` |
+
+**Signature features.** Identity owns none. It is what features 14 (trust by design: consent records and every credential change audited), 15 (the demo runs on ordinary accounts that the one-click reset re-seeds) and 31 (guardian transparency, whose break-glass and impersonation reads Identity's WF-SEC-02 and WF-SEC-03 record) depend on, cited by their Appendix W numbers. Each feature's moment, rung, autonomy, the requirements and slices that build it, its Appendix O step and its demo test are held once, in the "Signature feature trace" table of `32-product-differentiation-and-demo.md`, and are not copied here.
 
 ---
 
@@ -2144,14 +2313,16 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 | Messaging | Standard lane for lifecycle and copies; `identity.permissions.changed.v1` consumers elsewhere read it on their urgent lane (`11-messaging-architecture.md` §1.3) | End-to-end revocation above 5 s |
 | Tier migration | `identity` schema moves with the tenant; `identity_registry` stays shared because a person spans tenants | A regulator requiring the credential store per tenant |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A stale permission set is honoured after revocation | med | high | Version in the token and the cache key, broadcast L1 eviction, `TC-SEC-038`, `TC-SEC-047` | Identity lead |
-| Credential stuffing against parent accounts at scale | high | high | `auth` policy, lockout, breached list, new-device alert, passkeys offered | Security lead |
-| The seeded administrator shipped with the default password | low | critical | `SeedGuard`, Production block until changed and 2FA enrolled, secret scan | Identity lead |
-| The platform-scoped registry becomes a cross-tenant leak path | low | critical | Dedicated context, architecture test, isolation suite extended to the chooser, no tenant data in the registry | Architect |
-| Identity unavailable at first period | low | high | Token validation is local everywhere; refresh is the only hard dependency; 4 replicas at peak; last-known permission sets for 60 s | Platform operations |
-| A guardian linked against a court order | low | critical | School eligibility check with no fallback, reviewer sees the safeguarding note through School, `TC-IDN-015` | Safeguarding lead |
+Likelihood (L) and impact (I) use the 1 to 5 scales of `18-risk-register.md` Section 1; Score is L times I, and a row scoring 12 or more names the register risk that covers it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A stale permission set is honoured after revocation | 3 | 4 | 12 | Version in the token and the cache key, broadcast L1 eviction, `TC-SEC-038`, `TC-SEC-047` | Identity lead | RISK-13 |
+| Credential stuffing against parent accounts at scale | 4 | 4 | 16 | `auth` policy, lockout, breached list, new-device alert, passkeys offered | Security lead | RISK-50 |
+| The seeded administrator shipped with the default password | 2 | 5 | 10 | `SeedGuard`, Production block until changed and 2FA enrolled, secret scan | Identity lead | RISK-25 |
+| The platform-scoped registry becomes a cross-tenant leak path | 2 | 5 | 10 | Dedicated context, architecture test, isolation suite extended to the chooser, no tenant data in the registry | Architect | RISK-20 |
+| Identity unavailable at first period | 2 | 4 | 8 | Token validation is local everywhere; refresh is the only hard dependency; 4 replicas at peak; last-known permission sets for 60 s | Platform operations | none |
+| A guardian linked against a court order | 2 | 5 | 10 | School eligibility check with no fallback, reviewer sees the safeguarding note through School, `TC-IDN-015` | Safeguarding lead | none |
 
 ---
 
@@ -2168,7 +2339,8 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 | The impersonation workflow runs in Identity, with the Platform support console calling Identity's routes | `31-business-rules-and-workflows.md` assigns WF-SEC-03 to Identity; `12-security-privacy-safety.md` §3.6 draws Platform in front | As stated | Running it in Platform would need a synchronous token-issuing call from Platform to Identity |
 | Login history of 7 years is Audit's; Identity keeps `login_events` only as a short working set | Appendix F lists `LoginEvent` under Audit; `10-data-architecture.md` §1 partitions `login_events` in Identity | 90 days in Identity | A longer window only costs storage |
 | Offboarding starts from `POST /offboarding-cases` or from `school.staff.left.v1`; reassignment of tasks and approvals is done by Requests on `identity.user.deactivated.v1`, and of teaching assignments by Academics | Appendix R WF-IDN-06, Appendix E consumers | As stated | Identity would otherwise need write access to other services' data |
-| On deactivation, force sign-out, offboarding revocation and tenant access revocation Identity writes a revoked-subject mark `state:revoked:{tenant}:{userId}` in `redis-state` with the 15-minute access-token lifetime as expiry; the Gateway refuses a token whose subject carries the mark (TC-IDN-056) | Appendix R WF-IDN-06 "request refused at the gateway"; access tokens are validated locally | As stated; the prefix is Open point 9 | Without it a leaver keeps a valid access token for up to 15 minutes |
+| On deactivation, force sign-out, offboarding revocation and tenant access revocation Identity writes a revoked-subject mark `state:revoked:{tenant}:{userId}` in `redis-state` with the 15-minute access-token lifetime as expiry; the Gateway refuses a token whose subject carries the mark (TC-IDN-056) | Appendix R WF-IDN-06 "request refused at the gateway"; access tokens are validated locally | As stated; the prefix and the Gateway's read are in `21-performance-engineering.md` §2.2 and §2.3 | Without it a leaver keeps a valid access token for up to 15 minutes |
+| A password is Unicode-normalized (NFKC) before it is hashed or checked, and contact digits are normalized to Latin before an E.164 lookup | NIST SP 800-63B §5.1.1.2 recommends normalizing passwords; REQ-L10N-013 stores phones in E.164; REQ-PLAT-019 | As stated | An Arabic password typed on a second phone would fail to verify, and a number typed in Arabic-Indic digits would miss its account (`TC-IDN-750`, `TC-IDN-751`) |
 | Identity does not publish `identity.audit.recorded.v1` for reads of its own non-sensitive lists; it does for every explainer call, every credential change and every sign-in | Appendix J rule 8 applies to sensitive reads only | As stated | Auditing every list read would multiply the audit volume without evidential value |
 
 ## Dependencies on other documents
@@ -2201,7 +2373,7 @@ Rule test classes (`31-business-rules-and-workflows.md` §2, table-driven from A
 | 6 | BR-IDN-009 examples use a 60-minute impersonation window, Appendix R WF-SEC-03 caps sessions at 30 minutes | 30 minutes | Security lead | A longer default widens the exposure window | 1 | 2 | 2 | none |
 | 7 | Appendix A3 lists service accounts; Appendix B has no permission to manage them | The registry is deployment configuration, changed by pull request, not a tenant screen | Architect | None for tenants | 2 | 1 | 2 | none |
 | 8 | The `own-homeroom` anchor needs the homeroom teacher of a section, which no Appendix E payload carries | Each consuming service resolves `own-homeroom` from its own section copy; Identity passes only the scope kind | School and Academics sheet owners | A homeroom teacher change is seen per service rather than once | 2 | 2 | 4 | RISK-15 |
-| 9 | `21-performance-engineering.md` §2.2 does not list a `state:revoked:` prefix, and §2.3 gives `svc_gateway` no read on it | Add the prefix with Identity as writer and the Gateway as reader | Architect, update to document 21 | Without it the leaver rule of WF-IDN-06 holds only after the 15-minute token lifetime | 2 | 3 | 6 | none |
+| 9 | `21-performance-engineering.md` §2.2 did not list a `state:revoked:` prefix, and §2.3 gave `svc_gateway` no read on it | Add the prefix with Identity as writer and the Gateway as reader | Architect | Closed 2026-09-26: document 21 §2.2 lists `state:revoked:{tenant}:{userId}` ("Identity writes, Gateway reads") with the 15-minute expiry, and §2.3 gives `svc_gateway` read-only `~state:revoked:*`, so the leaver rule of WF-IDN-06 holds at the Gateway within its 5-second L1 (`TC-IDN-056`) | 1 | 1 | 1 | none |
 | 10 | Decisions in force states the platform-scoped `identity_registry` schema, with no `tenant_id` and outside row-level security, "as stated, pending ADR"; no ADR in `docs/project/DECISIONS/` records it yet | One credential set per person across tenants in `identity_registry`, reached only through its dedicated context, with the tenant-isolation suite extended to the tenant chooser (section 16) | Architect, ADR | A registry that holds tenant data, or a context reachable from tenant code, is a cross-tenant path; per-tenant credentials instead would break the one-parent-many-schools promise | 2 | 5 | 10 | RISK-20 |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).

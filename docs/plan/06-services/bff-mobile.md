@@ -21,6 +21,8 @@ Bff.Mobile is the only endpoint the Flutter application talks to (`09-mobile-str
 | Sensitivity | "passes through, stores nothing" | `05-service-catalog.md` |
 | Route prefix | `/bff/mobile/v1/`, `bearerAuth` only | `22-api-conventions-and-error-catalog.md` §1.1, §11.3 |
 
+**Signature features.** Bff.Mobile owns three Appendix W features: 34, teacher five-minute mode (demo test `TC-MOB-003` (Appendix W)); 35, parent calm screen (`TC-MOB-004` (Appendix W)); and 44, low-bandwidth mode (`TC-MOB-005` (Appendix W)). It also carries feature 12, offline-first mobile (the sync contract of section 4.3), and the flavor values of feature 16, white-label mobile apps (`config/remote`). The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities and non-responsibilities
@@ -67,7 +69,7 @@ Bff.Mobile is the only endpoint the Flutter application talks to (`09-mobile-str
 | REQ-BFF-001, REQ-BFF-002 | No rule, no bypassing write; one call per screen |
 | REQ-MOB-020, REQ-MOB-029, REQ-MOB-034 | Badge counts from the server, forced and recommended update with the outbox surviving, a school day under 2 MB |
 | REQ-MOB-007, REQ-MOB-010, REQ-MOB-017 | Offline actions replay once through this host; per-student merge decided by Attendance |
-| REQ-MOB-008 | Clinic, wellbeing, approvals and payments are online-only: the sync dispatcher refuses those action types |
+| REQ-MOB-008 | Clinic, wellbeing, approvals and payments are online-only: the sync dispatcher refuses those action types, with one exception while Open Question 29 is open: the student's own daily check-in answer, which the plan's default queues on the device (open point 5) |
 | REQ-PERF-009, REQ-PERF-010 | Cold start under 3 s needs the home under 24 KB; scale to the 08:00 peak |
 | REQ-SEC-003, REQ-SEC-005 | Caller token forwarded; generated isolation and permission suites cover every route |
 | REQ-GW-007, REQ-GW-008 | Partial regions when an upstream is down; correlation id forwarded |
@@ -159,6 +161,8 @@ The `actionType` values are the device outbox names of `09-mobile-structure.md` 
 | `operations.library.*`, `operations.inventory.*`, `operations.transport.boarding` | Operations operations (Tier 2) | Append-only |
 
 Action types for clinic visits, wellbeing records, approvals of any kind and payments are refused by the dispatcher with `BFF_VALIDATION_FAILED` and `params.reason = "onlineOnly"` (Appendix M.1, REQ-MOB-008); the app never queues them, so a refusal here means a defective client.
+
+**The one wellbeing exception, and why it is not settled.** Open Question 29 is still open. The default in force is what the plan builds: the student's daily check-in answer code waits in the device's encrypted outbox until sync, write-only and never readable back (Appendix R WF-WEL-05, `34-work-breakdown.md` SL-WEL-619). Under that default the dispatcher accepts that single action and forwards it, with its key and `occurredAt`, to Wellbeing `POST /api/v1/wellbeing/check-ins/sync`; it caches nothing of it, logs only the action type and result, and never returns it in a delta. **Until the question is decided this default contradicts the rule that wellbeing data never reaches a device** (master brief Section 20, Appendix M.1, REQ-WEL-002), and this sheet does not present that rule as held for the check-in. The recommended answer is online only: the dispatcher would then refuse the check-in like every other wellbeing action, and the exception and its test would be removed. The risk is RISK-47 (open point 5).
 
 **Never shed.** When an upstream's circuit is open or it answers 429 or 503, the affected actions return `deferred` with `retryAfter`, and the rest of the batch proceeds; the device keeps deferred actions pending with their original keys (N-08: "the API never sheds a sync batch, it queues it"). The batch route itself is exempt from the per-user rate limit of the Web building block and has its own concurrency limit per device of one batch in flight.
 
@@ -311,13 +315,13 @@ Threat rows: `12-security-privacy-safety.md` §2.21 T-GW-01 (tenant header accep
 | Internal | Timetable, reference data, permissions |
 | Confidential | Home regions, delta pages, roster and pickup lists, sync results: per-user, never stored beyond the short cache entries of section 11 |
 | Sensitive | Never forwarded into any entity group; passes through only on online-only pass-through reads with `no-store` (for example a guardian's own gate-pass code) |
-| S (Wellbeing) | Online-only pass-through with `no-store`; never in a delta, a home region beyond counts, a log or a cache |
+| S (Wellbeing) | Online-only pass-through with `no-store`; never in a delta, a home region beyond counts, a log or a cache. The one exception, while Open Question 29 is open, is the student's own check-in answer code arriving from the device outbox and forwarded once to Wellbeing (section 4.3, open point 5) |
 
 | Never | What |
 |---|---|
 | Cached | The items listed under "Never cached" in section 11 |
 | Logged | Request and response bodies, action payloads, delta tokens, push tokens; logs carry route, action type, result status, Appendix K code, tenant id and correlation id |
-| Sent to a device | Anything at Sensitive or level S in a synced entity group (Appendix M.1: "The device cache holds nothing classified sensitive in Appendix J"); the watchlist; another family's data on a personal device |
+| Sent to a device | Anything at Sensitive or level S in a synced entity group (Appendix M.1: "The device cache holds nothing classified sensitive in Appendix J"); the watchlist; another family's data on a personal device. Bff.Mobile never sends the check-in answer to a device; under the default in force of Open Question 29 the device itself holds the pending answer code until sync, which is the contradiction of open point 5 |
 
 The delta token is signed with a per-tenant HMAC key held in the secret store and rotated with an overlap window; a token signed with a retired key is treated as expired and forces a full refresh, never an error the person must handle. Kiosk devices authenticate with the device-bound credential issued by Identity, scoped to `attendance.student-attendance.mark` (kiosk source) and `attendance.safety.visitors.check-in` (`09-mobile-structure.md` part 6).
 
@@ -511,6 +515,19 @@ New identifiers are minted from `TC-BFF-101` upward, numbers 101 to 160 (Bff.Web
 | TC-BFF-125 | Caching | Tenant and user in every key; version policy evicted by the settings broadcast within 2 s |
 | TC-BFF-126 | Integration | Delta-token key rotation: a token signed with the retired key forces a full refresh, not an error |
 | TC-BFF-127 | Architecture | `Nibras.Bff.Mobile` references no `Nibras.<S>.*` assembly (with TC-TST-114) |
+| TC-BFF-760 | Unit | With the process culture set to `ar-SA`, `en-US` and `de-DE` in turn, `X-Nibras-Client: mobile-android/2.3.1` parses to the same version and policy, a delta token round-trips to the same checkpoint, and `occurredAt` values with Arabic-locale devices' offsets are read as the same instants; every value the host parses or writes uses the invariant culture (REQ-PLAT-019) |
+| TC-BFF-761 | Integration | A device registered with `pushStrategy: none` is accepted and passed to Notification as a device without push; with the app open it receives the unread counts and the realtime channel through the hub route, and a pull on opening returns the same changes a silent push would have triggered on a device with Google services (REQ-NOT-019, REQ-MOB-038) |
+| TC-BFF-762 | Integration | Under the default in force of Open Question 29, a queued check-in answer code is forwarded once to Wellbeing's check-in sync with its key and `occurredAt`, a second delivery returns the first response, nothing of it enters a cache, a log body or a delta, and every other wellbeing action type is still refused as in TC-BFF-108. If the question is answered online only, this test becomes a refusal case with the rest of TC-BFF-108 |
+
+### 14.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | The host's unit, integration, contract and generated suites run on `ubuntu-latest` in `ci-service.yml`; the Flutter client it serves is built and golden-tested on the Linux runner (authoritative), its iOS goldens and archive on the macOS runner (`ci-mobile-ios.yml`), and the desktop kiosk build on the Windows and Linux runners (document 33 part 4). The one-command start that brings the host up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `ci-mobile.yml`, `ci-mobile-ios.yml`, `dev-smoke.yml` | ubuntu for the host; mobile on ubuntu, macos and windows as listed |
+| Culture and time | The host parses only machine values (client versions, delta tokens, instants) and parses them with the invariant culture; the tenant's languages, numerals, time zone and calendars travel to the app in `me/bootstrap`, and the app formats with them | TC-BFF-760; `TC-PLAT-010` (document 33), a 30-day-old delta token replayed; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only; device pass for `TC-PLAT-010` |
+| Right-to-left output | The host renders nothing; every mobile screen it feeds is right-to-left in Arabic, proven on the client | Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2), accepted only from the Linux runner (`TC-PLAT-016` (document 33)); `TC-PLAT-009` (document 33), three Arabic screens on each device of the device pass | Linux; device pass |
+| Arabic search and collation | None here: searches are passed through unchanged to the owning service | not applicable | not applicable |
+| Devices without Google services | This host is where such a device meets the product: it registers with `pushStrategy: none`, gets no silent push, and so syncs on opening, on reconnecting and on the 15-minute foreground timer (`09-mobile-structure.md` §3.5), with the realtime channel carrying new items while the app is open | TC-BFF-761; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7, which covers sign-in, offline attendance sync and the in-app channel | Linux; device pass, per release |
 
 ---
 
@@ -523,13 +540,16 @@ New identifiers are minted from `TC-BFF-101` upward, numbers 101 to 160 (Bff.Web
 | Sync storm | One batch in flight per device, grouping per upstream, deferral instead of shedding, silent-push jitter set by Notification | Deferral rate above 5 percent for 5 minutes |
 | Upstream fan-out | Delta pull asks at most one source per entity group; homes at most one call per region | A group needing two sources on every pull |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A teacher's offline work lost or applied twice | med | high | Idempotency keys forwarded per action, ordered dispatch, deferral, TC-BFF-104 to TC-BFF-107, TC-MOB-701 to TC-MOB-710 | Mobile lead |
-| A silent conflict | low | high | Conflict fields mapped verbatim for the banner rule, TC-BFF-109 | Mobile lead with Attendance lead |
-| Sensitive data reaches a device | low | critical | Entity groups exclude Sensitive and S by construction, `no-store` pass-through, TC-BFF-115, TC-BFF-123, TC-MOB-704 | Privacy officer |
-| An old app breaks after a server change | med | high | Version policy, `v1` kept while any tenant minimum needs it, pacts against the Bff.Mobile OpenAPI | Tech lead |
-| Delta token forged or replayed across tenants | low | high | HMAC per tenant, tenant check, 30-day expiry, revocation on unregister | Security owner |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A teacher's offline work lost or applied twice | 3 | 4 | 12 | Idempotency keys forwarded per action, ordered dispatch, deferral, TC-BFF-104 to TC-BFF-107, TC-MOB-701 to TC-MOB-710 | Mobile lead | RISK-09 |
+| A silent conflict | 2 | 4 | 8 | Conflict fields mapped verbatim for the banner rule, TC-BFF-109 | Mobile lead with Attendance lead | RISK-09 |
+| Sensitive data reaches a device through a synced entity group | 2 | 5 | 10 | Entity groups exclude Sensitive and S by construction, `no-store` pass-through, TC-BFF-115, TC-BFF-123, TC-MOB-704 | Privacy officer | RISK-24 |
+| A student's level S check-in answer rests on a shared or lost device under the default in force of Open Question 29 | 4 | 5 | 20 | Write-only outbox entry, never readable back, forwarded once and never cached (TC-BFF-762); the recommended answer, online only, removes the path | Privacy officer, then the product owner | RISK-47 |
+| An old app breaks after a server change | 3 | 4 | 12 | Version policy, `v1` kept while any tenant minimum needs it, pacts against the Bff.Mobile OpenAPI | Tech lead | RISK-58 |
+| Delta token forged or replayed across tenants | 2 | 4 | 8 | HMAC per tenant, tenant check, 30-day expiry, revocation on unregister | Security owner | none |
 
 ---
 
@@ -537,7 +557,7 @@ New identifiers are minted from `TC-BFF-101` upward, numbers 101 to 160 (Bff.Web
 
 | Decision | Source | Default if unanswered | Impact if wrong |
 |---|---|---|---|
-| Route prefix `/bff/mobile/v1/` | `22-api-conventions-and-error-catalog.md` §1.1 and Spectral rule | As stated | Documents 09, 15 and Appendix N write `/api/mobile`, `/config/version` and `/bff-mobile/...`; Open point 1 |
+| Route prefix `/bff/mobile/v1/` | `22-api-conventions-and-error-catalog.md` §1.1 and Spectral rule; document 09 uses the same prefix | As stated | Document 15 and Appendix N still write `/bff-mobile/...` for two load and alert paths; Open point 1 |
 | The app talks to Bff.Mobile only, so single-service screens use an allow-listed pass-through | `09-mobile-structure.md` (Dio against Bff.Mobile only); `12-security-privacy-safety.md` §1.2 | As stated | A per-screen composed endpoint for every mobile screen would multiply routes without adding value |
 | Conflict rules are decided by the owning service; Bff.Mobile maps outcomes | Appendix M.3 | As stated | A rule here would be business logic in a BFF (REQ-BFF-001) |
 | The server never refuses a request because of the app version | Master brief Section 37 | As stated | A refusal would strand queued work on a device that cannot yet upgrade |
@@ -557,14 +577,15 @@ New identifiers are minted from `TC-BFF-101` upward, numbers 101 to 160 (Bff.Web
 
 ## Open points
 
-**Closed by ADR-0019 (brief v9.1).** Appendix K.23 now carries `BFF_APP_VERSION_BELOW_MINIMUM` (403, parent-safe), so the missing code this sheet reported exists. The sheet's behaviour does not change: master brief Section 37 still forbids refusing a request because of the app's version, so section 11.4 lists the code as one Bff.Mobile never raises, and the `block` outcome keeps travelling in `config/version` and the response headers. The remaining points are renumbered.
+**Closed by ADR-0019 (brief v9.1).** Appendix K.23 now carries `BFF_APP_VERSION_BELOW_MINIMUM` (403, parent-safe), so the missing code this sheet reported exists. The sheet's behaviour does not change: master brief Section 37 still forbids refusing a request because of the app's version, so section 10 lists the code as one Bff.Mobile never raises, and the `block` outcome keeps travelling in `config/version` and the response headers. The remaining points are renumbered.
 
 | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|
-| 1. `09-mobile-structure.md` §5.2 uses `apiBaseUrl .../api/mobile` and `/config/version`; Appendix N and `15-deployment-and-operations.md` write `/bff-mobile/home/principal` and `/bff-mobile/sync/batch`; document 22 requires `/bff/mobile/v1/` | `/bff/mobile/v1/` everywhere; the flavor file's `apiBaseUrl` becomes `https://<host>/bff/mobile/v1` and `minimumVersionPolicyUrl` becomes `/bff/mobile/v1/config/version` | Mobile lead | The Gateway route and the app's base URL disagree on the first build | 2 | 2 | 4 | none |
+| 1. Document 09's half is closed: `09-mobile-structure.md` now uses `/bff/mobile/v1/`, with `minimumVersionPolicyUrl` at `/bff/mobile/v1/config/version`. Still open: Appendix N and `15-deployment-and-operations.md` write `/bff-mobile/home/principal` and `/bff-mobile/sync/batch`, where document 22 requires `/bff/mobile/v1/` | `/bff/mobile/v1/` everywhere; the load scenarios and the `MobileSyncRejections` alert read `/bff/mobile/v1/home/principal` and `/bff/mobile/v1/sync/batch` | Mobile lead, with the Appendix N owner and the document 15 owner | A load scenario or an alert rule written against the old path measures nothing until it is corrected. The app and the Gateway already agree | 2 | 2 | 4 | none |
 | 2. Only Attendance names a change feed for its entity group; the other sources (Scheduling, School, Communication, Requests, Behavior, Identity) do not yet name one | Each source exposes `GET .../changes?checkpoint=` in its sheet; until it does, its group is served as a snapshot with `ETag`, which is correct but costs data | Tech lead, per service sheet | Teacher data usage rises towards the 2 MB budget (TC-MOB-715) | 3 | 2 | 6 | none |
 | 3. `09-mobile-structure.md` §2.7 matches visitors against "the cached list" in gate mode; the Attendance sheet never sends the watchlist to a device | Offline check-ins queue and are matched on the server at sync; gate mode shows "watchlist not checked offline" on the pending row | Security owner with the mobile lead | A device-held watchlist would put names and instructions on a device that can be lost | 2 | 4 | 8 | none |
 | 4. Bus attendant mode needs an Operations transport read permission that Appendix B lists only as `operations.transport.view` without a mode scope | `operations.transport.view` scoped to the attendant's route through the device session | Operations lead | An attendant could read other routes' rosters | 2 | 3 | 6 | none |
+| 5. Open Question 29, still open: may a student's level S check-in answer wait in the device's encrypted outbox until sync, or must the check-in be online only? | The default in force is what the plan builds (Appendix R WF-WEL-05, SL-WEL-619): the answer code waits in the outbox, write-only, and this host forwards it once to Wellbeing (section 4.3, TC-BFF-762). **Until decided, this default contradicts the rule that wellbeing data never reaches a device.** Recommended answer: online only, which removes the exception here and in SL-WEL-619 | Privacy officer, then the product owner | A level S answer rests on a shared or lost device; if online only is chosen, a student without connectivity cannot check in and the exception and TC-BFF-762 are withdrawn | 4 | 5 | 20 | RISK-47 |
 
 ## Review record
 
@@ -576,9 +597,12 @@ New identifiers are minted from `TC-BFF-101` upward, numbers 101 to 160 (Bff.Web
 
 | Claim | Proof | Where it runs |
 |---|---|---|
-| Owns no data, no event, no rule | TC-BFF-127 and TC-TST-114; no `Persistence/` or `Messaging/` folder | `tests/Architecture.Tests`, review |
+| Owns no data, no event, no rule | TC-BFF-127 and TC-TST-114 once code exists, built with the SL-TST-003 architecture test pack; `architecture-reviewer` checks that the section 13 tree has no `Persistence/` or `Messaging/` content at the Group C review and on every change to this sheet | `tests/Architecture.Tests`, review |
 | The sync contract matches Appendix M and document 09 | TC-BFF-101 to TC-BFF-113 and TC-MOB-701 to TC-MOB-710 | Host test project, device pass |
 | Never sheds a sync batch | TC-BFF-107, TC-BFF-119 and the `MobileSyncRejections` alert | Load tier, production |
 | Version policy per master brief Section 37 | TC-BFF-102, TC-BFF-103, TC-MOB-713 | Host tests, device pass |
-| Every gate permission exists in Appendix B | `/lint-plan` cross-check; TC-BFF-118 once code exists | Lint, pipeline |
+| Every gate permission exists in Appendix B | `tools/kit-lint` rule R19 (permission strings in every column whose header names a permission, which includes the "Permission (gate)" column of section 4.1, against Appendix B); `plan-consistency-checker` checks the allow-list of section 4.4 against Appendix B at the Group C review and on every change to this sheet; TC-BFF-118 once code exists | Lint, review, pipeline |
 | Every tree entry has a purpose comment | `tools/kit-lint` rule R18 | Lint |
+| Open Question 29 is stated with its default, its contradiction and its risk, never as settled | `plan-consistency-checker` compares section 4.3, section 12 and open point 5 with the question's row in `docs/project/OPEN_QUESTIONS.md` whenever that row changes; kit-lint R33 (the open point is scored and, at 20, names RISK-47) and R24 (the score is L times I and RISK-47 exists) | Review; lint |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 14.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 and R34 (each demo test defined once and run by its demo step) | Review; lint |

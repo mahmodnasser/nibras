@@ -536,3 +536,35 @@ test('R33 requires scored open points, a register link at 12 or more, and owned 
   assert.match(m, /Threat table has no Owner role column/);
   assert.doesNotMatch(m, /Minor/);
 });
+
+test('R34 requires every signature feature to have a step that runs its demo test, and every step a phase', () => {
+  const f = only('R34-demo-coverage', {
+    'docs/brief/02-appendices/appendix-w-feature-register.md': '# W\n\n| # | Feature | Demo |\n|---|---|---|\n| 1 | Morning brief | TC-RPT-001 |\n| 2 | Sixty-second attendance | TC-ATT-810 |\n| 3 | Live interface | TC-UX-001 |\n| 4 | Scaling: moved to engineering capabilities | None |\n| 5 | Emergency mode | TC-ATT-813 |\n',
+    'docs/brief/02-appendices/appendix-o-demo-script.md': '# O\n\nFeature 3 is guarded by TC-UX-001.\n\n| Min | Persona | What happens | Feature | Test | Phase |\n|---|---|---|---|---|---|\n| 1 | Principal | Brief | 1 | TC-RPT-001 | 4 |\n| 2 | Teacher | Register | 2 | TC-ATT-003 | 2 |\n| 3 | Officer | Drill | 5 | TC-ATT-813 | |\n',
+  });
+  const m = messages(f);
+  assert.match(m, /Feature 2 is shown in step 2 but no such step runs its demo test TC-ATT-810/);
+  assert.match(m, /Demo step 3 does not say which phase/);
+  assert.doesNotMatch(m, /Feature 1 |Feature 3 |Feature 4 /);
+});
+
+test('R35 requires every Tier 2 requirement built in phases 1 to 4 to be listed in document 17, and nothing else', () => {
+  const f = only('R35-tier-ahead', {
+    'docs/plan/03-requirements-catalog.md': '# 03\n\n| ID | Requirement | Tier |\n|---|---|---|\n| REQ-ATT-001 | Mark | 1 |\n| REQ-ATT-002 | Kiosk | 2 |\n| REQ-ATT-003 | Face | 3 |\n',
+    'docs/plan/34-work-breakdown.md': '# 34\n\n### 3. Phase 1: Foundation\n\n| SL-ATT-001 | x | Attendance | 2 | REQ-ATT-001, REQ-ATT-002 | x | none |\n\n### 7. Phase 5: Extended\n\n| SL-ATT-600 | x | Attendance | 2 | REQ-ATT-003 | x | none |\n',
+    'docs/plan/17-roadmap.md': '# 17\n\n| Capability | What |\n|---|---|\n| CAP-ATT-01 | Take attendance |\n\n### Requirements built ahead of their tier\n\n| Requirement | Tier | Slices | Phase | Why it is built early |\n|---|---|---|---|---|\n| REQ-ATT-003 | 3 | SL-ATT-600 | 5 | stale |\n',
+  });
+  const m = messages(f);
+  assert.match(m, /REQ-ATT-002 is Tier 2 but SL-ATT-001 builds it/);
+  assert.match(m, /REQ-ATT-003 is listed as built ahead of its tier, but no phase 1 to 4 slice builds it/);
+  assert.doesNotMatch(m, /REQ-ATT-001/);
+});
+
+test('R24 requires a risk row scoring 12 or more to name a RISK in document 18', () => {
+  const f = only('R24-risk-tables', {
+    'docs/plan/18-risk-register.md': '# 18\n\n| Id | Risk | L | I | Score |\n|---|---|---|---|---|\n| RISK-01 | Late | 3 | 4 | 12 |\n',
+    'docs/plan/06-services/attendance.md': '# Attendance\n\n| Risk | L | I | Score | In the register |\n|---|---|---|---|---|\n| Pool exhaustion | 3 | 4 | 12 | Not yet |\n| Covered | 4 | 3 | 12 | RISK-01 |\n| Small | 2 | 2 | 4 | none |\n',
+  });
+  assert.equal(f.length, 1, JSON.stringify(f));
+  assert.match(f[0].message, /Pool exhaustion: scores 12 but names no RISK/);
+});

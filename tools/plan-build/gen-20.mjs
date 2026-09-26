@@ -7,6 +7,7 @@ const __here = __dirOf(__toPath(import.meta.url)).split(String.fromCharCode(92))
 const __kit = __resolve(__here, '../..').split(String.fromCharCode(92)).join('/') + '/';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { writeGenerated } from './write-generated.cjs';
+import { buildContext, testCaseOwnership } from '../kit-lint/kit-lint.mjs';
 
 
 const K = __kit;
@@ -70,7 +71,16 @@ for (const r of reqs) {
 const sheet = (svc) => '06-services/' + svc.toLowerCase().replace('.', '-') + '.md';
 const areaDoc = { SEC: '12', PRV: '12, 27', PERF: '21', L10N: '24', UX: '14', WEB: '08', MOB: '09', API: '22', INT: '23', DATA: '10', MSG: '11', INF: '15', TST: '16', PLAT: '33' };
 const svcPhase = { Gateway: '1', 'Bff.Web': '1', 'Bff.Mobile': '2', Identity: '1', Platform: '1', School: '2', Admissions: '4', Academics: '2', Assessment: '2', Scheduling: '2', Attendance: '2', Finance: '3', Communication: '3', Notification: '1', Requests: '3', Documents: '3', Behavior: '4', Reporting: '4', Audit: '1', Wellbeing: '5', Hr: '5', Operations: '5', Ai: '5' };
-const platformOf = (area) => ({ PLAT: 'per Appendix X', MOB: 'Android, iOS', WEB: 'Chromium, Firefox, WebKit' }[area] || 'any');
+// The Platform column names the runners or devices the requirement's tests name in
+// their definitions; otherwise the area's default, from document 33's runner matrix.
+const own = testCaseOwnership(buildContext(K));
+const RUNNERS = [['ubuntu-latest', /ubuntu-latest/i], ['windows-latest', /windows-latest/i], ['macos-latest', /macos-latest/i], ['Android', /\bAndroid\b/], ['iOS', /\biOS\b/], ['Chromium', /Chromium/], ['Firefox', /Firefox/], ['WebKit', /WebKit/], ['device farm', /device (farm|pass)/i]];
+const platformOf = (area, tests) => {
+  const text = tests.map((t) => (own.defs.get(t) || []).map((d) => d.text).join(' ')).join(' ');
+  const named = RUNNERS.filter(([, re]) => re.test(text)).map(([n]) => n);
+  if (named.length) return named.join(', ');
+  return ({ PLAT: 'ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4)', MOB: 'Android, iOS', WEB: 'Chromium, Firefox, WebKit' }[area] || 'any');
+};
 
 const rows = [];
 let noSlice = 0;
@@ -84,7 +94,7 @@ for (const r of reqs) {
   const wf = (r.wfbr.match(/WF-[A-Z]+-\d{2}/g) || []).join(', ') || 'none';
   const br = (r.wfbr.match(/BR-[A-Z0-9]+-\d{3}/g) || []).join(', ') || 'none';
   const summary = r.text.replace(/\|/g, '/').replace(/\s+/g, ' ');
-  rows.push('| ' + r.id + ' | ' + (summary.length > 110 ? summary.slice(0, 107) + '...' : summary) + ' | ' + r.tier + ' | ' + r.service + ' | ' + wf + ' | ' + br + ' | ' + doc + ' | ' + phase + ' | ' + (slices.join(', ') || 'gate, see document 34') + ' | ' + [...reqTests.get(r.id)].join(', ') + ' | ' + platformOf(area) + ' | Planned |');
+  rows.push('| ' + r.id + ' | ' + (summary.length > 110 ? summary.slice(0, 107) + '...' : summary) + ' | ' + r.tier + ' | ' + r.service + ' | ' + wf + ' | ' + br + ' | ' + doc + ' | ' + phase + ' | ' + (slices.join(', ') || 'gate, see document 34') + ' | ' + [...reqTests.get(r.id)].join(', ') + ' | ' + platformOf(area, [...reqTests.get(r.id)]) + ' | Planned |');
 }
 
 const L = [];
@@ -130,7 +140,7 @@ p('| Plan document | The owning service\'s sheet, or for a cross-cutting require
 p('| Phase | The phases of the capabilities whose slices build it, from documents 34 and 17 |');
 p('| Slices | Document 34\'s Covers column |');
 p('| Test case | Document 03\'s acceptance column, the service sheets\' test plans, or the derived acceptance test of Section 2 |');
-p('| Platform | The runner or device class from Appendix X when the requirement exists because of a platform difference; otherwise `any` |');
+p('| Platform | The runners or devices named in the definitions of the tests of the requirement (ubuntu-latest, windows-latest, macos-latest, Android, iOS, the browser engines, the device pass); otherwise the default of its area from document 33 part 4, or `any` |');
 p('| Status | `Planned` until the build begins; `docs/project/TRACEABILITY.md` carries it forward |');
 p();
 p('### 4. The matrix');

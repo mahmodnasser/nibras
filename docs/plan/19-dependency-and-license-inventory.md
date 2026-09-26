@@ -2,7 +2,7 @@
 
 > Plan document for the Nibras platform. Group E. It refines master brief Section 6 (the open-source-only policy, the approved stack, the unavoidable costs and the standalone list) and reference architecture Section 16 (pinned majors); it does not re-derive them. Where this document and the brief disagree, an ADR records the deviation.
 
-**Group** E · **Requirement areas covered** SEC (supply chain and REQ-SEC-012), OPS (images and tools), every area that links a library · **Last updated** 2026-09-22 by the platform plan
+**Group** E · **Requirement areas covered** SEC (supply chain and REQ-SEC-012), OPS (images and tools), every area that links a library · **Last updated** 2026-09-26 by the round-3 scorecard remediation (k6 statements made to agree with `allow.json`)
 
 ## Purpose
 
@@ -223,7 +223,7 @@ Section 6.2 names the SIL Open Font License for fonts, so OFL-1.1 fonts are `all
 | Gitleaks | Secret scan | 8.30.1 | MIT | https://github.com/gitleaks/gitleaks/blob/master/LICENSE | 2026-09-22 | Tool | allowed |
 | OWASP ZAP | Dynamic security scan | 2.17.0 | Apache-2.0 | https://github.com/zaproxy/zaproxy/blob/main/LICENSE | 2026-09-22 | Tool | allowed |
 | SonarQube Community | Static analysis | 26.9.0.129388 | LGPL-3.0 | https://github.com/SonarSource/sonarqube/blob/master/LICENSE.txt | 2026-09-22 | Standalone (never linked) | allowed-standalone (LGPL run as a server; Section 6.4 covers GPL and AGPL only, but the scanner still needs an exception entry if its image is ever scanned) |
-| k6 | Load tests (Section 6.2, Testing paragraph; Section 6.4 row since brief v9.1) | 2.3.0 | AGPL-3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | 2026-09-22 | Tool (load-test binary in CI and test environments, never linked, never shipped) | allowed-standalone by master brief Section 6.4; the `allow.json` entry and its ADR are still outstanding (open point 1) |
+| k6 | Load tests (Section 6.2, Testing paragraph; Section 6.4 row since brief v9.1) | 2.3.0 | AGPL-3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | 2026-09-22 | Tool (load-test binary in CI and test environments, never linked, never shipped) | allowed-standalone: master brief Section 6.4 row and the `allow.json` entry with ADR `0019-brief-v9-1-corrections` (§11.1; open point 1 closed) |
 | oasdiff | Breaking-change detection | 1.32.1 | Apache-2.0 | https://github.com/oasdiff/oasdiff/blob/main/LICENSE | 2026-09-22 | Tool | allowed |
 | buf | gRPC lint and breaking checks | 1.73.0 | Apache-2.0 | https://github.com/bufbuild/buf/blob/main/LICENSE | 2026-09-22 | Tool | allowed |
 | Forgejo | Self-hosted forge (alternative to GitHub) | 16.0.5 | GPL-3.0-or-later (since v9.0) | https://codeberg.org/forgejo/forgejo/src/branch/forgejo/LICENSE ; https://forgejo.org/2024-08-gpl/ | 2026-09-22 | Standalone | not-allowed until a Section 6.4 row and ADR exist (open point 1) |
@@ -240,9 +240,9 @@ Section 6.2 names the SIL Open Font License for fonts, so OFL-1.1 fonts are `all
 
 | Item | What Section 6.2 or 6.4 says | What the source says on 2026-09-22 | Version where it changed | Source | Consequence |
 |---|---|---|---|---|---|
-| k6 | Named in the Testing paragraph with no licence; brief v9.1 added the Section 6.4 row under ADR-0019 (load, soak and performance-budget tests; a standalone binary in CI and test environments only) | AGPL-3.0 | Current 2.3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | The Section 6.4 row now exists; the `allow.json` entry and its ADR do not, so the first load-test job still fails the scan. Open point 1 |
-| Forgejo | Named in the CI row with no licence | GPL-3.0-or-later | 9.0 (older releases MIT) | https://forgejo.org/2024-08-gpl/ | Same as k6 if Forgejo is chosen. Open point 1 |
-| Matomo | Named for staff analytics, "verify the license" | GPL-3.0 | Current 5.13.0 | https://github.com/matomo-org/matomo/blob/5.x-dev/LICENSE | Same as k6 if Matomo is chosen. Open point 1 |
+| k6 | Named in the Testing paragraph with no licence; brief v9.1 added the Section 6.4 row under ADR-0019 (load, soak and performance-budget tests; a standalone binary in CI and test environments only) | AGPL-3.0 | Current 2.3.0 | https://github.com/grafana/k6/blob/master/LICENSE.md | The Section 6.4 row and the `allow.json` entry (ADR `0019-brief-v9-1-corrections`) both exist, so the load-test jobs pass the scan. Open point 1, closed |
+| Forgejo | Named in the CI row with no licence | GPL-3.0-or-later | 9.0 (older releases MIT) | https://forgejo.org/2024-08-gpl/ | If Forgejo is chosen it needs what k6 now has: a Section 6.4 row, an `allow.json` entry and an ADR. Open point 1 |
+| Matomo | Named for staff analytics, "verify the license" | GPL-3.0 | Current 5.13.0 | https://github.com/matomo-org/matomo/blob/5.x-dev/LICENSE | If Matomo is chosen it needs what k6 now has: a Section 6.4 row, an `allow.json` entry and an ADR. Open point 1 |
 | SonarQube Community | Named in the CI row with no licence | LGPL-3.0 | Current 26.9.0.129388 | https://github.com/SonarSource/sonarqube/blob/master/LICENSE.txt | Standalone use is fine; recorded so nobody links its libraries |
 | Valkey | Reference architecture Section 16 pins Valkey 9.1 since v9.1 (ADR-0019), and never Redis below 8.0 | Current is 9.1.2, still BSD-3-Clause | 9.x minor | https://github.com/valkey-io/valkey | Major-version drift from the pinned table, not a licence change. Open point 4 |
 | Redis | 6.4 row: Redis 8, AGPLv3 option | Tri-licence RSALv2 OR SSPLv1 OR AGPLv3 from 8.0; 7.2 and earlier BSD-3-Clause; the 7.4 line has no AGPL option | 7.4 (RSALv2 or SSPLv1 only), 8.0 (AGPLv3 added) | https://github.com/redis/redis/blob/unstable/LICENSE.txt | Never pin a 7.4.x image. `TC-SEC-394` below |
@@ -304,10 +304,11 @@ The last-acceptable versions for MassTransit, MediatR, AutoMapper and FluentAsse
 | clamav | GPL-2.0 | Upload scanning. Separate container, reached over its socket protocol. | 0005-redis-agpl-standalone-valkey-fallback |
 | ansible | GPL-3.0 | On-premises provisioning. A build tool, never shipped inside a product image. | 0005-redis-agpl-standalone-valkey-fallback |
 | renovate | AGPL-3.0 | Dependency update pull requests. A continuous integration tool, never shipped. | 0005-redis-agpl-standalone-valkey-fallback |
+| k6 | AGPL-3.0 | Load and soak tests. A continuous integration tool run as its own binary against a deployed environment; no product code links to it and the scenarios are JavaScript in this repository. Master brief Section 6.4 carries the row since v9.1. | 0019-brief-v9-1-corrections |
 
 The file's own note reads: "Nothing linked into product code may appear here."
 
-Seven entries, quoted as the file stands on 2026-09-22. Master brief Section 6.4 gained a k6 row in brief v9.1 under ADR-0019; the matching `allow.json` entry does not exist yet, which is open point 1. This table is not edited ahead of the file.
+Eight entries, quoted as the file stands on 2026-09-26. The k6 entry matches the Section 6.4 row brief v9.1 added under ADR-0019, which closed open point 1. This table is not edited ahead of the file.
 
 ### 11.2 The four-field rule
 
@@ -323,7 +324,7 @@ The first version of `tools/license-scan/run.mjs` compared a licence string agai
 | OFL-1.1 | `@fontsource/*` fonts | An asset rule: OFL-1.1 and the Creative Commons asset licences pass for `kind: "asset"` and are refused for linked code, per master brief Section 6.2 | "font licences are allowed as assets and refused as linked code" |
 | Licence carried as a file | Bogus, dotnet-stryker, NetArchTest.Rules | Refused with a message naming the fix: record the SPDX identifier under `overrides` in `tools/license-scan/allow.json`, keyed `<package>@<exact version>`. An override whose licence is itself not allowed fails the scan | "a licence shipped as a file is refused until an override records its SPDX identifier" |
 | `-only` and `-or-later` spellings | renovate (`AGPL-3.0-only`), LGPL packages | Suffixes are normalised before comparison, so the policy judges the licence, not its spelling | "the -only and -or-later suffixes are judged on the licence they spell" |
-| Tools not yet listed | k6 until its `allow.json` entry lands; Forgejo or Matomo if chosen | Correctly refused until listed in master brief Section 6.4 **and** `allow.json`; k6 has the Section 6.4 row since brief v9.1 and still needs the entry | Open point 1 |
+| Tools not yet listed | Forgejo or Matomo if chosen (k6 is now listed in both places, §11.1) | Correctly refused until listed in master brief Section 6.4 **and** `allow.json` | Open point 1 |
 
 ---
 
@@ -361,7 +362,7 @@ The first version of `tools/license-scan/run.mjs` compared a licence string agai
 | GPL and AGPL only as standalone tools, each listed in Section 6.4 with an `allow.json` entry and an ADR | Master brief Section 6.4; ADR `0005-redis-agpl-standalone-valkey-fallback` | In force | Keeps copyleft at arm's length and visible |
 | OFL-1.1 is allowed for fonts only | Master brief Section 6.2 | In force; the scanner applies it as an asset rule (§11.3) | Fonts are assets, not code |
 | Where a package offers `A OR B`, the allowed alternative is elected and recorded | This document §9.1 | Proposed | CsvHelper and RabbitMQ.Client would otherwise block the scan |
-| k6 runs as a standalone load-test tool in CI and test environments, never linked and never shipped | Master brief Section 6.4, row added in brief v9.1 under ADR-0019 | In force in the brief; the `allow.json` entry is outstanding (open point 1) | Every load gate in documents 15, 16 and 17 runs on it |
+| k6 runs as a standalone load-test tool in CI and test environments, never linked and never shipped | Master brief Section 6.4, row added in brief v9.1 under ADR-0019 | In force: the Section 6.4 row and the `allow.json` entry with ADR `0019-brief-v9-1-corrections` (§11.1) | Every load gate in documents 15, 16 and 17 runs on it |
 | FsCheck is the property-based library for the arithmetic rules, pinned at 3.4.0 | `16-test-strategy.md` §6.2; this document §3 | Proposed, pending the ADR in open point 7 | Appendix V requires a property-based test and Section 6.2 names no library |
 | Redis is never pinned below 8.0 | This document §9.1 | Proposed | 7.4 has no AGPL option |
 | Capped packages carry a Renovate `allowedVersions` rule | This document §12 | Proposed | An automated update must never cross a licence change |
@@ -400,7 +401,8 @@ No verified item forces a replacement today. Every banned item in §9.2 already 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
 | 2026-09-22 | Group E review pending | Draft | none recorded yet |
-| 2026-09-22 | Scorecard remediation, theme 4 | Amended: FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 added to §3 from each nuspec (row count 147 to 149); k6 re-verdicted `allowed-standalone` on the Section 6.4 row brief v9.1 added under ADR-0019; the §11.3 scanner test count corrected from 11 to 12 | The k6 `allow.json` entry, open point 1 |
+| 2026-09-22 | Scorecard remediation, theme 4 | Amended: FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 added to §3 from each nuspec (row count 147 to 149); k6 re-verdicted `allowed-standalone` on the Section 6.4 row brief v9.1 added under ADR-0019; the §11.3 scanner test count corrected from 11 to 12 | The k6 `allow.json` entry, open point 1 (closed since) |
+| 2026-09-26 | Round-2 scorecard, Group E, remediation round 3 | Amended: every k6 statement (§8, §9.1, §11.1, §11.3, Decisions in force) now agrees with the file, which has eight entries including k6 under ADR `0019-brief-v9-1-corrections`; §11.1 re-quoted with the k6 row | none |
 
 ## How this document is verified
 

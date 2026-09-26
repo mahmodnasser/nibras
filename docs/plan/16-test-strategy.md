@@ -2,7 +2,7 @@
 
 > Group E. The coverage matrix is **quoted from Appendix V** and the load scenarios are **quoted from Appendix N**; both are normative. This document adds what the plan owes on top of them: the pyramid per layer with its tool, runner and gate; the `tests/` tree; naming and fixtures; the two interceptors that turn a query budget into a failing test; the generated suites with their sizes and inputs; the contract, business-rule, workflow, interface, document and non-functional suites; the test data tiers and staging anonymization; the quality gates per phase; the flaky-test policy; acceptance; coverage enforcement; and the platform cases allocated by document 33. Requirement area: `TST`.
 
-**Group** E · **Requirement areas covered** `TST`, with `PLAT` cases by reference · **Last updated** 2026-09-22 by the plan-scorecard remediation
+**Group** E · **Requirement areas covered** `TST`, with `PLAT` cases by reference · **Last updated** 2026-09-26 by the round-4 scorecard remediation (the derived-test count, the macOS leg of `TC-PLAT-013`, the phase 3 and 4 demo-gate cells)
 
 **Rule for reading.** Where a value here and a value in Appendix V, Appendix N or Appendix X disagree, the appendix wins and this document is the defect. The mechanism of the generated permission-matrix and tenant-isolation suites is described in document 12, parts 4.3 and 4.4; this document cites it and adds only sizes, inputs and where the suites run. Every claim in this document ends in a test case identifier, a pipeline stage, or a drill on a calendar, because master brief Section 19 says proof, not belief.
 
@@ -18,16 +18,16 @@ Master brief Section 24 fixes the shape: many fast unit tests on domain and appl
 | `<Service>.Application` | Unit through the mediator pipeline with the ports faked at the boundary; the handler itself is never mocked | xUnit, NSubstitute for ports only, `FakeClock`, fake identifier generator | Unit stage | 80 percent line coverage per project |
 | `<Service>.Infrastructure` | Integration against the real PostgreSQL, RabbitMQ, Redis and Valkey at the versions `19-dependency-and-license-inventory.md` §7 pins (PostgreSQL 18.6, RabbitMQ 4.3.6, Redis 8.10.2, Valkey 9.1.2; reference architecture Section 16 sets the majors, Valkey 9.1 since brief v9.1): EF Core mappings, named query filters, outbox and inbox, the caching wrapper, the reference-copy consumers | Testcontainers through `Nibras.BuildingBlocks.Testing` | Integration stage, Linux; `BuildingBlocks` and `Documents` also Windows | Deliver-twice, tenant-key isolation and Redis-down tests green; every hot query inside its budget |
 | `<Service>.Api` and `.Worker` | Endpoint and consumer integration through `NibrasWebAppFactory<TProgram>`; Problem Details and pagination contract; query-budget assertion per handler | xUnit, the command-counting interceptor (part 3.4) | Integration stage | Zero handlers over budget without an ADR attribute |
-| Generated suites | Permission matrix, tenant isolation, response shape per role | `tools/permission-matrix-gen`, `TenantIsolation.Tests/Generator` (document 12) | Sampled per pull request; full at size nightly in the Test environment | One isolation failure blocks the release |
+| Generated suites | Permission matrix, tenant isolation, response shape per role | `tests/PermissionMatrix.Tests/Generator/` (document 07 part 4, built by SL-IDN-014) and `TenantIsolation.Tests/Generator` (document 12), both in the `tests/` tree of part 3.1 | Sampled per pull request; full at size nightly in the Test environment | One isolation failure blocks the release |
 | `src/Contracts` | Consumer-driven contracts for gRPC and backend-for-frontend REST; message schema baselines per `v<n>` record | PactNet, JSON schema baselines | `Contracts.Tests`, on every change to `src/Contracts/**` and to a consumer or provider | Provider verification green before merge; a changed baseline is a new version |
 | Architecture | Layer, building-block and shape rules | NetArchTest and two source scans, the twenty-four rules in document 07 | Every `ci-service.yml` | All green; a new project is covered the moment it exists |
 | Workflows and sagas | One test per transition, failure and compensation row in Appendix R; sagas add timeout, mid-flight failure and worker-kill | Testcontainers, `FakeClock`, container stop and restart | Integration stage | 312 transition rows, each with its identifier present in the suite |
 | Web, Angular | Unit, a story per state, end-to-end, accessibility, visual snapshots, bundle budgets | Vitest, Storybook, Playwright, axe-core, the Angular build budgets | `ci-web.yml`: Chromium, Firefox, WebKit | axe clean, zero snapshot difference, budgets met |
 | Mobile, Flutter | Widget, golden in both directions, integration on emulators, the device pass | `flutter test`, `integration_test`, five physical devices | `ci-mobile.yml` on Linux for goldens; Windows for kiosk goldens; macOS for iOS artefacts and goldens | Goldens accepted only from the Linux run (TC-PLAT-016); device pass recorded per release |
 | Documents | PDF snapshots in English and Arabic with a shaping check | Documents integration tests against the Gotenberg container with bundled fonts | Linux and Windows | Zero difference against committed baselines; baselines byte-identical on both runners (TC-PLAT-003) |
-| Non-functional | Load, soak, chaos, restore drills, performance baselines, micro-benchmarks | k6, container fault injection, BenchmarkDotNet, the restore runbooks | Nightly on the load tier, weekly on the scale tier, quarterly drills | k6 thresholds fail the run; regression over 10 percent fails the comparison |
+| Non-functional | Load, soak, chaos, restore drills, performance baselines, micro-benchmarks | k6, container fault injection, BenchmarkDotNet, the restore runbooks | Gates and chaos nightly on the load tier; the 24-hour soak weekly in its own window on the load tier and weekly on the scale tier (part 10.2); quarterly drills | k6 thresholds fail the run; regression over 10 percent fails the comparison |
 | Platform | Culture inside the built image, path and line-ending checks, device behaviour | Per Appendix X.2, cases TC-PLAT-001 to TC-PLAT-017 (part 16) | The matching runner or device | Every case green on its named runner |
-| Acceptance | Role scripts and the golden-path demo | Appendix Q and Appendix O on the demo tier | Before every release | One named person per role signs; every refusal step refused |
+| Acceptance | Role scripts and the golden-path demo | Appendix Q, and the fifteen minutes and reserve bank of Appendix O, on the demo tier | Before every release; the demo gate also at each phase exit (part 12.2) | One named person per role signs; every refusal step refused; every Appendix O step whose phase has shipped green |
 
 **Where each stage sits in the service pipeline.** The order is the one in reference architecture Section 11; the diagram shows which suite each stage runs so that a reader can tell where a failure will surface.
 
@@ -42,8 +42,8 @@ flowchart LR
     G --> H["Query-budget assertions<br/>command-counting interceptor"]
     H --> I["Licence, vulnerability,<br/>container and secret scans"]
     I --> J["Publish image, SBOM,<br/>signature"]
-    J --> K["Nightly: k6 load tier,<br/>full generated suites,<br/>chaos"]
-    K --> L["Weekly: scale tier,<br/>24-hour soak"]
+    J --> K["Nightly: k6 load-tier gates,<br/>full generated suites,<br/>chaos"]
+    K --> L["Weekly: 24-hour soak in its<br/>own load-tier window,<br/>scale tier"]
 ```
 
 ---
@@ -78,7 +78,7 @@ The following table is quoted verbatim from Appendix V.3. Nothing is done on the
 | Runbook | Executed in a game day within ninety days of being written | manual | operations calendar | An unexercised runbook is fiction |
 | Plan document | Scorecard at 4 or better on every axis, clean `kit-lint` | review | `/score-plan`, `/lint-plan` | Per group |
 
-The test case format is the one in Appendix V.2 and the `test-case-writing` skill: `Covers`, `Level`, `Platform`, `Automated` with the test name, then Given, When, Then with concrete numbers. Every automated test carries its identifier as an xUnit trait, a Playwright annotation or a Flutter tag, and `20-traceability-matrix.md` is generated from those traits rather than maintained by hand.
+The test case format is the one in Appendix V.2 and the `test-case-writing` skill: `Covers`, `Level`, `Platform`, `Automated` with the test name, then Given, When, Then with concrete numbers. Every automated test carries its identifier as an xUnit trait, a Playwright annotation or a Flutter tag. `20-traceability-matrix.md` is not generated from those traits: `tools/plan-build/gen-20.mjs` generates it from documents 03, 17, 31 and 34 and the service sheets' test plans, and kit-lint R23 fails when it differs from what the generator produces today. Once code exists, the traits are what the traceability check of SL-TST-005 reads, so that a requirement whose test identifier appears in no trait fails the pipeline. Each of the 327 derived acceptance tests of document 20 Section 2 is written by the slice that document 20's Slices column names for its requirement, as part of that slice's definition of done.
 
 ---
 
@@ -438,7 +438,7 @@ The worker-kill tests double as the chaos cases in part 10 at scale; the shape i
 | Web vitals | LCP under 2.5 s, INP under 200 ms, CLS under 0.1 on the phone project with CPU throttling of 4 times | Measured by Playwright on the five heaviest routes per workspace; a miss fails the run |
 | Clock | Every spec pins the clock through the test-only clock endpoint | A spec that depends on today's date is a scheduled failure |
 
-The end-to-end specs are few and named: one per workflow in master brief Section 14, one per Appendix O minute, and one per Appendix Q step that a browser can perform. Everything else is a component story or an integration test.
+The end-to-end specs are few and named: one per workflow in master brief Section 14, one per test case in the Test cell of an Appendix O minute or reserve step, and one per Appendix Q step that a browser can perform; the Appendix O steps played on a phone or tablet run as the Flutter integration tests of part 8.2 under the same identifiers. Everything else is a component story or an integration test.
 
 ### 8.2 Mobile: Flutter widget, goldens, integration, the device pass
 
@@ -494,13 +494,22 @@ The eleven scenarios, their tiers and cadence are quoted from Appendix N.1; the 
 
 What the plan adds: each scenario is written to the `k6-scenario` skill, with a large and a small tenant in the same run, arrival-rate executors shaped like the school day, the back end measured alongside the front (queue depth, consumer lag, commands per request, cache hit ratio, exported from the same metrics the dashboards use), and ramp reported separately from steady state. Every run records tier, seed and commit. A failed nightly blocks merges to the release branch until the code is fixed or an ADR records the accepted change.
 
-### 10.2 Soak
+### 10.2 Soak, and how the load tier's week is scheduled
 
-N-07 is the soak. It runs nightly on the load tier and weekly on the scale tier, with the diurnal profile and the 2-hour recovery tail from Appendix N. The plan adds the leak detectors that make a 24-hour run useful: heap and working-set per container sampled every minute; connection-pool wait time; RabbitMQ queue depth per lane; dead-letter count; Redis memory and eviction count; the reconciliation and retention job outcomes. Each has a threshold in the scenario, so the soak fails on a leak, not on a human reading a graph.
+N-07 is the soak: 24 hours plus a 2-hour recovery tail, with the diurnal profile from Appendix N. A 26-hour run cannot share a night with the nightly rebuild of the load tier (part 11.2) and the nightly gates, so the load tier's week has two kinds of window that never overlap. SL-PERF-006 builds the schedule (its slice already schedules the weekly soak), and `TC-TST-790` checks it.
+
+| Window | When | What runs | What does not |
+|---|---|---|---|
+| Nightly gate window | Every night outside the soak window | The rebuild to the seed, then the load-tier gate scenarios of part 10.1 other than N-07 that the phase has reached (part 12.2), in sequence, with the chaos experiments of part 10.3 beside them. Their Appendix N.2 durations add to 375 minutes (N-01 90, N-02 30, N-03 45, N-04 25, N-05 20, N-06 60, N-08 30, N-09 20, N-10 30, N-11 25), so the full set fits one night after the rebuild | N-07 |
+| Weekly soak window | Once a week, across the team's weekend, 26 hours from the start of N-07 plus the rebuild before it | N-07 on the load tier, with the RabbitMQ partition experiment (`TC-TST-212`) injected once during it, as part 10.3 pairs them | The nightly rebuild and the nightly gates. A nightly run that falls inside the window is recorded as "not run: soak window", never as passed, and the first nightly after the window must be green before anything merges to the release branch (Appendix N.3, rule 6) |
+
+The scale tier runs N-07 weekly as Appendix N.1 says (SL-PERF-605). **This departs from Appendix N.2**, whose N-07 sheet reads "load nightly": a soak longer than a night cannot start every night on one environment. The plan's default is the weekly load-tier soak above; the alternative that keeps "nightly" is a second, soak-only environment of load-tier size, which doubles that environment's cost in document 28. The soak-schedule row of the Open points below carries the decision and the brief correction it needs.
+
+The plan adds the leak detectors that make a 24-hour run useful: heap and working-set per container sampled every minute; connection-pool wait time; RabbitMQ queue depth per lane; dead-letter count; Redis memory and eviction count; the reconciliation and retention job outcomes. Each has a threshold in the scenario, so the soak fails on a leak, not on a human reading a graph.
 
 ### 10.3 Chaos
 
-Master brief Section 19 requires resilience tests that stop a service or a worker during a workflow, and a resilience test that proves graceful degradation when Redis is unavailable. Each experiment runs beside a load scenario on the load tier nightly, using `tests/Load/chaos/` and the same `ContainerFaults` code the saga tests use.
+Master brief Section 19 requires resilience tests that stop a service or a worker during a workflow, and a resilience test that proves graceful degradation when Redis is unavailable. Each experiment runs beside a load scenario on the load tier in the nightly gate window of part 10.2 (the RabbitMQ partition beside N-07 in the weekly soak window), using `tests/Load/chaos/` and the same `ContainerFaults` code the saga tests use.
 
 | Experiment | Injection | Runs beside | Expected behaviour | Asserted by | Identifier |
 |---|---|---|---|---|---|
@@ -521,7 +530,8 @@ Appendix X.2 puts the restore and disaster-recovery drill on a quarterly cadence
 | Drill | What is restored | Measured | Identifier |
 |---|---|---|---|
 | Platform point-in-time | Every service database to a chosen minute, object storage to the matching manifest | Recovery point achieved, elapsed time per step, who ran it | `TC-TST-215` |
-| Single-tenant restore | One tenant's rows from every service into a running cluster without touching other tenants, per reference architecture Section 14 | Elapsed time; zero rows of any other tenant changed, proven by checksum | `TC-TST-216` |
+| Single-tenant restore | One tenant's rows from every service into a running cluster on staging without touching other tenants, per reference architecture Section 14; once per release, the timed restore the approval gate of document 15 part 3 requires | Elapsed time; zero rows of any other tenant changed, proven by checksum | `TC-TST-216` |
+| Single-tenant restore under load | The same restore on the load tier while the other 49 tenants run a load scenario, quarterly, in a nightly gate window announced ahead and never inside the weekly soak window | No other tenant's p95 moves by more than 10 percent; the reconciliation report matches the expected difference | `TC-DATA-020` (document 10) |
 | Wellbeing key restore | The isolation level S database and its encryption key from the key store backup | A restored record decrypts; a record restored without the key does not | `TC-TST-217` |
 | Appliance restore | The on-premises appliance from its backup archive onto a fresh Hyper-V host, per document 33 part 8 | Elapsed time; the smoke script passes | `TC-TST-218` |
 
@@ -575,7 +585,7 @@ Appendix N.1 adds the shape of the load and scale tiers (60 percent single-campu
 | Tenants A and B | The two Appendix H tenants are structurally identical on purpose: the same sections, the same student counts, different names; that is what makes an isolation failure visible as a wrong name rather than a missing row |
 | Demo credentials | The login helper and the known demo passwords exist only when the environment is `Test` or `Demo`; a release build that contains them fails the Gitleaks rule and the seeded administrator safeguards in document 12 |
 | Load-tier partitions | Twelve months of attendance partitions and three time zones, so the retention job and the pre-peak warm-up have something real to act on |
-| Where each tier lives | Demo: every developer machine and every pull request. Load: the performance environment, rebuilt nightly. Scale: production-shaped infrastructure, rebuilt weekly, per Appendix N.3 |
+| Where each tier lives | Demo: every developer machine and every pull request. Load: the performance environment, rebuilt nightly except inside the weekly soak window of part 10.2. Scale: production-shaped infrastructure, rebuilt weekly, per Appendix N.3 |
 
 ### 11.3 Staging anonymization
 
@@ -625,12 +635,14 @@ The phases are those of master brief Section 28. A gate applies from the phase i
 | Vulnerabilities | Zero high or critical | Same | Same | Same | Same | Plus penetration-test findings closed or accepted with an owner |
 | Licence scan | Clean | Clean | Clean | Clean | Clean | Clean, with document 19 re-verified |
 | Accessibility | axe on the design system and the console | axe plus the manual pass on the teacher, parent and principal workspaces | Plus accountant and registrar | Plus dashboards | Plus Tier 2 workspaces | Full manual pass and the conformance statement |
-| Performance | Demo-tier smoke for N-01, N-05, N-11 | Load-tier gate for N-01, N-02, N-05, N-08, N-11 | Plus N-03, N-04, N-09, and N-06 nightly from phase 3 as `18-risk-register.md` RISK-19 requires | Plus N-10, N-07 nightly | Same | Scale tier for every scenario; N-07 weekly; chaos nightly |
+| Performance | Demo-tier smoke for N-01, N-05, N-11 | Load-tier gate for N-01, N-02, N-05, N-08, N-11 | Plus N-03, N-04, N-09, and N-06 nightly from phase 3 as `18-risk-register.md` RISK-19 requires | Plus N-10, and N-07 weekly in the soak window of part 10.2 | Same | Scale tier for every scenario; N-07 weekly; chaos nightly |
 | Tenant isolation | Every surface of the 6 services | Every surface so far | Same | Same | Same | Same, plus the penetration-test isolation table |
 | Traceability | Every requirement of the phase has a test case | Same | Same | Same | Same | Same |
 | Documentation | Runbooks for the 6 services; restore drill run once | Same, quarterly drill | Same | Same | Same | Every runbook exercised within ninety days |
-| Demo script | Provisioning and sign-in | Appendix O acts one and two | Act three | The full script with one-click reset | The full script | The full script, in Arabic, on the appliance as well |
+| Demo script | The steps of phase 1: minute 15 and R-18 | Plus the steps of phase 2 and the MVP cut line: minutes 2, 3, 4, 6, 7, 8, 9, 11 and 13, R-01, R-02, R-09, the iCal half of R-12 and the heatmap of R-19; minutes 1, 5, 10, 12 and 14 run their "Before a minute's phase" substitutions | Plus minute 10 and R-03, R-06, R-11, R-12, R-15 and R-16; minutes 1, 5, 12 and 14 keep their substitutions | Plus minutes 1, 5 and 14 as scripted, the data-saver profile of minute 4, and R-04, R-05, R-07, R-08, R-10 and R-14, on a fresh tenant with one-click reset; minute 12 keeps its substitution | Plus minute 12 as scripted, R-13, R-20 and the suggestion of R-19 | Plus R-17: every minute and every reserve step, in Arabic, on the appliance as well |
 | Acceptance | Appendix Q.10 platform administrator | Q.1, Q.2, Q.3, Q.6, Q.7 | Q.4, Q.5 | Q.4 admissions steps | Q.8, Q.9 | Every script, signed by a named person per role |
+
+**The demo gate (REQ-TST-022, ADR-0023).** At each phase exit and on every release, the demo gate runs the test cases in the Test cell of every Appendix O step, the fifteen minutes and the reserve bank R-01 to R-20, whose Phase cell has shipped, end to end against the demo tenant reset to its seed; a minute whose phase has not shipped runs the substitution Appendix O gives it and its test instead. The Demo script row above is that rule applied to the Phase cells of Appendix O as they stand, and a Phase cell changed in Appendix O changes the row. A signature feature's own Appendix W demo test runs from the phase that builds the feature in `17-roadmap.md`, even when the step that shows it runs earlier: minute 5 runs as scripted from phase 4, but TC-WEL-810 for the Wellbeing intervention playbooks joins it from phase 5, and minute 4 runs from phase 2 while TC-MOB-005 for the data-saver profile joins it from phase 4. From phase 6 on, therefore, the demo test of every one of the 43 signature features runs in every release gate. Kit-lint rule R34 checks, on every change under `docs/`, that each signature feature in Appendix W is shown by a minute or reserve step whose Test cell names its demo test and that every step states its phase (feature 23, present in every minute with no step of its own, has TC-UX-001 named in Appendix O); the `demo-director` agent in `.claude/agents/` reviews the choreography itself, the sixty seconds, the clicks and the seed data, before each phase demo. The gate is built by SL-TST-006 in `34-work-breakdown.md`, and document 15 part 3 makes it evidence for promotion.
 
 ---
 
@@ -654,9 +666,9 @@ Master brief Section 24: a flaky test is quarantined with an owner and a 48-hour
 | Instrument | What it is | Who signs | When | Evidence |
 |---|---|---|---|---|
 | Appendix Q | Ten role scripts, 118 steps, each with a test case identifier; every script has an Arabic step, an offline step where the role leaves a desk, and a refusal step | One named person per role, from the school side; a sign-off by the build team is not acceptance | On the demo tier before every release, and per phase as part 12.2 says | Recorded screen and time per step; a failed step captures the correlation identifier that maps to an Appendix K code |
-| Appendix O | The fifteen-minute demo, fifteen test cases, two steps in Arabic, one offline, one permission boundary | The quality engineer runs it; the product owner signs the release | Before every release; acts per phase as master brief Section 28 says | The run date, who ran it, and the end-to-end suite summary |
+| Appendix O | The fifteen-minute demo and the reserve bank R-01 to R-20, every test case in their Test cells, with two minutes in Arabic, one offline and one permission boundary | The quality engineer runs it; the product owner signs the release | At each phase exit and before every release, every step whose phase has shipped, as the demo gate in part 12.2 says | The run date, who ran it, and the end-to-end suite summary |
 | Automation | Every Appendix Q step a browser or a device can perform is also a Playwright or Flutter test with the same identifier; the refusal steps are also rows in the generated permission suite | | Every pull request for the automated form | The trait in the test |
-| Signature features | Every Appendix W signature feature has its Appendix O row, run against the demo tenant; sixty seconds or it is not signature | Demo director review | Per release | The timing in the end-to-end run |
+| Signature features | Each of the 43 Appendix W signature features is shown by an Appendix O minute or reserve step whose Test cell runs the feature's own demo test (feature 23 by TC-UX-001, which Appendix O names), run against the demo tenant from the phase that builds the feature; sixty seconds or it is not signature | Kit-lint R34 checks the coverage; the `demo-director` agent reviews the choreography | R34 on every change under `docs/`; the review before each phase demo; the tests at each phase exit and every release | The timing in the end-to-end run |
 
 A refusal step that succeeds instead of refusing is a security defect, not a test failure, and goes to the security auditor the same day.
 
@@ -696,7 +708,7 @@ Document 33 part 9 maps every Appendix X.3 edge case to a `TC-PLAT-` identifier,
 | `TC-PLAT-010` (document 33) | iOS suspends the app for days | Mobile sync test replaying a 30-day-old delta token; confirmed on the iPhone SE in the device pass | unit and manual | Linux, device |
 | `TC-PLAT-011` (document 33) | Android battery optimisation kills the sync worker | Widget test that the restriction is explained exactly once; device pass confirms an urgent push still arrives | widget and manual | Linux, device |
 | `TC-PLAT-012` (document 33) | A device clock is wrong by hours | `Attendance.IntegrationTests/Offline/` submits `occurredAt` hours off and asserts ordering by `receivedAt` | integration | Linux |
-| `TC-PLAT-013` (document 33) | Podman names its network differently from Docker | `dev-smoke.yml` runs one Podman and one Docker Engine configuration | pipeline | Linux, Windows |
+| `TC-PLAT-013` (document 33) | Podman names its network differently from Docker | `dev-smoke.yml` runs one Podman and one Docker Engine configuration on `ubuntu-latest` and `windows-latest` (document 15 part 4.4). Its `macos-latest` leg proves setup and builds only (`TC-PLAT-800`, document 33) and reports the container check as unavailable, because hosted Apple-silicon runners lack nested virtualisation, so this case is not run on macOS | pipeline | Linux, Windows |
 | `TC-PLAT-014` (document 33) | A white-label flavour builds on Linux but its iOS twin does not | The white-label release gate in document 33 part 7 refuses a flavour with one artefact missing | pipeline | Linux, macOS |
 | `TC-PLAT-015` (document 33) | A pooled connection under transaction pooling sees another tenant's rows | The pool swap attack in `TenantIsolation.Tests/Attacks/`, and `PostgresFixture` runs every service's integration suite through PgBouncer in transaction mode | integration | Linux |
 | `TC-PLAT-016` (document 33) | A Flutter golden regenerated on macOS or Windows | `ci-mobile.yml` on Linux is the only place goldens are accepted; a pull request changing a golden without a Linux run attached is refused | pipeline | Linux |
@@ -731,6 +743,7 @@ Document 07 allocated `TC-TST-101` to `TC-TST-124` to the architecture rules. Th
 | TC-TST-219 | Performance baseline comparison, the 10 percent gate | 10.5 |
 | TC-TST-220 | Staging anonymization assertions | 11.3 |
 | TC-TST-221 | Quarantine expiry fails the build | 13 |
+| TC-TST-790 | Given the load-tier pipeline schedules, when they are parsed for one week, then the weekly N-07 window of 26 hours contains no rebuild and no nightly gate run, every other night holds the rebuild and the gate scenarios the phase has reached, and a nightly run skipped for the soak is reported as not run rather than passed | 10.2 |
 
 ---
 
@@ -766,10 +779,12 @@ The first run of R20 found 206 identifiers defined in more than one document and
 | 12 | The generated suite mechanisms, the penetration-test scope, the seeded administrator safeguards |
 | 13 | The saga list and the compensation designs the saga tests drive |
 | 15 | Environments, the production slow-query thresholds, the migration and rollout order |
+| 17 | The phase that builds each signature feature, from which its demo test joins the demo gate |
 | 19 | Exact versions and verified licences for every test library named here |
-| 20 | The traceability matrix generated from the test traits |
+| 20 | The traceability matrix, generated by `gen-20.mjs` from documents 03, 17, 31 and 34 and the service sheets' test plans; the test traits feed the traceability check of SL-TST-005 once code exists |
 | 21 | The hot queries and their budgets per service |
 | 33 | The `TC-PLAT-` cases and the runner matrix |
+| 34 | SL-TST-006, the slice that builds the release-candidate gate the demo gate runs in |
 
 ## Open points
 
@@ -779,9 +794,19 @@ The first run of R20 found 206 identifiers defined in more than one document and
 | Who signs the Appendix Q scripts from the school side (part 14)? | One named person per role from a pilot school, on the demo tier before every release; a build-team sign-off is not acceptance | Product owner | With no school-side signer a release has no acceptance and the phase exit waits for one, or acceptance quietly becomes a build-team run | 3 | 3 | 9 | none |
 | Are the Phase 0 bundle and image budgets in part 10.6 the right size? | The Phase 0 values, as the decision table above states; raising one is an architect decision with an ADR | Architect | Budgets set too tight stall slices on ADRs; set too loose, they let startup and transfer size drift until the Core Web Vitals and cold-start targets fail late | 3 | 2 | 6 | none |
 | Is FsCheck recorded as the property-based library (part 6.2)? | FsCheck 3.4.0, pinned by document 19, with its record carried as document 19 open point 7 | Architect | The property-based tests of part 6.2 move to the alternative library; the rules they test and their identifiers do not change | 1 | 1 | 1 | none |
+| Soak schedule: Appendix N.2 runs N-07 "load nightly", which a 26-hour run on an environment rebuilt nightly cannot do (part 10.2). Weekly, or a second soak-only environment? | Weekly on the load tier in its own window, with the nightly gates separate; an ADR with a brief version bump changes the N-07 sheet's data set to "load weekly, scale weekly" | Architect, with the product owner for the brief change | A leak that needs two or more days to show is still caught weekly; one that only the nightly cadence would have caught reaches the release branch up to six days later, bounded by the weekly soak being a release-gate input (document 15 part 3) | 2 | 3 | 6 | none |
 | Is plain container fault injection enough for the chaos cases of part 10.3? | Container stop, start and network disconnect on the load tier, pod deletion and network policy on the scale tier; Chaos Mesh is a Phase 6 candidate | Platform engineering | A fault the plain tooling cannot inject (clock skew, disk latency) goes untested until Phase 6 | 2 | 1 | 2 | none |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+## Review record
+
+| Date | Reviewer | Verdict | Blocking items |
+|---|---|---|---|
+| 2026-09-22 | Plan-scorecard remediation, round 1 | Amended: pinned versions, the per-phase service counts in part 12.2, N-06 nightly from phase 3 | none |
+| 2026-09-26 | Scorecard remediation, theme 8 (ADR-0023) | Amended: the demo gate in part 12.2 and the signature-feature row of part 14 | none |
+| 2026-09-26 | Round-2 scorecard, Group E, then remediation round 3 | Blocked for the group on consistency, feasibility and risk honesty; for this document the soak on a nightly-rebuilt tier, the restore drill under two identifiers and the claim that document 20 is generated from traits. Amended: the load tier's week split into a nightly gate window and a weekly soak window (part 10.2) with `TC-TST-790` and an open point for the Appendix N.2 departure; `TC-TST-216` (per release, staging) and `TC-DATA-020` (quarterly, under load) stated as two drills with one identifier each; part 2 corrected on how document 20 is generated and who writes each derived acceptance test; `macos-latest` added to the `dev-smoke` runners of `TC-PLAT-013` | none |
+| 2026-09-26 | Round-3 scorecard, Group E, then remediation round 4 | Blocked for the group on consistency; for this document the derived-test count and the macOS leg. Amended: part 2 says 327 derived acceptance tests, as document 20 counts them; the `TC-PLAT-013` row says, as document 33 does, that the `macos-latest` leg proves setup and builds only (`TC-PLAT-800`) and reports the container check unavailable, so the case runs on Linux and Windows; the phase 3 and 4 cells of the Demo script row in part 12.2 name the substitutions still running, in the same words as the demo column of `17-roadmap.md` | none |
 
 ---
 
@@ -789,6 +814,7 @@ The first run of R20 found 206 identifiers defined in more than one document and
 
 | Claim | Proof | Where it runs |
 |---|---|---|
+| Every signature feature is shown by an Appendix O step that runs its own demo test, and every step states its phase (part 12.2) | Kit-lint R34 over Appendix W and Appendix O; the `demo-director` agent reviews the choreography before each phase demo | Lint (`/lint-plan`); each phase demo |
 | Every test case is defined once and every cited test exists | Kit-lint R20; R23 fails when `16-annex-test-case-registry.md` differs from what `gen-tc-registry.mjs` produces today | Lint (`/lint-plan`) |
 | The quoted tables match Appendix V and Appendix N word for word | Review step, not a lint rule: the `test-strategist` agent compares the quoted sections with Appendix V and Appendix N word for word at the Group E review and on every change to this document or to either appendix; a difference is a defect in this document | Group E review |
 | Every artefact class in the coverage matrix has a suite named in this document | The `test-strategist` agent's `## Suites` table on review; a row of Appendix V.3 with no part of this document naming its suite is a gap | Plan review |
@@ -797,7 +823,7 @@ The first run of R20 found 206 identifiers defined in more than one document and
 | The generated suites are the size this document estimates | The pipeline summary publishes the measured counts; a count below half the estimate for any suite is a review finding, because it means a registry the generator reads is empty | Nightly |
 | Every Appendix S rule has its class and every Appendix R row has its test | Kit-lint R09: every Appendix S rule has three worked examples and names its test class. Kit-lint R08: every Appendix R workflow has a state diagram, a Transition table and test case identifiers; R32: the owning service sheet cites every transition test of the workflow; R23: document 20 equals what `gen-20.mjs` produces from the sheets today. That each transition row carries its own test is checked by the `test-strategist` agent at the Group E review; in code, the trait scan is added by the traceability check of SL-TST-005 | Lint (`/lint-plan`); Group E review; `ci-service.yml` from SL-TST-005 |
 | The thresholds in the load scenarios are the Section 19 budgets | One shared thresholds file under `tests/Load/thresholds/` imported by every scenario, with a test that its numbers equal the table in document 21 | `tests/Load` self-test |
-| The chaos and restore cases run on the cadence stated | The nightly and weekly pipeline schedules and the quarterly drill records with dates and names | Operations calendar |
+| The chaos and restore cases run on the cadence stated, and the soak never shares a window with the nightly gates | `TC-TST-790` over the pipeline schedules, built with the schedule by SL-PERF-006; the quarterly drill records with dates and names, read by the platform engineer at each phase review (document 15 part 7) | Every change to a pipeline schedule; each phase review |
 | Flaky tests cannot hide | Zero retries in every pipeline configuration, checked by a `ci-kit.yml` rule that greps the workflow files for a retry setting; `TC-TST-221` | `ci-kit.yml` |
 | Coverage thresholds are enforced, not reported | The threshold properties in `tests/Directory.Build.props` and a deliberate under-covered sample project in the Testing block's tests that fails the stage | `ci-service.yml` |
 | Every Section and Appendix reference resolves, no placeholder exists, every Mermaid block and tree is well formed | `kit-lint` rules R01, R02, R05, R17 and R18 | `ci-kit.yml` |

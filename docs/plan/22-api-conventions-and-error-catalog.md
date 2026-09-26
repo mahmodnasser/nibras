@@ -1,8 +1,8 @@
 # 22. API Conventions and Error Catalog
 
-> Plan document for the Nibras platform. Group D. It refines master brief Section 19 (the API conventions bullets and the three rate-limit layers), Section 35 (versioning) and Appendix K (the error catalog); it does not re-derive them. Where this document and the brief disagree, an ADR records the deviation.
+> Plan document for the Nibras platform. Group F. It refines master brief Section 19 (the API conventions bullets and the three rate-limit layers), Section 35 (versioning) and Appendix K (the error catalog); it does not re-derive them. Where this document and the brief disagree, an ADR records the deviation.
 
-**Group** D · **Requirement areas covered** API (all of it), SEC (the parts that ride on the API surface), INT (only where the public API reuses these conventions) · **Last updated** 2026-09-20 by the platform plan
+**Group** F · **Requirement areas covered** API (all of it), SEC (the parts that ride on the API surface), INT (only where the public API reuses these conventions) · **Last updated** 2026-09-20 by the platform plan
 
 ## Purpose
 
@@ -525,7 +525,7 @@ Master brief Section 7.3: maximum one synchronous hop. The rule is enforced, not
 |---|---|
 | Outbound interceptor | Refuses to open a gRPC call when the current activity already carries `nibras-hop: 1` from an inbound gRPC call; throws `InvalidOperationException` in development and returns `FAILED_PRECONDITION` with code `<SERVICE>_HOP_LIMIT_EXCEEDED` in production |
 | Inbound interceptor | Sets the hop marker on the request activity so any nested call is caught |
-| Architecture test | `GrpcHopRules` in `Nibras.BuildingBlocks.Testing` fails when a gRPC service implementation class references a gRPC client type |
+| Architecture test | `GrpcHopRules`, one of the architecture rules of `07-solution-structure.md` §10.3 in `tests/Architecture.Tests/Rules/`; document 07 owns the rule and its test-case identifier, and this document only states what it enforces: it fails when a gRPC service implementation class references a gRPC client type |
 | Consequence | A service that needs data two hops away keeps a reference copy (master brief Section 7.3) or subscribes to an event; the reconciliation job in `10-data-architecture.md` keeps the copy honest |
 | Backend-for-frontend | Bff.Web and Bff.Mobile call services over HTTP, fan out in parallel, and are not counted as a hop because they own no data and make no gRPC calls |
 
@@ -756,12 +756,12 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 |---|---|---|
 | Service names, prefixes, permission namespaces | Appendix L, Appendix B | Every lint run |
 | The per-service code rows | Appendix K | Every lint run once `docs/api/error-codes.json` is generated |
-| The eight cross-cutting codes, the rules, and the Gateway and backend-for-frontend codes | Appendix K.1, K.22 and K.23 | Group D review |
-| Token issuance, permission version, client credentials, key rotation | `12-security-privacy-safety.md` §3 and §9 | Group D review |
+| The eight cross-cutting codes, the rules, and the Gateway and backend-for-frontend codes | Appendix K.1, K.22 and K.23 | Group F review |
+| Token issuance, permission version, client credentials, key rotation | `12-security-privacy-safety.md` §3 and §9 | Group F review |
 | The caching map that decides `Cache-Control` and the L1 fallback | `21-performance-engineering.md` | Group C review |
 | The outbox transaction that stores an idempotency result | `11-messaging-architecture.md` | Group C review |
-| Public API keys, webhooks, deprecation headers | `23-integrations-and-public-api.md` | Group D review |
-| `LocalizedText`, normalization, numerals | `24-localization-and-calendars.md` | Group D review |
+| Public API keys, webhooks, deprecation headers | `23-integrations-and-public-api.md` | Group F review |
+| `LocalizedText`, normalization, numerals | `24-localization-and-calendars.md` | Group F review |
 | The generated client tool and the versions of Scalar, Spectral and `oasdiff` | `19-dependency-and-license-inventory.md` | Group E review |
 | Load scenario N-06 for the noisy-neighbour proof | Appendix N; `16-test-strategy.md` | Group E review |
 
@@ -778,7 +778,9 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 
 | Date | Reviewer | Verdict | Blocking items |
 |---|---|---|---|
-| 2026-09-20 | Group D review pending | Draft | none recorded yet |
+| 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | None of the group's blocking gaps was in this document |
+| 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | This document was labelled Group D and its dependency checks pointed at a Group D review (Consistency) |
+| 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | Relabelled Group F with every dependency check at the Group F review; §10.4 places `GrpcHopRules` with the architecture rules of `07-solution-structure.md` §10.3 instead of the Testing block |
 
 ## How this document is verified
 
@@ -794,7 +796,7 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 | Bulk endpoints return per-item results and respect 500 | `TC-API-050`: 500 attendance marks with 3 invalid rows in `independent` mode; `TC-API-051`: `allOrNothing` rolls back; `TC-API-052`: 501 items is 400 | Every pull request per service with a bulk endpoint |
 | Problem Details shape and the `code` field | `TC-API-030` to `TC-API-033` in §12.4; a snapshot test per catalog code asserts the exact JSON shape and that `detail` never reaches the DOM | Every pull request |
 | The three rate-limit layers and the 429 contract | `TC-API-060`: Gateway address and tenant limits with `Retry-After` and `RateLimit-*`; `TC-API-061`: service per-user and per-key buckets; `TC-API-062`: a plan quota is 402 and never 429; N-06 noisy neighbour keeps the small tenant inside budget | Every pull request for the Gateway and `BuildingBlocks`; nightly load tier for N-06 |
-| gRPC metadata, deadlines and the one-hop rule | `TC-API-070`: a call without `nibras-tenant-id` is refused; `TC-API-071`: a tenant mismatch between metadata and token is `_TENANT_MISMATCH`; `TC-API-072`: a nested gRPC call is refused with the hop code; `GrpcHopRules` architecture test; `buf lint` and `buf breaking` on `src/Contracts/` | Every pull request |
+| gRPC metadata, deadlines and the one-hop rule | `TC-API-070`: a call without `nibras-tenant-id` is refused; `TC-API-071`: a tenant mismatch between metadata and token is `_TENANT_MISMATCH`; `TC-API-072`: a nested gRPC call is refused with the hop code; the `GrpcHopRules` architecture test (`07-solution-structure.md` §10.3); `buf lint` and `buf breaking` on `src/Contracts/` | Every pull request |
 | Breaking changes are caught | `oasdiff` against `docs/api/released/` in the product pipeline, the gate SL-INT-402 builds; when SL-INT-402 is accepted, `architecture-reviewer` confirms that a seeded breaking change fails the gate | Every pull request once SL-INT-402 is built; the seeded-change check at its acceptance |
 | Error codes are never removed and never reused | The generator of `docs/api/error-codes.json` compares against the previous release's file; both language bundles carry every code | Every pull request touching Appendix K or the bundles |
 | This document agrees with the catalogs | kit-lint R01, R02 and R17 for section and appendix references and Mermaid types, R19 for service-prefixed error codes (Appendix K) and routing keys, and R31 for database and image names against Appendix L; `plan-consistency-checker` compares the rest, project and exchange names included, with `05-service-catalog.md`, `12-security-privacy-safety.md`, `23-integrations-and-public-api.md` and `24-localization-and-calendars.md` | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of those documents |

@@ -1,6 +1,6 @@
 # Documents
 
-Documents keeps every file the product holds and makes every official paper the school issues. It owns file storage behind `IFileStorage` (SeaweedFS by default, local disk for the single-server profile), upload validation, virus scanning with ClamAV and the quarantine a flagged file never leaves, short-lived signed download URLs, central storage with folders, tags, versions, access rules, expiry and retention, OCR text search, the bilingual template designer, PDF rendering through Gotenberg with the bundled Arabic fonts, certificates with a public QR verification page and revocation, batch layouts such as ID cards, and the two bulk data doors of the product: the import center with its dry run and rollback (WF-DATA-01, Saga 9) and the export center with its sensitive-export approval (WF-PRV-02). Documents decides nothing about the content it renders or the rows it imports: the requesting service supplies the values of a document, and the target service validates and writes the rows of an import. Its worker runs PDF rendering, imports, exports, scanning and OCR as five separate job groups. `26-migration-and-onboarding-toolkit.md` does not exist in the kit yet, so the import machinery, the legacy mapping adapters and the reconciliation reports are specified here in full.
+Documents keeps every file the product holds and makes every official paper the school issues. It owns file storage behind `IFileStorage` (SeaweedFS by default, local disk for the single-server profile), upload validation, virus scanning with ClamAV and the quarantine a flagged file never leaves, short-lived signed download URLs, central storage with folders, tags, versions, access rules, expiry and retention, OCR text search, the bilingual template designer, PDF rendering through Gotenberg with the bundled Arabic fonts, certificates with a public QR verification page and revocation, batch layouts such as ID cards, and the two bulk data doors of the product: the import center with its dry run and rollback (WF-DATA-01, Saga 9) and the export center with its sensitive-export approval (WF-PRV-02). Documents decides nothing about the content it renders or the rows it imports: the requesting service supplies the values of a document, and the target service validates and writes the rows of an import. Its worker runs PDF rendering, imports, exports, scanning and OCR as five separate job groups. `26-migration-and-onboarding-toolkit.md` plans the migration toolkit as a whole; the import machinery this service runs, the legacy mapping adapters and the reconciliation reports are specified here in full, and document 26 cites them.
 
 **Group** C · **Requirement areas covered** DOC, with PRV, DATA, PERF, SEC, L10N, TST and PLAT rows that bind this service · **Last updated** 2026-09-21 by the planning session
 
@@ -20,6 +20,8 @@ Documents keeps every file the product holds and makes every official paper the 
 | Scaling profile | "Read-heavy API; worker on queue depth; the public QR verification page is output-cached 5 min" | `05-service-catalog.md` |
 | Build phase | "3; the PDF pipeline is built in 1 (Section 28 critical path)" | `05-service-catalog.md` |
 | Sensitivity | "confidential; file bytes carry the class of the owning record" | `05-service-catalog.md`, Appendix J.3 |
+
+**Signature features.** Documents owns Appendix W feature 9, go live in a day: import with dry run and rollback (demo test `TC-DOC-001` (Appendix W)), and feature 36, school memory: portfolio and yearbook (Tier 2; `TC-DOC-801` (Appendix W)). It also renders and verifies the report cards of feature 6, Report Card Studio with QR verification, whose public verification is Appendix O minute 9 (TC-DOC-002, section 14). The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
 
 ---
 
@@ -49,7 +51,7 @@ Documents keeps every file the product holds and makes every official paper the 
 
 | Does not own | Owner instead | Why the line is here |
 |---|---|---|
-| The content of a document: grades, balances, attendance summaries, the words of a letter | The requesting service (Assessment, Finance, School, Admissions, Requests, Platform, Hr, Behavior) | The requester resolves the merge values under its own rules and sends them with `GenerateDocument`; Documents lays them out. A figure on a PDF is explained by the service that computed it (REQ-RPT-010) |
+| The content of a document: grades, balances, attendance summaries, the words of a letter | The requesting service (Assessment, Finance, School, Admissions, Requests, Platform, Hr, Behavior, Operations, Scheduling) | The requester resolves the merge values under its own rules and sends them with `GenerateDocument`; Documents lays them out. A figure on a PDF is explained by the service that computed it (REQ-RPT-010) |
 | Deciding whether a document may be issued (fee restriction, clearance, approval) | Finance for restrictions, School for clearance, Requests for approvals | Documents records a restriction it hears about (`finance.account.restricted.v1`) only to refuse a render that the requester flagged as restrictable |
 | Validating and writing imported rows | The target service: School for students, guardians and enrolments, Hr for staff, Finance for opening balances | Only the target knows its rules; Saga 9 sends `ValidateImportBatch`, `DryRunImportBatch`, `CommitImportBatch` and `RollbackImport` to it (`13-workflows-and-sagas.md` Saga 9) |
 | Report-card calculation and the batch orchestration of Saga 7 | Assessment (`Assessment.Worker`) | Documents renders one card per `assessment.report-cards.generation-requested.v1` and replies with `documents.document.generated.v1` |
@@ -65,7 +67,7 @@ Documents keeps every file the product holds and makes every official paper the 
 | The audit store, the access log and its search | Audit | Documents emits `documents.audit.recorded.v1` for every write, every download of a sensitive owner's file and every transition |
 | Job progress hubs | Communication (SignalR hosts) | Documents writes progress to `redis-state`; the `/hubs/jobs` hub reads it (`22-api-conventions-and-error-catalog.md` §6.3) |
 | Open Badges 3.0 credentials | Behavior | Documents may render a badge certificate on command; the credential is Behavior's |
-| Wellbeing documents of any kind | Wellbeing | No level-S record is rendered or stored here; see section 13 |
+| Wellbeing documents of any kind | Wellbeing | No level-S record is rendered or stored here; see section 12. Whether referral packs and signed medication records are rendered here is not settled: an ADR with the privacy officer decides, and until then this sheet and the Wellbeing sheet's open point 11 carry the same interim default, that nothing level S is rendered here (open point 13, RISK-48) |
 
 ---
 
@@ -506,7 +508,7 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 | Routing key | Partition key | Raised by | Consumers (Appendix E, resolved by document 11 §2.2) |
 |---|---|---|---|
 | `documents.document.generation-requested.v1` | `subjectId` | `GenerateDocumentHandler`, `RequestGenerationHandler`, `RenderBatchHandler`: one per accepted generation request, after the dedupe check | `Documents.Worker` (`documents-worker.render.bulk`) |
-| `documents.document.generated.v1` | `subjectId` | `RenderDocumentHandler` in the worker, once per request; also re-published unchanged on a duplicate request | the requesting service (Platform, Admissions, School, Assessment, Finance, Requests), Notification |
+| `documents.document.generated.v1` | `subjectId` | `RenderDocumentHandler` in the worker, once per request; also re-published unchanged on a duplicate request | the requesting service (Platform, Admissions, School, Assessment, Finance, Requests, Hr, Behavior; document 11 §2.2), Notification |
 | `documents.certificate.revoked.v1` | `subjectId` | `RevokeCertificateHandler`, `RevokeDocumentHandler`, supersession on reissue | Notification, Reporting, Admissions, School, Requests; Saga 3, 5 and 6 compensations |
 | `documents.import.completed.v1` | `jobId` | `LegacyImportSaga` at `Committed` or `RolledBack` (a second event with `succeeded = 0` on rollback, Saga 9 step 5) | the target service (School, Hr, Finance), Notification, Reporting |
 | `documents.export.completed.v1` | `jobId` | `RunExportHandler` at `Ready`; `ExportTenantHandler` for Saga 2 | Notification, Audit, Platform, Requests, Reporting |
@@ -564,7 +566,7 @@ The Saga 1, 2 and 10 commands common to every data-owning service (`DeprovisionT
 
 ## 7. Sagas and workflows
 
-State types are fixed by `31-business-rules-and-workflows.md` section 3; saga designs are in `13-workflows-and-sagas.md` and are not repeated. Documents owns no business rule in Appendix S (document 31 section 1: 0 rules, 2 workflows).
+State types are fixed by `31-business-rules-and-workflows.md` section 3; saga designs are in `13-workflows-and-sagas.md` and are not repeated, except the Saga 9 state diagram, copied below because Documents orchestrates it. Documents owns no business rule in Appendix S (document 31 section 1: 0 rules, 2 workflows).
 
 | WF or saga | Role | Kind (document 13) | What Documents implements | State type |
 |---|---|---|---|---|
@@ -578,6 +580,35 @@ State types are fixed by `31-business-rules-and-workflows.md` section 3; saga de
 | Sagas 1, 2 and 10 lifecycle commands | Participant | Saga | Tenant lifecycle handlers | none local |
 
 **WF-DATA-01 transitions and where they run.** `Uploaded → Parsed`: `ParseImportFileHandler` (worker) after the scan is clean and the template version is recognised. `Parsed → ErrorsReported` and `Validated → DryRunReady`: `LegacyImportSaga` on the target's `ImportBatchValidated` and `ImportBatchPreviewed` replies. `DryRunReady → Committing`: `CommitImportHandler` (endpoint), guard preview under 24 h. `Committing → Committed`: saga on the last `ImportBatchCommitted`. `Committing → CommitFailed → RolledBack`: saga after a batch fails three times, `RollbackImport` sent. `Committed → RolledBack`: `RollbackImportHandler` inside the 7-day window. `Committed → Sealed`: `ImportSealJob`. The Appendix R status is a projection of `ImportState`: `Validating` shows as `Parsed`, `Stalled` as `Committing`, `RollingBack` as `CommitFailed` when the rollback follows a failure and as `Committed` otherwise, `Rejected` and `Cancelled` as terminal states Appendix R does not name (Open point 3).
+
+**Saga 9 as document 13 draws it.** Documents orchestrates Saga 9, so its states are drawn here too, copied without change from `13-workflows-and-sagas.md` section 3, which stays the source; a change there is copied here in the same pull request. Every end (`Sealed`, `RolledBack`, `Rejected`) reaches the terminal state and every transition carries its label; `Stuck` waits for the operator.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Uploaded: file received and scanned
+    Uploaded --> Parsed: template version recognised
+    Uploaded --> Rejected: scan failed or template unknown
+    Parsed --> Validating: ValidateImportBatch sent
+    Validating --> Validated: no blocking errors
+    Validating --> ErrorsReported: blocking errors in the reply
+    ErrorsReported --> Uploaded: corrected file re-uploaded
+    Validated --> DryRunReady: ImportBatchPreviewed reply
+    DryRunReady --> Validating: preview older than 24 h
+    DryRunReady --> Committing: administrator confirms
+    Committing --> Committing: ImportBatchCommitted for one batch
+    Committing --> Stalled: no progress 10 min
+    Stalled --> Committing: worker resumes after the last committed batch
+    Committing --> Committed: last batch confirmed
+    Committing --> RollingBack: a batch failed 3 times
+    Committed --> RollingBack: rollback requested inside 7 days
+    RollingBack --> RolledBack: ImportRolledBack reply
+    RollingBack --> Stuck: rollback failed
+    Stuck --> RollingBack: operator retries
+    Committed --> Sealed: window passed
+    Sealed --> [*]
+    RolledBack --> [*]
+    Rejected --> [*]
+```
 
 **WF-PRV-02 as Documents implements it**
 
@@ -604,7 +635,7 @@ stateDiagram-v2
 
 `Revoked` is Documents' name for Appendix R's "approved in error is revoked" compensation; it is not a WF-PRV-02 state in Appendix R and is listed in Open point 3. Approval waits have a timeout: `ExportApprovalEscalationJob` reminds the data protection officer at 2 working days and escalates to the principal at 5 (Appendix R timeouts).
 
-**Legacy mapping adapters and reconciliation (the migration toolkit, REQ-DOC-016).** Because document 26 does not exist, the machinery is fixed here:
+**Legacy mapping adapters and reconciliation (the migration toolkit, REQ-DOC-016).** `26-migration-and-onboarding-toolkit.md` plans the toolkit as a whole; the machinery the Documents service itself runs is fixed here:
 
 | Piece | Design |
 |---|---|
@@ -966,7 +997,7 @@ src/Services/Documents/                                               Documents:
 │   │   │   ├── CreateMemoryBookValidator.cs                          flag enabled, items at most 500
 │   │   │   └── MemoryBookEndpoints.cs                                POST /memory-books, GET /{id}, POST /{id}/export
 │   │   ├── RequestEffects/                                           Saga commands Documents receives
-│   │   │   ├── GenerateDocumentCommandHandler.cs                     GenerateDocument from Sagas 2, 3, 5, 6, 8 and School, Hr, Behavior
+│   │   │   ├── GenerateDocumentCommandHandler.cs                     GenerateDocument from Sagas 2, 3, 5, 6, 8 and School, Hr, Behavior, Operations, Scheduling
 │   │   │   ├── RevokeDocumentHandler.cs                              compensation: revoke the certificate
 │   │   │   ├── RequestExportCommandHandler.cs                        RequestExport from Saga 6
 │   │   │   ├── RevokeExportCommandHandler.cs                         RevokeExport, replies ExportRevoked
@@ -1205,7 +1236,8 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 | `TC-PRV-016` (Appendix R) | Workflow | `Ready → LinkExpired`: link dead, temporary file deleted |
 | TC-PRV-301 | UAT | Export with national identity numbers needs approval and a reason, is watermarked, notifies the principal |
 | `TC-DOC-001` (Appendix W) | Feature register | Go live in a day: import with dry run and rollback |
-| TC-DOC-002 | Feature register | School memory: portfolio and yearbook (Tier 2) |
+| TC-DOC-002 | Demo, end to end | Appendix O minute 9: the QR code on a printed report card opens the public verification page, which confirms the card in both languages without a login; a revoked certificate scanned next is refused with its revocation date (feature 6; the meaning Appendix W keeps for this identifier) |
+| `TC-DOC-801` (Appendix W) | Feature register | School memory: portfolio and yearbook (Tier 2, feature 36), built from consented media only |
 | TC-DOC-301 | UAT | Birth certificate upload scanned and accepted; missing-document count drops |
 | TC-DOC-302 | UAT | Public verification page confirms a certificate without personal data beyond the school's choice |
 | TC-L10N-301 | UAT | Arabic transfer certificate renders right to left with a resolving QR code |
@@ -1256,6 +1288,18 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 | TC-DOC-351 | Load | N-04: 10,000 rows validated and committed in under 5 minutes, dry run under 2 minutes, other tenants degrade at most 10 percent |
 | TC-DOC-352 | Integration | Tenant suspended: uploads refused, downloads and verification still served |
 | TC-DOC-353 | Integration | Legal hold keeps a file past its retention; the job reports it skipped |
+| TC-DOC-760 | Integration | A CSV import saved on Windows in Windows-1256 with carriage returns, whose mapping declares `dd/MM/yyyy` dates, Hijri dates of birth and decimals written with the Arabic decimal separator, gives the same dry-run report on the Linux runner and on the Windows runner, and the same again with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn: the mapping's declared culture decides, never the machine's (REQ-PLAT-019, REQ-PLAT-020) |
+| TC-DOC-761 | Integration | A bilingual template whose Arabic body mixes Arabic text, Latin names and numbers renders the Arabic version right to left with the numbers in the tenant's numeral setting and the Latin runs isolated, and the English version left to right; both PDFs match their committed baselines byte for byte on the Linux and Windows runs (REQ-DOC-007) |
+
+### 14.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Documents is one of the three projects Appendix X runs on Windows as well as Linux, because path composition, culture-sensitive parsing and line endings live here: its unit and integration suites run on `ubuntu-latest` and `windows-latest` in `ci-service.yml`, and the pipeline compares generated PDF baselines byte for byte between the two runs; the contract, load, generated and image suites run on `ubuntu-latest` only (document 33 part 4). The one-command start that brings the Api, the worker, Gotenberg, ClamAV and object storage up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml`; `TC-PLAT-003` (document 33), the byte-for-byte comparison | ubuntu and windows; `dev-smoke` on ubuntu, windows and macos |
+| Culture, calendars and file formats | Imports normalize Arabic-Indic digits before validation, parse dates and numbers with the mapping's declared culture, and accept Hijri and Gregorian dates; storage paths are composed with the path API and object keys never carry a machine separator | TC-DOC-760; `TC-PLAT-008` (document 33), Arabic-Indic digits in an Excel file; `TC-PLAT-007` (document 33), culture-sensitive decimals; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux and Windows; the image test on Linux only |
+| Right-to-left output | Every generated PDF has an English and an Arabic version with Arabic shaping, the bundled fonts and the tenant's numerals; the public verification page is bilingual | `TC-TST-208` (document 16), the bilingual baselines with the shaping canaries; TC-DOC-761; TC-L10N-301 (Arabic transfer certificate); TC-DOC-002 (the verification page in both languages) | Linux and Windows for the baselines; Linux for the end-to-end |
+| Arabic search and collation | Central-storage search and OCR text use the fold of `24-localization-and-calendars.md` §3 with `pg_trgm`, as `10-data-architecture.md` names for Documents | TC-DOC-338 (Arabic OCR searchable); `TC-L10N-310` (document 24), Arabic trigrams inside the database image | Linux |
+| Devices without Google services | Downloads are 5-minute signed links opened through Bff.Mobile and uploads are resumable through it, so nothing needs Google services; a "document ready" notice reaches such a device in-app while the app is open and by email | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | Device pass, per release |
 
 ---
 
@@ -1271,15 +1315,17 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 | Partitions | `import_rows` list partition per job, dropped on seal; no other table grows beyond millions: generated documents about 6 per student a year | `generated_documents` above 50 million rows in the scale tier |
 | Object storage | SeaweedFS with replication across volumes, a nightly copy to a versioned bucket (`10-data-architecture.md` part 9) | Storage per tenant above the plan quota |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A malicious file served to a child's family | med | critical | Magic-number allow-list, scan before any download, quarantine never released, attachment disposition, TC-DOC-310, TC-DOC-313 | Documents lead |
-| Mass export of children's data by an insider | med | critical | WF-PRV-02 with an approver who is not the requester, watermark, single download, principal notified, daily limit, TC-PRV-013 to TC-PRV-016 | Security owner |
-| A bad import overwrites guardians for a whole school | med | high | Dry run required and fresh, elevated commit, 7-day rollback with conflicts reported, reconciliation checksum, TC-DATA-004 to TC-DATA-006 | Documents lead with the School lead |
-| Arabic shaping regression on report cards | med | high | Fonts in the image, snapshot baselines in both languages (TC-TST-208), renderer version pinned | Documents lead |
-| Report-card batch misses the term deadline | med | high | Render lane scaled on depth, tenant-fair picks, N-02 gate | Performance owner |
-| Revoked certificate still verifies from a cache | low | med | Revocation evicts the output cache by code hash in the same handler, TC-DOC-322 | Documents lead |
-| Merge values leak through logs or caches | low | high | Encrypted payload table deleted after render, `NoPiiLogging` analyzer, never cached, TC-DOC-348 | Security owner |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A malicious file served to a child's family | 3 | 5 | 15 | Magic-number allow-list, scan before any download, quarantine never released, attachment disposition, TC-DOC-310, TC-DOC-313 | Documents lead | RISK-60 |
+| Mass export of children's data by an insider | 3 | 5 | 15 | WF-PRV-02 with an approver who is not the requester, watermark, single download, principal notified, daily limit, TC-PRV-013 to TC-PRV-016 | Security owner | RISK-61 |
+| A bad import overwrites guardians for a whole school | 3 | 4 | 12 | Dry run required and fresh, elevated commit, 7-day rollback with conflicts reported, reconciliation checksum, TC-DATA-004 to TC-DATA-006 | Documents lead with the School lead | RISK-57 |
+| Arabic shaping regression on report cards | 3 | 4 | 12 | Fonts in the image, snapshot baselines in both languages (TC-TST-208), renderer version pinned | Documents lead | RISK-08 |
+| Report-card batch misses the term deadline | 3 | 4 | 12 | Render lane scaled on depth, tenant-fair picks, N-02 gate | Performance owner | RISK-55 |
+| Revoked certificate still verifies from a cache | 2 | 3 | 6 | Revocation evicts the output cache by code hash in the same handler, TC-DOC-322 | Documents lead | none |
+| Merge values leak through logs or caches | 2 | 4 | 8 | Encrypted payload table deleted after render, `NoPiiLogging` analyzer, never cached, TC-DOC-348 | Security owner | RISK-48 for Wellbeing merge values (open point 13) |
 
 ---
 
@@ -1293,7 +1339,7 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 | WF-PRV-02 transitions live in `Features/SensitiveExportApproval/` and WF-DATA-01 person-started transitions in `Features/LegacyImportWithDryRunAndRollback/`, with the saga in `Sagas/LegacyImportSaga/` | Document 31 feature folders, document 13 saga folder | As stated | Moving handlers is mechanical |
 | The public verification route is `/v/{code}` for the page and `/api/v1/documents/verify/{code}` for the data, output-cached 5 minutes | `05-service-catalog.md`, document 21 §1.13, document 22 `Cache-Control` rule | As stated | A different path only changes the QR payload of new documents |
 | Signed URLs are stateless HMAC tokens except single-use and Sensitive-owner downloads, which have a grant row | Appendix J 5-minute rule; `10-data-architecture.md` `TokenSweepJob` | As stated | A row per URL would add a write to every download |
-| The import machinery, adapters and reconciliation reports are specified here because `26-migration-and-onboarding-toolkit.md` does not exist | Brief to this sheet | As stated | Document 26, when written, cites this section rather than restating it |
+| The import machinery, adapters and reconciliation reports the Documents service runs are specified here; `26-migration-and-onboarding-toolkit.md` plans the toolkit around them | Brief to this sheet; document 26 | As stated | Document 26 cites this section rather than restating it |
 | Settings defaults are the Appendix R and J values | Appendix G lists names only | As stated in section 10.3 | Tenants change them in Platform |
 
 ## Dependencies on other documents
@@ -1323,12 +1369,13 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 | 4. Appendix C gained thirteen rows under ADR-0019 but none for export approval reminders, the approval request to the data protection officer, central-storage expiry reminders or a stalled import, and Appendix E has no event for them | Send `RequestNotification` (`notification.commands.request-notification.v1`) with a Documents template code | Appendix C owner | Four catalogued rows would move these to event triggers | 2 | 1 | 2 | none |
 | 5. Appendix B still gives `documents.files` no `edit` action and `documents.imports` no mapping action, yet files are renamed and re-tagged, folder access rules change and mappings are edited; ADR-0019 considered the pair and left it to a later ADR | Metadata edits and mapping edits under the resource's `create`; folder access-rule changes under `documents.files.share-link` (elevated) | Appendix B owner | A `documents.files.edit` and `documents.imports.edit` pair would replace these | 3 | 2 | 6 | none |
 | 6. The Admissions sheet says offer letters are generated from `admissions.offer.made.v1`; document 11 says `documents.subjects` never renders | Offer letters come from Admissions' `GenerateDocument`; the consumer only registers the subject | Admissions lead, document 11 owner | Admissions sends one more command; no letter is lost | 1 | 1 | 1 | none |
-| 7. Behavior awards certificates (REQ-BEH-007) and Hr, Operations and Wellbeing workflows name `documents.document.generated.v1`, but `documents.commands` binds only `nibras.admissions`, `nibras.school`, `nibras.assessment`, `nibras.finance`, `nibras.requests` and `nibras.platform` | Add `nibras.behavior`, `nibras.hr` and `nibras.operations` to the `documents.commands` bindings; Wellbeing documents stay out of Documents (section 1) | Document 11 owner | Those services could not request a render | 2 | 2 | 4 | none |
+| 7. Closed 2026-09-26. Behavior awards certificates (REQ-BEH-007), and Hr, Operations and Scheduling render documents too, but `documents.commands` bound only the six saga senders | Document 11 §2.4 and §2.5 now bind `nibras.hr`, `nibras.behavior`, `nibras.operations` and `nibras.scheduling` on `documents.commands`, and `documents.document.generated.v1` on `hr.events` and `behavior.events`. Wellbeing stays unbound until open point 13 is decided | Closed | None left: payslips, contracts, purchase orders, award certificates and timetable PDFs can be requested | 1 | 1 | 1 | none |
 | 8. `assessment.report-cards.generation-requested.v1` carries identifiers only, so Documents has no merge values for a card | Assessment adds an optional `mergeValues` field (adding an optional field is not breaking under Appendix E versioning) | Assessment lead, Appendix E owner | Report cards could not render without a synchronous read | 2 | 3 | 6 | none |
 | 9. REQ-DOC-002's acceptance says a signed URL fails after 15 minutes; Appendix J and Appendix K say 5 | 5 minutes | Product owner | Longer links widen T-DOC-02 | 1 | 2 | 2 | none |
-| 10. Appendix O references `TC-DOC-002` for the QR verification demo while Appendix W uses it for school memory | This sheet uses `TC-DOC-002` for school memory and `TC-DOC-302` for verification | Appendix O owner | A renumbered demo step | 1 | 1 | 1 | none |
+| 10. Closed by ADR-0019. Appendix O referenced `TC-DOC-002` for the QR verification demo while Appendix W used it for school memory; Appendix W now gives feature 36 the demo test `TC-DOC-801` and says `TC-DOC-002` keeps its Appendix O meaning (minute 9) | Section 14 defines `TC-DOC-002` as the minute 9 verification demo, cites `TC-DOC-801` (Appendix W) for school memory, and keeps `TC-DOC-302` for the Appendix Q verification step. Documents 03 and 20 still map REQ-DOC-017 to `TC-DOC-002`; their owners correct it | Closed | None in this sheet; until documents 03 and 20 follow, REQ-DOC-017 points at the wrong demo | 1 | 1 | 1 | none |
 | 11. Public uploads from the admissions form (REQ-DOC-009 example) arrive before any account exists | Admissions issues a short-lived upload token after OTP and proxies the upload to `POST /files` with its service identity | Admissions lead | A public upload endpoint here would need its own bot protection | 2 | 2 | 4 | none |
 | 12. School memory needs the media consent flag, which School owns | The requesting service confirms consent per item at compile time; Documents stores `consent_checked_at` | School lead | A consent copy here would duplicate a Confidential field | 2 | 3 | 6 | none |
+| 13. Should Documents render referral packs and signed medication administration records under a Sensitive owner class, as the Wellbeing sheet once proposed, although this sheet renders and stores no Wellbeing document (sections 1 and 12)? Not settled: an ADR with the privacy officer decides the render path | Documents refuses to render level S Wellbeing content, and `documents.commands` is not bound for `nibras.wellbeing` (document 11 §2.5), until the ADR exists. The Wellbeing sheet's open point 11 carries the same interim default and leaves its `DocumentRequestPublisher` unwired; if it chooses Documents, the render runs under the controls RISK-48 lists (Sensitive owner class, per-tenant encryption, no share link, no OCR, no search index, merge values deleted after render and never logged) and sections 1, 12 and open point 7 change with it | Architect, privacy officer | Level S merge values pass through Documents for the length of a render and could persist in its queue, temporary files, logs or output; or, if a renderer inside Wellbeing is chosen, Wellbeing needs its own renderer | 3 | 5 | 15 | RISK-48 |
 
 ## Review record
 
@@ -1343,9 +1390,12 @@ Existing identifiers are reused; new ones are minted upward from `TC-DOC-310` in
 | Every routing key here exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
 | Every permission string exists in Appendix B | `tools/kit-lint` rule R19 (permission strings in Permission columns); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-DOC-339 once code exists | Lint, review, pipeline |
 | Every error code exists in Appendix K | `tools/kit-lint` rule R19 (every back-quoted service-prefixed error code is in Appendix K or ends in a K.1 suffix); generated tests assert the exact code | Lint, pipeline |
-| The tree follows document 07's anatomy with a Worker project | Group C review against `07-solution-structure.md` part 3; TC-TST-124 once code exists | Review, `ci-service.yml` |
-| Every Appendix R transition of WF-DATA-01 and WF-PRV-02 has a test | Section 14 against Appendix R; `tools/kit-lint` rule R32 (every test case in the WF-DATA-01 and WF-PRV-02 entries of Appendix R is cited in section 14, ranges expanded); `[TestCase]` attributes compared once code exists | Review, lint, pipeline |
+| The tree follows document 07's anatomy with a Worker project | `plan-consistency-checker` compares the section 13 tree with `07-solution-structure.md` part 3 at the Group C review and on every change to this sheet or document 07; once code exists `EveryServiceHas_TheAnatomy` (`TC-TST-124`), built with the SL-TST-003 architecture test pack | Review, `ci-service.yml` |
+| Every Appendix R transition of WF-DATA-01 and WF-PRV-02 has a test | `tools/kit-lint` rule R32 (every test case in the WF-DATA-01 and WF-PRV-02 entries of Appendix R is cited in section 14, ranges expanded) and R20 (each is defined in exactly one document); `[TestCase]` attributes compared once code exists | Lint, pipeline |
+| The Saga 9 diagram of section 7 is document 13's, with a terminal state and a label on every transition | kit-lint R29 checks both properties on document 13's copy, the source; `plan-consistency-checker` compares this copy with it line by line at the Group C review and on every change to either | Lint; review |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 14.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture, import and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's, and `TC-DOC-002` keeps its Appendix O meaning | `plan-consistency-checker` compares them with Appendix W, Appendix O minute 9 and the "Signature feature trace" of document 32 at the Group C review and on every change to any of them; kit-lint R20 (each identifier defined in exactly one document) and R34 (each feature's demo step runs its demo test) | Review; lint |
 | The query budgets hold | TC-DOC-341, TC-DOC-342 with the command counter and plan capture | Integration suite |
 | Every consumer and command is idempotent | TC-DOC-343, TC-DOC-344 | Integration suite |
-| PDFs render correctly in both languages | TC-TST-208 snapshot baselines | Integration suite |
+| PDFs render correctly in both languages | TC-TST-208 snapshot baselines, compared between the Linux and Windows runs (TC-PLAT-003), and TC-DOC-761 | Integration suite on both runners |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |

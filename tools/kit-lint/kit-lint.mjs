@@ -907,6 +907,8 @@ rule('R24-risk-tables', 'Every risk row scores likelihood times impact on the 1 
         if (+L < 1 || +L > 5 || +I < 1 || +I > 5) bad('likelihood and impact run from 1 to 5');
         if (si >= 0 && Number(r.cells[si]) !== +L * +I) bad('score ' + r.cells[si] + ' is not ' + L + ' x ' + I + ' = ' + (+L * +I));
         if (ri >= 0 && riskIds.size) for (const id of r.cells[ri].match(/RISK-\d{2}/g) || []) if (!riskIds.has(id)) bad(id + ' is not in document 18');
+        // A risk scoring 12 or more is a register risk wherever it is written (ADR-0022).
+        if (ri >= 0 && riskIds.size && !/^docs\/plan\/18-/.test(f.rel) && +L * +I >= 12 && !/RISK-\d{2}\b/.test(r.cells[ri] || '')) bad('scores ' + (+L * +I) + ' but names no RISK in document 18');
       }
     }
   }
@@ -1153,6 +1155,92 @@ rule('R33-open-points', 'Every plan document scores its open points and register
     if (col(t, /^Impact$/i) < 0 || col(t, /^Test$/i) < 0 || !/^ID$/i.test(t.header[0] || '')) continue;
     for (const c of ['Owner role', 'In the register']) if (col(t, new RegExp('^' + c + '$', 'i')) < 0) out.push(finding('R33-open-points', 'error', d12.rel, t.line, 'Threat table has no ' + c + ' column'));
   }
+  return out;
+});
+
+/* ---------------------------------------------------------------- R34 */
+
+/*
+ * Every signature feature is proven on the stage (scorecard theme 8, ADR-0023).
+ * Each feature in Appendix W's register is shown by a step of the Appendix O
+ * demo (one of the fifteen minutes or a reserve step), and that step's Test
+ * cell runs the feature's own demo test, because the release gate runs the
+ * tests of every step. A feature with no step of its own (feature 23, the live
+ * interface, present in every minute) must still have its demo test named in
+ * Appendix O. Every step states the phase it runs from.
+ */
+rule('R34-demo-coverage', 'Every signature feature has a demo step that runs its own demo test', (ctx) => {
+  const W = ctx.md.find((f) => /appendix-w-feature-register/.test(f.rel));
+  const O = ctx.md.find((f) => /appendix-o-demo-script/.test(f.rel));
+  if (!W || !O) return [];
+  const out = [];
+  const steps = [];
+  for (const t of linedTables(O)) {
+    const fi = col(t, /^Feature$/i);
+    const ti = col(t, /^Test$/i);
+    const pi = col(t, /^Phase$/i);
+    if (fi < 0 || ti < 0) continue;
+    for (const r of t.rows) {
+      const step = { id: r.cells[0], line: r.line, feats: (r.cells[fi] || '').match(/\d+/g) || [], tests: r.cells[ti] || '' };
+      steps.push(step);
+      if (pi < 0 || !/\d/.test(r.cells[pi] || '')) out.push(finding('R34-demo-coverage', 'error', O.rel, r.line, 'Demo step ' + step.id + ' does not say which phase it runs from'));
+    }
+  }
+  if (!steps.length) return out;
+  for (const t of linedTables(W)) {
+    const di = col(t, /^Demo$/i);
+    if (di < 0 || t.header[0] !== '#') continue;
+    for (const r of t.rows) {
+      const n = r.cells[0];
+      if (!/^\d+$/.test(n) || /moved to engineering/i.test(r.cells[1] || '')) continue;
+      const tc = ((r.cells[di] || '').match(/TC-[A-Z0-9]+-\d{3}/) || [])[0];
+      if (!tc) { out.push(finding('R34-demo-coverage', 'error', W.rel, r.line, 'Feature ' + n + ' has no demo test')); continue; }
+      const mine = steps.filter((s) => s.feats.includes(n));
+      if (!mine.length) {
+        if (!O.text.includes(tc)) out.push(finding('R34-demo-coverage', 'error', W.rel, r.line, 'Feature ' + n + ' has no demo step and Appendix O never names its demo test ' + tc));
+        continue;
+      }
+      if (!mine.some((s) => s.tests.includes(tc))) out.push(finding('R34-demo-coverage', 'error', O.rel, mine[0].line, 'Feature ' + n + ' is shown in step ' + mine.map((s) => s.id).join(', ') + ' but no such step runs its demo test ' + tc));
+    }
+  }
+  return out;
+});
+
+/* ---------------------------------------------------------------- R35 */
+
+/*
+ * Scope honesty (RISK-02, ADR-0024). Phases 1 to 4 build Tier 1. A Tier 2 or 3
+ * requirement that a phase 1 to 4 slice builds is scope pulled forward, and is
+ * only allowed when document 17's "Requirements built ahead of their tier"
+ * table lists it with a reason. Listing a requirement nobody builds early is
+ * stale and fails too.
+ */
+rule('R35-tier-ahead', 'Every Tier 2 or 3 requirement built in phases 1 to 4 is listed, with a reason, in document 17', (ctx) => {
+  const d03 = planDoc(ctx, '03');
+  const d17 = planDoc(ctx, '17');
+  const d34 = planDoc(ctx, '34');
+  if (!d03 || !d17 || !d34) return [];
+  const tier = new Map();
+  for (const l of d03.lines) { const m = /^\| (REQ-[A-Z0-9]+-\d{3}) \|[^|]*\| ([^|]*)\|/.exec(l); if (m) tier.set(m[1], (m[2].match(/[123]/) || ['1'])[0]); }
+  const early = new Map();
+  let ph = null;
+  for (const l of d34.lines) {
+    const h = /^### \d+\. Phase (\d)/.exec(l);
+    if (h) ph = +h[1];
+    if (!ph || ph > 4 || !/^\| SL-/.test(l)) continue;
+    const c = splitCells(l);
+    for (const r of (c[4] || '').match(/REQ-[A-Z0-9]+-\d{3}/g) || []) if (tier.get(r) !== '1') { if (!early.has(r)) early.set(r, []); early.get(r).push(c[0]); }
+  }
+  const sec = sectionLines(d17, /^Requirements built ahead of their tier/i);
+  const out = [];
+  if (!sec) {
+    if (early.size) out.push(finding('R35-tier-ahead', 'error', d17.rel, 1, early.size + ' Tier 2 or 3 requirements are built in phases 1 to 4, and there is no "Requirements built ahead of their tier" section to list them'));
+    return out;
+  }
+  const listed = new Map();
+  sec.lines.forEach((l, k) => { const m = /^\| (REQ-[A-Z0-9]+-\d{3}) \|/.exec(l); if (m) listed.set(m[1], sec.start + k + 1); });
+  for (const [r, slices] of early) if (!listed.has(r)) out.push(finding('R35-tier-ahead', 'error', d17.rel, sec.start, r + ' is Tier ' + tier.get(r) + ' but ' + slices.join(', ') + ' builds it in phases 1 to 4; list it with its reason'));
+  for (const [r, ln] of listed) if (!early.has(r)) out.push(finding('R35-tier-ahead', 'error', d17.rel, ln, r + ' is listed as built ahead of its tier, but no phase 1 to 4 slice builds it, or it is Tier 1'));
   return out;
 });
 

@@ -21,6 +21,8 @@ Assessment and Reporting turns marks into results a school can defend. It owns t
 | Sensitivity | confidential | `05-service-catalog.md`, Appendix J.2 (mark, report card, transcript) |
 | First-release merge option | May be hosted inside Academics under an ADR; database, exchange, routing keys and permissions unchanged | Appendix L.1, `05-service-catalog.md` part 6 |
 
+**Signature features.** Assessment owns Appendix W feature 6, Report Card Studio with QR verification (demo test `TC-ASM-810` (Appendix W)), and feature 42, mastery and next step (Tier 2; `TC-ASM-811` (Appendix W)). It also serves feature 12, offline-first mobile (mark drafts entered offline sync through Bff.Mobile and land on the grid, section 4.3). The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities and non-responsibilities
@@ -481,7 +483,35 @@ Queues from `11-messaging-architecture.md`: `assessment.reference-copies`, `asse
 | WF-WEL-01 Education plan | Participant | Effect | Applies the accommodation to the sitting | none local |
 | Sagas 1, 2 and 10 | Participant | Saga | Tenant lifecycle commands | none local |
 
-**Saga 7** is designed in `13-workflows-and-sagas.md` §3 (steps, compensations, persisted state, idempotency, process monitor, tests) and is not repeated. What this sheet fixes for it: the handler lives in `Nibras.Assessment.Application/Sagas/ReportCardBatchSaga/` and runs in `Assessment.Worker`; per-student status is the `report_cards` row rather than a `jsonb` map, so the batch status query of `21-performance-engineering.md` §3.6 query 5 reads an index; progress is written to the job resource of document 22 §6 at most once per second and read by Bff.Web for the principal's batch screen.
+**Saga 7** is designed in `13-workflows-and-sagas.md` §3 (steps, compensations, persisted state, idempotency, process monitor, tests) and is not repeated, except its state diagram below. What this sheet fixes for it: the handler lives in `Nibras.Assessment.Application/Sagas/ReportCardBatchSaga/` and runs in `Assessment.Worker`; per-student status is the `report_cards` row rather than a `jsonb` map, so the batch status query of `21-performance-engineering.md` §3.6 query 5 reads an index; progress is written to the job resource of document 22 §6 at most once per second and read by Bff.Web for the principal's batch screen.
+
+Because Assessment orchestrates Saga 7, its states are drawn here too, copied without change from document 13, which stays the source; a change there is copied here in the same pull request. Both ends (`Published` and `Cancelled`) reach the terminal state and every transition carries its label.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Locked: principal publishes
+    Locked --> Computing: batch and job created
+    Computing --> Computing: checkpoint every 100 students
+    Computing --> Computed: every result versioned
+    Computing --> Stalled: no progress 10 min
+    Computed --> Generating: generation requested per student
+    Generating --> Generating: documents.document.generated.v1 for one student
+    Generating --> Generated: every card rendered or withheld
+    Generating --> Stalled: no progress 10 min
+    Generating --> GenerationFailed: a card failed 3 times
+    GenerationFailed --> Generating: retried after the fix
+    GenerationFailed --> Cancelling: officer cancels the batch
+    Stalled --> Computing: worker resumes from checkpoint
+    Stalled --> Generating: worker resumes from the per-student status
+    Generated --> Publishing: assessment.report-cards.published.v1
+    Publishing --> Published: every guardian notified
+    Publishing --> Publishing: delivery retried for the remainder
+    Cancelling --> Cancelled: rendered cards revoked
+    Published --> [*]
+    Cancelled --> [*]
+```
+
+The WF-ASM-02 machine that follows is this sheet's own drawing of the grade-appeal workflow, with the timeouts of Appendix R.
 
 **WF-ASM-01 transitions and where they run.** `Scheduled → MarkEntry`: `ExamTimetablePublishedConsumer` or structure publish. `MarkEntry → Validated`: `SubmitComponent`. `Validated → MarkEntry`: validation errors returned. `Validated → Moderated`: `ModerateComponent`. `Moderated → Approved`: `ApproveGradingPeriod`. `Approved → Locked`: `LockGradingPeriod`. `Locked → Generating → Generated → Published`, `GenerationFailed`: Saga 7.
 
@@ -1092,6 +1122,18 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 | TC-ASM-337 | Contract | Provider pacts for Bff.Web and Bff.Mobile |
 | TC-SEC-160 to TC-SEC-164, TC-SEC-201 | Security | T-ASM-01 to T-ASM-06 |
 | `TC-WEL-003` (Appendix R) | Integration | Accommodation applied per sitting (REQ-ASM-009) |
+| TC-ASM-760 | Unit, property | Every Appendix S example of the fourteen BR-ASM rule classes gives the same result, to the last stored digit, with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn; 84.995 still reads 85.00 under each (BR-ASM-008, REQ-PLAT-019) |
+| TC-ASM-761 | Integration | A report card rendered for a tenant whose numeral setting is Arabic-Indic shows marks, averages and GPA in Arabic-Indic digits in the Arabic version and in Latin digits in the English version, while the stored results, the inputs hash and the QR verification payload stay in invariant form (REQ-DOC-007) |
+
+### 14.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Assessment is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, mutation, integration, contract, load and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). The one-command start that brings the Api and the worker up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml` | ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture | Every calculation runs in `decimal` with the invariant culture; the tenant's numerals are applied only when a figure is displayed or rendered | TC-ASM-760, TC-ASM-761; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
+| Right-to-left output | Report cards and transcripts are rendered by Documents from Assessment's merge values, in both languages with Arabic shaping; the mark grid is right-to-left in the web client | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries, compared byte for byte between the Linux and Windows runs of Documents (`TC-PLAT-003` (document 33)); TC-ASM-101 and the other web end-to-end specs run in all four theme and direction combinations (document 33 part 2) | Linux; the PDF comparison on Linux and Windows |
+| Arabic search and collation | Assessment runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language (`ar-x-icu` or `en-x-icu`) | The culture test inside the built image, which checks the collations exist, `TC-PLAT-004` (document 33) | Linux |
+| Devices without Google services | A published report card is announced through Notification, which reaches such a device in-app while the app is open and by email; the card itself opens from the Bff.Mobile document link without any Google service | `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services | Device pass, per release |
 
 ---
 
@@ -1105,14 +1147,16 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 | Batch throughput | 100 students per compute checkpoint; one render request per student and language on the bulk lane; Documents keys renders idempotently | 800 cards above 8 minutes in N-02 |
 | Pool | `default_pool_size` 16, reserve 4, `max_db_connections` 24 | Pool waits during N-02 |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A wrong grade published | low | high | Fourteen rule classes under property tests and 80 percent mutation score, reproducibility job, inputs hash on every result | Assessment lead |
-| A grade changed after lock without trace | low | high | `SERIALIZABLE` lock, BR-ASM-014, two signatures, audit with both values (T-ASM-01) | Security owner |
-| Report-card batch starves mark entry | med | med | Bulk lane, separate worker, N-02 gate on grid p95 | Performance owner |
-| Duplicate or missing cards after a crash | med | high | Per-student idempotency keys, checkpoint, TC-ASM-006 | Assessment lead |
-| Exam paper leak | low | high | Per-user access log, setter and reviewer only, sealed state, short-lived links (T-ASM-06) | Exams officer |
-| Promotion computed without attendance data | med | med | Open point 3: the attendance condition reports "not evaluated" rather than passing silently | Architect |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there. The last row takes the register's own score for RISK-45, which is higher than this sheet's earlier "medium, medium".
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A wrong grade published | 2 | 4 | 8 | Fourteen rule classes under property tests and 80 percent mutation score, reproducibility job, inputs hash on every result | Assessment lead | none |
+| A grade changed after lock without trace | 2 | 4 | 8 | `SERIALIZABLE` lock, BR-ASM-014, two signatures, audit with both values (T-ASM-01) | Security owner | none |
+| Report-card batch starves mark entry | 3 | 3 | 9 | Bulk lane, separate worker, N-02 gate on grid p95 | Performance owner | none |
+| Duplicate or missing cards after a crash | 3 | 4 | 12 | Per-student idempotency keys, checkpoint, TC-ASM-006 | Assessment lead | RISK-57 |
+| Exam paper leak | 2 | 4 | 8 | Per-user access log, setter and reviewer only, sealed state, short-lived links (T-ASM-06) | Exams officer | none |
+| Promotion computed without attendance data | 4 | 3 | 12 | Open point 3: the attendance condition reports "not evaluated" rather than passing silently | Architect | RISK-45 |
 
 ---
 
@@ -1164,8 +1208,10 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 |---|---|---|
 | Every routing key exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
 | Every permission and error code exists in Appendices B and K | `tools/kit-lint` rule R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; generated permission and validation tests assert exact codes (TC-ASM-320) | Lint, review, pipeline |
-| Every BR-ASM rule has its test class and the mutation gate | Section 14 rows TC-ASM-301 to TC-ASM-315 against document 31 §2 and §6; Stryker.NET in the pipeline | Review, pipeline |
-| Every Appendix R transition has a test | Section 14 against the three WF-ASM tables; `tools/kit-lint` rule R32 (every test case in the WF-ASM-01 to WF-ASM-03 entries of Appendix R is cited in section 14, ranges expanded) | Review, lint, pipeline |
-| Saga 7 matches document 13 | `ReportCardBatchSagaTests` covers every scenario in document 13's table | Integration suite |
+| Every BR-ASM rule has its test class and the mutation gate | `test-strategist` compares section 14 rows TC-ASM-301 to TC-ASM-315 with document 31 §2 and §6 at the Group C review and on every change to this sheet or document 31; kit-lint R09 (each Appendix S rule has three examples and a class ending in `Tests`); Stryker.NET in the pipeline once code exists (TC-ASM-315) | Review, lint, pipeline |
+| Every Appendix R transition has a test | `tools/kit-lint` rule R32 (every test case in the WF-ASM-01 to WF-ASM-03 entries of Appendix R is cited in section 14, ranges expanded) and R20 (each is defined in exactly one document) | Lint, pipeline |
+| Saga 7 matches document 13 | `plan-consistency-checker` compares the Saga 7 diagram of section 7 with document 13's line by line, and `test-strategist` compares the `ReportCardBatchSagaTests` scenarios of section 14 with document 13's Saga 7 test table at the Group C review and on every change to either; kit-lint R29 checks document 13's Saga 7 diagram has a terminal state and labelled transitions | Review, lint; integration suite once code exists |
 | Calculations are reproducible | `ReproducibilityCheckJob` weekly and TC-ASM-316 | Worker, integration suite |
-| The tree follows document 07's anatomy and every entry has a comment | Group C review diff; `tools/kit-lint` rule R18 | Review, lint |
+| The tree follows document 07's anatomy and every entry has a comment | `plan-consistency-checker` compares the section 13 tree with document 07 part 3 at the Group C review and on every change to this sheet or document 07; `tools/kit-lint` rule R18 | Review, lint |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 14.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 (each cited demo test is defined in exactly one document) | Review; lint |

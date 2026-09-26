@@ -2,7 +2,7 @@
 
 Bff.Web is the web backend-for-frontend: the one place where a screen of the Angular workspaces that needs data from more than one service gets it in one call. It composes role home payloads ("Today" for every role in Appendix D), the Student 360 page from the Reporting read model and the owning services, the session bootstrap (identity, tenant snapshot, effective permissions, landing workspace, reference data), the permission refresh after `identity.permissions.changed.v1`, the command palette and search, the guardian transparency panel, and the platform console's cross-service process monitor. It owns no data, publishes no event, holds no business rule and performs no write that bypasses the owning service (REQ-BFF-001). A single-service screen, such as the attendance register or the mark grid, does not come here: the web workspace calls that service through the Gateway with its generated client (`08-web-structure.md` part 4).
 
-**Group** C · **Requirement areas covered** BFF, with WEB, PERF, SEC and PRV rows that bind this host · **Last updated** 2026-09-21 by the planning session
+**Group** C · **Requirement areas covered** BFF, with WEB, PERF, SEC and PRV rows that bind this host · **Last updated** 2026-09-26 by the planning session
 
 | Fact | Value | Source |
 |---|---|---|
@@ -34,7 +34,9 @@ Bff.Web is the web backend-for-frontend: the one place where a screen of the Ang
 | Role home payloads | One composed payload per role "Today" (Appendix D), each card answering one question and linking to one action, each card's data filtered by the caller's permissions and scope |
 | Student 360 composition | Header, tabs, and one chronological timeline across attendance, grades, behavior, health visits, fees, communication, documents and interventions, filtered by the viewer's permissions, with "exists, no access" for what the viewer may not read (REQ-BFF-003) |
 | Command palette and search | Federated search across the services the caller may read, merged with the permitted navigation and action entries; natural-language search through Ai when the tenant enables it (REQ-BFF-006) |
+| Ai's front door and read path | The web client's only road to Ai (the `ai/{path}` pass-through and the natural-language routes, each answering with Ai's 202 job), and the three internal routes Ai's jobs read through: the source feed, the source re-check and the read-only tools (reference architecture Section 8.0; section 4.1) |
 | Guardian transparency panel | Who read the child's sensitive records and when, consents, retention clocks, composed from Audit and Platform (`12-security-privacy-safety.md` §7) |
+| Campus digital twin (feature 33) | Operations' floor plans and tickets, Scheduling's room holds and Attendance's present counts, joined by room for the principal's floor plan and weekly heatmap. It shows rooms and counts, never a child (REQ-OPS-016, SL-OPS-624; section 4.1) |
 | Shell counters | Unread messages, unread inbox, open tasks and pending approvals for the shell badges |
 | Platform console process monitor | Every service's `/jobs` list for a tenant, read through one call (`22-api-conventions-and-error-catalog.md` §6.3) |
 | Per-tenant web artefacts | `manifest.webmanifest` with the tenant's white-label name, icon and theme colour, and the App Links and Universal Links association files per tenant host (`09-mobile-structure.md` §4.2) |
@@ -70,6 +72,9 @@ Bff.Web is the web backend-for-frontend: the one place where a screen of the Ang
 | REQ-PERF-003, REQ-PERF-010 | Composed reads within the Gateway-class budget; composed home p95 under 250 ms (Appendix N, N-05, `15-deployment-and-operations.md`) |
 | REQ-PERF-026 | With Redis down, composition still answers from upstream calls |
 | REQ-L10N-001, REQ-L10N-008, REQ-L10N-010, REQ-L10N-014 | Bootstrap carries language, numerals, time zone, Hijri display and terminology overrides |
+| REQ-API-018 | The natural-language search route and the Ai pass-through answer 202 with Ai's assist job, so no request waits on a model |
+| REQ-AI-006, REQ-AI-014 | The source re-check and the read tools run under the caller's token, and a natural-language plan is executed here over the owners' list endpoints, never by Ai |
+| REQ-OPS-016 | The campus digital twin (feature 33) is composed here from Operations, Scheduling and Attendance (SL-OPS-624); Operations owns the requirement and its floor plans |
 
 ---
 
@@ -81,7 +86,7 @@ None, by design. Bff.Web owns no database (Appendix L.1); every field it returns
 
 ## 4. REST API: routes, aggregation endpoints and their upstream calls
 
-All routes are under `/bff/web/v1/`, reached through the Gateway on the tenant host, `bearerAuth` only (`22-api-conventions-and-error-catalog.md` §11.3). **Permission** is the upstream permission that gates the screen; Bff.Web declares no permission of its own and forwards the caller's token, so every upstream call is authorised by the owning service against the caller's effective set and scope. A card whose upstream refuses returns that region as `noPermission` rather than failing the page. Errors are the eight Appendix K.1 suffixes with the `BFF_` prefix for failures before any upstream is reached (`22-api-conventions-and-error-catalog.md` part 8); an upstream Appendix K code is passed through verbatim inside the region's `problem` object and never rewritten. Every route is a `GET` except where marked, is safe, and supports `ETag` and `If-None-Match`.
+All routes are under `/bff/web/v1/`, reached through the Gateway on the tenant host, `bearerAuth` only (`22-api-conventions-and-error-catalog.md` §11.3), except the three internal routes under `/bff/web/v1/internal/ai/`, which the Gateway never routes and only Ai's jobs call in-cluster (the Ai routes table after section 4.1). **Permission** is the upstream permission that gates the screen; Bff.Web declares no permission of its own and forwards the caller's token, so every upstream call is authorised by the owning service against the caller's effective set and scope. A card whose upstream refuses returns that region as `noPermission` rather than failing the page. Errors are the eight Appendix K.1 suffixes with the `BFF_` prefix for failures before any upstream is reached (`22-api-conventions-and-error-catalog.md` part 8); an upstream Appendix K code is passed through verbatim inside the region's `problem` object and never rewritten. Every route is a `GET` except where marked, is safe, and supports `ETag` and `If-None-Match`.
 
 ### 4.1 Route table
 
@@ -110,18 +115,30 @@ All routes are under `/bff/web/v1/`, reached through the Gateway on the tenant h
 | GET | `/bff/web/v1/students/{studentId}/360` | `school.students.view` | `tab` | `Student360`: header, tab list with counts and access flags, first timeline page | `BFF_NOT_FOUND` (student outside scope, no hint it exists) | Safe |
 | GET | `/bff/web/v1/students/{studentId}/360/timeline?cursor=&kinds=&from=&to=` | `school.students.view` | query, keyset cursor | Timeline page, newest first, page cap 50 | `BFF_VALIDATION_FAILED` (bad cursor) | Safe |
 | GET | `/bff/web/v1/students/{studentId}/transparency` | `audit.access-transparency.view` (own-children) | none | Reads of sensitive records by role and time, consents, retention clocks | `BFF_NOT_FOUND` | Safe; never cached |
+| GET | `/bff/web/v1/campus/digital-twin?campusId=&date=` | `operations.facilities.view` | `campusId`; `date` (default today in the campus time zone) sets the day for live occupancy and the week for the heatmap | `DigitalTwin`: floor plans with room polygons. Per room, it carries the timetabled or booked use now, the present count from today's roll call, open tickets, and a utilisation heatmap over the week, which lays out Scheduling's holds per room and period as held or free. Bff.Web sums nothing. It shows rooms and counts, never a student name or id (REQ-OPS-016, feature 33) | none beyond K.1; the occupancy and heatmap regions may be `partial` | Safe; never cached here (Operations caches the floor plans) |
 | GET | `/bff/web/v1/search?q=&kinds=&limit=` | signed in; each result kind gated by its upstream view permission | `q` at least 2 characters, Arabic-normalized upstream | `SearchResults` grouped by kind plus permitted navigation and action entries | `BFF_VALIDATION_FAILED` | Safe; never cached |
-| POST | `/bff/web/v1/search/natural-language` | `ai.assistant.use` | `{ question }` | Answer with sources, limited by the caller's scope; `AI_*` codes passed through | `AI_DISABLED_FOR_TENANT`, `AI_SCOPE_VIOLATION_BLOCKED` passed through | No side effect; not replayed |
+| POST | `/bff/web/v1/search/natural-language` | `ai.assistant.use` | `{ question, language }`, `Idempotency-Key` | **202** `{ jobId, location }`: the assist job Ai returns for `POST /api/v1/ai/query-plans` with `featureCode = nl-search` (REQ-API-018; no request waits on a model). When Ai answers 200 degraded at rung 1, or Ai is not deployed, the route answers **200** with keyword `SearchResults` from the `search` route, `degraded: true` and the `degradedReason` | `AI_DISABLED_FOR_TENANT` (403, the client hides the entry point), `AI_LANGUAGE_UNSUPPORTED`, `BFF_VALIDATION_FAILED` (question over 200 characters) | By `Idempotency-Key`, forwarded to Ai |
+| GET | `/bff/web/v1/search/natural-language/{jobId}` | `ai.assistant.view` | none | **202** with the job status while it runs; then **200** `NaturalLanguageResults`: Bff.Web runs the job's `QueryPlan` over the owning services' list endpoints under the caller's token, so every row is authorized by its owner, and returns the rows grouped by kind with the plan's filters as the Because explanation and any `AI_SCOPE_VIOLATION_BLOCKED` warning of a plan narrowed to scope | `AI_NOT_FOUND` passed through (another user's job, a second read, or after 15 minutes) | Safe; the result is readable once, as Ai's is |
+| any | `/bff/web/v1/ai/{path}` | the Appendix B permission Ai's own route declares (`06-services/ai.md` §5) | as Ai's route | as Ai's route, unchanged: drafts, translations and asks answer 202 with the assist job, configuration and usage answer as Ai's section 5 says | Ai's `AI_*` codes passed through unchanged | As Ai's route; `Idempotency-Key` and `If-Match` forwarded |
+| GET | `/bff/web/v1/internal/ai/sources/{sourceEntity}?cursor=` | **Internal**: Ai's client-credentials service token (`12-security-privacy-safety.md` §3.3) whose scope names this source entity; no user | `cursor` from the last page, or none for a full read | A page of at most 200 records of the entity changed since the cursor, each with its source service, id, `sourceVersion`, data class, required permission and scope tags (campus, sections, students) and the text fields document 25 §4.2 lists for it; the next cursor; the last page also carries the entity's record count and highest `sourceVersion` for Ai's nightly reconciliation | `BFF_PERMISSION_DENIED` for an entity the credential does not name, and always for message bodies, Wellbeing and any Sensitive or level S field (T-AI-03); `BFF_VALIDATION_FAILED` (bad cursor, unknown entity) | Safe |
+| POST | `/bff/web/v1/internal/ai/sources/authorize` | **Internal**: the caller's token, forwarded by Ai's job | `{ sources: [{ sourceService, sourceEntity, sourceId }] }`, at most 8 | `{ permitted: [...] }`: the subset the caller may read now, each confirmed by the owning service's own read under the caller's token (document 25 §4.4 step 5) | `BFF_VALIDATION_FAILED` (more than 8, unknown entity); an upstream refusal drops the source, never fails the call | Safe |
+| POST | `/bff/web/v1/internal/ai/tools/{toolName}` | **Internal**: the caller's token, forwarded by Ai's job | the tool's arguments | The result of the one read-only GET operation `toolName` maps to, called on the owning service under the caller's token | `BFF_NOT_FOUND` (a tool name outside the map), `BFF_PERMISSION_DENIED` (a mapping to any operation other than `GET`, refused before a call); the owner's code passed through | Safe |
 | GET | `/bff/web/v1/console/jobs?tenantId=&state=` | `platform.jobs.view` | query | Jobs from every service that runs them, merged and ordered by age | none beyond K.1; a silent service shows as `partial` | Safe |
 | GET | `/bff/web/v1/manifest.webmanifest` | none (public, per tenant host) | host | Web manifest with the tenant's white-label name, icons and theme colour | `BFF_NOT_FOUND` for an unknown host | Safe; `Cache-Control: max-age=3600` |
 | GET | `/.well-known/assetlinks.json` | none (public, per tenant host; Gateway maps the path to Bff.Web) | host | Android App Links statement for the shared app and every white-label package | `BFF_NOT_FOUND` | Safe |
 | GET | `/.well-known/apple-app-site-association` | none (public, per tenant host) | host | Universal Links association | `BFF_NOT_FOUND` | Safe |
 
-**Route count: 29.**
+**Route count: 35**, counted from the table: 32 reached through the Gateway (the `/bff/web/v1/ai/{path}` pass-through counts once, whatever Ai path it forwards) and 3 internal routes that only Ai's jobs call.
 
+**The Ai routes.** Reference architecture Section 8.0 gives Bff.Web two jobs for Ai, and the rows above are both:
+
+| Kind | Routes | Who calls | Rule |
+|---|---|---|---|
+| Assist submission | `/bff/web/v1/ai/{path}` and the two natural-language search routes | The web client through the Gateway | Ai is never routed from outside (`06-services/gateway.md` §5.1), so the web client reaches Ai's section 5 only through this host. The pass-through forwards the caller's token, the tenant and the correlation id unchanged and adds nothing: Ai authorizes, meters and degrades. Every model call answers 202 with an assist job, which the client polls on the job route |
+| Internal routes for Ai's jobs | `GET /bff/web/v1/internal/ai/sources/{sourceEntity}?cursor=`, `POST /bff/web/v1/internal/ai/sources/authorize`, `POST /bff/web/v1/internal/ai/tools/{toolName}` | `ai-api` and `ai-worker` only, in-cluster | The Gateway never routes `/bff/web/v1/internal/` (`TC-GW-751`) and a network policy admits only the two Ai workloads. The source feed runs under Ai's service credential, limited per source entity; the re-check and the tools run under the caller's token that Ai's job holds in memory. Each is one hop from an Ai job to Bff.Web, answered from the owning service's own API, and none is made inside a request Ai is serving (`05-service-catalog.md`, "Ai over REST, through Bff.Web") |
 ### 4.2 Upstream calls behind each aggregation endpoint
 
-Every composition fans out in parallel with a per-call deadline (section 5), forwards the caller's bearer token, `X-Nibras-Tenant-Id`, the correlation id and `traceparent`, and assembles the response even when some calls fail. Attendance and Assessment paths are quoted from their sheets; paths of the other services are pinned by the consumer pacts in `tests/Nibras.Bff.Web.Tests/Contracts/` against each service's published OpenAPI, and are named here by service and resource.
+Every composition fans out in parallel with a per-call deadline (section 5), forwards the caller's bearer token, `X-Nibras-Tenant-Id`, the correlation id and `traceparent`, and assembles the response even when some calls fail. Attendance and Assessment paths, and the Operations and Scheduling paths of the digital twin, are quoted from their sheets; paths of the other services are pinned by the consumer pacts in `tests/Nibras.Bff.Web.Tests/Contracts/` against each service's published OpenAPI, and are named here by service and resource.
 
 | Endpoint | Upstream calls (service → resource) | Source of truth for the card |
 |---|---|---|
@@ -147,8 +164,14 @@ Every composition fans out in parallel with a per-call deadline (section 5), for
 | `students/{id}/360` | School → student header (name, photo reference, section, status; never custody text); Reporting → `student_360` read model (timeline and counts); for each tab the owning service's permission check through a `HEAD` or count read: Attendance `GET /api/v1/attendance/students/{id}/summary`, Assessment `GET /api/v1/assessment/students/{id}/term-results`, Behavior, Finance, Communication, Documents, Wellbeing (existence and count only) | Reporting for the timeline; the owning service decides whether the viewer may open each tab |
 | `students/{id}/360/timeline` | Reporting → `student_360` timeline page by keyset; entries of kinds the viewer cannot read are replaced by an "exists, no access" marker with no content | Reporting |
 | `students/{id}/transparency` | Audit → the guardian transparency facts for the child's sensitive records (role, time, category; never reader names, never content); Platform → consents and retention clocks per category | Audit, Platform |
+| `campus/digital-twin` | Operations → `GET /api/v1/operations/facilities/floor-plans?campusId=` (plans, room polygons, open tickets per room); Scheduling → `GET /api/v1/scheduling/rooms/availability?campusId=&from=&to=` for the day and for the week (room holds from the timetable and bookings, the heatmap source); Attendance → `GET /api/v1/attendance/reports/daily-register?campusId=&date=` (register per section and period, from which only the present count per section and period is kept; no student row leaves the composer) | Operations for geometry and tickets; Scheduling for which section or booking holds a room; Attendance for how many are present. The composer joins them by room and section and computes nothing else (SL-OPS-624) |
 | `search` | School → students, guardians, staff; Requests → requests; Documents → files the caller may read; Academics → assignments; plus the static navigation manifest filtered by the effective set | each owner; results are the union of what each owner returned for this caller |
-| `search/natural-language` | Ai → assistant query with the caller's scope | Ai |
+| `search/natural-language` (POST) | Ai → `POST /api/v1/ai/query-plans` with `featureCode = nl-search` under the caller's token; on a degraded answer or with Ai absent, the `search` fan-out above instead | Ai for the job; the owners for any keyword fallback |
+| `search/natural-language/{jobId}` (GET) | Ai → `GET /api/v1/ai/assist-jobs/{jobId}`; once it holds a `QueryPlan`, each list endpoint the plan names, on its owning service, in parallel under the caller's token, at most one call per service | The owning services for every row; Ai only for the plan |
+| `ai/{path}` | Ai → `/api/v1/ai/{path}`, the same method and body, 2 s deadline (every model call answers 202 at once) | Ai |
+| `internal/ai/sources/{sourceEntity}` | The one owning service of the entity (Communication for announcements, Assessment for report-card comments and marks summaries, Academics for lesson plans, Attendance for weekly attendance summaries, Behavior for behavior categories without restricted narratives; document 25 §4.2) → its list endpoint filtered by change since the cursor, under Ai's service token; 10 s per page of 200 | The owning service |
+| `internal/ai/sources/authorize` | Each distinct owning service among the at most 8 sources → its own read of the source under the caller's token, in parallel; 800 ms for the whole call | The owning services; a refusal or a timeout drops the source |
+| `internal/ai/tools/{toolName}` | The one owning service the tool maps to → its `GET` operation under the caller's token; 2 s per call, and Ai makes at most 3 per job | The owning service |
 | `console/jobs` | The `/jobs` resource of Assessment, Documents, Scheduling, Finance, Reporting, Platform (document 22 §6) | each owner |
 | `manifest.webmanifest`, `.well-known/*` | Platform → branding and the white-label flavor registry for the host | Platform |
 
@@ -175,7 +198,7 @@ Upstream HTTP policy, stated here because it replaces the gRPC deadlines of a se
 
 | Aspect | Value |
 |---|---|
-| Deadline per upstream call | 400 ms for home and bootstrap regions, 800 ms for Student 360 and search, 2 s for `console/jobs`; bounded by the Gateway's 30-second request timeout |
+| Deadline per upstream call | 400 ms for home and bootstrap regions, 800 ms for Student 360, search and the digital twin, 2 s for `console/jobs` and the `ai/{path}` pass-through; bounded by the Gateway's 30-second request timeout. The internal Ai routes carry Ai's own budgets (`06-services/ai.md` §6): 10 s per source-feed page of 200, 800 ms for a re-check of up to 8 sources, 2 s per tool call |
 | Retries | One retry on connection failure or 503 for `GET`, with 50 to 100 ms jitter; none for the preferences `PUT` |
 | Circuit breaker | Per upstream service through the resilience pipeline of `Nibras.BuildingBlocks.Web`: opens at 50 percent failures over 30 s with at least 20 calls, half-open after 15 s; an open breaker returns the region as `unavailable` at once |
 | Bulkhead | At most 64 concurrent calls per upstream per instance, so one slow service cannot exhaust the host |
@@ -225,9 +248,9 @@ None. Bff.Web runs no Quartz.NET job. The pre-peak warm-up of the entries it rea
 | Error codes | HTTP | When |
 |---|---|---|
 | `BFF_VALIDATION_FAILED` | 400 | Bad query parameter, unknown slice, bad cursor |
-| `BFF_PERMISSION_DENIED` | 403 | Route gate refused before any upstream call (a route the caller's effective set cannot reach at all) |
+| `BFF_PERMISSION_DENIED` | 403 | Route gate refused before any upstream call (a route the caller's effective set cannot reach at all); on the internal Ai routes, a source entity the service credential does not name, or a tool mapped to anything but a `GET` |
 | `BFF_TENANT_MISMATCH` | 403 | Token tenant differs from the forwarded tenant |
-| `BFF_NOT_FOUND` | 404 | Unknown host for per-tenant artefacts; a student or child outside scope |
+| `BFF_NOT_FOUND` | 404 | Unknown host for per-tenant artefacts; a student or child outside scope; a tool name outside `AiToolMap` |
 | `BFF_CONCURRENCY_CONFLICT` | 409 | Preferences `If-Match` failure passed through |
 | `BFF_IDEMPOTENCY_REPLAY` | 200 | Not raised by a route today; reserved by the shared middleware |
 | `BFF_RATE_LIMITED` | 429 | Per-user limit of the Web building block (for example search at 10 per second) |
@@ -248,7 +271,7 @@ The entries are `21-performance-engineering.md` §1.21 (role home payload per us
 | Student 360 header per viewer and student | `nibras:{tenant}:bff:s360-header:{viewerId}:{studentId}:v1` | `tenant`, `user`, `student` | 15 s | 60 s ± 10% | Broadcast for tag `student` after `school.student.profile-updated.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1` | Custody, medical summary, wellbeing content; the timeline is never cached here (Reporting owns its freshness) |
 | Per-tenant web manifest and association files (platform-scoped, per host) | `nibras:platform:bff:web-manifest:{host}:v1` | none | 5 min | 1 h ± 10% | Branding publish handler in Platform evicts by key through the broadcast | Nothing |
 
-**Never cached in Bff.Web:** search results, natural-language answers, the transparency panel, the view-as-role set, Student 360 timeline pages, Wellbeing content beyond counts, any response carrying a signed URL. Every key carries the full tenant UUID and, for anything Confidential, the `userId` (§1 conventions); a composed payload is cached per user, never shared across users, because the permission that shaped it is part of its identity.
+**Never cached in Bff.Web:** search results, natural-language answers, the digital twin (its occupancy is live; Operations caches the floor plans), the transparency panel, the view-as-role set, Student 360 timeline pages, Wellbeing content beyond counts, any response carrying a signed URL. Every key carries the full tenant UUID and, for anything Confidential, the `userId` (§1 conventions); a composed payload is cached per user, never shared across users, because the permission that shaped it is part of its identity.
 
 **Hot paths and budgets.** Bff.Web runs no query. Its budgets are the composition budgets: home p95 under 250 ms and p99 under 600 ms with a cache hit ratio at or above 95 percent after the first request (N-05); first screen of every workspace at most two Bff.Web calls (`21-performance-engineering.md` §10); each home at most one upstream call per card and at most 5 database commands per card upstream (`16-test-strategy.md` query budgets for "Dashboard card from a read model"). The metric is `nibras_bff_compose_duration_seconds` by screen with upstream failures and circuit states per service (`15-deployment-and-operations.md`).
 
@@ -272,7 +295,7 @@ The threat row is `12-security-privacy-safety.md` §2.21 T-GW-04 (the backend co
 | Logged | Response bodies, search text, natural-language questions, student names; logs carry route, status, upstream timings, tenant id and correlation id |
 | Sent to the browser | Any field the upstream did not return for this caller; the view-as-role preview never carries data, only the permission set |
 
-The BFF runs under its own client-credentials identity only for the platform-scoped per-host artefacts; every tenant data call uses the caller's forwarded token so that the owning service's authorization, scope and row-level security apply unchanged.
+The BFF runs under its own client-credentials identity only for the platform-scoped per-host artefacts; every tenant data call uses the caller's forwarded token so that the owning service's authorization, scope and row-level security apply unchanged. The one exception is the internal source feed, which forwards Ai's own service token, scoped per source entity, and never widens it: the owning service answers that token only for the entity it names, and never with message bodies, Wellbeing or a Sensitive or level S field (T-AI-03 in `12-security-privacy-safety.md` §2.20).
 
 ---
 
@@ -332,11 +355,42 @@ src/Bff.Web/                                                      web backend-fo
 │   │   │   ├── GetTransparencyHandler.cs                         Audit access log and Platform consents and clocks; never cached
 │   │   │   ├── GetTransparencyValidator.cs                       caller is a guardian of the student
 │   │   │   └── GetTransparencyEndpoint.cs                        route
-│   │   ├── Search/                                               GET /bff/web/v1/search and POST /search/natural-language
-│   │   │   ├── SearchQuery.cs                                    record: text, kinds, limit, or a natural-language question
-│   │   │   ├── SearchHandler.cs                                  parallel owner searches, merged by kind, plus permitted manifest entries; Ai for questions
+│   │   ├── GetDigitalTwin/                                       GET /bff/web/v1/campus/digital-twin (feature 33, SL-OPS-624)
+│   │   │   ├── GetDigitalTwinQuery.cs                            record: campus id, date
+│   │   │   ├── GetDigitalTwinHandler.cs                          parallel Operations, Scheduling and Attendance reads; hands them to the composer
+│   │   │   ├── GetDigitalTwinValidator.cs                        campus in the caller's scope, date within 7 days of today
+│   │   │   └── GetDigitalTwinEndpoint.cs                         route; never cached
+│   │   ├── Search/                                               GET /bff/web/v1/search
+│   │   │   ├── SearchQuery.cs                                    record: text, kinds, limit
+│   │   │   ├── SearchHandler.cs                                  parallel owner searches, merged by kind, plus permitted manifest entries
 │   │   │   ├── SearchValidator.cs                                length 2 to 200, kinds known
-│   │   │   └── SearchEndpoint.cs                                 routes, per-user rate limit
+│   │   │   └── SearchEndpoint.cs                                 route, per-user rate limit
+│   │   ├── NaturalLanguageSearch/                                POST /search/natural-language and GET /search/natural-language/{jobId}
+│   │   │   ├── NaturalLanguageSearchRequests.cs                  records: question and language, or job id
+│   │   │   ├── NaturalLanguageSearchHandler.cs                   submits the nl-search query plan to Ai (202); runs a finished plan over the owners' list endpoints; keyword fallback when degraded
+│   │   │   ├── NaturalLanguageSearchValidator.cs                 question 2 to 200 characters, language ar or en
+│   │   │   └── NaturalLanguageSearchEndpoint.cs                  routes, per-user rate limit, Idempotency-Key forwarded
+│   │   ├── AiPassThrough/                                        any method on /bff/web/v1/ai/{path}
+│   │   │   ├── AiPassThroughRequest.cs                           record: method, path, body, forwarded headers
+│   │   │   ├── AiPassThroughHandler.cs                           forwards to Ai section 5 unchanged under the caller's token; adds and removes nothing
+│   │   │   ├── AiPassThroughValidator.cs                         path stays under /api/v1/ai/ after normalisation, no internal route reachable
+│   │   │   └── AiPassThroughEndpoint.cs                          route; 2 s deadline, 202 passed through
+│   │   ├── AiSourceFeed/                                         GET /bff/web/v1/internal/ai/sources/{sourceEntity}
+│   │   │   ├── AiSourceFeedQuery.cs                              record: source entity, cursor
+│   │   │   ├── AiSourceFeedHandler.cs                            one owner list read by change since the cursor, pages of 200, count and highest version on the last page
+│   │   │   ├── AiSourceFeedValidator.cs                          service token names this entity; entity is one of the five of document 25 §4.2
+│   │   │   └── AiSourceFeedEndpoint.cs                           internal route, Ai service credential only
+│   │   ├── AiSourceAuthorize/                                    POST /bff/web/v1/internal/ai/sources/authorize
+│   │   │   ├── AiSourceAuthorizeCommand.cs                       record: at most 8 sources
+│   │   │   ├── AiSourceAuthorizeHandler.cs                       each owner's own read under the caller's token, in parallel; refusal or timeout drops the source
+│   │   │   ├── AiSourceAuthorizeValidator.cs                     at most 8, known entities, a user token
+│   │   │   └── AiSourceAuthorizeEndpoint.cs                      internal route, 800 ms budget
+│   │   ├── AiTools/                                              POST /bff/web/v1/internal/ai/tools/{toolName}
+│   │   │   ├── AiToolCommand.cs                                  record: tool name, arguments
+│   │   │   ├── AiToolHandler.cs                                  calls the one GET operation the tool maps to, under the caller's token
+│   │   │   ├── AiToolValidator.cs                                tool in AiToolMap, mapped operation is a GET, arguments match its query parameters
+│   │   │   └── AiToolEndpoint.cs                                 internal route, 2 s deadline
+│   │   ├── AiToolMap.cs                                          tool name to owning-service GET operation; Ai's ToolCatalog offers only these names
 │   │   ├── GetConsoleJobs/                                       GET /bff/web/v1/console/jobs
 │   │   │   ├── GetConsoleJobsQuery.cs                            record: tenant id, state
 │   │   │   ├── GetConsoleJobsHandler.cs                          reads every job-running service's /jobs, merged by age
@@ -366,6 +420,8 @@ src/Bff.Web/                                                      web backend-fo
 │   │   │   ├── Region.cs                                         the region envelope: key, status, asOf, data, problem, action
 │   │   │   ├── RegionStatusMapper.cs                             upstream outcome to ready, empty, partial, noPermission, unavailable
 │   │   │   └── ActionLinkResolver.cs                             card action from the navigation manifest with its permission
+│   │   ├── DigitalTwin/                                          campus digital twin composition
+│   │   │   └── DigitalTwinComposer.cs                            joins floor plans, room holds and present counts by room and section; drops every student row
 │   │   ├── Student360/                                           Student 360 composition
 │   │   │   ├── TabAccessResolver.cs                              per-tab access flags from the owning services' answers
 │   │   │   └── TimelineRedactor.cs                               replaces entries the viewer cannot read with "exists, no access"
@@ -381,6 +437,7 @@ src/Bff.Web/                                                      web backend-fo
 │   ├── Security/                                                 no permissions of its own; propagation only
 │   │   ├── TokenForwardingHandler.cs                             forwards the caller's bearer token unchanged
 │   │   ├── TenantPropagationHandler.cs                           forwards X-Nibras-Tenant-Id and refuses a mismatch with BFF_TENANT_MISMATCH
+│   │   ├── InternalAiCallerPolicy.cs                             internal Ai routes: Ai's service token for the feed, a user token for the re-check and tools, in-cluster callers only
 │   │   └── CorrelationHandler.cs                                 forwards the correlation id, traceparent and Nibras-Expect-Message
 │   ├── Caching/                                                  what this host caches and what evicts it
 │   │   ├── BffWebCacheKeys.cs                                    keys and tags of document 21 §1.21 and section 11
@@ -389,7 +446,8 @@ src/Bff.Web/                                                      web backend-fo
 │   │   ├── BootstrapDto.cs                                       bootstrap payload
 │   │   ├── HomeDtos.cs                                           one DTO per role home
 │   │   ├── Student360Dtos.cs                                     header, tabs, timeline page
-│   │   └── SearchDtos.cs                                         grouped search results
+│   │   ├── SearchDtos.cs                                         grouped search results and natural-language results with the plan as Because
+│   │   └── InternalAiDtos.cs                                     source feed page, re-check answer, tool result; internal, not in the public OpenAPI groups
 │   ├── Observability/                                            metrics beyond ServiceDefaults
 │   │   └── ComposeMetrics.cs                                     nibras_bff_compose_duration_seconds by screen, upstream failures and circuit states
 │   ├── Persistence/                                              absent by design: no database (Appendix L), so the template does not create this folder here
@@ -405,12 +463,14 @@ src/Bff.Web/                                                      web backend-fo
     │   ├── PrincipalHomeComposerTests.cs                         lens ordering, unmarked attendance and visitors from Attendance
     │   ├── ParentHomeComposerTests.cs                            one card per child, the designed empty state
     │   ├── Student360ComposerTests.cs                            redaction and tab access flags per role
+    │   ├── DigitalTwinComposerTests.cs                           counts per room, tickets on the plan, no student field, partial regions (TC-BFF-027)
     │   └── HomeComposersTests.cs                                 the remaining homes, table-driven
     ├── Contracts/                                                consumer pacts, one per upstream service (twenty)
     │   └── UpstreamPactTests.cs                                  pins every upstream path and field the composers read
     ├── Payload/                                                  size and shape
     │   └── PayloadSizeTests.cs                                   every composed example under 32 KB after Brotli
     ├── Security/                                                 no widening, no leak
+    │   ├── InternalAiRouteTests.cs                               feed scope per entity, re-check drops refused sources, tools refuse non-GET mappings
     │   ├── TokenForwardingTests.cs                               the caller's token reaches every upstream unchanged
     │   └── NoLeakTests.cs                                        no Sensitive or level-S field in any response; logs carry no body
     ├── Caching/                                                  keys and invalidation
@@ -459,6 +519,24 @@ New identifiers are minted from `TC-BFF-001` upward for Bff.Web, numbers 001 to 
 | TC-BFF-024 | Integration | Per-host manifest and association files carry the tenant's white-label values; unknown host is `BFF_NOT_FOUND` |
 | TC-BFF-025 | Integration | The correlation id and `traceparent` reach every upstream span of one composition (REQ-GW-008) |
 | TC-BFF-026 | Localization | Bootstrap carries numerals, calendar, time zone and terminology; labels are keys only |
+| TC-BFF-027 | Composition | The digital twin for a campus of 3 floors, with stubbed Operations, Scheduling and Attendance answers, shows each room's timetabled use, the present count for its section and period, and its open tickets. The week's heatmap marks each room and period held or free exactly as Scheduling returned it. No student name or id appears anywhere in the payload. With Attendance stopped, the occupancy region is `partial` and the plan and tickets still render (REQ-OPS-016, SL-OPS-624; the end-to-end demo test is `TC-OPS-810`, Operations sheet) |
+| TC-BFF-750 | Integration | The source feed, called in-cluster with Ai's service token scoped to announcements, returns pages of at most 200 announcements with their versions and scope tags and a next cursor; the same token asking for report-card comments, message bodies or a Wellbeing entity gets `BFF_PERMISSION_DENIED` and no upstream call is made; the same path from outside is refused at the Gateway (`TC-GW-751`, Gateway sheet) |
+| TC-BFF-751 | Integration | The source re-check under a teacher's token for 8 sources, 2 of them outside the teacher's sections, returns the 6 permitted ids within 800 ms; an owning service stopped mid-call drops its sources rather than failing the call |
+| TC-BFF-752 | Integration | A tool call whose name maps to a `GET` list returns that list under the caller's token; an unknown tool name returns `BFF_NOT_FOUND`; a map entry pointing at a `POST` is refused with `BFF_PERMISSION_DENIED` before any upstream call |
+| TC-BFF-753 | End to end | Natural-language search returns 202 with Ai's job; polling the job route returns the rows of the plan's list calls, each authorized by its owner under the caller's token, and a second read returns `AI_NOT_FOUND`; with Ai stopped or answering degraded, the same POST returns 200 keyword results with `degraded: true` (REQ-BFF-006) |
+| TC-BFF-754 | Contract | With the process culture set to `ar-SA`, every composed payload example filled from the Arabic demo tenant stays under 32 KB after Brotli, and its dates, numbers and `asOf` values are ISO 8601 with Latin digits, byte-identical to the invariant-culture run; the client renders them in the tenant's numerals and calendar (REQ-PLAT-019, REQ-L10N-008) |
+
+### Platform notes
+
+| Concern | What holds here | Proof and runner |
+|---|---|---|
+| Runner | The host's composition, contract and security tests run on the Linux runner (`ubuntu-latest`) in `ci-service.yml`; Bff.Web is not among the projects document 33 part 4 runs on Windows (`BuildingBlocks`, `Documents`, `Localization`), and the Web building block it composes with is tested there. `dev-smoke` starts the host on `ubuntu-latest`, `windows-latest` and `macos-latest` | Document 33 part 4 |
+| Culture-sensitive values | Every value this host returns is machine-facing: labels are keys, dates and numbers are ISO 8601 and invariant, so a host process running under any culture returns the same bytes, and the client renders them in the tenant's numerals, calendar and time zone from the bootstrap | `TC-BFF-754`, `TC-BFF-026` on the Linux runner |
+| Right-to-left and Arabic payloads | The host composes no sentence and sets no direction; the web client mirrors (document 08). Arabic payloads are the larger ones, so the 32 KB budget is proven on Arabic examples, which the Spectral rule `nibras-example-arabic` of document 22 requires for every schema with bilingual text or a person's name | `TC-BFF-754`, `TC-BFF-011` |
+| Arabic search | Search text is passed to the owners unchanged; each owner folds it with `nibras_ar_fold` (document 24), so this host never normalises Arabic itself and cannot disagree with the owner | `TC-BFF-022`; `TC-L10N-310` (document 24) |
+| Devices without Google services | Not relevant to this host: it serves the web client only, and the mobile app talks to Bff.Mobile | Not applicable |
+
+**Signature features.** This host owns Appendix W features 2 (Student 360 timeline filtered by the viewer's permissions) and 11 (command palette and natural-language search, natural language at rung 3 through the routes above), and composes the web side of 1 (Today dashboards), 25 (morning brief per role, on the principal home), 31 (guardian transparency panel) and 33 (campus digital twin, Operations' feature, through `campus/digital-twin`). Each is cited by its Appendix W number; its moment, rung, autonomy, the requirements and slices that build it, its Appendix O step and its demo test are held once, in the "Signature feature trace" table of `32-product-differentiation-and-demo.md`, and are not copied here.
 
 ---
 
@@ -471,13 +549,16 @@ New identifiers are minted from `TC-BFF-001` upward for Bff.Web, numbers 001 to 
 | Upstream fan-out | At most one call per card, parallel, deadline per class, bulkhead per upstream | A home needing more than 10 upstream calls, which means Reporting lacks a projection |
 | Cache | Per-user entries with short lifetimes; hit ratio monitored per screen | Hit ratio under 95 percent at 07:45 in any band |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A composed screen shows a field the viewer may not see | med | high | Token forwarding, no own permissions, redaction by upstream answer, TC-SEC-331, TC-BFF-019 | Security owner |
-| A business rule creeps into a composer | med | med | Architecture test TC-BFF-001, review checklist: composers only fan out, filter and shape | Architect |
-| One slow service makes every home slow | med | high | Deadlines, breaker, bulkhead, partial regions, TC-BFF-008 | Performance owner |
-| Stale home after an action | med | low | 15 s L1, broadcast eviction, read-your-writes header | Web lead |
-| Contract drift between BFF and a service | med | med | Twenty consumer pacts gate both sides, TC-BFF-012 | Tech lead |
+Likelihood (L) and impact (I) use the 1 to 5 scales of `18-risk-register.md` Section 1; Score is L times I, and a row scoring 12 or more names the register risk that covers it.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A composed screen shows a field the viewer may not see | 3 | 4 | 12 | Token forwarding, no own permissions, redaction by upstream answer, TC-SEC-331, TC-BFF-019 | Security owner | RISK-20 |
+| An internal Ai route widens what Ai may read: the feed answers an entity its credential does not name, or a tool reaches a write | 2 | 5 | 10 | The Gateway never routes `/bff/web/v1/internal/`, a network policy admits only the Ai workloads, the feed checks the entity against the service token, tools map only to `GET`; TC-BFF-750, TC-BFF-752, `TC-GW-751` | Security owner | RISK-38 |
+| A business rule creeps into a composer | 3 | 3 | 9 | Architecture test TC-BFF-001, review checklist: composers only fan out, filter and shape | Architect | none |
+| One slow service makes every home slow | 2 | 4 | 8 | Deadlines, breaker, bulkhead, partial regions, TC-BFF-008 | Performance owner | none |
+| Stale home after an action | 3 | 2 | 6 | 15 s L1, broadcast eviction, read-your-writes header | Web lead | RISK-13 |
+| Contract drift between BFF and a service | 3 | 3 | 9 | Twenty consumer pacts gate both sides, TC-BFF-012 | Tech lead | none |
 
 ---
 
@@ -485,9 +566,10 @@ New identifiers are minted from `TC-BFF-001` upward for Bff.Web, numbers 001 to 
 
 | Decision | Source | Default if unanswered | Impact if wrong |
 |---|---|---|---|
-| Route prefix is `/bff/web/v1/` | `22-api-conventions-and-error-catalog.md` §1.1 and Spectral rule `nibras-path-version-prefix` | As stated | `08-web-structure.md` §3.2 writes `/api/v1/bff-web/...`; Open point 1 |
+| Route prefix is `/bff/web/v1/` | `22-api-conventions-and-error-catalog.md` §1.1 and Spectral rule `nibras-path-version-prefix`; documents 08 and 12 use the same prefix | As stated | The generated web client and the Gateway route table would disagree; the Spectral rule fails such a build |
 | Single-service screens call their service through the Gateway; Bff.Web serves only compositions | `08-web-structure.md` part 4 | As stated | Routing every screen through the BFF would couple web releases to it and double the hop count |
-| Reporting read models are read through the Reporting API, not a database connection | Appendix L (no database), reference architecture Section 8 table 8.0 ("reads ... the Reporting read models") | As stated | `10-data-architecture.md` §7.4 gives the BFFs `Reporting:ReadReplica`; Open point 2 |
+| Reporting read models are read through the Reporting API, not a database connection | Appendix L (no database), reference architecture Section 8 table 8.0 ("reads ... the Reporting read models"); `10-data-architecture.md` §7.4, which now says the same | As stated | A direct connection would make the BFF a reader of another service's database |
+| Bff.Web is the web client's only road to Ai: model calls through the `/bff/web/v1/ai/{path}` pass-through and the natural-language routes, each answering 202 with Ai's assist job; and Ai's jobs read through the three internal routes | Reference architecture Section 8.0 ("Ai over REST, through Bff.Web"); `05-service-catalog.md`; `06-services/ai.md` §5 and §6 | As stated | Without the pass-through the drafting panel and the AI settings screens have no path, because the Gateway never routes `/api/v1/ai/`; without the internal routes Ai cannot index or re-check a source |
 | Cache eviction arrives through the `state:invalidate` broadcast, not a queue | `11-messaging-architecture.md` part 1, `21-performance-engineering.md` §2.3 and §2.6 | As stated | A queue would make the BFF a consumer with an inbox and an exchange binding it does not own |
 | Every composed payload is cached per user | Appendix J level Confidential; `21-performance-engineering.md` §1 conventions | As stated | A shared payload would leak one role's view to another |
 
@@ -502,15 +584,17 @@ New identifiers are minted from `TC-BFF-001` upward for Bff.Web, numbers 001 to 
 | Threat row and child-safety control | `12-security-privacy-safety.md` §2.21 and §7 | Group D review |
 | Projection catalog and lag awareness | `10-data-architecture.md` §7 | Group C review |
 | Card list per role | Appendix D, Appendix I | every lint run |
+| Ai's routes, jobs, source streams and the three internal routes it calls | `06-services/ai.md` §5, §6, §9; `25-ai-and-assist-ladder.md` §4.2, §4.4; reference architecture Section 8.0 | Group C review |
+| The Gateway never routes `/bff/web/v1/internal/` | `06-services/gateway.md` §5.1 | `TC-GW-751` |
 
 ## Open points
 
 | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|
-| 1. `08-web-structure.md` §3.2 and §5 name `/api/v1/bff-web/me/bootstrap` and `/api/v1/bff-web/me/permissions`; document 22 and its Spectral rule require `/bff/web/v1/` | `/bff/web/v1/me/bootstrap` and `/bff/web/v1/me/permissions`; document 08 corrected at its Group D review | Web lead | The generated client and the Gateway route table disagree | 1 | 2 | 2 | none |
-| 2. `10-data-architecture.md` §7.4 has both backends-for-frontends reading the Reporting replica through a connection string | Read through the Reporting API; the replica routing and the `Nibras-Expect-Message` check run inside Reporting | Data architect | A direct connection makes the BFF a reader of another service's database, which Appendix L and master brief Section 7.1 forbid | 1 | 2 | 2 | none |
+| 1. `08-web-structure.md` §3.2 and §5 and `12-security-privacy-safety.md` §3.4 named `/api/v1/bff-web/...` where document 22 and its Spectral rule `nibras-path-version-prefix` require `/bff/web/v1/` | `/bff/web/v1/` everywhere | Web lead | Closed 2026-09-26: documents 08 and 12 now use the `/bff/web/v1/` prefix (both call `GET /bff/web/v1/me/permissions`), as this sheet and document 22 do | 1 | 1 | 1 | none |
+| 2. `10-data-architecture.md` §7.4 had both backends-for-frontends reading the Reporting replica through a connection string | Read through the Reporting API; the replica routing and the `Nibras-Expect-Message` check run inside Reporting | Data architect | Closed 2026-09-26: document 10 §7.4 now says the Reporting API alone holds `Reporting:ReadReplica` and the BFF forwards `Nibras-Expect-Message` to it | 1 | 1 | 1 | none |
 | 3. Saved views, table columns, density and pinned actions "persist per person through Bff.Web" (`08-web-structure.md` §3.1), but Bff.Web stores nothing and no Appendix B permission covers user preferences | Stored as user preferences in Identity (which owns `User`), forwarded unchanged, self-scoped. ADR-0019 did not add an `identity.me.*` resource to Appendix B, so the two preference routes keep declaring the `self` scope and no permission, as the Identity sheet's Decisions in force say | Identity lead | If Identity declines, the preferences stay browser-local and do not follow the person across devices | 2 | 1 | 2 | none |
-| 4. `21-performance-engineering.md` §1.21 lists routing keys as the invalidators of the BFF entries; the BFF consumes no event | The owning services' consumers publish the tag eviction on `state:invalidate`; document 21 records which service broadcasts which tag | Performance owner | Without the broadcast, entries live to their 60-second lifetime, which the budget tolerates | 3 | 2 | 6 | RISK-13 |
+| 4. `21-performance-engineering.md` §1.21 lists routing keys as the invalidators of the BFF entries; the BFF consumes no event | The publisher of each key broadcasts the tag on `state:invalidate` after commit, and each BFF instance evicts its own entries under its own ACL user | Performance owner | Closed 2026-09-26: document 21 §1.21 now names the broadcaster per key (Requests, Notification, Attendance, Identity, Platform) and says the BFF evicts under `svc_bff_web`; without a broadcast an entry still lives only 60 seconds | 1 | 2 | 2 | RISK-13 |
 
 ## Review record
 
@@ -527,4 +611,7 @@ New identifiers are minted from `TC-BFF-001` upward for Bff.Web, numbers 001 to 
 | Every route appears in the OpenAPI document with `bearerAuth` only and the `/bff/web/v1/` prefix | Spectral rules `nibras-path-version-prefix` and `nibras-security-declared` | `ci-service.yml` for the host |
 | Composition budgets hold | TC-BFF-010 in N-05 and `nibras_bff_compose_duration_seconds` alerts | Load tier, production dashboards |
 | No field leaks | TC-SEC-331, TC-BFF-019 | Security suite |
+| The three internal Ai routes read only what their credential allows and are unreachable from outside | TC-BFF-750, TC-BFF-751, TC-BFF-752; `TC-GW-751` (Gateway sheet) | Integration suite on `ubuntu-latest`, every pull request touching the host or Ai |
+| Natural-language search answers with Ai's 202 job and degrades to keyword search | TC-BFF-753 | End-to-end suite, once SL-BFF-004 and CAP-AI-01 exist |
+| Payloads do not depend on the host culture | TC-BFF-754 | Contract suite on `ubuntu-latest` |
 | Every tree entry has a purpose comment | `tools/kit-lint` rule R18 | Lint |

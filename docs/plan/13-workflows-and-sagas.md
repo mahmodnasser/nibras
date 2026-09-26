@@ -2,7 +2,7 @@
 
 > Every workflow in Appendix R assigned to its owning service, with the saga designs and compensations for every process that crosses a service boundary. This document refines and assigns; it does not restate Appendix R, which stays the normative catalog of states, guards and test tables.
 
-**Group** D · **Requirement areas covered** every AREA in Appendix R, plus `MSG` and `TST` · **Last updated** 2026-09-20 by M. Nasser
+**Group** D · **Requirement areas covered** every AREA in Appendix R, plus `MSG` and `TST` · **Last updated** 2026-09-26 by M. Nasser
 
 ## Purpose
 
@@ -171,15 +171,16 @@ stateDiagram-v2
 
 **Process monitor.** Row per saga: tenant name, plan, state, elapsed against the 10-minute deadline, a 19-cell service grid coloured by status with the verbatim last error on hover, and the actions `Retry step`, `Compensate now` and `Abandon`, mapped to `platform.jobs.retry`, `platform.jobs.cancel` and `platform.tenants.delete` from Appendix B. The signup page polls the same state and shows "Creating your school: 14 of 19 services ready".
 
-**Tests.** Class `TenantProvisioningSagaTests` in `Nibras.Platform.IntegrationTests/Sagas/`.
+**Tests.** Class `TenantProvisioningSagaTests` in `Nibras.Platform.IntegrationTests/Sagas/`. `TC-PLT-005` (Appendix R) proves the transition in general; `TC-PLT-780` to `TC-PLT-782`, defined here, each fail one step and assert what that step's position adds: which reverse commands run, in which order, and what the journal and the tenant row hold afterwards.
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
 | Happy path, all 19 services acknowledge | Owner invited, year opened, `platform.tenant.provisioned.v1` published once | `TC-PLT-003` (Appendix R) |
 | One service times out after three retries | Saga halts, no later step attempted, operator alerted with the service named | `TC-PLT-004` (Appendix R) |
-| Step 3 fails | Fan-out deprovisioned, no invitation exists, no welcome sent | `TC-PLT-005` (Appendix R) |
-| Step 4 fails | Invitation revoked, schemas dropped, tenant row in `Compensated` | `TC-PLT-005` (Appendix R) |
-| Step 5 or 6 fails | Steps 2 to 4 reversed in order, journal complete | `TC-PLT-005` (Appendix R) |
+| Any step fails and every reverse step succeeds (the Appendix R `Failed → Compensated` transition) | No schema, queue or user left behind | `TC-PLT-005` (Appendix R) |
+| Step 3 fails | Fan-out deprovisioned, no invitation exists, no welcome sent | TC-PLT-780 |
+| Step 4 fails | Invitation revoked, schemas dropped, tenant row in `Compensated` | TC-PLT-781 |
+| Step 5 or 6 fails | Steps 2 to 4 reversed in order, journal complete | TC-PLT-782 |
 | Deadline passed while retrying | Alert raised, retries continue, state visible as `TimedOut` | TC-PLT-550 |
 | `TenantProvisioned` reply delivered twice | Second reply ignored, step count unchanged | `ProvisionTenantReply_DeliveredTwice_Ignored` |
 | Compensation runs twice | Second run is a no-op on every service | `Compensation_RunTwice_NoSecondEffect` |
@@ -673,18 +674,20 @@ stateDiagram-v2
 
 **Orchestrator** Platform · **Started by** the `Approved → Applied` transition of WF-PLT-02 when the target plan's isolation tier differs from the current one · **State enum** `Nibras.Platform.Domain.Tenants.TierMigrationState` · **Handler** `Nibras.Platform.Application/Sagas/TierMigrationSaga/` · **Rules applied** BR-PLT-002 during the read-only window, BR-PLT-003 for the cooling-off before purge, BR-PLT-004 for the region of the new databases
 
-The five steps in reference architecture Section 14 become saga steps. Every step before the switch is reversible by dropping the dedicated copies; the switch itself is reversible by switching back; only the purge of the source rows is not, so it waits for the cooling-off period and goes last. The reverse direction, dedicated to shared, runs the same saga with source and target swapped.
+The five steps in reference architecture Section 14 become saga steps. Every step before the switch is reversible by dropping the dedicated copies; the switch itself is reversible by switching back; only the purge of the source rows is not, so it waits for the cooling-off period and goes last, and nothing purges early: no operator action shortens the cooling-off period. The reverse direction, dedicated to shared, runs the same saga with source and target swapped.
+
+**The read-only window is under 5 minutes**, the number `10-data-architecture.md` owns: REQ-DATA-027 promises "a read-only window under 5 minutes", and `TC-DATA-010` (document 10) moves the demo tenant shared to dedicated and back under the load tier's steady traffic and asserts "zero lost writes, zero cross-tenant rows, and a read-only window under 5 minutes". Step 4's budget below is that number, not a separate one.
 
 | # | Step | Command sent | Service | Expected outcome | Timeout | Compensation |
 |---|---|---|---|---|---|---|
 | 1 | Provision the empty dedicated database and run migrations, in the tenant's pinned region | `ProvisionDedicatedDatabase` | every data-owning service | reply `DedicatedDatabaseReady` | 10 min, 3 retries | `DropDedicatedDatabase` |
 | 2 | Initial copy of the tenant's rows with `COPY` while the tenant keeps working | `CopyTenantRows(phase = initial)` | every data-owning service | reply `TenantRowsCopied` with `rowCount` and `changeFeedCheckpoint` | 6 h, then alert | `DropDedicatedDatabase` |
 | 3 | Delta copy from the change feed | `CopyTenantRows(phase = delta)` | every data-owning service | reply `TenantRowsCopied` | 60 min | `DropDedicatedDatabase` |
-| 4 | Set the tenant read-only for the final window | none; `platform.tenant.suspended.v1` with `reason = tier-migration` | Platform | every service refuses writes with `PLATFORM_TENANT_SUSPENDED` | window budget 15 min | `platform.tenant.reactivated.v1` |
+| 4 | Set the tenant read-only for the final window | none; `platform.tenant.suspended.v1` with `reason = tier-migration` | Platform | every service refuses writes with `PLATFORM_TENANT_SUSPENDED` | window budget 5 min (REQ-DATA-027, `TC-DATA-010`) | `platform.tenant.reactivated.v1` |
 | 5 | Final delta and reconciliation report | `CopyTenantRows(phase = final)` then `ReconcileTenantCopy` | every data-owning service | reply `TenantCopyReconciled` with `match` and the report | 10 min | On any mismatch: reactivate on the source, drop the copies |
 | 6 | Switch the connection-string resolution and invalidate the tenant's caches | none, local; `platform.settings.changed.v1` with `scope = isolation` | Platform, consumed by every service | every service's tenant connection resolver reloads | none | Switch back; the source is untouched |
 | 7 | Unfreeze | none; `platform.tenant.reactivated.v1` | Platform | writes accepted on the target | none | None needed |
-| 8 | Keep the source rows for the cooling-off period, then purge | `PurgeSourceRows` | every data-owning service | reply `SourceRowsPurged` | after the cooling-off period | None; irreversible and last. Until then, switching back is step 6 in reverse |
+| 8 | Keep the source rows for the cooling-off period, then purge | `PurgeSourceRows` | every data-owning service | reply `SourceRowsPurged` | starts only when the cooling-off period has ended; never earlier | None; irreversible and last. Until then, switching back is step 6 in reverse |
 
 ```mermaid
 stateDiagram-v2
@@ -697,14 +700,14 @@ stateDiagram-v2
     DeltaCopied --> Frozen: platform.tenant.suspended.v1
     Frozen --> Reconciled: every TenantCopyReconciled match
     Frozen --> Mismatched: a service reported a difference
-    Frozen --> WindowExceeded: 15 min passed
+    Frozen --> WindowExceeded: 5 min passed
     Mismatched --> Compensating: source reactivated first
     WindowExceeded --> Compensating: source reactivated first
     Reconciled --> Switched: platform.settings.changed.v1
     Switched --> Unfrozen: platform.tenant.reactivated.v1
     Unfrozen --> CoolingOff: source rows retained
     CoolingOff --> Switched: operator switches back inside the window
-    CoolingOff --> Purged: every SourceRowsPurged
+    CoolingOff --> Purged: cooling-off ended, every SourceRowsPurged
     Compensating --> Compensated: dedicated copies dropped, tenant on the source
     Compensating --> Stuck: a drop failed
     Stuck --> Compensating: operator retries
@@ -716,21 +719,23 @@ stateDiagram-v2
 
 **Idempotency per step.** Step 1: provisioning an existing database returns `DedicatedDatabaseReady`. Steps 2, 3 and 5: each copy phase is keyed on `(tenantId, phase)` and resumes from the persisted change-feed checkpoint. Step 6 is an upsert of the connection entry. Step 8 purges where `tenant_id` matches and replies the stored count on a repeat.
 
-**Process monitor.** A per-service grid with source and target row counts, the reconciliation result, the freeze timer against its 15-minute budget, and the actions `Switch back` (available through the cooling-off period) and `Purge now` (elevated, `platform.tenants.delete`). The tenant owner sees only the announced maintenance window.
+**Process monitor.** A per-service grid with source and target row counts, the reconciliation result, the freeze timer against its 5-minute budget, the cooling-off countdown, and one action, `Switch back`, available through the cooling-off period. There is no early purge: the purge runs when the countdown ends, and the monitor says so in words. The tenant owner sees only the announced maintenance window.
 
-**Tests.** Class `TierMigrationSagaTests`. Appendix R and Appendix Q carry no test case identifier for this procedure; the identifiers are assigned in `16-test-strategy.md` under the `DATA` area, and the scenarios are fixed here.
+**Tests.** Class `TierMigrationSagaTests`. Appendix R and Appendix Q carry no test case identifier for this procedure. The end-to-end proof is `TC-DATA-010`, which document 10 defines; the scenarios below are defined here, once, as `TC-DATA-780` to `TC-DATA-788`.
 
-| Scenario | Expected outcome |
-|---|---|
-| Shared to dedicated, 20 services, no writes during the window | Reconciliation matches, switch inside 15 minutes, tenant unfrozen, source retained |
-| Step 1 fails for one service | No copy started, empty databases dropped, tenant untouched |
-| Step 2 exceeds 6 hours | Alert, copy continues; operator may abort to `Compensated` |
-| Step 5 reports a mismatch | Source reactivated first, then copies dropped; tenant never lost writes |
-| Window exceeded before reconciliation | Same as mismatch |
-| Switch back inside cooling-off | Connection returned to the source, delta from the target replayed by the reverse saga |
-| Platform Api killed during step 3 | Resume continues from each service's checkpoint, no double copy |
-| `CopyTenantRows` delivered twice | Second delivery resumes from the checkpoint and copies nothing twice |
-| Pooled connection after the switch | A connection returned to the pool cannot read the previous tenant's rows (the row-level security test in reference architecture Section 14) |
+| Scenario | Expected outcome | Test case |
+|---|---|---|
+| Shared to dedicated and back on the load tier under steady traffic | Zero lost writes, zero cross-tenant rows, read-only window under 5 minutes | `TC-DATA-010` (document 10) |
+| Shared to dedicated, 20 services, no writes during the window | Reconciliation matches, switch inside 5 minutes, tenant unfrozen, source retained | TC-DATA-780 |
+| Step 1 fails for one service | No copy started, empty databases dropped, tenant untouched | TC-DATA-781 |
+| Step 2 exceeds 6 hours | Alert, copy continues; operator may abort to `Compensated` | TC-DATA-782 |
+| Step 5 reports a mismatch | Source reactivated first, then copies dropped; tenant never lost writes | TC-DATA-783 |
+| Window exceeded before reconciliation (5 minutes on the fake clock) | Same as mismatch: source reactivated first, copies dropped, `WindowExceeded` then `Compensated` | TC-DATA-784 |
+| Switch back inside cooling-off | Connection returned to the source, delta from the target replayed by the reverse saga | TC-DATA-785 |
+| Cooling-off not yet ended | No `PurgeSourceRows` is sent and no operator action can send one; on the fake clock one minute past the end, every service purges and the saga reaches `Purged` | TC-DATA-786 |
+| Platform Api killed during step 3 | Resume continues from each service's checkpoint, no double copy | TC-DATA-787 |
+| `CopyTenantRows` delivered twice | Second delivery resumes from the checkpoint and copies nothing twice | TC-DATA-788 |
+| Pooled connection after the switch | A connection returned to the pool cannot read the previous tenant's rows (the row-level security test in reference architecture Section 14) | `TC-SEC-059` (document 12) |
 
 ### 4. Request-type effects
 
@@ -806,7 +811,7 @@ Master brief Section 11 names five effects executed automatically on approval; A
 | The state enum, aggregate and handler folder per workflow | `31-business-rules-and-workflows.md` | review of Group F |
 | The process monitor screens | `08-web-structure.md` (platform console) | review of Group D |
 | The alert rules for stuck sagas | `15-deployment-and-operations.md` | review of Group E |
-| Test case identifiers for Saga 10 | `16-test-strategy.md` | review of Group E |
+| The tier-migration read-only window (under 5 minutes) and its end-to-end test `TC-DATA-010` | `10-data-architecture.md` (REQ-DATA-027 in `03-requirements-catalog.md`) | review of Group C; kit-lint R20 on every lint run |
 
 ## Open points
 
@@ -814,12 +819,16 @@ Master brief Section 11 names five effects executed automatically on approval; A
 |---|---|---|---|---|---|---|---|
 | Does the first release run the merged 14-service tree of Appendix L? | No: 20 services as catalogued | Product owner, master brief Section 27 | With the merge, the Assessment steps of Sagas 4 and 5 become in-process calls inside Academics; the saga shape does not change | 3 | 2 | 6 | RISK-06, RISK-33 |
 | Property-based test library for the arithmetic rules | FsCheck 3.4.0, licence BSD-3-Clause, verified and pinned by `19-dependency-and-license-inventory.md` §3; the ADR that a Section 6.2 addition needs is that document's open point 7 | Tech lead | Another library with the same generators; no rule text changes | 1 | 1 | 1 | none |
+| Open question 27: does a parent receive an absence alert within 30 seconds of the mark, or 30 minutes after the register closes? WF-ATT-01, owned by Attendance in section 1, is the workflow it changes | Within 30 seconds, as REQ-ATT-017 and master brief Section 31 require; WF-ATT-01 stays a single-owner workflow with no saga either way | Product owner | A 30-minute grace window adds one timed transition to WF-ATT-01 (the alert waits for the register to close), changes `TC-ATT-003` (Appendix R) and moves the notification from the urgent lane; the owner, the kind and the phase in section 1 do not change | 3 | 3 | 9 | RISK-41 |
+| Open question 29: may a student's level S check-in answer wait in the device's encrypted outbox until sync, or must the check-in be online only? WF-WEL-05, owned by Wellbeing in section 1, is the workflow it changes | What the plan builds: WF-WEL-05 is offline in Appendix R and SL-WEL-619 queues the answer code on the phone until sync, write-only. This contradicts the rule that Wellbeing data never reaches a device (master brief Section 20, Appendix M.1) until the privacy officer and then the product owner decide; the recommended answer is online only | Privacy officer, then the product owner | On the online-only answer WF-WEL-05 loses its offline entry: an answer is recorded only with a connection, the `Prompted → Answered` transition never carries a device timestamp, and the Wellbeing test of an offline answer keeping its timestamp is withdrawn; the owner, the kind and the phase in section 1 do not change | 4 | 5 | 20 | RISK-47 |
 
 ## Review record
 
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-20 | drafted | awaiting Group D review |
+| 2026-09-26 | Group D scorecard, rounds 1 and 2 | Blocked. Round 2 found Saga 10's 15-minute window against `TC-DATA-010`'s 5 minutes, Saga 10's scenarios without test identifiers, one identifier for three Saga 1 failure scenarios, `Purge now` against the cooling-off rule, and Open Question 27 missing from the open points |
+| 2026-09-26 | Round 3 remediation | Saga 10 quotes document 10's 5-minute window and has no early purge; `TC-DATA-780` to `TC-DATA-788` and `TC-PLT-780` to `TC-PLT-782` defined; Open Questions 27 and 29 added to the open points; awaiting the round 3 score |
 
 ## How this document is verified
 
@@ -828,7 +837,9 @@ Master brief Section 11 names five effects executed automatically on approval; A
 | Every WF identifier in Appendix R appears once in the assignment table with an owner from Appendix L | Kit-lint R25: every Appendix R workflow has a row in section 1 and no workflow has two. The owner in each row is compared with Appendix L by the `plan-consistency-checker` agent at the Group D review and on every change to this document | Lint (`/lint-plan`); Group D review |
 | Every routing key in this document exists in Appendix E | Kit-lint R19: every backticked routing key here is in Appendix E, or is a key, command or reply that `11-messaging-architecture.md` defines | Lint (`/lint-plan`) |
 | Every Mermaid block is a `stateDiagram-v2` with a terminal state and every transition labelled | Kit-lint R17 (every block opens with a known diagram type) and R29 (every `stateDiagram-v2` block here and in Appendix R has a `--> [*]` exit and a label on every transition). That no block here uses another diagram type is checked by the `plan-consistency-checker` agent at the Group D review | Lint (`/lint-plan`); Group D review |
-| Every saga has a compensation or an explicit "last, irreversible" for every step | Manual review against the saga-design skill checklist | Group D review |
+| Every saga has a compensation or an explicit "last, irreversible" for every step | Review step: the `architecture-reviewer` agent walks every step table in section 3 against the saga-design skill checklist at the Group D review and on every change to section 3 | Group D review; each change to section 3 |
+| Saga 10's read-only window is the number document 10 owns | Review step: the `plan-consistency-checker` agent compares the 5-minute budget of Saga 10 step 4, its state diagram and `TC-DATA-780` and `TC-DATA-784` with REQ-DATA-027 and `TC-DATA-010` in `10-data-architecture.md`, on every change to either document; in the product, `TC-DATA-010` on the load tier fails a window of 5 minutes or more | Review; load tier before each general-availability release |
+| Every saga scenario that names a test case uses one defined once | Kit-lint R20: `TC-PLT-780` to `TC-PLT-782` and `TC-DATA-780` to `TC-DATA-788` are defined here and nowhere else, and every cited identifier resolves to one definition | Lint (`/lint-plan`) |
 | Every saga step is idempotent | The deliver-twice test per step in `<SagaName>SagaTests` | Service integration suites, phase of the owning service |
 | A killed worker loses and duplicates nothing | The `WorkerKilled*` test per saga (master brief Section 8, item 12) | Service integration suites and the phase 6 chaos drill |
 | Every transition writes an audit event through the outbox | Architecture test that no transition bypasses the pipeline; Audit integration test that every `<service>.audit.recorded.v1` lands in the chain | `tests/Architecture.Tests`, Audit integration suite |

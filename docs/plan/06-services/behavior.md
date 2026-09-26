@@ -22,6 +22,8 @@ Behavior records what students do at school that the school wants to encourage o
 | Sensitivity | "confidential; restricted narratives are logged on every read" | `05-service-catalog.md`, Appendix J |
 | First-release merge option | Behavior may be hosted inside Wellbeing's deployable; `nibras_behavior` stays separate and Behavior data stays parent-visible while Wellbeing stays at level S | Appendix L, `05-service-catalog.md` part 5 |
 
+**Signature features.** Behavior owns Appendix W feature 18, student portfolio and recognition (Tier 2; demo test `TC-BEH-810` (Appendix W)). It also serves feature 34, the teacher five-minute mode, whose quick note is a Behavior point or note recorded from the phone, and feature 12, offline-first mobile (points and incidents captured offline, TC-BEH-314). The requirements, capabilities, slices, Appendix O step and demo test of each feature are traced once, in `32-product-differentiation-and-demo.md` under "Signature feature trace"; this sheet does not repeat them.
+
 ---
 
 ## 1. Responsibilities and non-responsibilities
@@ -844,6 +846,18 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 | TC-BEH-342 | Contract | Every V1 record in `Nibras.Contracts.Behavior` matches its schema; Pact provider verification for Bff.Web and Bff.Mobile |
 | TC-BEH-343 | Integration | Dismissing an incident after the guardian was notified sends a correction and publishes the negative points entry once |
 | TC-BEH-344 | Integration | Portfolio export when the student leaves produces one book through Documents with every visible item (REQ-BEH-008) |
+| TC-BEH-760 | Unit, property | Point balances, term totals, the consequence ladder's window count and the review deadline across the campus work week give the same result with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn; `+5` and `-2` stay `+3` under each, and every stored or published value uses the invariant culture (REQ-PLAT-019) |
+| TC-BEH-761 | Integration | A guardian notice for a decided incident is requested in the guardian's preferred language (as `TC-BEH-003` (Appendix R) requires) with the category name taken from the category's own name in that language, and an Open Badges 3.0 credential for a badge with an Arabic name keeps that name intact in UTF-8 and still validates |
+
+### 14.1 Platform notes
+
+| Concern | What holds here | Proof | Runner |
+|---|---|---|---|
+| Runners | Behavior is not one of the three projects Appendix X puts on Windows (`BuildingBlocks`, `Documents`, `Localization`), so its unit, integration, contract and generated suites run on `ubuntu-latest` in `ci-service.yml` (document 33 part 4). The one-command start that brings it up on a developer machine is proven by the `dev-smoke` job on `ubuntu-latest`, `windows-latest` and `macos-latest` | `ci-service.yml`, `dev-smoke.yml` | ubuntu; `dev-smoke` on ubuntu, windows and macos |
+| Culture and time | Review deadlines count working days in the campus work week and time zone; points are integers and totals are sums, so no value depends on a machine culture | TC-BEH-331 (a weekend of the campus work week), TC-BEH-760; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
+| Right-to-left output | Award certificates and the portfolio book are rendered by Documents in both languages; the incident, points and portfolio screens are right-to-left in the web client and the mobile app | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries; TC-BEH-761; the web end-to-end specs, `TC-BEH-601` among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2) | Linux |
+| Arabic search and collation | None here: Behavior runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language | `TC-PLAT-004` (document 33), the culture test inside the built image, which checks the collations exist | Linux |
+| Devices without Google services | A teacher records points and incidents offline with no Google service involved; a guardian's incident notice reaches such a device in-app while the app is open and by email | TC-BEH-314; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services | Linux; device pass, per release |
 
 ---
 
@@ -857,14 +871,16 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 | Jobs in the Api host | Clustered Quartz; all jobs are short | A job above 60 s per tenant |
 | First-release merge | Can be hosted in Wellbeing's deployable with its own database and classification (Appendix L) | The merge ADR |
 
-| Risk | Likelihood | Impact | Mitigation | Owner |
-|---|---|---|---|---|
-| A parent sees another child's name in an incident | med | critical | Guardian projection rule, `own-children` scope, TC-BEH-321, TC-SEC-251 | Behavior lead |
-| A restricted narrative read without a trace | med | high | Side table, `view-restricted`, read logged in the same transaction, TC-BEH-320 | Security owner |
-| Behavior used as a back door to safeguarding information | low | critical | No level-S data, existence-only for linked incidents, no narrative in events, TC-BEH-322, TC-BEH-323 | Security owner |
-| Points used to punish without a record | low | low | Reversal entries with reasons, dismissal path, TC-BEH-005 | Behavior lead |
-| Public ranking harms students | med | med | Individual leaderboard off by default, TC-BEH-319 | Product owner |
-| Offline double award | med | low | Per-key idempotency, additive merge, TC-BEH-314 | Behavior lead with mobile lead |
+Risks are scored on the scales of `18-risk-register.md` part 1, translated as that part translates words: likelihood low 2, medium 3, high 4; impact low 2, medium 3, high 4, critical 5. **In the register** names the RISK that carries the row, or says the row is not yet there.
+
+| Risk | L | I | Score | Mitigation | Owner | In the register |
+|---|---|---|---|---|---|---|
+| A parent sees another child's name in an incident | 3 | 5 | 15 | Guardian projection rule, `own-children` scope, TC-BEH-321, TC-SEC-251 | Behavior lead | RISK-54 |
+| A restricted narrative read without a trace | 3 | 4 | 12 | Side table, `view-restricted`, read logged in the same transaction, TC-BEH-320 | Security owner | RISK-59 |
+| Behavior used as a back door to safeguarding information | 2 | 5 | 10 | No level-S data, existence-only for linked incidents, no narrative in events, TC-BEH-322, TC-BEH-323 | Security owner | RISK-24 |
+| Points used to punish without a record | 2 | 2 | 4 | Reversal entries with reasons, dismissal path, TC-BEH-005 | Behavior lead | none |
+| Public ranking harms students | 3 | 3 | 9 | Individual leaderboard off by default, TC-BEH-319 | Product owner | none |
+| Offline double award | 3 | 2 | 6 | Per-key idempotency, additive merge, TC-BEH-314 | Behavior lead with mobile lead | RISK-09 |
 
 ---
 
@@ -908,7 +924,7 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 | 9. Appendix C has no row for the reviewer task, the plan review reminder, the escalations or the dismissal correction | `RequestNotification` with Behavior template codes | Appendix C owner | Catalogued rows would move them to event triggers | 2 | 1 | 2 | none |
 | 10. Appendix R has no `GuardianNotified → Closed` transition, yet a decided single action with a notified guardian must end | Add it; Appendix R gains the row | Appendix R owner | Incidents would wait in `GuardianNotified` forever | 2 | 2 | 4 | none |
 | 11. Appendix M.1 queues behaviour incidents offline while Appendix R marks WF-BEH-01 "Offline: no" | Capture offline, transitions online | Appendix M and R owners | Offline capture refused | 2 | 2 | 4 | none |
-| 12. `TC-BEH-001` is both the WF-BEH-01 `Recorded → UnderReview` test (Appendix R) and the portfolio feature test (Appendix W, REQ-BEH-008) | This sheet uses TC-BEH-001 for the transition and TC-BEH-601 and TC-BEH-344 for the portfolio | Appendix W owner | A renumbered register row | 1 | 1 | 1 | none |
+| 12. Closed by ADR-0020. `TC-BEH-001` was both the WF-BEH-01 `Recorded → UnderReview` test (Appendix R) and the portfolio feature test (Appendix W, REQ-BEH-008); Appendix W now gives feature 18 the demo test `TC-BEH-810` and Appendix R keeps `TC-BEH-001` | This sheet uses TC-BEH-001 for the transition and cites `TC-BEH-810` (Appendix W) for the portfolio feature, with TC-BEH-601 and TC-BEH-344 as its UAT and integration tests | Closed | None; each identifier has one meaning | 1 | 1 | 1 | none |
 
 ## Review record
 
@@ -922,9 +938,11 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 |---|---|---|
 | Every routing key here exists in Appendix E or is a command or reply document 11 names | `tools/kit-lint` rules R19 (every back-quoted routing key is in Appendix E or document 11) and R27 (every key document 11 uses is in Appendix E or is a command or reply it names) | Lint |
 | Every permission and error code exists in Appendices B and K | `tools/kit-lint` rule R19 (permission strings in Permission columns against Appendix B; every back-quoted service-prefixed error code in Appendix K or ending in a K.1 suffix); `plan-consistency-checker` checks the permission strings in prose and other columns against Appendix B at the Group C review and on every change to this sheet; TC-BEH-335 | Lint, review, pipeline |
-| Every Appendix R transition of WF-BEH-01 has a test | Section 14 against Appendix R; `tools/kit-lint` rule R32 (every test case in the WF-BEH-01 entry of Appendix R is cited in section 14, ranges expanded); `[TestCase]` attributes once code exists | Review, lint, pipeline |
+| Every Appendix R transition of WF-BEH-01 has a test | `tools/kit-lint` rule R32 (every test case in the WF-BEH-01 entry of Appendix R is cited in section 14, ranges expanded) and R20 (each is defined in exactly one document); `[TestCase]` attributes once code exists | Lint, pipeline |
 | The parent-visible and Wellbeing lines hold | TC-BEH-318, TC-BEH-321 to TC-BEH-323, TC-SEC-250, TC-SEC-251 | Integration and security suites |
 | The query budgets hold | TC-BEH-337, TC-BEH-338 | Integration suite |
 | Every consumer is idempotent | TC-BEH-339 | Integration suite |
-| The tree follows document 07's anatomy | Group C review; TC-TST-124 once code exists | Review, `ci-service.yml` |
+| The tree follows document 07's anatomy | `plan-consistency-checker` compares the section 13 tree with document 07 part 3 at the Group C review and on every change to this sheet or document 07; once code exists `EveryServiceHas_TheAnatomy` (`TC-TST-124`), built with the SL-TST-003 architecture test pack | Review, `ci-service.yml` |
+| Every platform note names a runner that really runs its proof | `portability-reviewer` compares section 14.1 with the runner matrix of `33-platform-support-and-dev-environments.md` part 4, and `rtl-localization-reviewer` checks its culture and right-to-left rows against `24-localization-and-calendars.md`, at the Group C review and on every change to this sheet or to document 33 | Review |
+| The signature features named under the facts table are Appendix W's | `plan-consistency-checker` compares them with Appendix W and with the "Signature feature trace" of document 32 at the Group C review and on every change to either; kit-lint R20 (each cited demo test is defined in exactly one document) | Review; lint |
 | Every tree entry has a purpose comment and every Mermaid block declares its type | `tools/kit-lint` rules R17 and R18 | Lint |

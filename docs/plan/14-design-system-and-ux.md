@@ -514,7 +514,31 @@ The refusal rows in the screen inventory (`08-web-structure.md` Section 7) are t
 
 ## 9. Key screen descriptions
 
-Seventeen screens across every workspace, quoted by name and route from `08-web-structure.md` Section 7 with the components that inventory lists. Each table gives the layout regions, the question and the action of every card, and what changes in light, dark, LTR and RTL. "Bento" means `bento-grid` with `card` children; a card's row reads "question → action". The phone layout is the same cards in the same order in one column unless the row says otherwise.
+Nineteen screens, at least one from every workspace of `08-web-structure.md` Section 7 except the public verification page (whose layout is the `card` and `key-value` of its row in §7.1 of that document), quoted by name and route from that inventory with the components it lists. The HR officer has HR Today (§9.18) and the counselor has the case file (§9.19) beside the shared Care Today (§9.13). Each table gives the layout regions, the question and the action of every card, and what changes in light, dark, LTR and RTL. "Bento" means `bento-grid` with `card` children; a card's row reads "question → action". The phone layout is the same cards in the same order in one column unless the row says otherwise.
+
+**Signature features on these screens.** Each feature is cited by its Appendix W number. Its moment, rung, autonomy level, the requirements and slices that build it, its Appendix O step and its demo test are held once, in the "Signature feature trace" table of `32-product-differentiation-and-demo.md`, and are not copied here.
+
+| Key screen | Appendix W features it carries |
+|---|---|
+| §9.1 Teacher Today | 1; 34 on the phone (`09-mobile-structure.md`) |
+| §9.2 Register | 3, 26; 12 on the phone |
+| §9.3 Mark entry grid | 6 |
+| §9.4 Early-warning flags | 4, 28, 30 |
+| §9.5 Parent calm screen | 35, 7, 44 |
+| §9.6 Guardian transparency | 31, 14 |
+| §9.7 Student Today | 1 |
+| §9.8 Morning brief and Today | 25, 1, 27, 28 |
+| §9.9 Approvals inbox | 1, 25 |
+| §9.10 Emergency mode | 32, 8 |
+| §9.11 Applications pipeline | none |
+| §9.12 Cashier day close | none |
+| §9.13 Care Today | 1 |
+| §9.14 Gate and passes | 8 |
+| §9.15 Branding editor | 10, 16 |
+| §9.16 Operator Today | 1, 40 |
+| §9.17 Sign-in | none; 23, the live interface, is carried by every screen through §6 |
+| §9.18 HR Today | 1 |
+| §9.19 Case file | 14 |
 
 ### 9.1 Teacher Today (`/teacher`)
 
@@ -722,6 +746,30 @@ Seventeen screens across every workspace, quoted by name and route from `08-web-
 | RTL | The same order; the identifier field uses `dir="auto"` so an email address types LTR inside the Arabic form; the phone field keeps the country code at inline-start |
 | States of note | Error: the Appendix K code mapped to wording that never says which of identifier or password was wrong; offline: the offline page; no CAPTCHA and no cognitive test (WCAG 3.3.8), paste allowed in the password field |
 
+### 9.18 HR Today (`/hr`)
+
+| Aspect | Description |
+|---|---|
+| Regions | `page-header` with the date in both calendars and `as-of-badge`; bento of three columns with the four cards of the Appendix D HR officer row: leave to approve (hero, two columns), documents expiring, probation ending, vacancies; a `stat-tile` row under the bento for headcount, absence rate and turnover. Not optimised for phone (`08-web-structure.md` Section 8): it renders at 768 in two columns and no 360 layout is designed |
+| Cards | Leave: "Whose leave waits on me, and is cover arranged?" → open the request in `/hr/leave`, where the substitution step comes before approval. Documents: "Whose document or teaching licence expires within 30 days?" → request the upload. Probation: "Whose probation ends this month?" → open the staff file. Vacancies: "Which posts are open and how long have they been open?" → open the vacancy |
+| Light | Cards at elevation 1; an expired licence line uses the `danger` icon plus "expired", an expiring one `warning` plus the days left; tiles count up once |
+| Dark | Cards on `surface-1`; the tiles' numbers in `on-surface`; expiry lines keep icon plus word on the dark containers |
+| LTR | Hero at the left; days-left counts right-aligned in each row |
+| RTL | Hero at the right; staff names in Arabic lead with the Latin name as the secondary line; dates read Hijri then Gregorian when the tenant sets Hijri as display; counts isolated in the tenant numerals |
+| States of note | Empty is the calm state: "No leave, expiry or probation needs you this week"; no permission for `hr.payroll.view-salary` never shows a salary tile or a placeholder for one (the absent-section rule of the salary refusal row in §7.8 of `08-web-structure.md`); partial when Scheduling is slow: the leave card shows the request without its cover line and says the cover is still loading |
+
+### 9.19 Case file, counselor (`/care/cases/:caseId`)
+
+| Aspect | Description |
+|---|---|
+| Regions | `student-header` with the `badge` "logged" stating that every read is recorded; the case `timeline` (sessions, referrals, intervention steps, never another team's entries) at inline-start; the session-note `text-area` at inline-end; a "close with outcome" `dialog` from the header. Not optimised for phone; never in the service worker's data groups and never on a device (`08-web-structure.md` Section 8, `09-mobile-structure.md` §2.6) |
+| Cards | Timeline: "What has happened in this case, and what is next?" → open an entry or add a follow-up date. Note: "What did we agree today?" → save the session note. Header: "Is this case finished?" → close with an outcome, which clears the linked flag |
+| Light | The header badge in `info-container` with the word "logged"; the timeline rail in `outline`; a break-glass read by a principal appears as a `warning` icon plus the word in the rail, never as the principal's reading of the note |
+| Dark | Rail in the dark `outline`; the note field on `surface-2`; the logged badge keeps 4.5:1 on its dark container |
+| LTR | Timeline at the left, note at the right |
+| RTL | Timeline at the right, note at the left; a note mixing Arabic and Latin text uses `dir="auto"` per paragraph (the "Session note in Arabic" row in §7.8 of `08-web-structure.md`); dates and times isolated |
+| States of note | No permission is a 404-shaped empty state that never confirms the case exists (`WELLBEING_ACCESS_DENIED`, Appendix K); offline shows the offline error state and no cached note, because Wellbeing is never cached; processing while the note saves, with no optimistic update, because a note that did not reach the isolated store must not look saved |
+
 ---
 
 ## 10. Microcopy principles and the bilingual voice
@@ -814,7 +862,7 @@ The inventory is the two catalogues, not this document; a component that is not 
 
 | Required story | Storybook (`@nibras/ui`) | Widgetbook (`nibras_ui`) | CI check |
 |---|---|---|---|
-| `Docs` | Purpose, props, accessibility notes, the Flutter equivalent, the token list consumed | Use case `docs` with the same text from a shared Markdown file in the component folder | The parity script fails when the two read different files |
+| `Docs` | Purpose, props, accessibility notes, the Flutter equivalent, the token list consumed | Use case `docs` with the same text from a shared Markdown file in the component folder | Presence in the Storybook test runner of SL-UX-003; that both catalogues read the same Markdown file is part of the `ux-reviewer` inventory review below |
 | `Playground` | Every input as a control | Knobs for every constructor parameter | Presence |
 | `States` | The state matrix from `08-web-structure.md` Section 6 | Use case per state, laid out as a matrix in one golden | Four-way snapshot job (web), goldens LTR and RTL (mobile) |
 | `Directions` | The matrix under `dir="ltr"` and `dir="rtl"` with the longest Arabic string | `Directionality` LTR and RTL with the longest `.arb` string | Snapshots and goldens |
@@ -824,7 +872,7 @@ The inventory is the two catalogues, not this document; a component that is not 
 
 | Living-inventory rule | Enforcement |
 |---|---|
-| The component list in §7 equals the Storybook index equals the Widgetbook index, minus the five web-only rows and plus the three mobile-only widgets | `tools/design-parity` compares the three lists in `ci-web.yml` and `ci-mobile.yml` and fails on any difference |
+| The component list in §7 equals the Storybook index equals the Widgetbook index, minus the five web-only rows and plus the three mobile-only widgets | Review step, the same one "How this document is verified" names: the `ux-reviewer` agent compares the three lists at every phase demo from phase 1 and on every pull request that adds or removes a component, and a difference blocks the demo. No pipeline tool compares them: no slice in `34-work-breakdown.md` builds one, and SL-UX-003 (Storybook test runner) and SL-UX-007 (Widgetbook and goldens) each prove only their own catalogue |
 | Tokens are consumed, never copied | The generators emit `tokens.css` and `nibras_tokens.dart` from the one JSON file; a literal colour, size, duration or easing fails stylelint and the Dart analyzer rule |
 | A new component starts with its seven stories | The component generator scaffolds all seven and the `Docs` file; a pull request that removes a story fails the Storybook test runner |
 | The Arabic length story uses real strings | `nbLongestString` reads the feature's `ar.json`; the Widgetbook equivalent reads the `.arb` | The story fails to build when the key set is empty |
@@ -859,7 +907,7 @@ The inventory is the two catalogues, not this document; a component that is not 
 | Mobile matches the web in tokens, states, directions and themes | Golden tests in `nibras_ui` for every widget's `States`, `Directions` and `Themes` use cases in LTR and RTL on the Linux runner, Windows kiosk goldens and iOS goldens per Appendix X; `TC-UX-012` | `ci-mobile.yml` |
 | Motion honours reduced motion and the delight budget | The `Motion` story renders both settings; the reduced-motion golden must equal the end state; stylelint forbids animated properties other than `transform` and `opacity` and forbids literal durations; a motion review item in the pull-request template asks for the pattern row in §6 | `ci-web.yml`, `ci-mobile.yml`, review |
 | The product name lives in one place | The lint step from §1.4 greps templates, string files and notification templates for the display name outside the token file and the brand assets | `ci-web.yml`, `ci-mobile.yml`, `ci-service.yml` |
-| The inventory is alive | Review step: the `ux-reviewer` agent compares §7 (the 64 components, the five web-only rows and the three mobile-only widgets) with the Storybook index (SL-UX-003) and the Widgetbook index (SL-UX-007) at every phase demo from phase 1; the Storybook test runner in `ci-web.yml`, built by SL-UX-003, fails on a missing story id | Phase demos; `ci-web.yml` |
+| The inventory is alive | Review step: the `ux-reviewer` agent compares §7 (the 64 components, the five web-only rows and the three mobile-only widgets) with the Storybook index (SL-UX-003) and the Widgetbook index (SL-UX-007) at every phase demo from phase 1 and on every pull request that adds or removes a component (§12); the Storybook test runner in `ci-web.yml`, built by SL-UX-003, fails on a missing story id | Phase demos and component pull requests; `ci-web.yml` |
 | References and names are canonical | Kit-lint R01 and R02 for section and appendix references, R17 for Mermaid types and R05 for open items; component and screen names are a review step: the `ux-reviewer` agent checks each against `08-web-structure.md` §7 at the Group D review and on every change to document 08 or this document | Lint (`/lint-plan`); Group D review |
 
 ### Test cases

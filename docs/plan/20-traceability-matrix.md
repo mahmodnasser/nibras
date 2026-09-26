@@ -22,8 +22,8 @@ One row per requirement, from its identifier to the service that owns it, the wo
 | Requirements built by at least one slice | 858 |
 | Requirements satisfied by a gate named in document 34 rather than a slice | 2 |
 | Requirements with a test identifier | 860 |
-| Of which the identifier comes from document 03 or a service sheet's test plan | 527 |
-| Of which the identifier is a derived acceptance test (Section 2) | 333 |
+| Of which the identifier comes from document 03 or a service sheet's test plan | 533 |
+| Of which the identifier is a derived acceptance test (Section 2) | 327 |
 
 ### 2. Derived acceptance tests
 
@@ -39,7 +39,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | Phase | The phases of the capabilities whose slices build it, from documents 34 and 17 |
 | Slices | Document 34's Covers column |
 | Test case | Document 03's acceptance column, the service sheets' test plans, or the derived acceptance test of Section 2 |
-| Platform | The runner or device class from Appendix X when the requirement exists because of a platform difference; otherwise `any` |
+| Platform | The runners or devices named in the definitions of the tests of the requirement (ubuntu-latest, windows-latest, macos-latest, Android, iOS, the browser engines, the device pass); otherwise the default of its area from document 33 part 4, or `any` |
 | Status | `Planned` until the build begins; `docs/project/TRACEABILITY.md` carries it forward |
 
 ### 4. The matrix
@@ -101,7 +101,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-PLT-006 | A tenant can export all its data at every lifecycle state, including read-only and pending deletion | 1 | Platform | WF-PLT-03 | BR-PLT-006 | 06-services/platform.md | 1 | SL-PLT-012 | TC-PLT-956 | any | Planned |
 | REQ-PLT-007 | Tenant deletion is a saga across every service with a 30-day cooling-off period and a final certificate of ... | 1 | Platform | WF-PLT-03 | BR-PLT-003 | 06-services/platform.md | 1 | SL-PLT-013, SL-IDN-036 | TC-PRV-901 | any | Planned |
 | REQ-PLT-008 | Plans are priced per active student with tiers, add-on modules, monthly and annual terms, coupons, several ... | 1 | Platform | WF-PLT-02 | none | 06-services/platform.md | 1 | SL-PLT-008 | TC-PLT-958 | any | Planned |
-| REQ-PLT-009 | A student counts as active for billing only with the status enrolled on the billing date, prorated by day f... | 1 | Platform | none | BR-FIN-017 | 06-services/platform.md | 1 | SL-PLT-010 | TC-PLT-103 | any | Planned |
+| REQ-PLT-009 | A student counts as active for billing only with the status enrolled on the billing date, prorated by day f... | 1 | Platform | none | BR-FIN-017 | 06-services/platform.md | 1 | SL-PLT-010, SL-PLT-010 | TC-FIN-621, TC-PLT-103 | any | Planned |
 | REQ-PLT-010 | An upgrade takes effect immediately with proration by day, and a downgrade takes effect at the next renewal... | 1 | Platform | WF-PLT-02 | BR-FIN-018 | 06-services/platform.md | 1 | SL-PLT-009 | TC-PLT-102 | any | Planned |
 | REQ-PLT-011 | Plan limits on students, storage, SMS credits, and AI usage warn softly before the limit and block hard at it | 1 | Platform | none | BR-PLT-001 | 06-services/platform.md | 1 | SL-PLT-010 | TC-PLT-961 | any | Planned |
 | REQ-PLT-012 | Services publish usage events and Platform aggregates them for limits, billing, and the tenant health score | 1 | Platform | none | BR-PLT-005 | 06-services/platform.md | 1 | SL-PLT-010, SL-IDN-037 | TC-PLT-962 | any | Planned |
@@ -222,7 +222,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-ACA-025 | Item analysis is produced per quiz | 2 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-217 | TC-ACA-975 | any | Planned |
 | REQ-ACA-026 | The question bank imports and exports QTI 3 packages | 2 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-216 | TC-ACA-414 | any | Planned |
 | REQ-ACA-027 | Online classes run through Jitsi or LiveKit with attendance captured from participation | 2 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-218 | TC-ACA-977 | any | Planned |
-| REQ-ACA-028 | The kindergarten daily sheet records meals, naps, mood, activities, consented photos, and a note to guardia... | 2 | Academics | none | none | 06-services/academics.md | 2, 4 | SL-ACA-209, SL-ACA-400, SL-ACA-401, SL-ACA-402, SL-ACA-403, SL-ACA-404 | TC-ACA-001 | any | Planned |
+| REQ-ACA-028 | The kindergarten daily sheet records meals, naps, mood, activities, consented photos, and a note to guardia... | 2 | Academics | none | none | 06-services/academics.md | 2, 4 | SL-ACA-209, SL-ACA-400, SL-ACA-401, SL-ACA-402, SL-ACA-403, SL-ACA-404 | TC-ACA-001, TC-ACA-424, TC-ACA-425, TC-ACA-426 | any | Planned |
 | REQ-ACA-029 | A daily job sends an assignment-due reminder the evening before to students and, for young grades, guardians | 1 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-208 | TC-ACA-416 | any | Planned |
 | REQ-ACA-030 | LTI 1.3 launches external learning tools from an assignment or resource | 2 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-207 | TC-ACA-980 | any | Planned |
 | REQ-ASM-001 | An assessment structure per subject and grading period defines categories, weights, drop-lowest, best-of, m... | 1 | Assessment | none | BR-ASM-001, BR-ASM-003, BR-ASM-004, BR-ASM-005 | 06-services/assessment.md | 2 | SL-ASM-201, SL-ASM-210 | TC-ASM-951 | any | Planned |
@@ -354,7 +354,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-FIN-029 | A balanced day closes to 0.00, records a deposit slip reference, and cannot be edited afterwards | 1 | Finance | WF-FIN-06 | none | 06-services/finance.md | 3 | SL-FIN-441, SL-FIN-447 | TC-FIN-410 | any | Planned |
 | REQ-FIN-030 | At day close the sum of postings equals invoices minus payments minus credits minus write-offs per tenant a... | 1 | Finance | WF-FIN-06 | none | 06-services/finance.md | 3 | SL-FIN-441 | TC-FIN-616 | any | Planned |
 | REQ-FIN-031 | Finance reports cover collections, aging, outstanding by grade, discounts granted, revenue forecast, cash f... | 1 | Finance | none | none | 06-services/finance.md | 3 | SL-FIN-442, SL-FIN-447 | TC-FIN-411 | any | Planned |
-| REQ-FIN-032 | An accounting export and an e-invoicing plug-in interface are provided, with country implementations such a... | 1 | Finance | none | none | 06-services/finance.md | 3 | SL-FIN-443, SL-FIN-444, SL-FIN-447 | TC-FIN-620 | any | Planned |
+| REQ-FIN-032 | An accounting export and an e-invoicing plug-in interface are provided, with country implementations such a... | 1 | Finance | none | none | 06-services/finance.md | 3 | SL-FIN-443, SL-FIN-444, SL-FIN-447 | TC-FIN-620, TC-FIN-751 | ubuntu-latest | Planned |
 | REQ-FIN-033 | Expenses and budgets are tracked against a financial period | 2 | Finance | WF-OPS-01 | none | 06-services/finance.md | 3 | SL-FIN-445 | TC-FIN-983 | any | Planned |
 | REQ-FIN-034 | A general ledger is out of scope and is served by the accounting export and an integration interface | 3 | Finance | none | none | 06-services/finance.md | 3 | SL-FIN-443 | TC-FIN-984 | any | Planned |
 | REQ-FIN-035 | Every amount is a decimal with a currency, and rounding is per currency with configurable mode and decimals | 1 | Finance | none | BR-FIN-011 | 06-services/finance.md | 3 | SL-FIN-400, SL-FIN-442 | TC-FIN-985 | any | Planned |
@@ -401,7 +401,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-NOT-016 | Every row of the Appendix C notification matrix is implemented with its named trigger, recipients, urgency ... | 1 | Notification | none | BR-NOT-001, BR-NOT-002 | 06-services/notification.md | 1 | SL-NOT-009, SL-NOT-010 | TC-NOT-601 | any | Planned |
 | REQ-NOT-017 | Each tenant sends email from its own subdomain with SPF, DKIM and DMARC generated at provisioning and verif... | 1 | Notification | none | none | 06-services/notification.md | 1 | SL-NOT-007 | TC-NOT-617 | any | Planned |
 | REQ-NOT-018 | A hard bounce suspends the address and raises a data-quality issue, a complaint suppresses non-urgent email... | 1 | Notification | none | BR-NOT-002 | 06-services/notification.md | 1 | SL-NOT-005 | TC-NOT-608 | any | Planned |
-| REQ-NOT-019 | On a device without Google services, push arrives in-app while the app is open and urgent messages fall bac... | 1 | Notification | none | BR-NOT-002 | 06-services/notification.md | 1 | SL-NOT-002 | TC-NOT-610 | any | Planned |
+| REQ-NOT-019 | On a device without Google services, push arrives in-app while the app is open and urgent messages fall bac... | 1 | Notification | none | BR-NOT-002 | 06-services/notification.md | 1 | SL-NOT-002 | TC-BFF-761, TC-NOT-610 | any | Planned |
 | REQ-RQS-001 | A request type is designed without code: form fields, required attachments, who may submit, optional fee, S... | 1 | Requests | WF-RQS-01 | none | 06-services/requests.md | 3 | SL-RQS-402, SL-RQS-415 | TC-PLT-001 | any | Planned |
 | REQ-RQS-002 | A form builder produces the forms used by request types, admissions, consent forms and surveys | 1 | Requests | none | none | 06-services/requests.md | 3 | SL-RQS-400, SL-RQS-415, SL-COM-405 | TC-RQS-617 | any | Planned |
 | REQ-RQS-003 | Approval chains are sequential, parallel, any-of or all-of, with conditional routing by amount and by duration | 1 | Requests | none | BR-RQS-001, BR-RQS-002 | 06-services/requests.md | 3 | SL-RQS-401, SL-RQS-403, SL-RQS-415 | TC-RQS-604 | any | Planned |
@@ -428,7 +428,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-DOC-004 | Certificates and letters are generated on demand or by an approved request | 1 | Documents | WF-RQS-01 | none | 06-services/documents.md | 3, 4 | SL-DOC-403, SL-DOC-411, SL-DOC-412, SL-MOB-406 | TC-L10N-301 | any | Planned |
 | REQ-DOC-005 | Every official document carries a QR code that opens a public verification page showing no personal data be... | 1 | Documents | none | none | 06-services/documents.md | 3, 4 | SL-DOC-404, SL-DOC-405, SL-DOC-413, SL-MOB-406 | TC-DOC-302, TC-DOC-323 | any | Planned |
 | REQ-DOC-006 | A certificate can be revoked, after which the verification page reports it as revoked and the holder and re... | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-405, SL-DOC-412 | TC-DOC-322 | any | Planned |
-| REQ-DOC-007 | PDFs are rendered through Gotenberg with correct Arabic shaping, and Inter, IBM Plex Sans Arabic and a Noto... | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-FIN-409, SL-DOC-406 | TC-DOC-957 | any | Planned |
+| REQ-DOC-007 | PDFs are rendered through Gotenberg with correct Arabic shaping, and Inter, IBM Plex Sans Arabic and a Noto... | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-FIN-409, SL-DOC-406 | TC-ASM-761, TC-DOC-761 | any | Planned |
 | REQ-DOC-008 | Central document storage has folders, tags, versions, access rules, expiry reminders, and retention rules | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-407, SL-DOC-413 | TC-DOC-315 | any | Planned |
 | REQ-DOC-009 | Uploaded documents are OCR-indexed with Tesseract in Arabic and English for text search, and OCR assists da... | 2 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-408, SL-DOC-413 | TC-DOC-338 | any | Planned |
 | REQ-DOC-010 | ID cards for students and staff are produced in batch printing layouts | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-409, SL-DOC-412 | TC-DOC-324 | any | Planned |
@@ -438,7 +438,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-DOC-014 | The export center requires approval for sensitive exports, with a reason, a watermark naming the requester,... | 1 | Documents | WF-PRV-02 | none | 06-services/documents.md | 3 | SL-DOC-421, SL-DOC-422, SL-DOC-424 | TC-PRV-301 | any | Planned |
 | REQ-DOC-015 | Long jobs report progress over SignalR, can be cancelled, and leave a result record with downloadable outpu... | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-417, SL-DOC-421, SL-DOC-423 | TC-DOC-333 | any | Planned |
 | REQ-DOC-016 | The legacy migration toolkit provides mapping templates, a staging area, validation and reconciliation repo... | 1 | Documents | WF-DATA-01 | none | 06-services/documents.md | 3, 6 | SL-DOC-420, SL-DOC-424, SL-PLT-601 | TC-DOC-330 | any | Planned |
-| REQ-DOC-017 | School memory assembles a per-student portfolio and a yearbook from consented media, achievements and comme... | 2 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-410 | TC-DOC-002 | any | Planned |
+| REQ-DOC-017 | School memory assembles a per-student portfolio and a yearbook from consented media, achievements and comme... | 2 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-410 | TC-DOC-801 | any | Planned |
 | REQ-BEH-001 | Positive and negative categories carry points and severity levels | 1 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-400, SL-BEH-406, SL-BEH-412 | TC-BEH-310 | any | Planned |
 | REQ-BEH-002 | An incident report records involved students, witnesses, location, action taken, and follow-up | 1 | Behavior | WF-BEH-01 | none | 06-services/behavior.md | 4 | SL-BEH-401, SL-BEH-402, SL-BEH-412, SL-MOB-409 | TC-BEH-311 | any | Planned |
 | REQ-BEH-003 | A consequence ladder schedules detentions and applies parent notification rules | 1 | Behavior | WF-BEH-01 | none | 06-services/behavior.md | 4 | SL-BEH-400, SL-BEH-403, SL-BEH-412 | TC-BEH-312 | any | Planned |
@@ -521,7 +521,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-OPS-013 | After-school and summer programs have enrollment and billing | 2 | Operations | none | none | 06-services/operations.md | 5 | SL-OPS-621, SL-OPS-622, SL-OPS-626 | TC-OPS-614 | any | Planned |
 | REQ-OPS-014 | The cafeteria runs a prepaid wallet with an allergy check at sale and parent spending limits | 3 | Operations | none | none | 06-services/operations.md | 5 | gate, see document 34 | TC-OPS-964 | any | Planned |
 | REQ-OPS-015 | Boarding and hostel management is provided as a separate schema | 3 | Operations | none | none | 06-services/operations.md | 5 | gate, see document 34 | TC-OPS-965 | any | Planned |
-| REQ-OPS-016 | The campus digital twin shows rooms with live occupancy from the timetable and roll call, a utilisation hea... | 2 | Operations | none | none | 06-services/operations.md | 5 | SL-OPS-623, SL-OPS-624, SL-OPS-626 | TC-OPS-001 | any | Planned |
+| REQ-OPS-016 | The campus digital twin shows rooms with live occupancy from the timetable and roll call, a utilisation hea... | 2 | Operations | none | none | 06-services/operations.md | 5 | SL-OPS-623, SL-OPS-624, SL-OPS-626 | TC-OPS-001, TC-BFF-027 | any | Planned |
 | REQ-OPS-017 | A purchase requisition runs budget check, approval, order, receipt, then inventory or asset update | 2 | Operations | WF-OPS-01 | none | 06-services/operations.md | 5 | SL-OPS-604, SL-OPS-608 | TC-OPS-615 | any | Planned |
 | REQ-OPS-018 | Safety incidents and drills are logged with follow-up actions | 2 | Operations | WF-OPS-05 | none | 06-services/operations.md | 5 | SL-OPS-619, SL-OPS-625 | TC-OPS-616 | any | Planned |
 | REQ-AI-001 | Every AI feature is off by default per tenant and per feature, and the product is fully usable with all of ... | 2 | Ai | none | none | 06-services/ai.md | 5 | SL-AI-600, SL-AI-601, SL-AI-613, SL-AI-621 | TC-AI-601 | any | Planned |
@@ -557,7 +557,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-BFF-003 | Student 360 shows one chronological timeline per student across attendance, grades, behavior, health visits... | 1 | Bff.Web | none | none | 06-services/bff-web.md | 1, 4 | SL-BFF-005, SL-RPT-410 | TC-RPT-002 | any | Planned |
 | REQ-BFF-004 | The mobile backend-for-frontend exposes delta-sync endpoints driven by the signed delta token | 1 | Bff.Mobile | none | none | 06-services/bff-mobile.md | 2, 4 | SL-BFF-203, SL-MOB-400 | TC-BFF-101 | any | Planned |
 | REQ-BFF-005 | The mobile backend-for-frontend enforces the per-tenant minimum app version policy | 1 | Bff.Mobile | none | none | 06-services/bff-mobile.md | 2 | SL-BFF-201 | TC-BFF-102 | any | Planned |
-| REQ-BFF-006 | The command palette jumps anywhere and runs any permitted action, and natural-language search returns resul... | 1 | Bff.Web | none | BR-IDN-002 | 06-services/bff-web.md | 1 | SL-BFF-004 | TC-WEB-001 | any | Planned |
+| REQ-BFF-006 | The command palette jumps anywhere and runs any permitted action, and natural-language search returns resul... | 1 | Bff.Web | none | BR-IDN-002 | 06-services/bff-web.md | 1 | SL-BFF-004 | TC-WEB-001, TC-BFF-753 | any | Planned |
 | REQ-BFF-007 | The teacher five-minute mode home shows attendance, a quick note, a quick grade, the cover alert, and nothi... | 1 | Bff.Mobile | none | none | 06-services/bff-mobile.md | 2 | SL-BFF-205, SL-MOB-207 | TC-MOB-003 | any | Planned |
 | REQ-BFF-008 | The parent calm screen shows one card per child per day, with "nothing needs your attention" as a designed ... | 1 | Bff.Mobile | none | none | 06-services/bff-mobile.md | 2, 4 | SL-BFF-206, SL-MOB-214, SL-MOB-401, SL-ACA-402 | TC-MOB-004 | any | Planned |
 | REQ-BFF-009 | A low-bandwidth mode serves compressed images, delta sync, and text-first notifications for slow connection... | 1 | Bff.Mobile | none | none | 06-services/bff-mobile.md | 2 | SL-BFF-208, SL-MOB-218 | TC-MOB-005 | any | Planned |
@@ -642,12 +642,12 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-L10N-005 | Names, addresses, subject names, report card comments and official documents hold Arabic and English values... | 1 | cross-cutting | none | BR-L10N-007 | 24 | 1 | SL-DOC-002 | TC-L10N-955 | any | Planned |
 | REQ-L10N-006 | Right-to-left layouts mirror steppers, icons, charts and swipe directions | 1 | cross-cutting | none | none | 24 | 1 | SL-UX-003 | TC-L10N-201 | any | Planned |
 | REQ-L10N-007 | Bidirectional text is handled in inputs, tables, PDFs and notifications, and numbers stay left to right ins... | 1 | cross-cutting | none | none | 24 | 1 | SL-DOC-001, SL-L10N-002 | TC-L10N-301 | any | Planned |
-| REQ-L10N-008 | Numerals render as Western or Arabic-Indic per tenant setting | 1 | cross-cutting | none | BR-L10N-002 | 24 | 1 | SL-DOC-001, SL-L10N-002 | TC-L10N-958 | any | Planned |
-| REQ-L10N-009 | Search normalizes alef, hamza, ta marbuta and diacritics, sorts with correct collation, and tolerates trans... | 1 | cross-cutting | none | BR-L10N-001 | 24 | 1 | SL-L10N-002 | TC-L10N-959 | any | Planned |
+| REQ-L10N-008 | Numerals render as Western or Arabic-Indic per tenant setting | 1 | cross-cutting | none | BR-L10N-002 | 24 | 1 | SL-DOC-001, SL-L10N-002 | TC-BFF-754 | any | Planned |
+| REQ-L10N-009 | Search normalizes alef, hamza, ta marbuta and diacritics, sorts with correct collation, and tolerates trans... | 1 | cross-cutting | none | BR-L10N-001 | 24 | 1 | SL-L10N-002 | TC-COM-760 | any | Planned |
 | REQ-L10N-010 | Dates are stored as Gregorian in UTC and displayed with an optional Hijri calendar and the school's time zone | 1 | cross-cutting | none | BR-L10N-003 | 24 | 1 | SL-L10N-002 | TC-L10N-960 | any | Planned |
 | REQ-L10N-011 | The work week and weekend are configurable, holidays are per campus, and Ramadan bell schedules apply by date | 1 | cross-cutting | none | BR-L10N-003 | 24 | 1 | SL-PLT-002, SL-PLT-005 | TC-L10N-961 | any | Planned |
-| REQ-L10N-012 | Money supports several currencies with configurable decimals and rounding, tax per fee item, and amounts in... | 1 | cross-cutting | none | BR-FIN-011, BR-L10N-004 | 24 | 1 | SL-API-003 | TC-L10N-962 | any | Planned |
-| REQ-L10N-013 | Phone numbers are stored in E.164 with a country picker, addresses follow a country template, and names hol... | 1 | cross-cutting | none | none | 24 | 1 | SL-L10N-002 | TC-L10N-963 | any | Planned |
+| REQ-L10N-012 | Money supports several currencies with configurable decimals and rounding, tax per fee item, and amounts in... | 1 | cross-cutting | none | BR-FIN-011, BR-L10N-004 | 24 | 1 | SL-API-003 | TC-FIN-750 | ubuntu-latest | Planned |
+| REQ-L10N-013 | Phone numbers are stored in E.164 with a country picker, addresses follow a country template, and names hol... | 1 | cross-cutting | none | none | 24 | 1 | SL-L10N-002 | TC-IDN-750 | any | Planned |
 | REQ-L10N-014 | Terminology overrides and the tenant's language apply to every printed document | 1 | cross-cutting | none | none | 24 | 1 | SL-PLT-015, SL-DOC-002 | TC-L10N-501 | any | Planned |
 | REQ-L10N-015 | Microcopy is human in both languages, written by someone fluent and never machine-literal | 1 | cross-cutting | none | none | 24 | 1 | SL-UX-009 | TC-L10N-965 | any | Planned |
 | REQ-L10N-016 | The operator console and every administrator screen are fully available in Arabic | 1 | cross-cutting | none | none | 24 | 1 | SL-PLT-007, SL-PLT-026, SL-WEB-005 | TC-L10N-901 | any | Planned |
@@ -716,13 +716,13 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-MOB-035 | The shared Android APK stays under 25 MB per ABI | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-211 | TC-MOB-985 | Android, iOS | Planned |
 | REQ-MOB-036 | Screens render from the local cache first and refresh in the background, with heavy parsing in isolates and... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-210 | TC-MOB-986 | Android, iOS | Planned |
 | REQ-MOB-037 | The app provides home-screen widgets for today's timetable and the next due item, quick actions, haptics, a... | 1 | cross-cutting | none | none | 09 | 2, 4 | SL-MOB-212, SL-MOB-406 | TC-MOB-987 | Android, iOS | Planned |
-| REQ-MOB-038 | Supported devices are Android 8 and later including devices without Google services, iOS 15 and later, and ... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-MOB-988 | Android, iOS | Planned |
+| REQ-MOB-038 | Supported devices are Android 8 and later including devices without Google services, iOS 15 and later, and ... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-BFF-761 | Android, iOS | Planned |
 | REQ-MOB-039 | A Huawei push adapter plugs in behind `IPushSender` | 2 | Notification | none | none | 06-services/notification.md | 1 | SL-NOT-002 | TC-MOB-989 | Android, iOS | Planned |
 | REQ-MOB-040 | The app is distributed through Google Play, the App Store, AppGallery where it matters, and a signed APK ch... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-MOB-990 | Android, iOS | Planned |
 | REQ-MOB-041 | A white-label app is published under the school's own developer accounts, and the school owns the listing, ... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-MOB-001 | TC-MOB-991 | Android, iOS | Planned |
 | REQ-MOB-042 | Anything that must reach phones by a date is submitted to the stores a week early | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-MOB-992 | Android, iOS | Planned |
-| REQ-MOB-043 | The app syncs on open and on silent push, and never promises background sync on iOS | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-205 | TC-PLAT-010 | Android, iOS | Planned |
-| REQ-MOB-044 | When Android battery optimisation restricts the app, it explains why an exemption helps exactly once | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-205 | TC-PLAT-011 | Android, iOS | Planned |
+| REQ-MOB-043 | The app syncs on open and on silent push, and never promises background sync on iOS | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-205 | TC-PLAT-010 | iOS | Planned |
+| REQ-MOB-044 | When Android battery optimisation restricts the app, it explains why an exemption helps exactly once | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-205 | TC-PLAT-011 | Android, device farm | Planned |
 | REQ-API-001 | REST paths use `/api/v{n}/`, the service segment, and kebab-case plural nouns, with at most one sub-resourc... | 1 | cross-cutting | none | none | 22 | 1 | SL-API-001 | TC-API-951 | any | Planned |
 | REQ-API-002 | JSON properties and query parameters are camelCase and enums are camelCase strings, never integers | 1 | cross-cutting | none | none | 22 | 1 | SL-API-001 | TC-API-952 | any | Planned |
 | REQ-API-003 | Timestamps are ISO 8601 in UTC with the `Z` suffix, and dates without time are `YYYY-MM-DD` | 1 | cross-cutting | none | none | 22 | 1 | SL-API-001 | TC-API-953 | any | Planned |
@@ -883,29 +883,29 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-TST-023 | Each phase gate requires all tests green, coverage thresholds met, zero high or critical vulnerabilities, a... | 1 | cross-cutting | none | none | 16 | 1, 6 | SL-TST-001, SL-SEC-604, SL-UX-602 | TC-TST-973 | any | Planned |
 | REQ-TST-024 | Every runbook is executed in a game day within ninety days of being written | 1 | cross-cutting | none | none | 16 | 1, 6 | SL-INF-008, SL-INF-614, SL-INF-616, SL-INF-617 | TC-TST-974 | any | Planned |
 | REQ-TST-025 | Every plan document scores 4 or better on every scorecard axis and passes a clean `kit-lint` run | 1 | cross-cutting | none | none | 16 | 1 | SL-TST-005 | TC-TST-975 | any | Planned |
-| REQ-PLAT-001 | Development is supported on Windows 11 with PowerShell 7 or Git Bash, Ubuntu 22.04 and later, and macOS 14 ... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-003, SL-PLAT-005 | TC-PLAT-951 | per Appendix X | Planned |
-| REQ-PLAT-002 | Docker Desktop is never required, and Podman and Docker Engine both work for local development and Testcont... | 1 | cross-cutting | none | none | 33 | 1 | SL-TST-002, SL-PLAT-004, SL-PLAT-005 | TC-PLAT-013 | per Appendix X | Planned |
-| REQ-PLAT-003 | Servers run Linux on Debian, Ubuntu or the Red Hat family, on x86-64 and arm64, and Windows Server is not s... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002, SL-PLAT-004 | TC-PLAT-953 | per Appendix X | Planned |
-| REQ-PLAT-004 | A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware | 1 | cross-cutting | WF-INF-01 | none | 33 | 1, 6 | SL-PLAT-004, SL-INF-608, SL-INF-609, SL-INF-610, SL-INF-614 | TC-PLAT-101 | per Appendix X | Planned |
-| REQ-PLAT-005 | The web supports the last two major versions of Chrome, Edge, Firefox and Safari, and current Samsung Internet | 1 | cross-cutting | none | none | 33 | 1 | SL-WEB-004 | TC-PLAT-955 | per Appendix X | Planned |
-| REQ-PLAT-006 | Screen reader support is claimed for NVDA and Narrator on Windows, VoiceOver on macOS and iOS, and TalkBack... | 1 | cross-cutting | none | none | 33 | 1, 6 | SL-UX-003, SL-UX-600, SL-UX-601 | TC-PLAT-956 | per Appendix X | Planned |
-| REQ-PLAT-007 | Desktop kiosk builds for Windows and Linux run the gate, front desk and clinic modes, start full-screen, an... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-006 | TC-PLAT-957 | per Appendix X | Planned |
-| REQ-PLAT-008 | A white-label flavour is marked released only when both its Android and its iOS artefacts exist for the sam... | 1 | cross-cutting | none | none | 33 | 1 | SL-MOB-001 | TC-PLAT-014 | per Appendix X | Planned |
-| REQ-PLAT-009 | Flutter goldens are accepted only from the Linux runner, and iOS builds run on a macOS runner path-filtered... | 1 | cross-cutting | none | none | 33 | 1 | SL-UX-007 | TC-PLAT-016 | per Appendix X | Planned |
-| REQ-PLAT-010 | `BuildingBlocks`, `Documents` and `Localization` tests run on both a Linux and a Windows runner | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002, SL-PLAT-005, SL-DOC-003 | TC-PLAT-003 | per Appendix X | Planned |
-| REQ-PLAT-011 | Real-device passes cover a low-end Android 8, an Android 14, an iPhone SE, an iPad and one device without G... | 1 | cross-cutting | none | none | 33 | 1 | SL-UX-008 | TC-PLAT-009 | per Appendix X | Planned |
-| REQ-PLAT-012 | No two repository paths differ only by case | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-001 | per Appendix X | Planned |
-| REQ-PLAT-013 | No repository-relative path exceeds 200 characters | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-002 | per Appendix X | Planned |
-| REQ-PLAT-014 | Line endings are owned by `.gitattributes` with LF for source and CRLF for `.ps1`, so generated SQL and PDF... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001, SL-DOC-003 | TC-PLAT-003 | per Appendix X | Planned |
-| REQ-PLAT-015 | Globalization stays on in every image, and a test inside the built image proves `ar-SA`, the Um Al Qura cal... | 1 | cross-cutting | none | BR-L10N-006 | 33 | 1 | SL-PLAT-002 | TC-PLAT-004 | per Appendix X | Planned |
-| REQ-PLAT-016 | Debian-based images are the default, and an Alpine image installs ICU and tzdata explicitly and passes the ... | 1 | cross-cutting | none | BR-L10N-006 | 33 | 1 | SL-PLAT-002 | TC-PLAT-004 | per Appendix X | Planned |
-| REQ-PLAT-017 | tzdata and ICU are pinned per release and bumped deliberately | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002 | TC-PLAT-005 | per Appendix X | Planned |
-| REQ-PLAT-018 | Hijri and Gregorian conversions stay stable across an ICU update | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002 | TC-PLAT-006 | per Appendix X | Planned |
-| REQ-PLAT-019 | Parsing and formatting always name a culture, using the invariant culture for anything stored or transmitted | 1 | cross-cutting | none | BR-L10N-006 | 33 | 1 | SL-PLAT-001 | TC-PLAT-007 | per Appendix X | Planned |
-| REQ-PLAT-020 | Imports normalize Arabic-Indic digits before validation | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-414 | TC-PLAT-008 | per Appendix X | Planned |
-| REQ-PLAT-021 | Paths are composed with `Path.Combine`, never with a literal separator | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-971 | per Appendix X | Planned |
-| REQ-PLAT-022 | Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invo... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-102 | per Appendix X | Planned |
-| REQ-PLAT-023 | Kit archives are built with a tool that preserves the file set on every operating system | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-017 | per Appendix X | Planned |
+| REQ-PLAT-001 | Development is supported on Windows 11 with PowerShell 7 or Git Bash, Ubuntu 22.04 and later, and macOS 14 ... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-003, SL-PLAT-005 | TC-PLAT-951 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-002 | Docker Desktop is never required, and Podman and Docker Engine both work for local development and Testcont... | 1 | cross-cutting | none | none | 33 | 1 | SL-TST-002, SL-PLAT-004, SL-PLAT-005 | TC-PLAT-013 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-003 | Servers run Linux on Debian, Ubuntu or the Red Hat family, on x86-64 and arm64, and Windows Server is not s... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002, SL-PLAT-004 | TC-PLAT-953 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-004 | A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware | 1 | cross-cutting | WF-INF-01 | none | 33 | 1, 6 | SL-PLAT-004, SL-INF-608, SL-INF-609, SL-INF-610, SL-INF-614 | TC-PLAT-101 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-005 | The web supports the last two major versions of Chrome, Edge, Firefox and Safari, and current Samsung Internet | 1 | cross-cutting | none | none | 33 | 1 | SL-WEB-004 | TC-PLAT-955 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-006 | Screen reader support is claimed for NVDA and Narrator on Windows, VoiceOver on macOS and iOS, and TalkBack... | 1 | cross-cutting | none | none | 33 | 1, 6 | SL-UX-003, SL-UX-600, SL-UX-601 | TC-PLAT-956 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-007 | Desktop kiosk builds for Windows and Linux run the gate, front desk and clinic modes, start full-screen, an... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-006 | TC-PLAT-957 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-008 | A white-label flavour is marked released only when both its Android and its iOS artefacts exist for the sam... | 1 | cross-cutting | none | none | 33 | 1 | SL-MOB-001 | TC-PLAT-014 | Android, iOS | Planned |
+| REQ-PLAT-009 | Flutter goldens are accepted only from the Linux runner, and iOS builds run on a macOS runner path-filtered... | 1 | cross-cutting | none | none | 33 | 1 | SL-UX-007 | TC-PLAT-016 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-010 | `BuildingBlocks`, `Documents` and `Localization` tests run on both a Linux and a Windows runner | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002, SL-PLAT-005, SL-DOC-003 | TC-PLAT-003 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-011 | Real-device passes cover a low-end Android 8, an Android 14, an iPhone SE, an iPad and one device without G... | 1 | cross-cutting | none | none | 33 | 1 | SL-UX-008 | TC-PLAT-009 | device farm | Planned |
+| REQ-PLAT-012 | No two repository paths differ only by case | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-001 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-013 | No repository-relative path exceeds 200 characters | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-002 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-014 | Line endings are owned by `.gitattributes` with LF for source and CRLF for `.ps1`, so generated SQL and PDF... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001, SL-DOC-003 | TC-PLAT-003 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-015 | Globalization stays on in every image, and a test inside the built image proves `ar-SA`, the Um Al Qura cal... | 1 | cross-cutting | none | BR-L10N-006 | 33 | 1 | SL-PLAT-002 | TC-PLAT-004 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-016 | Debian-based images are the default, and an Alpine image installs ICU and tzdata explicitly and passes the ... | 1 | cross-cutting | none | BR-L10N-006 | 33 | 1 | SL-PLAT-002 | TC-PLAT-004 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-017 | tzdata and ICU are pinned per release and bumped deliberately | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002 | TC-PLAT-005 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-018 | Hijri and Gregorian conversions stay stable across an ICU update | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-002 | TC-PLAT-006 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-019 | Parsing and formatting always name a culture, using the invariant culture for anything stored or transmitted | 1 | cross-cutting | none | BR-L10N-006 | 33 | 1 | SL-PLAT-001 | TC-PLAT-007, TC-ACA-760, TC-ASM-760, TC-ATT-760, TC-BEH-760, TC-BFF-760, TC-BFF-754, TC-COM-762, TC-DOC-760, TC-FIN-750, TC-FIN-751, TC-IDN-750 | ubuntu-latest | Planned |
+| REQ-PLAT-020 | Imports normalize Arabic-Indic digits before validation | 1 | Documents | none | none | 06-services/documents.md | 3 | SL-DOC-414 | TC-PLAT-008, TC-DOC-760 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-021 | Paths are composed with `Path.Combine`, never with a literal separator | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-971 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-022 | Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invo... | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-102 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
+| REQ-PLAT-023 | Kit archives are built with a tool that preserves the file set on every operating system | 1 | cross-cutting | none | none | 33 | 1 | SL-PLAT-001 | TC-PLAT-017 | ubuntu-latest and windows-latest; dev-smoke also macos-latest (document 33 part 4) | Planned |
 
 ## Decisions in force
 
@@ -934,7 +934,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 
 | Date | Reviewer | Result |
 |---|---|---|
-| 2026-09-25 | Generated | 860 requirements, every one mapped to a test |
+| 2026-09-26 | Generated | 860 requirements, every one mapped to a test |
 
 ## How this document is verified
 

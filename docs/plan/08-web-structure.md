@@ -430,7 +430,7 @@ Every route is lazy-loaded by lazy area. Every route carries a `permissionGuard`
 
 ### 3.2 The permission store and live refresh
 
-`PermissionStore` in `@nibras/core/permissions` holds the **effective permission set** for the signed-in person in the current tenant: a map of permission string to the scope it was granted with, plus a `permissionVersion`. It is loaded once from `Bff.Web` at bootstrap (`GET /api/v1/bff-web/me/bootstrap`, which returns identity, tenant snapshot, effective permissions and the navigation manifest filter in one call), and it is refreshed without sign-out when the server says so.
+`PermissionStore` in `@nibras/core/permissions` holds the **effective permission set** for the signed-in person in the current tenant: a map of permission string to the scope it was granted with, plus a `permissionVersion`. It is loaded once from `Bff.Web` at bootstrap (`GET /bff/web/v1/me/bootstrap`, under the `/bff/web/v1/` prefix that `22-api-conventions-and-error-catalog.md` gives every Bff.Web route, which returns identity, tenant snapshot, effective permissions and the navigation manifest filter in one call), and it is refreshed without sign-out when the server says so.
 
 ```mermaid
 sequenceDiagram
@@ -447,7 +447,7 @@ sequenceDiagram
     RabbitMQ->>Communication: consume (queue communication.tenant-lifecycle)
     Communication->>Client: hub message permissions.changed {permissionVersion}
     Client->>Client: compare with held permissionVersion
-    Client->>BffWeb: GET /api/v1/bff-web/me/permissions (If-None-Match: held ETag)
+    Client->>BffWeb: GET /bff/web/v1/me/permissions (If-None-Match: held ETag)
     BffWeb->>Identity: read effective permissions (cache invalidated by the same event)
     BffWeb-->>Client: 200 new effective set, ETag
     Client->>Client: replace effective set, recompute navigation, re-evaluate directives and CanMatch guards
@@ -790,7 +790,46 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Front desk | Enquiries and complaints | `/front-desk/enquiries` | `list`, `form-field`, `select` (route to), `badge` (SLA) | 7 | `operations.frontdesk.view` | no | Appendix I receptionist row | — |
 | Front desk | Emergency roll call | `/front-desk/emergency` | `list` (by location), `stat-tile`, `search-field`, `button` (mark accounted) | 7 | `attendance.safety.emergency.view` | no | U.2 | `TC-ATT-813` (Appendix W) |
 
-**Counts.** 8 shell and public, 19 platform console, 33 school admin, 23 teacher and homeroom, 26 student and parent, 28 registrar and accountant, 23 principal and academic leadership, 31 HR, care and front desk: **191 screen rows**, of which 14 are refusal or same-route variants that the Appendix Q boundary steps require, so **177 distinct screens**. Every row is built from the 64 components of Section 6, the `@nibras/shared` composites of Section 1.1 (`filters` on 12 rows), and the five feature-local presentational components the attendance tree in Section 2 declares: `register-card`, `attendance-list`, `exception-bar`, `lock-window-notice` and `unmarked-classes-card`. None of these is a new primitive: each is a composition of Section 6 components, which is why `14-design-system-and-ux.md` Section 7 inventories the 64 primitives and not the compositions.
+**Counts.** 8 shell and public, 19 platform console, 33 school admin, 23 teacher and homeroom, 26 student and parent, 28 registrar and accountant, 23 principal and academic leadership, 31 HR, care and front desk: **191 screen rows**, of which 14 are refusal or same-route variants that the Appendix Q boundary steps require, so **177 distinct screens**. Every row is built from the 64 components of Section 6, the `@nibras/shared` composites of Section 1.1 (`filters` on 12 rows), and the five feature-local presentational components the attendance tree in Section 1.2 declares: `register-card`, `attendance-list`, `exception-bar`, `lock-window-notice` and `unmarked-classes-card`. None of these is a new primitive: each is a composition of Section 6 components, which is why `14-design-system-and-ux.md` Section 7 inventories the 64 primitives and not the compositions.
+
+### 7.9 Signature features on these screens
+
+Each signature feature is cited here by its Appendix W number only. Its moment, rung, autonomy level, the requirements and slices that build it, its Appendix O step and its demo test are held once, in the "Signature feature trace" table of `32-product-differentiation-and-demo.md`, and are not copied here, so a change to a rung or a demo test is made in one place.
+
+| Appendix W feature | Screens in Section 7 that carry it |
+|---|---|
+| 1 | Operator Today, Teacher Today, Homeroom Today, Student Today, Registrar Today, Accountant Today, Morning brief and Today, HR Today, Care Today, Front desk Today |
+| 2 | Student 360 (homeroom scope), Student 360 (principal) |
+| 3 | Register; Register, all present then exceptions |
+| 4 | Early-warning flags (homeroom), Early warning (principal) |
+| 5 | Timetable editor |
+| 6 | Mark entry grid, Comment bank and drafts, Report card batch |
+| 7 | Calm screen, Messages and digest, Notification preferences |
+| 8 | Gate pass (parent), Gate and passes, Pickup persons |
+| 9 | Imports |
+| 10 | Settings and terminology, Custom fields, Request type designer, Approval chains, Form builder |
+| 13 | Data quality center |
+| 14 | Audit viewer, Access log, Exports, Privacy dashboard |
+| 18 | Badges and portfolio |
+| 20 | Class formation |
+| 21 | Inspection readiness |
+| 22 | Policy acknowledgment |
+| 24 | Integrations, API keys, webhooks |
+| 25 | Morning brief and Today |
+| 26 | Register, all present then exceptions |
+| 27 | Campus comparison, School dashboard, Class overview, Collections and aging |
+| 28 | Early warning (principal), Early-warning flags (homeroom), Staff absence and cover, Substitute suggestion, Workload balance, Comment bank and drafts |
+| 29 | Provisioning wizard |
+| 30 | Intervention playbook (homeroom), Interventions and playbooks (care) |
+| 31 | Guardian transparency |
+| 32 | Emergency mode, Reunification, Emergency roll call (front desk) |
+| 35 | Calm screen |
+| 37 | Global template library |
+| 40 | Service health, Job monitor |
+| 41 | Configuration as code |
+| 43 | Workload balance |
+
+Features carried outside Section 7: 11 by the command palette of the shell (Section 5), 23 by every screen through Section 10, 44 by the low-bandwidth row of Section 8, and 12, 16 and 34 by the Flutter application in `09-mobile-structure.md`. Seven features have no route in Section 2 and no row here yet: 33 (campus digital twin), 36 (school memory) and 42 (mastery and next step), which `09-mobile-structure.md` §10 marks `full` on the web, and 15 (demo reset), 17 (media consent at publishing), 19 (kindergarten daily sheet) and 38 (plug-in kit). That gap is the fourth open point below.
 
 ---
 
@@ -801,7 +840,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Workspaces in scope | Teacher, homeroom, student, parent, principal (Appendix X mobile web row). Every screen marked `yes` in Section 7 is designed and snapshotted at 360 and 768 as well as desktop |
 | Workspaces available but not optimised | School admin console, registrar, accountant, HR, care, front desk, platform console. They render at 768 without horizontal scroll (`.claude/rules/web-a11y.md`), and no work goes into 360 layouts for them |
 | Installable application | `apps/school` ships `manifest.webmanifest` with the tenant's white-label name, icon and theme colour served by Bff.Web per tenant host; the platform console is not installable |
-| Application shell service worker | Angular service worker with `ngsw-config.json`: `app` asset group prefetches the shell (index, runtime, shell chunks, fonts, icons); `assets` group lazy-caches images; data groups cache `bff-web/me/bootstrap` and role home payloads with `freshness` strategy and `maxAge` of 15 minutes, so the last synced Today opens with an "as of" time (`as-of-badge`) when offline |
+| Application shell service worker | Angular service worker with `ngsw-config.json`: `app` asset group prefetches the shell (index, runtime, shell chunks, fonts, icons); `assets` group lazy-caches images; data groups cache `/bff/web/v1/me/bootstrap` and the `/bff/web/v1/home/{role}` payloads with `freshness` strategy and `maxAge` of 15 minutes, so the last synced Today opens with an "as of" time (`as-of-badge`) when offline |
 | Never cached | Anything under `wellbeing`, `school/students/*/medical-summary`, `school/custody`, `communication/messages` under oversight, `audit/*`, and every gate pass verification. Appendix U.10 says the allergy alert is read live and never from a cache; the data group list is the mechanism, and a test asserts those URL patterns are absent from `ngsw-config.json` |
 | Offline behaviour on web | Read-only. The `offline-banner` shows on every workspace when `navigator.onLine` is false or a request fails with a network error; write actions are visibly disabled with the banner text, never failing silently (Appendix Q, Q.1 step 11). Queued writes belong to the Flutter application (Appendix M); the web does not queue |
 | Update flow | `SwUpdate` checks on navigation and every 30 minutes; a new version shows the "what's new" sheet and reloads on the person's tap, never mid-form |
@@ -871,6 +910,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Does the Angular major pinned at Phase 0 ship stable zoneless change detection, `animate.enter`, `animate.leave` and the View Transitions integration? (`29-adr-index.md` Section 3) | Latest stable at project start; `OnPush` on every component while zoneless is provisional (the decision table above); if the motion primitives are absent, Section 10 drives the same motion with CSS classes toggled by signals, as master brief Section 3 allows | Architect | `OnPush` becomes permanent rather than a fallback, and the motion patterns of Section 10 and document 14 are re-implemented as class toggles in `@nibras/ui/motion`; no route, store or screen changes | 2 | 2 | 4 | none |
 | Are the Phase 0 bundle budgets in Section 9 the right size for the screens Section 7 lists? | The warning and error values in Section 9, enforced in `angular.json`; raising one requires an ADR | Architect | Too tight: feature slices stall on budget ADRs. Too loose: the Lighthouse Performance 90 budget of Section 8 and the LCP target fail late, on mid-range phones, when splitting a chunk is expensive | 3 | 2 | 6 | none |
 | Do school staff outside the five mobile-web workspaces work from phones? | Section 8 and the Appendix X mobile web row: the school admin console, registrar, accountant, HR, care, front desk and platform console render at 768 without horizontal scroll and get no 360 layouts | Product owner | 360 layouts, snapshots and Lighthouse routes are added for the affected rows of Section 7, and the capability that builds those screens slips inside its phase | 2 | 2 | 4 | none |
+| Where do the web screens of signature features 15, 17, 19, 33, 36, 38 and 42 live (the note under the table of §7.9)? | Each is built inside the workspace of its Appendix W owner by the slice that builds the feature in `34-work-breakdown.md`, and that slice adds its route to Section 2 and its row to Section 7 with the seven states; until then the counts of Section 7 exclude them | Architect | A slice reaches its phase with no route, guard or state design for the feature's screen, and the demo step that shows the feature has nothing on the web to open; the fix is rows added here, not a redesign | 3 | 2 | 6 | none |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
 
