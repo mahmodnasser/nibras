@@ -90,7 +90,7 @@ A tenant in the load and scale tiers carries a realistic mix: 60 percent single-
 | **Data set** | load, then scale |
 | **Virtual users and ramp** | 500 principal VUs at load, 5,000 at scale, arriving over 6 minutes in a burst shaped like a real morning |
 | **Duration** | 20 minutes |
-| **Exercised** | `GET /bff-mobile/home/principal` composing approvals, unmarked attendance, staff absences, incidents, at-risk students, overdue grading, visitors on site, from Reporting projections |
+| **Exercised** | `GET /bff/mobile/v1/home/principal` composing approvals, unmarked attendance, staff absences, incidents, at-risk students, overdue grading, visitors on site, from Reporting projections |
 | **Pass thresholds** | Composed home p95 under 250 ms and p99 under 600 ms · every card served from cache after the first request, cache hit ratio at or above 95 percent for reference data and permissions · 5 or fewer database commands per card · projection lag under 60 seconds · mobile cold start under 3 s, 60 frames per second on a mid-range Android device |
 | **Failure means** | The morning brief arrives after the bell, which removes the reason the principal opens the app at all |
 
@@ -126,7 +126,7 @@ A tenant in the load and scale tiers carries a realistic mix: 60 percent single-
 | **Data set** | load, then scale (8 campuses reconnecting within the same 3 minutes) |
 | **Virtual users and ramp** | 1,200 device VUs at load and 9,600 at scale, all reconnecting inside a 3-minute window, each holding 40 to 400 queued operations |
 | **Duration** | 30 minutes |
-| **Exercised** | `POST /bff-mobile/sync/batch` with idempotency keys, delta pull, conflict resolution, `attendance.attendance.marked.v1`, low-bandwidth profile |
+| **Exercised** | `POST /bff/mobile/v1/sync/batch` with idempotency keys, delta pull, conflict resolution, `attendance.attendance.marked.v1`, low-bandwidth profile |
 | **Pass thresholds** | Every queued operation applied exactly once, proven by idempotency replay returning the original result · zero lost writes · conflicts surfaced to the teacher with both values and times, never silently resolved · median device fully synced in under 45 s, p95 under 3 minutes · the API never sheds a sync batch, it queues it · a device on a 2G-class profile completes without timing out |
 | **Failure means** | Offline-first is a claim rather than a feature, and a teacher loses a morning of marks. Silent conflict resolution is an automatic fail even if timings pass |
 

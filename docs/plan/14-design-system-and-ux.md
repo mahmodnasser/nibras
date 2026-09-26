@@ -13,7 +13,7 @@ One design system, two renderers. `@nibras/ui` (Angular, selector prefix `nb-`) 
 | Product name | One server configuration value, `Platform:ProductName`, and one client token, `brand.name`, in the token file; never a literal in a template or a string file | §1.4 |
 | Motion | Four durations, three easings, one stagger step; reduced motion zeroes every duration and keeps an opacity fade | §2.6, §6 |
 | Accessibility bar | WCAG 2.2 AA on web and, through Flutter semantics, on mobile; screen readers exactly as Appendix X lists them | §11 |
-| Living inventory | Storybook for `@nibras/ui`, Widgetbook for `nibras_ui`, seven required stories per component, a parity check that fails CI when either side lacks a component in §7 | §12 |
+| Living inventory | Storybook for `@nibras/ui`, Widgetbook for `nibras_ui`, seven required stories per component, and a named review step (ADR-0021), not a pipeline check: the `ux-reviewer` agent compares §7 with both indexes at every phase demo and on every pull request that adds or removes a component, and a difference blocks the demo | §12 |
 
 ---
 
@@ -462,7 +462,7 @@ The inventory is quoted from `08-web-structure.md` Section 6: 64 components in e
 
 Sixty-four rows; five have no Flutter widget (`command-palette`, `breadcrumb`, `pagination`, `permission-matrix` and, as an editor, `grid`), and every one of those is a desktop interaction that the mobile parity matrix records as web only with the reason. The feature composites in `libs/shared/` (`table`, `filters`, `form-kit`, `import-wizard`, `long-job` and the rest, `08-web-structure.md` Section 1.1) are compositions of these 64 and are not separately inventoried, and so are the feature-local presentational components the `08-web-structure.md` Section 7 count names.
 
-**Mobile-only widgets.** Three widgets live in the Flutter `core/design` package and have no `nb-` counterpart, because the web client has no offline outbox and therefore no state for them to render. `09-mobile-structure.md` §3.7 owns their behaviour and wording; this table is the inventory entry so that the parity check has a rule for them rather than a difference.
+**Mobile-only widgets.** Three widgets live in the Flutter `core/design` package and have no `nb-` counterpart, because the web client has no offline outbox and therefore no state for them to render. `09-mobile-structure.md` §3.7 owns their behaviour and wording; this table is the inventory entry so that the inventory review step of §12 has a rule for them rather than a difference.
 
 | Group | Web component (`nb-`) | Flutter widget (file in `core/design`) | Built on | Parity |
 |---|---|---|---|---|
@@ -892,6 +892,14 @@ The inventory is the two catalogues, not this document; a component that is not 
 | Open question 8: which plans include removal of the "Powered by Nibras" line (§1.3)? | Platform holds a plan flag; removal is off unless the tenant's plan includes it | Product owner | The flag's default flips for some plans; the footer and sign-in rendering do not change | 3 | 1 | 3 | none |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+---
+
+## Review record
+
+| Date | Reviewer | Outcome |
+|---|---|---|
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | The decision table's "Living inventory" row no longer claims a parity check that fails CI; it names the `ux-reviewer` review step that §12 and "How this document is verified" name (ADR-0021), and the mobile-only widget note points at that step. Awaiting the round 6 score |
 
 ---
 

@@ -15,11 +15,11 @@ Platform is the SaaS operator's service and the tenant's configuration service. 
 | Exchange | `nibras.platform` | Appendix L |
 | Images | `nibras/platform-api` | Appendix L |
 | Worker | none. Quartz.NET jobs and the webhook dispatcher run in the Api host (`23-integrations-and-public-api.md` §4.1, open point 4 there) | Appendix L |
-| Build phase | 1; the Integrations capability arrives by phase: the public API, the iCal subscription URLs and OneRoster in 3 (CAP-INT-01, SL-INT-404 to SL-INT-410), LTI 1.3 in 4 (CAP-INT-02, SL-INT-411); the iCal feeds themselves are Scheduling's, phase 2. Whether the public API, OneRoster and iCal move into Tier 1 is Open Question 28, still open: the default in force is the phases above as Tier 2, RISK-42 (open point 10) | `05-service-catalog.md`, `17-roadmap.md` §4, `34-work-breakdown.md` |
+| Build phase | 1; the Integrations capability arrives by phase: the public API, the iCal subscription URLs and OneRoster in 3 (CAP-INT-01, SL-INT-404 to SL-INT-410), LTI 1.3 in 4 (CAP-INT-02, SL-INT-411, and Assignment and Grade Services in SL-INT-412); the iCal feeds themselves are Scheduling's, phase 2. Whether the public API, OneRoster and iCal move into Tier 1 is Open Question 28, still open: the default in force is the phases above as Tier 2, RISK-42 (open point 10) | `05-service-catalog.md`, `17-roadmap.md` §4, `34-work-breakdown.md` |
 | Service level class | Gateway class: 99.9% monthly availability | Reference architecture Section 8.0, master brief Section 31 |
 | Sensitivity | Confidential; webhook signing secrets and provider keys encrypted per deployment | `05-service-catalog.md`, `10-data-architecture.md` §1 |
 | Synchronous dependencies | Identity `ApiKeyAdministration` and `PermissionLookup.GetRoleRisk`; School's student and staff directory for OneRoster; from jobs only, every service's `Usage.Recount` (section 6) | Reference architecture Section 8.0 |
-| Local copies | Usage counters from every service; OneRoster roster copies for tenants that enable OneRoster (phase 3, SL-INT-407) | Reference architecture Section 8.0, section 9 |
+| Local copies | Usage counters from every service; `ref_student_enrolment_periods`, each student's enrolment and leaving dates from School's events, for the billable active-student count (BR-FIN-017, ADR-0027); OneRoster roster copies for tenants that enable OneRoster (phase 3, SL-INT-407) | Reference architecture Section 8.0, section 9 |
 | Scaling profile | Low traffic, read-heavy and cached everywhere; administrative rather than transactional load; bursts on usage events and webhook fan-out | `05-service-catalog.md` |
 | Why the boundary exists | Team: the platform operator's console and the commercial model change independently of any school-facing feature | `05-service-catalog.md` |
 
@@ -35,6 +35,7 @@ Platform is the SaaS operator's service and the tenant's configuration service. 
 | Residency and isolation | Region pinned at provisioning and immutable (BR-PLT-004); isolation tier per plan; tenant connection overrides for dedicated databases; tier migration (Saga 10) |
 | Domains | Subdomains, custom domains with DNS verification and automatic TLS, tenant resolution by host for the Gateway |
 | Commercial model | Plans priced per active student with tiers, add-on modules, limits, monthly and annual terms, coupons, currencies, trials and grace periods; subscriptions; plan change (WF-PLT-02); tenant invoices, payment records through the manual or gateway adapter, dunning at 7, 14 and 30 days (master brief Section 36) |
+| Billable active-student count | BR-FIN-017 and BR-FIN-018 are Platform's (ADR-0027, Open Question 30 decided 2026-09-26; the identifiers are kept). The count is master brief Section 36's, computed here from `ref_student_enrolment_periods` (section 9): a student enrolled all month counts 1, a mid-month joiner counts `(D − e + 1) ÷ D` from the enrollment day `e` in a month of `D` days, a leaver counts in full for the month of leaving, and the shares are summed exactly and rounded once, on the total, half away from zero to two places. An upgrade prorates by day from the day of the change; a downgrade takes effect at the next renewal with no proration (BR-FIN-018). Finance computes no part of it |
 | Usage and limits | Consuming `<service>.usage.recorded.v1`, daily facts and monthly aggregates (BR-PLT-005), soft warning and hard block (BR-PLT-001), the third rate-limit layer in `redis-state` (REQ-PLT-032) |
 | Feature flags and modules | Flags per tenant, per plan and by percentage rollout; modules on and off per tenant |
 | Branding and white-label | Logo, colours, login page, email sender name, "Powered by" rules, mobile flavour configuration and the store-account record of REQ-MOB-041 |
@@ -78,7 +79,7 @@ Platform is the SaaS operator's service and the tenant's configuration service. 
 | Range or identifier | What it binds here |
 |---|---|
 | REQ-PLT-001 to REQ-PLT-007 | Signup, provisioning saga, smart defaults, compensation, suspension, export at every state, deletion |
-| REQ-PLT-008 to REQ-PLT-013 | Plans, active-student counting, upgrade and downgrade, limits, usage aggregation, tenant invoices and dunning |
+| REQ-PLT-008 to REQ-PLT-013 | Plans, active-student counting (BR-FIN-017), upgrade and downgrade (BR-FIN-018), limits, usage aggregation, tenant invoices and dunning; both rules are Platform's by ADR-0027 |
 | REQ-PLT-014 to REQ-PLT-023 | Feature flags, white-label, "Powered by", announcements, release notes, support desk, tiers, health score, template library, template exchange (Tier 2) |
 | REQ-PLT-024 to REQ-PLT-039 | Settings catalog, custom fields, terminology, configuration as code, demo mode, the platform console, residency, isolation tiers, quotas, legal acceptance, customer success tooling, modules, jobs and failed messages, auto-replay, recycle bin, resellers (Tier 3) |
 | REQ-INT-001 to REQ-INT-003, REQ-INT-008 to REQ-INT-017 | Open by default, tenant keys, reveal once, webhooks, standards by phase, the plug-in kit |
@@ -158,20 +159,25 @@ Invariants: an upgrade applies at once and prorates by day; a downgrade applies 
 |---|---|---|---|---|
 | TenantInvoice | `number` | text | no | Gapless per seller country series |
 | TenantInvoice | `period_start`, `period_end`, `issued_on`, `due_on` | date | no | |
-| TenantInvoice | `active_student_count` | numeric(10,2) | no | REQ-PLT-009 and master brief Section 36: enrolled on the billing date, prorated by day from enrolment, counted for the month of leaving. This is the default in force of Open Question 30, which is still open; BR-FIN-017 (any student enrolled for at least one day of the month, no proration) and SL-PLT-010, which cites it, conflict with it until the question is decided (open point 9, RISK-52) |
+| TenantInvoice | `active_student_count` | numeric(10,2) | no | BR-FIN-017 (Platform's, ADR-0027), master brief Section 36 and REQ-PLT-009: computed by `ActiveStudentCountRule` from `ref_student_enrolment_periods` after the month closes; each student's share is 1, or `(D − e + 1) ÷ D` when enrolled on day `e` of a `D`-day month, a leaver counts in full for the month of leaving, and the exact sum is rounded once, half away from zero, to two places (October 2026: 1,240 all month plus 12 enrolled on the 28th gives 1,241.55) |
 | TenantInvoice | `subtotal`, `tax`, `total`, `currency` | numeric(18,4), char(3) | no | Tax follows the seller's country (master brief Section 36) |
 | TenantInvoice | `status` | text enum `issued`, `partially-paid`, `paid`, `waived`, `void` | no | |
 | TenantInvoiceLine | `invoice_id`, `kind` (`plan`, `add-on`, `overage`, `coupon`, `proration`), `quantity`, `unit_amount`, `amount` | | no | |
 | TenantPayment | `invoice_id`, `method` (`manual`, `gateway`), `amount`, `received_at`, `gateway_reference_encrypted`, `idempotency_key` | | reference yes | Card data never stored |
+| StudentEnrolmentPeriod (`ref_student_enrolment_periods`, read-only copy, section 9) | `student_id` | uuid | no | The School student the period belongs to; never a name, number or any other profile field |
+| StudentEnrolmentPeriod | `enrolled_on` | date | no | Enrollment date from `school.student.enrolled.v1` `enrolledOn`, in the tenant's time zone; the `e` of BR-FIN-017 |
+| StudentEnrolmentPeriod | `left_on` | date | yes | Leaving date from `school.student.status-changed.v1` `effectiveOn` of the first change whose `toStatus` is `withdrawn`, `transferred`, `graduated` or `alumni`; null while enrolled; a re-enrolment in the same month keeps the earliest `enrolled_on` of the month (BR-FIN-017 edge case), a later one opens a new period. A leaving date inside the month never reduces the share |
+| StudentEnrolmentPeriod | `never_attended` | boolean | no | True when `WithdrawEnrolment` compensation set `toStatus = never-attended`; the period then counts 0 |
+| StudentEnrolmentPeriod | `source_version`, `reconciled_at` | bigint, timestamptz | no, yes | Last School event applied (older events are ignored) and the last nightly check |
 
-Invariants: an issued invoice is immutable; a correction is a waiver (`platform.subscriptions.waive-charge`, reason required) or a credit line on the next invoice; a payment callback with a known idempotency key replays its first result; dunning reminders go at 7, 14 and 30 days past due and read-only begins at 30 days with export still available (REQ-PLT-013).
+Invariants: an issued invoice is immutable; a correction is a waiver (`platform.subscriptions.waive-charge`, reason required) or a credit line on the next invoice; a payment callback with a known idempotency key replays its first result; dunning reminders go at 7, 14 and 30 days past due and read-only begins at 30 days with export still available (REQ-PLT-013); a billing month's count is computed only after the month has closed (an open month is `PLATFORM_VALIDATION_FAILED`), from `ref_student_enrolment_periods` alone, and a student is counted once whatever campus or section moves the month held.
 
 ### 4.6 Aggregates of metering: UsageRecord, UsageMonthly, LimitState
 
 | Entity | Field | Type | Null | Notes |
 |---|---|---|---|---|
 | UsageRecord | `meter`, `source_service`, `period_start`, `period_end`, `quantity`, `unit`, `message_id`, `superseded_by` | | superseded yes | Partitioned by month; one immutable fact per tenant, meter, service and day (BR-PLT-005) |
-| UsageMonthly | `meter`, `period_start`, `quantity`, `aggregation` (`max`, `sum`) | | no | Maximum for headcount meters, sum for event meters |
+| UsageMonthly | `meter`, `period_start`, `quantity`, `aggregation` (`max`, `sum`, `active-student-count`) | | no | Maximum for headcount meters, sum for event meters; the active-student meter is the BR-FIN-017 count (BR-PLT-005, ADR-0027) |
 | LimitState | `limit`, `used`, `allowed`, `soft_warned_at`, `hard_reached_at`, `grace_ends_at` | | several yes | One row per tenant and limit |
 
 Invariants: a fact is never updated; a correction inserts a superseding fact and is audited; the same `message_id` twice changes nothing; reads, exports and reports are never blocked by a limit, only the action that would exceed it after the grace period (BR-PLT-001); every block is `PLATFORM_PLAN_LIMIT_REACHED` with 402, never 429.
@@ -231,9 +237,12 @@ Invariants: a legal hold on a tenant blocks Saga 2 at `DeletionScheduled`; a sub
 | ApiKeyUsage | `key_id`, `day`, `calls` | | no | Per-key metering from `api-calls` usage; deleted a year after revocation (`10-data-architecture.md` §8) |
 | ProviderConfiguration | `kind` (`payment`, `sms`, `e-invoicing`, `ministry-export`, `push`, `device`), `plugin_id`, `plugin_version`, `configuration_encrypted`, `status` | | no | Selection and configuration of a certified plug-in (document 23 §8) |
 | LtiTool | `name`, `client_id`, `launch_url`, `login_initiation_url`, `jwks_url`, `deep_linking_url`, `privacy` (`anonymous`, `name`, `name-and-email`), `placements` jsonb, `status` | | urls yes | Launch URL passes the same address guard as webhooks (TC-SEC-124) |
+| LtiTool | `grade_scopes` text[]: the Assignment and Grade Services scopes the registration allows, any of `lineitem`, `lineitem.readonly`, `result.readonly`, `score` (phase 4, SL-INT-412) | | no, empty means no grade access | Set by the administrator on register or edit; a token never holds a scope outside it |
+| LtiLineItem | `tool_id`, `context_id` (the section), `resource_link_id`, `assignment_id` (the Academics assignment or resource of the SL-ACA-405 launch), `label`, `score_maximum` numeric(9,2), `tag`, `resource_id`, `start_at`, `end_at` | | tag, resource, dates yes | One line item per `(tool_id, resource_link_id)`; bound to the assignment recorded on the launch, never to one the tool names (document 23 §6.3) |
+| LtiScore | `line_item_id`, `student_id`, `lti_user_id`, `score_given` numeric(9,2), `score_maximum` numeric(9,2), `activity_progress`, `grading_progress`, `comment`, `score_timestamp`, `status` (`accepted`, `sent`, `recorded`, `kept-teacher-value`, `refused`), `refusal_code` | | score, comment, refusal yes | Unique `(tenant_id, line_item_id, student_id, score_timestamp)`: the same score posted twice is accepted once; an older timestamp than the last stored changes nothing; only `FullyGraded` scores are sent to Assessment |
 | OneRosterSettings | `enabled`, `client_key_ids` uuid[], `include_guardians`, `last_export_job_id` | | job yes | Phase 3 (SL-INT-407 to SL-INT-410) |
 
-Invariants: a webhook URL is https, a public DNS name, port 443 or 8443, at most 2,048 characters, with no credentials and no personal data in the query (document 23 §4.2); an endpoint receives no event before its challenge passes; a subscription names only eligible keys and requires the owner to hold the mapped `view` permission with a matching scope; one rotation per endpoint at a time (`PLATFORM_CONCURRENCY_CONFLICT`); a delivery keeps its delivery id across retries and replays; a sandbox tenant's keys are `test` keys and its providers are fakes.
+Invariants: a webhook URL is https, a public DNS name, port 443 or 8443, at most 2,048 characters, with no credentials and no personal data in the query (document 23 §4.2); an endpoint receives no event before its challenge passes; a subscription names only eligible keys and requires the owner to hold the mapped `view` permission with a matching scope; one rotation per endpoint at a time (`PLATFORM_CONCURRENCY_CONFLICT`); a delivery keeps its delivery id across retries and replays; a sandbox tenant's keys are `test` keys and its providers are fakes. For Assignment and Grade Services: a tool reads and writes only its own line items and reads only the results of scores it posted itself; a score for a student its privacy setting hides from it is refused; a score is never published by Platform, only handed to Assessment as the `RecordToolScore` command (section 7.1), where it lands as a mark awaiting the teacher.
 
 ### 4.11 Registry aggregates of operations: sagas, release records, templates, announcements
 
@@ -279,6 +288,8 @@ erDiagram
     WEBHOOK_ENDPOINT ||--o{ WEBHOOK_DELIVERY : receives
     WEBHOOK_DELIVERY ||--o{ WEBHOOK_ATTEMPT : "is tried by"
     TENANT ||--o{ LTI_TOOL : registers
+    LTI_TOOL ||--o{ LTI_LINE_ITEM : "creates"
+    LTI_LINE_ITEM ||--o{ LTI_SCORE : "receives"
     TENANT ||--o| PROVISIONING_SAGA : "was created by"
     TENANT ||--o| DELETION_SAGA : "ends through"
 ```
@@ -548,6 +559,14 @@ Conventions from `22-api-conventions-and-error-catalog.md` §1 to §8. Routes wh
 | GET | `/api/v1/platform/lti/authorizations` | none; the tool's authentication request with the Nibras session | `login_hint`, `lti_message_hint`, nonce | auto-posted signed `id_token` to the tool | `PLATFORM_VALIDATION_FAILED` (`nonceReplayed`) | single use |
 | POST | `/api/v1/platform/lti/deep-linking-returns` | none; signed JWT from the tool | deep-linking response | content items returned to the teacher's picker | `PLATFORM_VALIDATION_FAILED` (`signatureInvalid`) | natural on JWT id |
 | GET | `/api/v1/platform/lti/jwks` | none, public | none | the platform's LTI signing keys | none | safe |
+| POST | `/api/v1/platform/lti/tokens` | none beyond the tool's own proof: an OAuth 2.0 client-credentials grant with a `client_assertion` JWT signed by the key on the registration's `jwks_url` (1EdTech Security Framework) | `grant_type=client_credentials`, `client_assertion_type`, `client_assertion`, `scope` naming any of `https://purl.imsglobal.org/spec/lti-ags/scope/lineitem`, `https://purl.imsglobal.org/spec/lti-ags/scope/lineitem.readonly`, `https://purl.imsglobal.org/spec/lti-ags/scope/result.readonly`, `https://purl.imsglobal.org/spec/lti-ags/scope/score` | a bearer token for 60 minutes, audience the grade routes below, holding the asked scopes that the registration's `grade_scopes` allows, and no others | `PLATFORM_VALIDATION_FAILED` (`signatureInvalid`, `assertionReplayed`), `PLATFORM_PERMISSION_DENIED` when no asked scope is allowed, `PLATFORM_FEATURE_DISABLED` | natural on the assertion's `jti`, which is single use |
+| GET | `/api/v1/platform/lti/contexts/{contextId}/line-items` | the tool's token with the `lineitem` or `lineitem.readonly` scope | `resource_link_id`, `resource_id`, `tag`, `limit` | `application/vnd.ims.lis.v2.lineitemcontainer+json`: this tool's line items in the section only | none | safe |
+| POST | `/api/v1/platform/lti/contexts/{contextId}/line-items` | the tool's token with the `lineitem` scope | `application/vnd.ims.lis.v2.lineitem+json`: `label`, `scoreMaximum`, `resourceLinkId` of the SL-ACA-405 launch, `tag`, `resourceId`, dates | 201 line item bound to the launch's assignment or resource | `PLATFORM_VALIDATION_FAILED` (`resourceLinkUnknown`), `PLATFORM_NOT_FOUND` for a section the tool was never launched in | natural on `(toolId, resourceLinkId)`: a second create returns the first |
+| GET, PUT, DELETE | `/api/v1/platform/lti/contexts/{contextId}/line-items/{lineItemId}` | the tool's token with the `lineitem` scope (`lineitem.readonly` for GET) | the line item for PUT | the line item; 204 for DELETE, which keeps the scores already sent to Assessment | `PLATFORM_NOT_FOUND` for another tool's line item | GET safe; PUT by `If-Match`; DELETE yes |
+| POST | `/api/v1/platform/lti/contexts/{contextId}/line-items/{lineItemId}/scores` | the tool's token with the `score` scope | `application/vnd.ims.lis.v1.score+json`: `userId`, `scoreGiven`, `scoreMaximum`, `activityProgress`, `gradingProgress`, `timestamp`, `comment` | 202; a `FullyGraded` score is written as an `LtiScore` and sent as `RecordToolScore` through the outbox in the same transaction; it is never published by Platform | `PLATFORM_PERMISSION_DENIED` without the `score` scope; `PLATFORM_NOT_FOUND` for a student the privacy setting hides or who is not in the section, and for another tool's line item | natural on `(lineItemId, userId, timestamp)`: the same score twice is accepted once; an older timestamp changes nothing |
+| GET | `/api/v1/platform/lti/contexts/{contextId}/line-items/{lineItemId}/results` | the tool's token with the `result.readonly` scope | `user_id`, `limit` | `application/vnd.ims.lis.v2.resultcontainer+json`: the latest score this tool posted per student on its own line item, from `LtiScore` rows in `sent`, `recorded` or `kept-teacher-value`; never a mark entered in Assessment | `PLATFORM_PERMISSION_DENIED` without the scope; `PLATFORM_NOT_FOUND` for another tool's line item | safe |
+
+**Assignment and Grade Services (phase 4, SL-INT-412).** The four route families above (token, line items, scores, results) are the tool-facing half of document 23 §6.3; `AuthorizeLtiLaunch` adds the `https://purl.imsglobal.org/spec/lti-ags/claim/endpoint` claim, with the line-items URL of the section and the scopes the registration allows, only when `grade_scopes` is not empty. The routes accept only a token from `/lti/tokens`; a tenant API key, a personal access token or a user session is refused. Each accepted `FullyGraded` score leaves Platform as the `RecordToolScore` command to Assessment (section 7.1), whose reply sets the score's `status` (section 7.2). Proof: `TC-INT-032` and `TC-INT-036` (document 23).
 | GET | `/api/v1/platform/providers` | `platform.integrations.view` | none | selected plug-ins per kind with status; secrets never returned | none | safe |
 | PUT | `/api/v1/platform/providers/{kind}` | `platform.integrations.edit` | plug-in id and version, configuration | provider configuration validated by the plug-in's `ValidateConfigurationAsync` in the owning service's contract | `PLATFORM_VALIDATION_FAILED` (`pluginNotCertified`) | `If-Match` |
 | POST | `/api/v1/platform/providers/{kind}/rotate-secret` | `platform.integrations.rotate-secret` | new secret, reason | rotated | none | `Idempotency-Key` required |
@@ -617,7 +636,9 @@ Payload fields are owned by Appendix E. Tenant lifecycle events are platform-sco
 | `platform.upgrade.started.v1` | `tenantId` | WF-INF-01 enters the upgrade window, carrying `readOnlyFrom` and `windowEndsAt` | Notification, Reporting |
 | `platform.audit.recorded.v1` | `tenantId` | Every write, transition, operator bypass, reveal, replay; the completion, rollback, release, drill and failover steps of WF-INF-01 to WF-INF-03, which have no event key | Audit |
 
-Commands sent (`11-messaging-architecture.md` §2.4), each carrying `sagaId` and `stepKey`: `DeprovisionTenant`, `DeleteTenantData`, `ProvisionDedicatedDatabase`, `DropDedicatedDatabase`, `CopyTenantRows`, `ReconcileTenantCopy`, `PurgeSourceRows`, `ReplayParkedMessages`, `DiscardParkedMessages` to every data-owning service; `InviteTenantOwner`, `RevokeInvitation`, `RevokeTenantAccess` to Identity; `OpenFirstAcademicYear` to School; `ApplyTenantBranding`, `DeleteTenantBranding`, `ExportTenant`, `DeleteTenantFiles`, `GenerateDocument` to Documents; `InitialiseProjections` to Reporting; `DetachTenantAuditPartition` to Audit; `RequestNotification` to Notification.
+Commands sent (`11-messaging-architecture.md` §2.4), each carrying `sagaId` and `stepKey`: `DeprovisionTenant`, `DeleteTenantData`, `ProvisionDedicatedDatabase`, `DropDedicatedDatabase`, `CopyTenantRows`, `ReconcileTenantCopy`, `PurgeSourceRows`, `ReplayParkedMessages`, `DiscardParkedMessages` to every data-owning service; `InviteTenantOwner`, `RevokeInvitation`, `RevokeTenantAccess` to Identity; `OpenFirstAcademicYear` to School; `ApplyTenantBranding`, `DeleteTenantBranding`, `ExportTenant`, `DeleteTenantFiles`, `GenerateDocument` to Documents; `InitialiseProjections` to Reporting; `DetachTenantAuditPartition` to Audit; `RequestNotification` to Notification; `RecordToolScore` to Assessment.
+
+`RecordToolScore` (`assessment.commands.record-tool-score.v1` on `nibras.platform`, into `assessment.commands`) belongs to no saga: `PostLtiScore` writes it to the outbox in the transaction that stores the `LtiScore`, one per accepted `FullyGraded` score (SL-INT-412). It carries `sagaId` set to the `LtiScore` id and `stepKey` `record-tool-score`, as document 11 §2.4 records, with `toolId`, `lineItemId`, `assignmentId`, `sectionId`, `studentId`, `launchedByUserId` (the teacher of the SL-ACA-405 launch), `scoreGiven`, `scoreMaximum`, `scoreTimestamp` and `comment`; never the tool's `lti_user_id` or any roster field beyond the student id.
 
 ### 7.2 Consumed
 
@@ -640,8 +661,9 @@ Queues follow `11-messaging-architecture.md` §1.2. A key marked with an asteris
 | `requests.request.approved.v1` | `platform.request-effects` | `RequestApprovedConsumer` | For the data-deletion effect: shows "approved, being applied"; the effect arrives as `OpenSubjectRequest` | `requestId` |
 | the 54 routing keys of the eligibility table in `23-integrations-and-public-api.md` §4.9 | `platform.webhook-fanout` | `WebhookFanOutConsumer` | One `WebhookDelivery` per active subscribed endpoint of the event's tenant whose owner still holds the mapped permission, in the inbox transaction | per `partitionKey` inside the dispatcher |
 | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.student.profile-updated.v1`, `school.section.created.v1`, `school.section.changed.v1`, `school.staff.created.v1`, `school.staff.left.v1`, `school.term.started.v1`, `school.academic-year.opened.v1`, `academics.teaching-assignment.changed.v1` | `platform.oneroster-copies` (phase 4, bound only while any tenant has OneRoster enabled; handlers ignore other tenants) | `OneRosterCopyConsumer` | Maintains the `ref_oneroster_*` tables of section 9 | `studentId`, `sectionId`, `staffId` per key |
+| `school.student.enrolled.v1`\*, `school.student.status-changed.v1` | `platform.reference-copies` (phase 1, every tenant) | `StudentEnrolmentPeriodConsumer` | Opens or extends a `ref_student_enrolment_periods` row from `enrolledOn`, sets `left_on` from a leaving `effectiveOn`, marks `never_attended` on enrolment compensation; idempotent on `messageId` and ignores an older `source_version` (BR-FIN-017 inputs, ADR-0027) | `studentId` |
 
-Commands received on `platform.commands`: `OpenSubjectRequest` from `nibras.requests` (Saga 6, effect "data deletion (subject request)"), which starts WF-PRV-01 and replies `EffectApplied`. Saga replies arrive on `platform.replies` (`platform.replies.#` bound on every replier's exchange).
+Commands received on `platform.commands`: `OpenSubjectRequest` from `nibras.requests` (Saga 6, effect "data deletion (subject request)"), which starts WF-PRV-01 and replies `EffectApplied`. Saga replies arrive on `platform.replies` (`platform.replies.#` bound on every replier's exchange). Among them, Assessment's answer to `RecordToolScore` is taken by `ToolScoreOutcomeConsumer`, idempotent on the `LtiScore` id: `ToolScoreRecorded` sets the score `recorded`, or `kept-teacher-value` when the teacher had already entered the cell; `ToolScoreFailed` sets it `refused` with the Appendix K code, `ASSESSMENT_MARKS_LOCKED` for a locked or submitted component, and the tool registration's console shows the refusal. A refused score is absent from the tool's results read.
 
 ---
 
@@ -755,9 +777,10 @@ Saga 10's read-only window is under 5 minutes, the number `10-data-architecture.
 | Copy | Source events | Fields kept | Reconciliation |
 |---|---|---|---|
 | Usage facts (`usage_records`) | `<service>.usage.recorded.v1` | `meter`, `quantity`, `unit`, `period_start`, `period_end`, `source_service` | Monthly `UsageRecountJob` against each service's `Usage/Recount` (BR-PLT-005) |
+| `ref_student_enrolment_periods` (phase 1, every tenant) | `school.student.enrolled.v1`, `school.student.status-changed.v1` (section 7.2) | `student_id`, `enrolled_on`, `left_on`, `never_attended`, `source_version`; nothing else of the student | Nightly: the count of periods open on each day of the month must equal School's daily `active-students` fact for that day; a day that differs fails the reconciliation, raises the discrepancy on the console and holds that tenant's invoice until it is explained (BR-PLT-005 last edge case) |
 | `ref_oneroster_student`, `ref_oneroster_staff`, `ref_oneroster_class`, `ref_oneroster_enrollment`, `ref_oneroster_session` (phase 3, tenants with OneRoster on) | the OneRoster row of section 7.2 | Identifiers, names in both languages, student and employee numbers, section, campus, grade level, term, status, `source_version`; never date of birth or any demographic (document 23 §6.2) | Nightly against School's directory checksums; enabled tenants only |
 
-A copy is never the basis of a decision the owning service should make: Platform uses the OneRoster copies only to answer OneRoster requests and the LTI roster, never to decide enrolment.
+A copy is never the basis of a decision the owning service should make: Platform uses the OneRoster copies only to answer OneRoster requests and the LTI roster, and `ref_student_enrolment_periods` only to bill the tenant (BR-FIN-017), never to decide enrolment.
 
 ---
 
@@ -768,9 +791,9 @@ Quartz.NET in the Api host, clustered on PostgreSQL; per-tenant jobs set the ten
 | Job | Schedule | What it does | Publishes | Progress |
 |---|---|---|---|---|
 | `PlanLimitAndTrialCheckJob` | daily 06:00 per tenant time zone (Appendix E jobs table) | Evaluates every `LimitState` against the plan (BR-PLT-001); trial reminders at 14, 7 and 1 days; moves an ended trial to read-only (WF-PLT-02 `Trialing` to `Expired`) | `platform.limit.approaching.v1`, `platform.trial.ending.v1`, `platform.tenant.suspended.v1` | none |
-| `TenantBillingRunJob` | daily 02:00 per tenant time zone, acts on each tenant's billing date | Counts active students from the headcount facts by REQ-PLT-009 (the Open Question 30 default; BR-FIN-017 conflicts until decided, open point 9), prorates, applies coupons, issues the invoice | `platform.invoice.due.v1` | job resource per run |
+| `TenantBillingRunJob` | daily 02:00 per tenant time zone, acts on each tenant's billing date | For the month just closed, computes the active-student count with `ActiveStudentCountRule` (BR-FIN-017, ADR-0027) from `ref_student_enrolment_periods`, sums the shares exactly and rounds once on the total to two places, skips a tenant whose nightly reconciliation of section 9 failed, prices the rounded count at the plan's per-student price rounded once to the currency's places (BR-FIN-011), applies an upgrade's proration line and leaves a pending downgrade to the next renewal (`PlanChangeProrationRule`, BR-FIN-018), applies coupons, issues the invoice | `platform.invoice.due.v1` | job resource per run |
 | `DunningJob` | daily 07:00 per tenant time zone | Reminders at 7, 14 and 30 days past due; at 30 days suspends for non-payment into read-only | `platform.invoice.due.v1`, `platform.tenant.suspended.v1` | none |
-| `UsageAggregationJob` | daily 00:30 per tenant time zone | Rolls daily facts into `usage_monthly`: maximum for headcount meters, sum for event meters | none | none |
+| `UsageAggregationJob` | daily 00:30 per tenant time zone | Rolls daily facts into `usage_monthly`: maximum for headcount meters, sum for event meters; the active-student meter shows the running maximum while the month is open and takes the BR-FIN-017 count once it has closed (BR-PLT-005) | none | none |
 | `UsageRecountJob` | monthly, second day, 03:00 UTC | Calls each service's `Usage/Recount` and supersedes differing facts with an audit entry (T-PLT-07) | `platform.audit.recorded.v1` | job resource: services done of total |
 | `PrePeakWarmupJob` | 30 minutes before the tenant's school-day start from General → work week, 06:30 local when unset (REQ-PERF-025) | Warms settings, flags, plan, terminology, branding and tenant resolution entries; writes `state:warmup:{tenant}:{date}` | none | none |
 | `HealthScoreJob` | daily 03:30 UTC | Computes adoption metrics from usage facts and delivery outcomes; flags churn risk and opens a ticket naming the metric (REQ-PLT-021) | `platform.audit.recorded.v1` | none |
@@ -913,7 +936,7 @@ The threat table is `12-security-privacy-safety.md` §2.2 (T-PLT-01 to T-PLT-08)
 | Sent to a device | Any secret beyond a single reveal to the console; operator-only fields such as voters on the feature board, internal ticket notes and health factors of other tenants |
 | Sent to a webhook receiver | Anything beyond the Appendix E payload; `userId` and `causationId` are dropped (document 23 §4.3) |
 
-Additional controls specific to this service: the operator bypass of section 4.1 is audited per transaction; the signup route is behind the Gateway's bot protection and per-address limit; custom domains resolve only after DNS proof; the address guard pins the resolved address for every webhook attempt and LTI URL (T-PLT-05); plug-ins are selected only from the certified list.
+Additional controls specific to this service: the operator bypass of section 4.1 is audited per transaction; the signup route is behind the Gateway's bot protection and per-address limit; custom domains resolve only after DNS proof; the address guard pins the resolved address for every webhook attempt and LTI URL (T-PLT-05); an LTI grade token is issued only against a client assertion signed by the registration's key, holds only the registration's `grade_scopes`, lives 60 minutes, is accepted only on the grade routes of section 5.13 and is never logged; plug-ins are selected only from the certified list.
 
 ---
 
@@ -959,13 +982,15 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   ├── PlanChangeRequest.cs                            aggregate root of WF-PLT-02 with the usage snapshot
 │   │   ├── TrialConversionAndPlanChangeStatus.cs           state enum of WF-PLT-02
 │   │   ├── TrialConversionAndPlanChangeTransitions.cs      allowed transitions table
-│   │   └── Proration.cs                                    domain service: upgrade by day now, downgrade at renewal (BR-FIN-018 applied to platform billing)
+│   │   └── Rules/                                          the plan-change rule, Platform's by ADR-0027
+│   │       └── PlanChangeProrationRule.cs                  BR-FIN-018: upgrade credits and charges the cycle's remaining days on its actual day count; downgrade at the next renewal, no proration
 │   ├── Billing/                                            aggregate TenantInvoice
 │   │   ├── TenantInvoice.cs                                aggregate root: immutable once issued; waiver or credit line corrects
 │   │   ├── TenantInvoiceLine.cs                            plan, add-on, overage, coupon, proration line
 │   │   ├── TenantPayment.cs                                manual or gateway payment keyed by idempotency key
-│   │   ├── ActiveStudentCount.cs                           domain service: REQ-PLT-009 counting on the billing date, prorated (Open Question 30 default)
-│   │   └── DunningLadder.cs                                value object: 7, 14 and 30 days, read-only at 30
+│   │   ├── DunningLadder.cs                                value object: 7, 14 and 30 days, read-only at 30
+│   │   └── Rules/                                          the billing-count rule, Platform's by ADR-0027
+│   │       └── ActiveStudentCountRule.cs                   BR-FIN-017: share 1 or (D − e + 1) ÷ D per student, leaver in full, exact sum rounded once to two places
 │   ├── Metering/                                           aggregates UsageRecord and LimitState
 │   │   ├── UsageRecord.cs                                  immutable daily fact, superseded never updated
 │   │   ├── UsageMonthly.cs                                 monthly aggregate by the plan's rule: maximum or sum
@@ -1020,7 +1045,9 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   ├── ApiKeyPolicy.cs                                 allowed scopes and limits within the plan
 │   │   ├── ApiKeyUsage.cs                                  calls per key per day
 │   │   ├── ProviderConfiguration.cs                        selected certified plug-in and encrypted configuration per kind
-│   │   ├── LtiTool.cs                                      aggregate root: registration, placements, privacy setting
+│   │   ├── LtiTool.cs                                      aggregate root: registration, placements, privacy setting, grade scopes
+│   │   ├── LtiLineItem.cs                                  aggregate root: one line item per tool and resource link, bound to the launch's assignment
+│   │   ├── LtiScore.cs                                     entity of LtiLineItem: one posted score per student and timestamp, with its status
 │   │   └── OneRosterSettings.cs                            enablement and allowed keys
 │   ├── Operations/                                         registry aggregates of the console and release records
 │   │   ├── FailedMessageIndex.cs                           index row over a parked message with its cause class
@@ -1035,7 +1062,8 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │       ├── ArabicNormalizationRule.cs                  BR-L10N-001: alef forms, alef maqsura, ta marbuta, tatweel, diacritics; display value untouched
 │   │       ├── NumeralRenderingRule.cs                     BR-L10N-002: stored Western digits, rendered per setting, identifiers never converted
 │   │       └── CultureInvarianceRule.cs                    BR-L10N-006: invariant culture for stored values, request culture for display only
-│   ├── References/                                         slim read-only copies for OneRoster, phase 3
+│   ├── References/                                         slim read-only copies: the billing enrolment periods (phase 1) and OneRoster (phase 3)
+│   │   ├── StudentEnrolmentPeriod.cs                       student id, enrolled on, left on, never attended: the BR-FIN-017 input
 │   │   ├── OneRosterStudentReference.cs                    student id, numbers, names in both languages, section, status
 │   │   ├── OneRosterStaffReference.cs                      staff id, employee number, names, campuses
 │   │   ├── OneRosterClassReference.cs                      section with grade level, campus and term
@@ -1341,7 +1369,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   │   └── WaiveChargeEndpoint.cs                  POST /api/v1/platform/tenant-invoices/{invoiceId}/waiver, platform.subscriptions.waive-charge, Idempotency-Key required
 │   │   │   ├── IssueTenantInvoice/                         billing date
 │   │   │   │   ├── IssueTenantInvoiceCommand.cs            immutable command record raised by a job, a consumer or a saga step, never by HTTP
-│   │   │   │   ├── IssueTenantInvoiceHandler.cs            TenantBillingRunJob counts active students and issues the invoice
+│   │   │   │   ├── IssueTenantInvoiceHandler.cs            TenantBillingRunJob: ActiveStudentCountRule over the closed month, then the invoice
 │   │   │   │   └── IssueTenantInvoiceValidator.cs          FluentValidation guard on the internal command, so a malformed message fails loudly
 │   │   │   └── RunDunning/                                 7, 14 and 30 days past due
 │   │   │       ├── RunDunningCommand.cs                    immutable command record raised by a job, a consumer or a saga step, never by HTTP
@@ -2088,11 +2116,31 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   │   ├── ReceiveDeepLinkingReturnHandler.cs      content items back to the picker
 │   │   │   │   ├── ReceiveDeepLinkingReturnValidator.cs    FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
 │   │   │   │   └── ReceiveDeepLinkingReturnEndpoint.cs     POST /api/v1/platform/lti/deep-linking-returns, signed tool JWT
-│   │   │   └── GetLtiJwks/                                 LTI signing keys
-│   │   │       ├── GetLtiJwksQuery.cs                      immutable query record: route and filter parameters only
-│   │   │       ├── GetLtiJwksHandler.cs                    current and overlapping keys
-│   │   │       ├── GetLtiJwksValidator.cs                  FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
-│   │   │       └── GetLtiJwksEndpoint.cs                   GET /api/v1/platform/lti/jwks, public
+│   │   │   ├── GetLtiJwks/                                 LTI signing keys
+│   │   │   │   ├── GetLtiJwksQuery.cs                      immutable query record: route and filter parameters only
+│   │   │   │   ├── GetLtiJwksHandler.cs                    current and overlapping keys
+│   │   │   │   ├── GetLtiJwksValidator.cs                  FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
+│   │   │   │   └── GetLtiJwksEndpoint.cs                   GET /api/v1/platform/lti/jwks, public
+│   │   │   ├── IssueLtiServiceToken/                       Assignment and Grade Services token, phase 4 (SL-INT-412)
+│   │   │   │   ├── IssueLtiServiceTokenCommand.cs          immutable command record: the only input type of the use case
+│   │   │   │   ├── IssueLtiServiceTokenHandler.cs          verifies the client assertion against the tool's JWKS, jti single use, grants only grade_scopes
+│   │   │   │   ├── IssueLtiServiceTokenValidator.cs        FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
+│   │   │   │   └── IssueLtiServiceTokenEndpoint.cs         POST /api/v1/platform/lti/tokens, client-credentials grant with a signed assertion
+│   │   │   ├── ManageLtiLineItems/                         line items of one tool in one section
+│   │   │   │   ├── ManageLtiLineItemsCommand.cs            immutable command record: the only input type of the use case
+│   │   │   │   ├── ManageLtiLineItemsHandler.cs            list, create bound to the launch's assignment, read, update, delete; own line items only
+│   │   │   │   ├── ManageLtiLineItemsValidator.cs          FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
+│   │   │   │   └── ManageLtiLineItemsEndpoint.cs           /api/v1/platform/lti/contexts/{contextId}/line-items routes, lineitem or lineitem.readonly scope
+│   │   │   ├── PostLtiScore/                               a tool's score for one student
+│   │   │   │   ├── PostLtiScoreCommand.cs                  immutable command record: the only input type of the use case
+│   │   │   │   ├── PostLtiScoreHandler.cs                  privacy check, once per timestamp, LtiScore and RecordToolScore in one outbox transaction
+│   │   │   │   ├── PostLtiScoreValidator.cs                FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
+│   │   │   │   └── PostLtiScoreEndpoint.cs                 POST /api/v1/platform/lti/contexts/{contextId}/line-items/{lineItemId}/scores, score scope
+│   │   │   └── GetLtiResults/                              results of the scores this tool posted
+│   │   │       ├── GetLtiResultsQuery.cs                   immutable query record: route and filter parameters only
+│   │   │       ├── GetLtiResultsHandler.cs                 latest own score per student from LtiScore, never an Assessment mark
+│   │   │       ├── GetLtiResultsValidator.cs               FluentValidation rules the pipeline runs before the handler; failures become _VALIDATION_FAILED with a field list
+│   │   │       └── GetLtiResultsEndpoint.cs                GET /api/v1/platform/lti/contexts/{contextId}/line-items/{lineItemId}/results, result.readonly scope
 │   │   └── Providers/                                      plug-in selection and configuration (section 5.13)
 │   │       ├── ListProviders/                              selected plug-ins
 │   │       │   ├── ListProvidersQuery.cs                   immutable query record: route and filter parameters only
@@ -2142,6 +2190,8 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   ├── DocumentGeneratedConsumer.cs                    documents.document.generated.v1 for certificates, letters and PDFs
 │   │   ├── RequestApprovedConsumer.cs                      requests.request.approved.v1 for the subject-request effect
 │   │   ├── WebhookFanOutConsumer.cs                        the 54 eligible keys of document 23 §4.9
+│   │   ├── ToolScoreOutcomeConsumer.cs                     ToolScoreRecorded and ToolScoreFailed from Assessment set the LtiScore status
+│   │   ├── StudentEnrolmentPeriodConsumer.cs               school.student.enrolled.v1 and status-changed.v1 into ref_student_enrolment_periods
 │   │   └── OneRosterCopyConsumer.cs                        School and Academics events for the OneRoster copies
 │   ├── Grpc/                                               application-side handlers behind the gRPC services of the Api host
 │   │   ├── GetTenantContextHandler.cs                      status, plan, limits, flags and modules
@@ -2198,9 +2248,9 @@ src/Services/Platform/                                      Tenant, Platform, an
 │   │   │   ├── CommunicationConfigurations.cs              announcements, maintenance_windows, release_notes
 │   │   │   ├── SupportConfigurations.cs                    support_tickets, ticket_messages, canned_replies, satisfaction_responses, feature_requests, feature_request_votes, health_scores
 │   │   │   ├── PrivacyConfigurations.cs                    legal_documents, legal_acceptances, retention_overrides, retention_holds, subject_requests, dpia_records
-│   │   │   ├── IntegrationConfigurations.cs                webhook_endpoints, webhook_subscriptions, webhook_secrets, webhook_deliveries, webhook_delivery_attempts partitioned by month, api_key_policies, provider_configurations, lti_tools, oneroster_settings
+│   │   │   ├── IntegrationConfigurations.cs                webhook_endpoints, webhook_subscriptions, webhook_secrets, webhook_deliveries, webhook_delivery_attempts partitioned by month, api_key_policies, provider_configurations, lti_tools, lti_line_items, lti_scores, oneroster_settings
 │   │   │   ├── OperationsConfigurations.cs                 failed_message_index, upgrade_runs, release_rollouts, restore_drills
-│   │   │   └── ReferenceConfigurations.cs                  ref_oneroster_student, ref_oneroster_staff, ref_oneroster_class, ref_oneroster_enrollment, ref_oneroster_session
+│   │   │   └── ReferenceConfigurations.cs                  ref_student_enrolment_periods, ref_oneroster_student, ref_oneroster_staff, ref_oneroster_class, ref_oneroster_enrollment, ref_oneroster_session
 │   │   ├── Migrations/                                     expand-and-contract migrations, bundled by migrate.yml, never run at start-up
 │   │   │   ├── 20260901000000_Initial.cs                   both schemas, row-level security with the operator clause, first partitions
 │   │   │   ├── PlatformDbContextModelSnapshot.cs           model snapshot for the tenant schema
@@ -2305,7 +2355,7 @@ src/Services/Platform/                                      Tenant, Platform, an
 
 ## 15. Test plan
 
-Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTests` (BR-PLT-001), `ReadOnlyModeRulesTests` (BR-PLT-002), `TenantDeletionCoolingOffRulesTests` (BR-PLT-003), `DataResidencyRulesTests` (BR-PLT-004), `UsageMeteringRulesTests` (BR-PLT-005, with property-based invariants), `TenantExportRulesTests` (BR-PLT-006), `ArabicNormalizationRulesTests` (BR-L10N-001), `NumeralRenderingRulesTests` (BR-L10N-002), `CultureInvarianceRulesTests` (BR-L10N-006).
+Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTests` (BR-PLT-001), `ReadOnlyModeRulesTests` (BR-PLT-002), `TenantDeletionCoolingOffRulesTests` (BR-PLT-003), `DataResidencyRulesTests` (BR-PLT-004), `UsageMeteringRulesTests` (BR-PLT-005, with property-based invariants), `TenantExportRulesTests` (BR-PLT-006), `ActiveStudentCountRulesTests` (BR-FIN-017, its five Appendix S examples as theory rows, TC-PLT-126 to TC-PLT-130), `PlanChangeProrationRulesTests` (BR-FIN-018, its three Appendix S examples as theory rows, the downgrade one TC-PLT-131), `ArabicNormalizationRulesTests` (BR-L10N-001), `NumeralRenderingRulesTests` (BR-L10N-002), `CultureInvarianceRulesTests` (BR-L10N-006).
 
 | Test case | What it proves | Level |
 |---|---|---|
@@ -2324,6 +2374,7 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | TC-INT-005, TC-INT-006, TC-INT-007 | Revocation within 5 s across services; no secret stored or logged; daily API meter | Integration |
 | TC-INT-010 to TC-INT-016 | Webhook challenge, replay window, signature vector, retry schedule, endpoint states, rotation overlap, eligibility | Integration |
 | TC-INT-031, TC-INT-032 | OneRoster 1.2 schema validation (phase 3); LTI 1.3 launch (phase 4) | Integration |
+| `TC-INT-036` (document 23) | Assignment and Grade Services (SL-INT-412): the client-credentials token, one line item bound to the launch's assignment, a score posted twice with the same timestamp sent once as `RecordToolScore`, and the refusals of a token without the score scope, a hidden student, a locked component (through `ToolScoreFailed`) and a read of another tool's results | Integration, with Assessment's handler (Assessment sheet, `TC-ASM-338`) |
 | `TC-INT-002` (Appendix W) | Plug-in kit conformance with the sample | Pipeline |
 | TC-SEC-120 to TC-SEC-125 | T-PLT-03 to T-PLT-08 controls | Integration |
 | TC-SEC-055, TC-SEC-056 | Generated permission matrix and tenant-isolation attack suites over every Platform endpoint, gRPC method and consumer | Generated suites |
@@ -2331,7 +2382,7 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | `TC-PLT-801`, `TC-PLT-802`, `TC-PLT-803`, `TC-PLT-804` (Appendix W) | Demo reset, smart defaults, template exchange, configuration as code | End to end |
 | TC-PLT-101 | Region change refused with `PLATFORM_RESIDENCY_VIOLATION`; every storage location of a tenant in its region (BR-PLT-004) | Integration |
 | TC-PLT-102 | Upgrade prorates by day and applies at once; downgrade waits for renewal and deletes nothing (REQ-PLT-010) | Integration |
-| TC-PLT-103 | Active-student billing count with a day-16 joiner counts 0.5; a leaver counts for the month (REQ-PLT-009, the Open Question 30 default; open point 9) | Unit and integration |
+| TC-PLT-103 | Billing run end to end: School's October 2026 enrolment and withdrawal events reach `ref_student_enrolment_periods` through `StudentEnrolmentPeriodConsumer` (each delivered twice), `TenantBillingRunJob` issues a `TenantInvoice` whose `active_student_count` is the BR-FIN-017 count and matches the closed month's `usage_monthly` active-student figure, a run for a month not yet closed is refused with `PLATFORM_VALIDATION_FAILED`, and a day whose School fact differs from the copy holds the invoice (REQ-PLT-009, BR-FIN-017, BR-PLT-005; ADR-0027) | Integration |
 | TC-PLT-104 | Dunning reminders at 7, 14, 30 days and read-only at 30 with export still answering (REQ-PLT-013) | Integration with the fake clock |
 | TC-PLT-105 | A flag at 20% rollout across 100 tenants gives 15 to 25 enabled and a stable answer per tenant (REQ-PLT-014) | Unit |
 | TC-PLT-106 | Custom domain verified and resolving within 15 minutes with a valid certificate; unverified host never resolves (REQ-PLT-015) | Integration |
@@ -2354,6 +2405,12 @@ Rule test classes (`31-business-rules-and-workflows.md` §2): `PlanLimitRulesTes
 | TC-PLT-123 | Sandbox: `live` key refused, fake providers wired, reset once per hour, deletion after 90 idle days | Integration |
 | TC-PLT-124 | Payment callback received twice records one payment | Integration |
 | TC-PLT-125 | Every endpoint in section 5 has an OpenAPI operation with `x-nibras-permission` from Appendix B, `Self` or `Pipeline` | Contract, `TC-TST-201` generator |
+| TC-PLT-126 | Given October 2026 (31 days), 1,240 students enrolled all month and 12 enrolled on 2026-10-28, when the count is computed, then it is 1,240 + 48 ÷ 31 = 1,241.548…, rounded to 1,241.55 (BR-FIN-017 example 1, REQ-PLT-009) | Unit, `ActiveStudentCountRulesTests` |
+| TC-PLT-127 | Given the same month with 6 of the 1,240 withdrawing on 2026-10-03, when the count is computed, then it stays 1,241.55: a leaver counts in full for the month of leaving (BR-FIN-017 example 2) | Unit, `ActiveStudentCountRulesTests` |
+| TC-PLT-128 | Given September 2026 (30 days) and one student enrolled on 2026-09-16, when the count is computed, then it is 15 ÷ 30 = 0.50 (BR-FIN-017 example 3, REQ-PLT-009's own) | Unit, `ActiveStudentCountRulesTests` |
+| TC-PLT-129 | Given February 2027 (28 days), one student enrolled on 2027-02-15 and one on 2027-02-28, when the count is computed, then it is 15 ÷ 28 = 0.5357…, rounded once on the total to 0.54; the divisor is the month's actual length (BR-FIN-017 example 4) | Unit, `ActiveStudentCountRulesTests` |
+| TC-PLT-130 | Given October 2026 and one student enrolled on 2026-10-10 who withdraws on 2026-10-20, when the count is computed, then it is 22 ÷ 31 = 0.7096…, rounded to 0.71: leaving does not reduce the share (BR-FIN-017 example 5) | Unit, `ActiveStudentCountRulesTests` |
+| TC-PLT-131 | Given a 31-day October cycle and a downgrade requested on 2026-10-17 from SAR 6,200.00 to SAR 3,100.00, when the change is processed, then October stays at SAR 6,200.00 with no credit and the SAR 3,100.00 plan starts on 2026-11-01 (BR-FIN-018 example 2, REQ-PLT-010) | Unit, `PlanChangeProrationRulesTests` |
 
 ### 15.1 Platform notes
 
@@ -2368,6 +2425,7 @@ What this service does on each operating system, runtime and device class, and t
 | Arabic search and collation | Settings and catalog search fold Arabic through BR-L10N-001, with the same fold in C# and in the database | `ArabicNormalizationRulesTests`; `TC-L10N-310` (document 24) inside the database image | `ubuntu-latest` |
 | Right to left | The operator console mirrors fully in Arabic; terminology overrides reach every surface in both languages; the deletion certificate and tenant invoice are rendered by Documents in both directions | `TC-L10N-901` (document 24), Playwright on Chromium, Firefox and WebKit; `TC-L10N-110` (document 24); `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
 | Mobile without Google services | A white-label flavour record (REQ-MOB-041) carries the push strategy; the no-Google build variant links no Firebase artefact and falls back as `09-mobile-structure.md` §4.3 states | `TC-PLAT-014` (document 33) for the paired artefacts of each flavour; `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | `ubuntu-latest`; the macOS runner of `ci-mobile-ios.yml` for the iOS twin; the device pass |
+| LTI tool scores (phase 4, SL-INT-412 with Assessment's SL-ASM-400) | `PostLtiScore` accepts the tool's JSON body with `scoreGiven` and `scoreMaximum` as JSON numbers. It parses and forwards them as decimals with the invariant culture, and `timestamp` as an ISO 8601 instant compared in UTC, never in the host's zone. `LtiTool.name` is one string in whatever script the administrator typed. It is never translated, and it is bidi-isolated wherever it appears: in the operator console's tool list, and in Assessment's mark grid, where the Draft cell names the tool | `TC-INT-036` (document 23) and `TC-INT-032` (document 23) with the reference tool; `CultureInvarianceRulesTests` under `ar-SA`, `en-US` and `de-DE`; `TC-L10N-901` (document 24) for the console in right to left; the grid's tool name is `TC-ASM-345` (Assessment sheet) | `ubuntu-latest` for the integration and culture suites; Playwright on Chromium, Firefox and WebKit in `ci-web.yml` on `ubuntu-latest` for both screens |
 
 ---
 
@@ -2389,7 +2447,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 | A tenant deleted early or under a hold | 2 | 5 | 10 | Cooling-off, signed confirmation, verified export, hold check before `DeletionScheduled` and again before step 6 | Platform lead | none |
 | Webhook secrets or provider keys leak | 2 | 4 | 8 | Encrypted per deployment, reveal once, rotation with overlap, never logged, `TC-SEC-121` | Security lead | none |
 | Server-side request forgery through webhook or LTI URLs | 3 | 4 | 12 | Address guard with pinned resolution, refused ranges, `TC-SEC-124` | Security lead | RISK-21 |
-| Usage or the active-student count is wrong, so revenue is lost or a school is invoiced or blocked on the wrong figure | 3 | 4 | 12 | Daily immutable facts, monthly recount, 402 only after grace, audit on correction; one count definition once Open Question 30 is decided | Product owner | RISK-52 |
+| Usage or the active-student count is wrong, so revenue is lost or a school is invoiced or blocked on the wrong figure | 3 | 4 | 12 | Daily immutable facts, monthly recount, 402 only after grace, audit on correction; one count definition, BR-FIN-017 computed only by Platform (ADR-0027), proved by TC-PLT-103 and TC-PLT-126 to TC-PLT-130, with the nightly check of `ref_student_enrolment_periods` against School's daily facts holding an invoice that disagrees | Platform lead | RISK-52 (closed by ADR-0027) |
 | The operator bypass becomes a cross-tenant leak | 2 | 5 | 10 | Flag set only by operator features, platform-tenant permission required, audited per transaction, isolation suite covers it | Architect | RISK-20 |
 
 ---
@@ -2400,6 +2458,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|---|
 | Operator features read across tenants through an audited `app.platform_operator` flag accepted by the `platform` schema policy | REQ-SEC-013, `10-data-architecture.md` §2.2 | As stated, pending ADR | Without it every operator list would iterate tenants one query at a time |
 | Tenant invoices are Platform's own billing; no Finance involvement | Master brief Sections 22 and 36; Appendix F lists `TenantInvoice` under Platform | As stated | Appendix R WF-PLT-02 names `finance.invoice.issued.v1` and WF-FIN-02 for tenant billing, which would mix school fees with platform billing (Open point 1) |
+| The billable active-student count (BR-FIN-017) and the plan-change proration (BR-FIN-018) are Platform's, computed from its own `ref_student_enrolment_periods` copy of School's events; Section 36's definition, rounded once on the total to two places; a downgrade waits for the next renewal | ADR-0027 (Accepted 2026-09-26, Open Question 30), master brief Section 36, REQ-PLT-009, Appendix S v9.7 | Decided | None; the product owner chose the contract definition |
 | Template copy is an import by the owning service from Platform's package, composed by Bff.Web | Appendix L.5 ownership; no command exists for it | As stated | A Platform-driven copy would need a command per owning service |
 | The recycle bin lives in every owning service through the persistence building block; Platform owns the namespace, the purge policy and the composed view | `22-api-conventions-and-error-catalog.md` §1.2 (`DELETE` moves to the recycle bin) | As stated | Central storage of deleted rows would copy every service's data into Platform |
 | Retention "run now" for another service calls that service's `/jobs` route, which declares `platform.retention.run-now` | `22-api-conventions-and-error-catalog.md` §6.1 | As stated | A command per service would need a catalog entry in document 11 |
@@ -2429,18 +2488,17 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 
 **Closed by ADR-0019 (brief v9.1).** Five points are answered by the brief and one is narrowed. Appendix C now carries the five platform lifecycle rows: signup confirmed with the welcome pack, the deletion cooling-off reminder, API key expiry and sandbox notices, the support SLA escalation and the subject-request acknowledgment, so section 11.2 lists them with their urgency and channels. Appendix E now carries `platform.upgrade.started.v1` (consumers Notification and Reporting) and Appendix R records the other upgrade, release, drill and failover steps as `platform.audit.recorded.v1`, which is what section 7.1 publishes. Appendix R's WF-PLT-02 guard now reads `platform.subscriptions.change-plan`, the Appendix B string this sheet already used. The product owner settled the tenant-deletion cooling-off at **30 days** with the export available throughout, so `DeletionCoolingOffReminderJob` and the Appendix C row say 30 days and Appendix R agrees with REQ-PLT-007, BR-PLT-003 and Appendix J. Appendix B gained `platform.tenants.export` (high, reason required, never plan-gated), the `platform.modules` and `platform.template-library` resources and `platform.jobs.replay`, so sections 5.1, 5.5, 5.7, 5.11, 11.1 and the folder tree declare those instead of borrowing `platform.tenants.view`, `platform.settings.*` and `platform.jobs.retry`. Reference architecture Section 8.0 now lists Platform's calls, including Identity `ApiKeyAdministration` and `PermissionLookup.GetRoleRisk`, School's directory for OneRoster and the job-only `Usage.Recount` of every service. Point 1 is what is left of the tenant-billing point; the rest are renumbered.
 
-**Closed since.** Point 2 (TC-PLT-002 to TC-PLT-005 meaning two things) is closed by ADR-0019 and ADR-0020: Appendix W's demo tests moved to TC-PLT-801 to TC-PLT-805, Appendix R keeps TC-PLT-001 to TC-PLT-006, and kit-lint R20 refuses a second definition. Its number is kept free so the other points keep theirs.
+**Closed since.** Point 2 (TC-PLT-002 to TC-PLT-005 meaning two things) is closed by ADR-0019 and ADR-0020: Appendix W's demo tests moved to TC-PLT-801 to TC-PLT-805, Appendix R keeps TC-PLT-001 to TC-PLT-006, and kit-lint R20 refuses a second definition. Point 9 (Open Question 30, which count bills a tenant) is closed by ADR-0027, accepted by the product owner on 2026-09-26 (brief v9.7): the count is master brief Section 36's, BR-FIN-017 is rewritten to it and BR-FIN-018's downgrade waits for the next renewal, and both rules are Platform's; `ActiveStudentCountRule`, `PlanChangeProrationRule`, `ref_student_enrolment_periods`, `TenantBillingRunJob`, TC-PLT-103 and TC-PLT-126 to TC-PLT-131 build it, and Finance no longer counts. The numbers 2 and 9 are kept free so the other points keep theirs.
 
 | # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Appendix R WF-PLT-02 still names `finance.invoice.issued.v1` and WF-FIN-02 for platform billing, although tenant invoices are Platform's own | Platform's own `TenantInvoice`; Finance is not involved in tenant billing | Architect, ADR on Appendix R | None at runtime; the appendix text mixes school fees with platform billing | 1 | 1 | 1 | RISK-43 |
 | 3 | Subject-request collection needs a per-subject export; document 11 catalogs only the tenant-wide `ExportTenant` | `ExportTenant` with an additive optional `subjectId` filter, collected by Documents from each service | Documents sheet owner, document 11 | Without it WF-PRV-01 could only answer from a whole-tenant archive | 2 | 3 | 6 | none |
-| 4 | LTI Assignment and Grade Services scores must land in Assessment and deep-linked items in Academics, but no command exists for either | Phase 4 ships launch, deep-linking return to the picker and the roster from Platform's copies; score passback waits for a catalogued command | Academics and Assessment sheet owners | Teachers enter tool scores by hand until the command exists | 3 | 2 | 6 | none |
+| 4 | Deep-linked items must land in Academics as resources or assignments, but no command carries them there. The score half of this point is closed: SL-INT-412 and SL-ASM-400 send each score as `RecordToolScore` (document 11 §2.4), landing as a mark awaiting the teacher (`TC-INT-036`) | Phase 4 ships the deep-linking return to the teacher's picker, and the teacher saves the item through Academics' own endpoints; no Platform command creates Academics records | Academics sheet owner | Teachers save each picked item by hand instead of in one step | 3 | 2 | 6 | none |
 | 5 | The webhook campus filter resolves events without a `campusId` "through Platform's slim reference copy" (document 23 §4.9), which reference architecture Section 8.0 does not list | Filter only on a payload `campusId`; events without one go to every subscribed endpoint of the tenant | Architect | A campus-scoped integrator receives other campuses' events that carry no campus | 3 | 4 | 12 | RISK-51 |
 | 6 | The OneRoster `users` resource for guardians needs guardian names that no event Platform consumes carries | Guardians excluded until `school.guardian.updated.v1` is added to the OneRoster copy with a directory lookup | Product owner | Rostering tools that expect parent users see none | 3 | 2 | 6 | RISK-42 |
 | 7 | Three localization rules (BR-L10N-001, BR-L10N-002, BR-L10N-006) are assigned to Platform's Domain while `Nibras.BuildingBlocks.Localization` implements the same technical behaviour for every service | Platform's rule classes are the tested reference; the building block runs the same Appendix S tables through a shared test data source | Architect | Two implementations can drift if the shared tables are not used | 2 | 2 | 4 | none |
 | 8 | Decisions in force states the operator cross-tenant read through the audited `app.platform_operator` flag "as stated, pending ADR"; no ADR in `docs/project/DECISIONS/` records it yet | The flag is set only by operator features, needs a platform-tenant permission, is audited per transaction and is attacked by the isolation suite (section 16) | Architect, ADR | A flag set outside an operator feature reads every tenant's rows; without it every operator list iterates tenants one query at a time | 2 | 5 | 10 | RISK-20 |
-| 9 | Open Question 30, still open: which count bills a tenant? | The default in force is the brief and REQ-PLT-009: students enrolled on the billing date, prorated by day, counted for the month of leaving; `ActiveStudentCount`, `TenantBillingRunJob` and TC-PLT-103 build it. BR-FIN-017 (any student enrolled for at least one day of the month, no proration) and SL-PLT-010, which cites BR-FIN-017, are in conflict with it until the product owner decides | Product owner, then an ADR with a brief change | A school is invoiced on a figure other than the one its contract states, or invoices are reissued after launch | 4 | 4 | 16 | RISK-52 |
 | 10 | Open Question 28, still open: do a read-only public API, the OneRoster export and iCal move from Tier 2 into Tier 1? | The default in force is where document 17 builds them: iCal feeds in phase 2 (Scheduling), the public API, the iCal subscription URLs and OneRoster in phase 3 under CAP-INT-01, as Tier 2 | Product owner, then an ADR | A first customer needs the API or OneRoster before phase 3, and CAP-INT-01 moves into the MVP | 3 | 3 | 9 | RISK-42 |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -2452,6 +2510,9 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Sections numbered from 1; Saga 1, 2 and 10 diagrams added to section 8; platform notes (section 15.1); signature features; risk table on document 18's scale; open point 2 closed; Open Questions 28 and 30 stated as open with their defaults; OneRoster moved to phase 3 as document 34 builds it. Awaiting Group C re-review |
 | 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | LTI Assignment and Grade Services for SL-INT-412: `LtiTool.grade_scopes`, the `LtiLineItem` and `LtiScore` entities, the token, line-item, score and result routes of section 5.13 with the four grade scopes, the use cases `IssueLtiServiceToken`, `ManageLtiLineItems`, `PostLtiScore` and `GetLtiResults`, the `RecordToolScore` command to Assessment (section 7.1) and `ToolScoreOutcomeConsumer` for its replies (section 7.2); `TC-INT-036` cited in section 15; open point 4 narrowed to deep-linked items. Awaiting the round 6 score |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Section 15.1 has a platform-notes row for the phase 4 LTI tool-score path (SL-INT-412, SL-ASM-400). It covers invariant-culture parsing of the score, the UTC timestamp comparison, the untranslated, bidi-isolated tool name in the console and in Assessment's grid (`TC-ASM-345`), and the runners. Awaiting the round 7 score |
+| 2026-09-26 | Open Question 30 decided (ADR-0027) | BR-FIN-017 and BR-FIN-018 are Platform's: a Billable active-student count responsibility; `ref_student_enrolment_periods` (section 4.5 fields, section 9 copy with the nightly check against School's daily facts) fed by `StudentEnrolmentPeriodConsumer` on the new `platform.reference-copies` queue; `TenantInvoice.active_student_count`, `UsageMonthly`, `TenantBillingRunJob` and `UsageAggregationJob` state the Section 36 count with its rounding; `ActiveStudentCountRule` and `PlanChangeProrationRule` replace `ActiveStudentCount` and `Proration`; TC-PLT-103 rewritten as the end-to-end billing test (it takes over the Finance sheet's retired the retired Finance count test), TC-PLT-126 to TC-PLT-131 added for the five BR-FIN-017 examples and the BR-FIN-018 downgrade example; the risk row updated and open point 9 closed |
 
 ## How this document is verified
 

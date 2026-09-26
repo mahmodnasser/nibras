@@ -117,12 +117,12 @@ src/Web/
 │   │   ├── long-job/                    # progress ring bound to the realtime progress channel, cancel, result download
 │   │   └── index.ts                     # public surface
 │   └── features/                        # one library per feature area; each has the shape in Section 1.2 and imports only ui, core, data-access, shared
-│       ├── admin/                       # school admin console: users, roles and permissions, join requests, settings, audit, jobs, failed messages
+│       ├── admin/                       # school admin console: users, roles and permissions, join requests, settings, audit, jobs, failed messages, demo reset (§7.10)
 │       ├── requests/                    # request center, approvals inbox, request type designer, approval chains, form builder
 │       ├── students/                    # student directory, student record, Student 360, guardians, custody, ID cards
 │       ├── admissions/                  # inquiries, applications, offers, waiting list, enrollment, re-enrollment campaigns
 │       ├── academics/                   # curriculum, teaching assignments, lesson plans, assignments, submissions, quizzes, question bank
-│       ├── assessment/                  # mark entry, moderation, approval and lock, report card studio, transcripts, grade changes, exams
+│       ├── assessment/                  # mark entry, moderation, approval and lock, report card studio, transcripts, grade changes, exams, standards heatmap (§7.10)
 │       ├── timetable/                   # timetable editor, generation, substitutions and cover, calendar, room bookings, exam timetable
 │       ├── attendance/                  # register, exception-only pre-fill, excuses, thresholds, staff attendance (expanded in Section 1.2)
 │       ├── safety/                      # pickup persons, gate passes, visitors, emergency mode and roll call, reunification
@@ -131,9 +131,9 @@ src/Web/
 │       ├── behavior/                    # categories, incidents, points, badges, portfolio
 │       ├── wellbeing/                   # clinic, medications, counseling cases, safeguarding, education plans, interventions, break-glass
 │       ├── hr/                          # staff files, contracts, leave, payroll inputs, appraisals, vacancies, document expiry
-│       ├── operations/                  # library, transport, inventory, facilities, front desk, activities
+│       ├── operations/                  # library, transport, inventory, facilities, front desk, activities, campus digital twin (§7.10)
 │       ├── reports/                     # dashboards, report library, early warning, data quality, inspection readiness, explain this number
-│       ├── documents/                   # files, templates, certificates, imports, exports, public verification page
+│       ├── documents/                   # files, templates, certificates, imports, exports, public verification page, school memory books (§7.10)
 │       ├── platform-console/            # operator features: tenants, provisioning wizard, plans, flags, health, support, retention, releases
 │       └── workspaces/                  # one entry library per role workspace: the home screen, its manifest slice and its routes
 │           ├── teacher/                 # teacher Today, my classes, grading queue, messages, timetable and cover
@@ -300,6 +300,7 @@ Every route is lazy-loaded by lazy area. Every route carries a `permissionGuard`
 | School admin | `/admin/recycle-bin` | `features/admin` | `platform.recycle-bin.view` | Recycle bin with restore |
 | School admin | `/admin/privacy` | `features/admin` | `platform.retention.view` | Privacy dashboard: retention clocks, consent coverage, subject requests |
 | School admin | `/admin/configuration` | `features/admin` | `platform.settings.view` | Configuration as code: export, diff, review, restore |
+| School admin | `/admin/demo` | `features/admin` | `platform.tenants.edit` | Demo reset: restore the Appendix H demo data in place, demo tenant only (feature 15, §7.10) |
 
 ### 2.4 Role workspaces (`apps/school`)
 
@@ -311,6 +312,7 @@ Every route is lazy-loaded by lazy area. Every route carries a `permissionGuard`
 | Teacher | `/teacher/classes/:sectionId/assignments` | `features/academics` | `academics.assignments.view` | Assignments for a section |
 | Teacher | `/teacher/grading` | `features/academics` | `academics.submissions.view` | Grading queue and fast grid |
 | Teacher | `/teacher/marks/:assessmentId` | `features/assessment` | `assessment.marks.view` | Mark entry grid |
+| Teacher | `/teacher/classes/:sectionId/mastery` | `features/assessment` | `assessment.marks.view` | Mastery and next step: standards heatmap for the class and for each student of the section (feature 42, §7.10) |
 | Teacher | `/teacher/comments/:cycleId` | `features/assessment` | `assessment.report-cards.view` | Comment bank and drafted comments in review |
 | Teacher | `/teacher/messages` | `features/communication` | `communication.messages.view` | Messages |
 | Teacher | `/teacher/meetings` | `features/communication` | `communication.meetings.view` | Conference slots |
@@ -357,6 +359,7 @@ Every route is lazy-loaded by lazy area. Every route carries a `permissionGuard`
 | Registrar | `/registrar/promotion` | `features/students` | `school.students.promote` | Promotion and year rollover |
 | Registrar | `/registrar/class-formation` | `features/students` | `school.sections.balance-formation` | Balanced class formation |
 | Registrar | `/registrar/id-cards` | `features/students` | `school.students.print-id-cards` | ID card batch |
+| Registrar | `/registrar/memory-books` | `features/documents` | `documents.certificates.generate` | School memory: compose a portfolio or a yearbook, and `/registrar/memory-books/:memoryBookId` (`documents.certificates.view`) for the compiled book (feature 36, §7.10) |
 | Accountant | `/accountant` | `features/workspaces/accountant` | `finance.payments.view` | Accountant Today |
 | Accountant | `/accountant/invoices` | `features/finance` | `finance.invoices.view` | Invoices, batch run and `/accountant/invoices/:invoiceId` |
 | Accountant | `/accountant/payments` | `features/finance` | `finance.payments.view` | Payments, receipts, bounced cheques |
@@ -376,6 +379,7 @@ Every route is lazy-loaded by lazy area. Every route carries a `permissionGuard`
 | Principal | `/principal/early-warning` | `features/reports` | `reporting.early-warning.view` | Early-warning list, Because panel, open intervention |
 | Principal | `/principal/dashboard` | `features/reports` | `reporting.dashboards.view` | School dashboard with explain this number |
 | Principal | `/principal/campuses` | `features/reports` | `reporting.dashboards.view` | Campus comparison for owner and group director |
+| Principal | `/principal/campus-twin` | `features/operations` | `operations.facilities.view` | Campus digital twin: floor plan, live occupancy, week heatmap, open tickets (feature 33, §7.10) |
 | Principal | `/principal/assessment` | `features/assessment` | `assessment.marks.view` | Approval, lock, report card batch |
 | Principal | `/principal/moderation` | `features/assessment` | `assessment.marks.view` | Moderation queue (coordinator) |
 | Principal | `/principal/academics` | `features/academics` | `academics.lesson-plans.view` | Lesson plan review, syllabus coverage (coordinator) |
@@ -633,6 +637,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | School admin | Recycle bin | `/admin/recycle-bin` | `data-table`, `action-bar` (restore), `dialog` (purge) | 7 | `platform.recycle-bin.view` | no | U.2 | — |
 | School admin | Privacy dashboard | `/admin/privacy` | `bento-grid`, `stat-tile`, `data-table` (retention clocks), `list` (subject requests) | 7 | `platform.retention.view` | no | U.2 | `TC-AUD-001` (Appendix W) |
 | School admin | Configuration as code | `/admin/configuration` | `tabs`, `data-table` (versions), `panel` (diff), `dialog` (restore) | 7 | `platform.settings.view` | no | U.11 | `TC-PLT-804` (Appendix W) |
+| School admin | Demo reset | `/admin/demo` | `card`, `badge` (demo tenant), `key-value` (seed set, last reset, by whom), `dialog` (confirm by typing the school name), `progress-ring` (the `long-job` composite), `error-state` (not a demo tenant) | 7 | `platform.tenants.edit` | no | U.11 | `TC-PLT-801` (Appendix W) |
 
 ### 7.4 Teacher and homeroom
 
@@ -646,6 +651,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Teacher | Grading queue and fast grid | `/teacher/grading` | `grid`, `panel` (submission), `chip` (rubric), `toast` | 7 | `academics.submissions.view` | yes | U.4 | `TC-ACA-202` (Academics sheet) |
 | Teacher | Mark entry grid | `/teacher/marks/:assessmentId` | `grid`, `badge` (state), `error-state` (out of range inline), `button` (submit for moderation) | 7 | `assessment.marks.view` | yes | U.4 | `TC-ASM-810` (Appendix W) |
 | Teacher | Mark entry in Arabic | same route | as above; numerals per tenant, numbers isolated LTR | 7 | `assessment.marks.enter` | yes | U.4 | TC-L10N-201 |
+| Teacher | Mastery and next step | `/teacher/classes/:sectionId/mastery` | `heatmap` (class grid of students by outcomes with a class row, columns mirror in RTL), `student-header` (drill-down to one student), `because-panel` (suggested next step for the class or the student, rung 2), `badge` (suggestion off: raw heatmap), `as-of-badge` | 7 | `assessment.marks.view` | yes | U.4 | `TC-ASM-811` (Appendix W) |
 | Teacher | Comment bank and drafts | `/teacher/comments/:cycleId` | `list`, `text-area`, `badge` (draft, reviewed), `because-panel` (sources) | 7 | `assessment.report-cards.view` | no | U.4 | `TC-AI-201` (Ai sheet) |
 | Teacher | Messages | `/teacher/messages` | `list`, `text-area`, `badge` (read receipt, quiet hours), `file-upload` | 7 | `communication.messages.view` | yes | U.4 | `TC-COM-201` (Communication sheet) |
 | Teacher | Meetings | `/teacher/meetings` | `timetable-grid` (slots), `list`, `dialog` | 7 | `communication.meetings.view` | yes | U.4 | — |
@@ -710,6 +716,8 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Registrar | Promotion and rollover | `/registrar/promotion` | `stepper`, `data-table`, `badge` (result), `progress-ring` | 7 | `school.students.promote` | no | U.6 | — |
 | Registrar | Class formation | `/registrar/class-formation` | `bento-grid` (sections), drag and drop with keyboard move menu, `chip` (keep together, keep apart), `stat-tile` (balance) | 7 | `school.sections.balance-formation` | no | U.3 | `TC-SCH-810` (Appendix W) |
 | Registrar | ID cards | `/registrar/id-cards` | `data-table`, `panel` (preview), `progress-ring` | 7 | `school.students.print-id-cards` | no | U.6 | — |
+| Registrar | School memory: compose | `/registrar/memory-books` | `stepper` (kind, subject, years, items), `radio-group` (portfolio or yearbook), `search-field` (student or section), `list` (files to include), `badge` (consent to be checked), `progress-ring` | 7 | `documents.certificates.generate` | no | U.6 | `TC-DOC-801` (Appendix W) |
+| Registrar | School memory: book | `/registrar/memory-books/:memoryBookId` | `key-value` (kind, status, item count), `list` (items with captions), `list` (excluded items and why), `button` (export PDF or zip), `progress-ring` | 7 | `documents.certificates.view` | no | U.6 | `TC-DOC-801` (Appendix W) |
 | Registrar | Post a payment (refusal) | `/registrar/students/:studentId` | finance action absent, `empty-state` on direct route | no-permission | `finance.payments.record` | no | U.6 | TC-SEC-301 |
 | Accountant | Accountant Today | `/accountant` | `bento-grid`, `card`, `stat-tile`, `list`, `sparkline` | 7 | `finance.payments.view` | no | U.7 | TC-FIN-401 |
 | Accountant | Invoices and batch run | `/accountant/invoices` | `data-table`, `stepper` (preview, approve, run), `progress-ring`, `badge` (series) | 7 | `finance.invoices.view` | no | U.7 | TC-FIN-402 |
@@ -741,6 +749,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Principal | Early warning | `/principal/early-warning` | `list`, `because-panel`, `dialog` (override with reason), `button` (open intervention) | 7 | `reporting.early-warning.view` | yes | U.2 | `TC-RPT-008` (Appendix W) |
 | Principal | School dashboard | `/principal/dashboard` | `bento-grid`, `stat-tile`, `line-chart`, `bar-chart`, `explain-number` | 7 | `reporting.dashboards.view` | yes | U.2 | `TC-RPT-102` (Reporting sheet) |
 | Principal | Campus comparison | `/principal/campuses` | `data-table`, `bar-chart`, `explain-number`, `select` (currency display) | 7 | `reporting.dashboards.view` | yes | U.1 | `TC-RPT-007` (Appendix W) |
+| Principal | Campus digital twin | `/principal/campus-twin` | `select` (campus, floor), `campus-floor-plan` (feature-local), `badge` (present count, open tickets), `heatmap` (week, room by period), `panel` (room detail and booking), `date-picker`, `as-of-badge` | 7 | `operations.facilities.view` | no | U.2 | `TC-OPS-810` (Appendix W) |
 | Principal | Marks approval and lock | `/principal/assessment` | `data-table`, `badge` (state), `dialog` (lock), `error-state` (post-lock change refused, appeal offered) | 7 | `assessment.marks.view` | no | U.2 | `TC-ASM-101` (Assessment sheet) |
 | Principal | Report card batch | `/principal/report-cards` | `stepper`, `progress-ring` (live over realtime), `list` (results), `badge` (QR) | 7 | `assessment.report-cards.view` | no | U.2 | `TC-ASM-810` (Appendix W) |
 | Principal | Moderation queue | `/principal/moderation` | `data-table`, `grid`, `heatmap` (distribution), `button` (release) | 7 | `assessment.marks.view` | no | U.3 | — |
@@ -790,7 +799,7 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 | Front desk | Enquiries and complaints | `/front-desk/enquiries` | `list`, `form-field`, `select` (route to), `badge` (SLA) | 7 | `operations.frontdesk.view` | no | Appendix I receptionist row | — |
 | Front desk | Emergency roll call | `/front-desk/emergency` | `list` (by location), `stat-tile`, `search-field`, `button` (mark accounted) | 7 | `attendance.safety.emergency.view` | no | U.2 | `TC-ATT-813` (Appendix W) |
 
-**Counts.** 8 shell and public, 19 platform console, 33 school admin, 23 teacher and homeroom, 26 student and parent, 28 registrar and accountant, 23 principal and academic leadership, 31 HR, care and front desk: **191 screen rows**, of which 14 are refusal or same-route variants that the Appendix Q boundary steps require, so **177 distinct screens**. Every row is built from the 64 components of Section 6, the `@nibras/shared` composites of Section 1.1 (`filters` on 12 rows), and the five feature-local presentational components the attendance tree in Section 1.2 declares: `register-card`, `attendance-list`, `exception-bar`, `lock-window-notice` and `unmarked-classes-card`. None of these is a new primitive: each is a composition of Section 6 components, which is why `14-design-system-and-ux.md` Section 7 inventories the 64 primitives and not the compositions.
+**Counts.** 8 shell and public, 19 platform console, 34 school admin, 24 teacher and homeroom, 26 student and parent, 30 registrar and accountant, 24 principal and academic leadership, 31 HR, care and front desk: **196 screen rows**, of which 14 are refusal or same-route variants that the Appendix Q boundary steps require, so **182 distinct screens**. Every row is built from the 64 components of Section 6, the `@nibras/shared` composites of Section 1.1 (`filters` on 12 rows), the five feature-local presentational components the attendance tree in Section 1.2 declares (`register-card`, `attendance-list`, `exception-bar`, `lock-window-notice` and `unmarked-classes-card`), and one more, `campus-floor-plan`, that the operations tree in §7.10 declares. The five attendance components are compositions of Section 6 components. `campus-floor-plan` also draws its own SVG: the floor-plan image and a polygon per room, each polygon a focusable button carrying a Section 6 `badge` and `tooltip`. It stays feature-local because one screen uses it. None of the six is a primitive, which is why `14-design-system-and-ux.md` Section 7 inventories the 64 primitives and not the compositions.
 
 ### 7.9 Signature features on these screens
 
@@ -810,6 +819,7 @@ Each signature feature is cited here by its Appendix W number only. Its moment, 
 | 10 | Settings and terminology, Custom fields, Request type designer, Approval chains, Form builder |
 | 13 | Data quality center |
 | 14 | Audit viewer, Access log, Exports, Privacy dashboard |
+| 15 | Demo reset |
 | 18 | Badges and portfolio |
 | 20 | Class formation |
 | 21 | Inspection readiness |
@@ -823,13 +833,68 @@ Each signature feature is cited here by its Appendix W number only. Its moment, 
 | 30 | Intervention playbook (homeroom), Interventions and playbooks (care) |
 | 31 | Guardian transparency |
 | 32 | Emergency mode, Reunification, Emergency roll call (front desk) |
+| 33 | Campus digital twin |
 | 35 | Calm screen |
+| 36 | School memory: compose, School memory: book, Report cards and documents (the parent's portfolio download) |
 | 37 | Global template library |
 | 40 | Service health, Job monitor |
 | 41 | Configuration as code |
+| 42 | Mastery and next step |
 | 43 | Workload balance |
 
-Features carried outside Section 7: 11 by the command palette of the shell (Section 5), 23 by every screen through Section 10, 44 by the low-bandwidth row of Section 8, and 12, 16 and 34 by the Flutter application in `09-mobile-structure.md`. Seven features have no route in Section 2 and no row here yet: 33 (campus digital twin), 36 (school memory) and 42 (mastery and next step), which `09-mobile-structure.md` §10 marks `full` on the web, and 15 (demo reset), 17 (media consent at publishing), 19 (kindergarten daily sheet) and 38 (plug-in kit). That gap is the fourth open point below.
+Features carried outside Section 7: 11 by the command palette of the shell (Section 5), 23 by every screen through Section 10, 44 by the low-bandwidth row of Section 8, and 12, 16 and 34 by the Flutter application in `09-mobile-structure.md`. Three features have no route in Section 2 and no row here yet: 17 (media consent at publishing), 19 (kindergarten daily sheet) and 38 (plug-in kit). That gap is the fourth open point below. Features 15, 33, 36 and 42 were added in remediation round 6, and §7.10 designs their screens.
+
+### 7.10 The screens of features 15, 33, 36 and 42
+
+Each screen below calls only the endpoints named, through the generated clients of Section 4, and stays within the one or two calls per first render of Section 9. Endpoints and permissions are quoted from the owning service sheet in `06-services/`. The seven states are those of `14-design-system-and-ux.md` Section 8. Each cell below says what the state shows on that screen.
+
+| Screen (feature) | Calls, owner and permission | Loading, empty, partial | Error, offline, processing, no-permission | Built by |
+|---|---|---|---|---|
+| Demo reset (15) | `POST /api/v1/platform/demo/reset` (Platform sheet §5.1, `platform.tenants.edit` on a demo tenant, `Idempotency-Key`), answering 202 with a job; progress through the realtime progress channel of `core/realtime`, and `GET /api/v1/platform/jobs/{jobId}` (the requester may read it) after a reconnect | Skeleton of the card; no empty state, because a demo tenant always has its seed; no partial state, because the reset restores the whole Appendix H set in place or nothing | `PLATFORM_VALIDATION_FAILED` (`notDemoTenant`) as the `error-state` "this school is not a demo school", with no action; offline disables the reset button under the banner; processing is the `progress-ring` until the job ends, and the page then reloads the tenant's bootstrap; no-permission is the standard page | SL-PLT-006 |
+| Mastery and next step (42) | `GET /api/v1/assessment/sections/{id}/standards-heatmap?subjectId=&gradingPeriodId=` (Assessment sheet §4.5, `assessment.marks.view`, own-sections, department or campus; keyset on students, not cached), which returns the class grid, the class cells, the student names and the class next step; and `GET /api/v1/academics/outcomes?subjectId=&gradeLevelId=` (Academics sheet §5.3, `academics.curriculum.view`) for the column labels. Opening one student calls `GET /api/v1/assessment/students/{id}/standards-heatmap` (same sheet and permission) for that student's next step | Skeleton heatmap. Empty: "no assessed outcomes yet for this class", which is also shown when no component of the structure links an outcome. Partial: the heatmap alone with the `badge` "suggestion off" when the rung 2 suggestion is absent or the model is off, the fallback that Appendix W feature 42 degrades to | Problem Details mapped by `core/errors`; offline shows the last loaded student with `as-of-badge` and nothing else; no processing state (read only); no-permission for a family account, since the endpoint serves staff scopes only | SL-ASM-219 (heatmap phase 2, suggestion phase 5) |
+| School memory: compose and book (36) | `GET /api/v1/documents/files?ownerType=&ownerId=` (Documents sheet §4.1, `documents.files.view`) to pick items; `POST /api/v1/documents/memory-books` (Documents sheet §4.10, `documents.certificates.generate`, `Idempotency-Key`), answering 202 with a job; `GET /api/v1/documents/memory-books/{id}` (`documents.certificates.view`); `POST /api/v1/documents/memory-books/{id}/export` (`documents.files.export`) | Skeleton list. Empty: "no files for this student or section yet". Partial: a compiled book whose excluded items are listed with the reason, because media consent is confirmed per item at compile time (Documents sheet §3.8 and its open point 12) | `DOCUMENTS_VALIDATION_FAILED` lists the items without consent in place; offline disables compose and export; processing is the compile or export job's `progress-ring`; no-permission hides the export button without `documents.files.export` and shows the standard page without `documents.certificates.view` | SL-DOC-410 |
+| Campus digital twin (33) | `GET /bff/web/v1/campus/digital-twin?campusId=&date=` (Bff.Web sheet §4.1, `operations.facilities.view`), which composes Operations' floor plans and tickets, Scheduling's room availability and Attendance's present counts; `POST /api/v1/scheduling/room-bookings` (Scheduling sheet §5.7, `scheduling.room-bookings.create`, `Idempotency-Key`) to book a free room | Skeleton floor plan. Empty: "no floor plan uploaded for this campus", with a link to the facilities screen for holders of `operations.facilities.edit`. Partial: the occupancy or heatmap region marked `partial` when Attendance or Scheduling did not answer, as the Bff.Web payload says, while the plan and tickets still render | Error per region, never a blank map; offline shows nothing live, because the payload is never cached; processing is the booking request until it is `Requested`; no-permission is the standard page. Rooms and counts only, never a child's name or id (REQ-OPS-016) | SL-OPS-624 (composer), SL-OPS-626 (screen) |
+
+**The class heatmap is one call.** Appendix W describes feature 42 as a heatmap "per student and class". The Assessment sheet now serves the class view: `component_outcomes` links each component to Academics outcome ids (its §3.1), and §4.5 defines the mastery computation and `GET /api/v1/assessment/sections/{id}/standards-heatmap`, tested by `TC-ASM-342` with `TC-ASM-811` (Appendix W) as the demo. So the first render is two calls, the class heatmap and the Academics outcome labels, within Section 9, and no per-student fan-out remains. The per-student route serves the drill-down only. The heatmap's columns mirror in right to left, and outcome codes are bidi-isolated.
+
+The feature folders these screens add follow the shape of Section 1.2. Only the new folders are shown.
+
+```text
+libs/features/
+├── admin/                                           # existing library; the demo reset page is added
+│   └── pages/                                       # smart routed components of the admin feature
+│       └── demo-reset/                              # the /admin/demo route
+│           ├── demo-reset.page.ts                   # smart: posts the reset with an Idempotency-Key, follows the job, reloads the bootstrap at the end
+│           └── demo-reset.page.html                 # card, confirm dialog, long-job progress ring, not-a-demo-tenant error state
+├── assessment/                                      # existing library; the mastery page is added
+│   ├── pages/                                       # smart routed components of the assessment feature
+│   │   └── mastery/                                 # the /teacher/classes/:sectionId/mastery route
+│   │       ├── mastery.page.ts                      # smart: loads the section standards heatmap and the Academics outcome labels, then one student's heatmap on drill-down
+│   │       └── mastery.page.html                    # class grid (students by outcomes), class row, student drill-down, Because panel for the next step or the suggestion-off badge
+│   └── state/                                       # SignalStores of the assessment feature
+│       └── mastery.store.ts                         # SignalStore: class heatmap pages, outcome labels by id, selected student, suggestion present or absent
+├── documents/                                       # existing library; the school memory pages are added
+│   ├── pages/                                       # smart routed components of the documents feature
+│   │   ├── memory-book-compose/                     # the /registrar/memory-books route
+│   │   │   ├── memory-book-compose.page.ts          # smart: kind, subject, years, items from the file list; posts with an Idempotency-Key
+│   │   │   └── memory-book-compose.page.html        # stepper with the item list and the consent-to-be-checked badge
+│   │   └── memory-book/                             # the /registrar/memory-books/:memoryBookId route
+│   │       ├── memory-book.page.ts                  # smart: reads the compiled book, starts the PDF or zip export job
+│   │       └── memory-book.page.html                # items, excluded items with the reason, export action shown only with documents.files.export
+│   └── state/                                       # SignalStores of the documents feature
+│       └── memory-book.store.ts                     # SignalStore: draft selection, compile job, compiled book, export job
+└── operations/                                      # existing library; the campus digital twin is added
+    ├── pages/                                       # smart routed components of the operations feature
+    │   └── campus-twin/                             # the /principal/campus-twin route
+    │       ├── campus-twin.page.ts                  # smart: loads the Bff.Web digital twin for a campus and date, books a free room
+    │       └── campus-twin.page.html                # campus and floor select, floor plan, week heatmap, room panel, partial markers per region
+    ├── components/                                  # presentational components of the operations feature
+    │   └── campus-floor-plan/                       # the floor plan the twin page renders
+    │       ├── campus-floor-plan.component.ts       # presentational: plan image and room polygons as SVG; each room a focusable button with a badge
+    │       └── campus-floor-plan.component.stories.ts  # stories: live, partial occupancy, no plan, keyboard walk, both directions and themes
+    └── state/                                       # SignalStores of the operations feature
+        └── campus-twin.store.ts                     # SignalStore: twin payload, selected room, booking in flight; never persisted offline
+```
 
 ---
 
@@ -910,9 +975,20 @@ Features carried outside Section 7: 11 by the command palette of the shell (Sect
 | Does the Angular major pinned at Phase 0 ship stable zoneless change detection, `animate.enter`, `animate.leave` and the View Transitions integration? (`29-adr-index.md` Section 3) | Latest stable at project start; `OnPush` on every component while zoneless is provisional (the decision table above); if the motion primitives are absent, Section 10 drives the same motion with CSS classes toggled by signals, as master brief Section 3 allows | Architect | `OnPush` becomes permanent rather than a fallback, and the motion patterns of Section 10 and document 14 are re-implemented as class toggles in `@nibras/ui/motion`; no route, store or screen changes | 2 | 2 | 4 | none |
 | Are the Phase 0 bundle budgets in Section 9 the right size for the screens Section 7 lists? | The warning and error values in Section 9, enforced in `angular.json`; raising one requires an ADR | Architect | Too tight: feature slices stall on budget ADRs. Too loose: the Lighthouse Performance 90 budget of Section 8 and the LCP target fail late, on mid-range phones, when splitting a chunk is expensive | 3 | 2 | 6 | none |
 | Do school staff outside the five mobile-web workspaces work from phones? | Section 8 and the Appendix X mobile web row: the school admin console, registrar, accountant, HR, care, front desk and platform console render at 768 without horizontal scroll and get no 360 layouts | Product owner | 360 layouts, snapshots and Lighthouse routes are added for the affected rows of Section 7, and the capability that builds those screens slips inside its phase | 2 | 2 | 4 | none |
-| Where do the web screens of signature features 15, 17, 19, 33, 36, 38 and 42 live (the note under the table of §7.9)? | Each is built inside the workspace of its Appendix W owner by the slice that builds the feature in `34-work-breakdown.md`, and that slice adds its route to Section 2 and its row to Section 7 with the seven states; until then the counts of Section 7 exclude them | Architect | A slice reaches its phase with no route, guard or state design for the feature's screen, and the demo step that shows the feature has nothing on the web to open; the fix is rows added here, not a redesign | 3 | 2 | 6 | none |
+| Where do the web screens of signature features 17, 19 and 38 live (the note under the table of §7.9)? | Each is built inside the workspace of its Appendix W owner by the slice that builds the feature in `34-work-breakdown.md`, and that slice adds its route to Section 2 and its row to Section 7 with the seven states; until then the counts of Section 7 exclude them | Architect | A slice reaches its phase with no route, guard or state design for the feature's screen, and the demo step that shows the feature has nothing on the web to open; the fix is rows added here, not a redesign | 3 | 2 | 6 | none |
 
 > L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+**Closed.** Open point 4 as the round-5 scorecard read it, the missing web screens of features 15, 33, 36 and 42, is closed. Section 2 routes them, Section 7 lists them with their seven states, and §7.10 designs them from the owning sheets' endpoints. The same row now carries only features 17, 19 and 38, which `09-mobile-structure.md` §10 does not list as web capabilities. The gap found while closing it, the class-level heatmap of feature 42, is closed in remediation round 7. The Assessment sheet §4.5 now defines `GET /api/v1/assessment/sections/{id}/standards-heatmap`, and §7.10 calls it.
+
+---
+
+## Review record
+
+| Date | Reviewer | Outcome |
+|---|---|---|
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Features 15, 33, 36 and 42 now have Section 2 routes, five Section 7 rows (196 rows, 182 distinct screens) and a §7.10 design. That design names each screen's endpoints, the Bff.Web digital-twin composition, the seven states and the building slice, with a fenced tree of the new feature folders. Open point 4 is narrowed to 17, 19 and 38. Awaiting the round 6 score |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Feature 42's class view. The §7.10 row now calls `GET /api/v1/assessment/sections/{id}/standards-heatmap` (Assessment sheet §4.5) and Academics' outcome labels, with the per-student route kept for the drill-down only. The note under the table and the closing note of the open points say the class endpoint exists. The Section 2 route row, the Section 7 row and the mastery folder entries now describe the class grid. Awaiting the round 7 score |
 
 ---
 

@@ -59,8 +59,8 @@ Rule identifiers follow Appendix L: `BR-<AREA>-<NNN>`, unique across the file, n
 | BR-FIN-014 | Posted documents are immutable | Finance | none |
 | BR-FIN-015 | Cheque bounce reversal and fee | Finance | Finance → payment methods, late fee rules |
 | BR-FIN-016 | Service restriction rules | Finance | Finance → restriction rules |
-| BR-FIN-017 | Active student definition for SaaS billing | Finance | none |
-| BR-FIN-018 | Proration on a plan change | Finance | none |
+| BR-FIN-017 | Active student definition for SaaS billing | Platform | none |
+| BR-FIN-018 | Proration on a plan change | Platform | none |
 | BR-FIN-019 | Split payers by percentage | Finance | General → currency |
 | BR-SCD-001 | Hard versus soft constraints | Scheduling | none |
 | BR-SCD-002 | Consecutive-period limit | Scheduling | General → work week |
@@ -948,43 +948,61 @@ Rule identifiers follow Appendix L: `BR-<AREA>-<NNN>`, unique across the file, n
 
 ### BR-FIN-017 Active student definition for SaaS billing
 
-**Owner:** Finance · **Parameters:** none
+**Owner:** Platform (ADR-0027; the identifier is kept) · **Parameters:** none
 
 **Tests:** `ActiveStudentCountRulesTests`
 
-**Rule.** For platform billing, an active student is one whose status was enrolled for at least one day inside the billing month. Each student is counted once per month regardless of section, campus or plan changes. Applicants, withdrawn records and alumni are not counted.
+**Rule.** For platform billing, Platform counts each student once per billing month by the definition of master brief Section 36: a student enrolled for the whole month counts 1; a student whose enrollment date falls inside the month counts the share of the month from that date to its end; a student who leaves counts in full for the month in which they leave. Applicants, withdrawn records from earlier months, graduates and alumni count 0.
+
+**Inputs.** The billing month (a calendar month in the tenant's time zone, with its actual number of days `D`); for each student, the enrollment date and, if any, the leaving date, from School's enrollment events (`student.enrolled`, `student.withdrawn`); the student identifier.
+
+**Computation, in order.**
+
+1. Take each student whose enrollment date is on or before the last day of the month and who was not withdrawn before the first day of the month; deduplicate on the student identifier.
+2. For each, if the enrollment date `e` is inside the month, the share is `(D − e + 1) ÷ D`, where `e` is the day of the month; otherwise the share is 1. A leaving date inside the month does not reduce the share.
+3. Sum the shares exactly, as fractions.
+
+**Rounding.** Once, on the sum: half away from zero to two decimal places. Shares are never rounded one by one. The amount billed is the rounded count times the plan's price per student, rounded once to the currency's places (BR-FIN-011).
 
 **Examples.**
 
-- Given a tenant with 1,240 enrolled students on 2026-10-01 and 12 more enrolling on 2026-10-28, when the October count is computed, then it is 1,252.
-- Given 6 of those students withdrawing on 2026-10-03, when the October count is computed, then it stays 1,252, because each of them was enrolled for at least one day in October.
-- Given a student moving from campus A to campus B on 2026-10-15, when the October count is computed, then the student is counted once and the total is unchanged at 1,252.
+- Given October 2026 (31 days), 1,240 students enrolled all month and 12 more enrolled on 2026-10-28, when the October count is computed, then it is 1,240 + 12 × (31 − 28 + 1) ÷ 31 = 1,240 + 48 ÷ 31 = 1,241.548…, which rounds to 1,241.55.
+- Given the same month and 6 of the 1,240 withdrawing on 2026-10-03, when the October count is computed, then it stays 1,241.55, because a leaver counts in full for the month of leaving.
+- Given September 2026 (30 days) and one student enrolled on 2026-09-16, when the September count is computed, then it is (30 − 16 + 1) ÷ 30 = 15 ÷ 30 = 0.50.
+- Given February 2027 (28 days), one student enrolled on 2027-02-15 and one enrolled on 2027-02-28, when the February count is computed, then it is 14 ÷ 28 + 1 ÷ 28 = 15 ÷ 28 = 0.5357…, which rounds to 0.54.
+- Given October 2026 and one student enrolled on 2026-10-10 who withdraws on 2026-10-20, when the October count is computed, then it is 22 ÷ 31 = 0.7096…, which rounds to 0.71, because leaving does not reduce the share.
+
+The third example is REQ-PLT-009's own. The fourth pins the divisor to the month's actual length and the rounding to the total: rounding each share first would give 0.50 + 0.04 = 0.54 here by luck, and would drift on a larger roll. The fifth pins the leaving rule.
 
 **Edge cases.**
 
-- A student enrolled and withdrawn on the same day counts for that month; the definition is "at least one day", not "at month end".
-- A student re-enrolling in the same month after a withdrawal is still one student, deduplicated on the student identifier.
-- The count is a Finance figure and the Platform meter in BR-PLT-005 consumes it; both must agree, and a disagreement fails the reconciliation job.
+- A student enrolled on the first day of the month counts 1; one enrolled on the last day counts `1 ÷ D`.
+- A student who re-enrolls in the same month after withdrawing is one student; the share runs from the earliest enrollment date in the month.
+- An accepted applicant whose enrollment date is in a later month counts 0 in this one.
+- A campus or section move changes nothing: the student is counted once.
+
+**Rejected.** A billing month that has not ended returns `PLATFORM_VALIDATION_FAILED`; the count is computed after the month closes, and corrections follow BR-PLT-005.
 
 ### BR-FIN-018 Proration on a plan change
 
-**Owner:** Finance · **Parameters:** none
+**Owner:** Platform (ADR-0027; the identifier is kept) · **Parameters:** none
 
 **Tests:** `PlanChangeProrationRulesTests`
 
-**Rule.** Changing a subscription plan mid-cycle credits the unused days of the old plan and charges the remaining days of the new plan, both computed on the actual number of days in that cycle. The day of the change is charged on the new plan.
+**Rule.** An upgrade takes effect on the day of the change: the unused days of the old plan are credited and the remaining days of the new plan are charged, both on the actual number of days in that cycle, and the day of the change is charged on the new plan. A downgrade takes effect at the next renewal, with no proration, as master brief Section 36 states; limits already exceeded show a warning and delete nothing.
 
 **Examples.**
 
-- Given a 31-day October cycle, an old plan of SAR 3,100.00, a new plan of SAR 6,200.00 and a change on 2026-10-17, when the proration is computed, then 15 remaining days are credited at 3,100 ÷ 31 = SAR 100.00 per day, giving SAR 1,500.00, and charged at 6,200 ÷ 31 = SAR 200.00 per day, giving SAR 3,000.00, for a net charge of SAR 1,500.00.
-- Given the same cycle and a downgrade on 2026-10-17 from SAR 6,200.00 to SAR 3,100.00, when the proration is computed, then the credit is SAR 3,000.00, the charge is SAR 1,500.00 and the net is a credit of SAR 1,500.00 carried to the next invoice rather than refunded.
-- Given a change on 2026-10-01, the first day of the cycle, when the proration is computed, then all 31 days are credited at SAR 3,100.00 and all 31 days are charged at SAR 6,200.00, so the net additional charge is SAR 3,100.00 and the cycle costs the full new plan price of SAR 6,200.00.
+- Given a 31-day October cycle, an old plan of SAR 3,100.00, a new plan of SAR 6,200.00 and an upgrade on 2026-10-17, when the proration is computed, then 15 remaining days are credited at 3,100 ÷ 31 = SAR 100.00 per day, giving SAR 1,500.00, and charged at 6,200 ÷ 31 = SAR 200.00 per day, giving SAR 3,000.00, for a net charge of SAR 1,500.00.
+- Given the same cycle and a downgrade requested on 2026-10-17 from SAR 6,200.00 to SAR 3,100.00, when the change is processed, then October stays at SAR 6,200.00 with no credit, and the SAR 3,100.00 plan starts on 2026-11-01.
+- Given an upgrade on 2026-10-01, the first day of the cycle, when the proration is computed, then all 31 days are credited at SAR 3,100.00 and all 31 days are charged at SAR 6,200.00, so the net additional charge is SAR 3,100.00 and the cycle costs the full new plan price of SAR 6,200.00.
 
 **Edge cases.**
 
 - February and the 31-day months produce different daily rates; the divisor is always the actual day count of that cycle, never 30.
-- A plan change on the last day of the cycle credits and charges one day each, which is correct and must not be special-cased to zero.
+- An upgrade on the last day of the cycle credits and charges one day each, which is correct and must not be special-cased to zero.
 - An annual cycle uses the same rule with the actual day count, so a leap year divides by 366.
+- A downgrade that would put the tenant over a limit of the smaller plan is accepted and warned about at renewal; nothing is deleted.
 
 ### BR-FIN-019 Split payers by percentage
 
@@ -1880,19 +1898,19 @@ Rule identifiers follow Appendix L: `BR-<AREA>-<NNN>`, unique across the file, n
 
 **Tests:** `UsageMeteringRulesTests`
 
-**Rule.** Usage meters are computed once per day from the owning service's own data and stored as an immutable daily fact per tenant and meter. A month's billable figure is the aggregate the plan names: the maximum daily value for headcount meters and the sum for event meters.
+**Rule.** Usage meters are computed once per day from the owning service's own data and stored as an immutable daily fact per tenant and meter. A month's billable figure is the aggregate the plan names: for the active-student meter, the BR-FIN-017 count computed from the month's daily facts; for every other headcount meter, the maximum daily value; and for event meters, the sum.
 
 **Examples.**
 
-- Given daily active-student counts of 1,240 on 1 to 27 October 2026 and 1,252 on 28 to 31 October 2026, when the October headcount meter is aggregated, then it is the maximum, 1,252.
+- Given daily active-student facts of 1,240 on 1 to 27 October 2026 and 1,252 on 28 to 31 October 2026, the 12 new students enrolled on 28 October, when the October active-student meter is aggregated, then it is the BR-FIN-017 count, 1,241.55, not the maximum 1,252.
 - Given SMS segment counts of 400, 350 and 610 on three days of October 2026 and none on the other days, when the October SMS meter is aggregated, then it is the sum, 1,360.
-- Given a back-dated correction on 2026-11-03 changing the 28 October count to 1,248, when the meter is recomputed, then the 28 October fact is superseded by a corrected fact, the October headcount becomes 1,248 and the correction is audited.
+- Given a back-dated correction on 2026-11-03 showing that 8, not 12, students enrolled on 28 October, when the meter is recomputed, then the 28 October facts are superseded by corrected facts, the October active-student count becomes 1,240 + 8 × 4 ÷ 31 = 1,241.03, and the correction is audited.
 
 **Edge cases.**
 
 - A daily fact is never updated in place; a correction writes a new fact that supersedes the old one, so the billing history is reproducible.
 - A day with no data is a zero fact, not a missing fact, so a gap in the job's execution is visible rather than silently ignored.
-- The headcount meter must reconcile with the Finance figure in BR-FIN-017; a mismatch fails the nightly reconciliation and blocks invoicing until it is explained.
+- The active-student meter and BR-FIN-017 are one computation, owned by Platform (ADR-0027); a month whose daily facts do not reproduce the count fails the nightly reconciliation and blocks invoicing until it is explained.
 
 ### BR-PLT-006 Tenant export completeness
 

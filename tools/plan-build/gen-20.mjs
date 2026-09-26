@@ -55,16 +55,34 @@ for (const f of readdirSync(K + 'docs/plan/06-services').filter((x) => x.endsWit
     for (const req of l.match(/REQ-[A-Z0-9]+-\d{3}/g) || []) for (const tc of tcs.slice(0, 1)) addTest(req, tc);
   }
 }
-// A requirement whose acceptance is a Given/When/Then line and that no test plan
-// names yet gets its derived acceptance test: TC-<AREA>-(950 + requirement number).
+// A requirement's derived acceptance test is TC-<AREA>-(950 + requirement number). It is
+// assigned when no source names a test for the requirement, and also when another plan
+// document already cites that identifier (a derived test named beside a sheet's test), so
+// this document and the registry (gen-tc-registry.mjs) count the same derived tests: an
+// identifier in the 950 to 999 range cited outside the history documents (30 and
+// docs/project) and outside this document and the annex.
+const own = testCaseOwnership(buildContext(K));
+const TC_HISTORY = /^docs\/(project\/|plan\/30-)/;
+const SELF = /^docs\/plan\/(20-|16-annex-)/;
+const citedElsewhere = new Set();
+for (const [id, list] of own.cites) {
+  if (!own.derivedReq(id)) continue;
+  if (list.some((c) => !TC_HISTORY.test(c.file) && !SELF.test(c.file))) citedElsewhere.add(id);
+}
+const fromSources = reqs.filter((r) => reqTests.has(r.id)).length;
 let derived = 0;
+let derivedBeside = 0;
+const derivedOnly = [];
 for (const r of reqs) {
-  if (reqTests.has(r.id)) continue;
   const [, area, num] = r.id.split('-');
   const n = Number(num);
+  const id = 'TC-' + area + '-' + (950 + n);
+  const sourced = reqTests.has(r.id);
+  if (sourced && !citedElsewhere.has(id)) continue;
   if (n > 49) throw new Error(r.id + ' exceeds the derived range; extend the rule');
-  addTest(r.id, 'TC-' + area + '-' + (950 + n));
+  addTest(r.id, id);
   derived++;
+  if (sourced) derivedBeside++; else derivedOnly.push([r.id, id]);
 }
 
 // ---- plan document and phase per requirement ----------------------------------------
@@ -73,7 +91,6 @@ const areaDoc = { SEC: '12', PRV: '12, 27', PERF: '21', L10N: '24', UX: '14', WE
 const svcPhase = { Gateway: '1', 'Bff.Web': '1', 'Bff.Mobile': '2', Identity: '1', Platform: '1', School: '2', Admissions: '4', Academics: '2', Assessment: '2', Scheduling: '2', Attendance: '2', Finance: '3', Communication: '3', Notification: '1', Requests: '3', Documents: '3', Behavior: '4', Reporting: '4', Audit: '1', Wellbeing: '5', Hr: '5', Operations: '5', Ai: '5' };
 // The Platform column names the runners or devices the requirement's tests name in
 // their definitions; otherwise the area's default, from document 33's runner matrix.
-const own = testCaseOwnership(buildContext(K));
 const RUNNERS = [['ubuntu-latest', /ubuntu-latest/i], ['windows-latest', /windows-latest/i], ['macos-latest', /macos-latest/i], ['Android', /\bAndroid\b/], ['iOS', /\biOS\b/], ['Chromium', /Chromium/], ['Firefox', /Firefox/], ['WebKit', /WebKit/], ['device farm', /device (farm|pass)/i]];
 // Requirements whose tests run on something other than a CI runner: the platform is
 // named from document 33, because their test definitions name none the pattern finds.
@@ -132,12 +149,12 @@ p('| Requirements | ' + reqs.length + ' |');
 p('| Requirements built by at least one slice | ' + (reqs.length - noSlice) + ' |');
 p('| Requirements satisfied by a gate named in document 34 rather than a slice | ' + noSlice + ' |');
 p('| Requirements with a test identifier | ' + reqs.length + ' |');
-p('| Of which the identifier comes from document 03 or a service sheet\'s test plan | ' + (reqs.length - derived) + ' |');
-p('| Of which the identifier is a derived acceptance test (Section 2) | ' + derived + ' |');
+p('| Of which an identifier comes from document 03 or a service sheet\'s test plan | ' + fromSources + ' |');
+p('| Of which an identifier is a derived acceptance test (Section 2) | ' + derived + (derivedBeside ? ', ' + derivedBeside + ' of them beside a test from a test plan, because another document already cites the derived test' : '') + ' |');
 p();
 p('### 2. Derived acceptance tests');
 p();
-p('Every requirement in document 03 has an acceptance criterion: either an existing test identifier or a Given, When, Then line with a concrete number. Where it is the latter and no service sheet\'s test plan names a test for it yet, the requirement\'s acceptance test takes the identifier **`TC-<AREA>-(950 + requirement number)`**, so the acceptance test of REQ-ATT-014 is TC-ATT-964, specified by that requirement\'s Given, When, Then line. No other test in the kit uses the 950 to 999 range, and no area has more than 49 requirements, so the rule is collision-free. When the slice that builds the requirement writes the test, it uses this identifier and the matrix stays true without an edit.');
+p('Every requirement in document 03 has an acceptance criterion: either an existing test identifier or a Given, When, Then line with a concrete number. Where it is the latter and no service sheet\'s test plan names a test for it yet, the requirement\'s acceptance test takes the identifier **`TC-<AREA>-(950 + requirement number)`**, so the acceptance test of ' + derivedOnly[0][0] + ' is ' + derivedOnly[0][1] + ', specified by that requirement\'s Given, When, Then line. A requirement that has a test from a test plan also carries its derived test when another plan document already cites that derived identifier, so a cited derived test always has a slice that writes it; the registry in `16-annex-test-case-registry.md` counts the same derived tests. No other test in the kit uses the 950 to 999 range, and no area has more than 49 requirements, so the rule is collision-free. When the slice that builds the requirement writes the test, it uses this identifier and the matrix stays true without an edit.');
 p();
 p('### 3. Columns');
 p();
@@ -185,6 +202,7 @@ p('## Review record');
 p();
 p('| Date | Reviewer | Result |');
 p('|---|---|---|');
+p('| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a requirement with a test from a test plan also carries its derived test when another plan document cites it (REQ-MOB-038 carries TC-MOB-988), so this document and the registry count the same derived tests; the Section 2 example names a requirement whose acceptance test is its derived test |');
 p('| ' + new Date().toISOString().slice(0, 10) + ' | Generated | ' + reqs.length + ' requirements, every one mapped to a test |');
 p();
 p('## How this document is verified');
@@ -197,4 +215,4 @@ p('| No test cell is empty | The generator assigns a derived acceptance test to 
 p('| The matrix is current | Kit-lint rule R23 reruns `gen-20.mjs --check` and fails when the matrix differs from what documents 03, 17, 31, 34 and the sheets produce today |');
 p();
 writeGenerated(K + 'docs/plan/20-traceability-matrix.md', L.join('\n'));
-console.log('requirements ' + reqs.length + ', built by slices ' + (reqs.length - noSlice) + ', gates ' + noSlice + ', tests from sources ' + (reqs.length - derived) + ', derived ' + derived);
+console.log('requirements ' + reqs.length + ', built by slices ' + (reqs.length - noSlice) + ', gates ' + noSlice + ', tests from sources ' + fromSources + ', derived ' + derived);

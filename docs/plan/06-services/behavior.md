@@ -189,6 +189,8 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 
 **`portfolio_items`**: `student_id uuid`, `academic_year_id uuid`, `kind smallint` (`Badge`, `Award`, `Certificate`, `HousePoints`, `SelectedWork`), `source_id uuid`, `file_id uuid null` (selected work stored in Documents), `caption LocalizedText null`, `visible boolean`, `position int`. The portfolio export asks Documents for a compiled book (`06-services/documents.md`, school memory) with these items.
 
+**`portfolio_exports`**: one row per export request, so the compiled book has a column to land in. `student_id uuid`, `format smallint` (`Pdf`, `Zip`), `requested_by uuid`, `requested_at timestamptz`, `generated_document_id uuid null` (the book from Documents; the id the export link opens), `status smallint` (`Requested`, `Generated`, `Failed`). The row's `id` is the `subjectId` of the `GenerateDocument` that asks for the book, as `awards.id` is for a certificate (section 6.1).
+
 ### 3.7 Reference copies (read-only)
 
 `ref_students`, `ref_sections`, `ref_staff_users` and `ref_houses` are described in section 8. They carry `tenant_id`, `source_version` and `reconciled_at`, no audit columns beyond `updated_at`, no soft delete and no `xmin`.
@@ -214,6 +216,7 @@ erDiagram
     BADGE_AWARD ||--o| OPEN_BADGE_CREDENTIAL : exported_as
     REF_STUDENT ||--o{ AWARD : receives
     REF_STUDENT ||--o{ PORTFOLIO_ITEM : collects
+    REF_STUDENT ||--o{ PORTFOLIO_EXPORT : exports
     REF_SECTION ||--o{ REF_STUDENT : contains
 ```
 
@@ -284,11 +287,11 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 | PUT | `/api/v1/behavior/badges/{id}` | `behavior.badges.edit` | model, `If-Match` | 200 | `BEHAVIOR_CONCURRENCY_CONFLICT` | Yes, by `If-Match` |
 | POST | `/api/v1/behavior/badges/{id}/awards` | `behavior.badges.award` | `{ studentIds[], evidenceNote }` | 201 awards; publishes `behavior.badge.awarded.v1` per student | `BEHAVIOR_BADGE_ALREADY_AWARDED` (200), `BEHAVIOR_STUDENT_NOT_IN_SCOPE` | Yes, by `(badge, student)` |
 | POST | `/api/v1/behavior/badge-awards/{id}/open-badge` | `behavior.badges.export-open-badge` | none | 200 the signed Open Badges 3.0 credential (JSON), hashed recipient | `BEHAVIOR_OPEN_BADGE_ISSUANCE_FAILED` (502), `BEHAVIOR_VALIDATION_FAILED` (consent missing) | Yes; the same credential is returned once issued |
-| POST | `/api/v1/behavior/awards` | `behavior.badges.award` | `{ studentIds[], awardCode, termId, title }` | 201; `GenerateDocument` per student for the certificate (REQ-BEH-007) | `BEHAVIOR_STUDENT_NOT_IN_SCOPE` | Yes, Key required |
+| POST | `/api/v1/behavior/awards` | `behavior.badges.award` | `{ studentIds[], awardCode, termId, title }` | 201; `GenerateDocument` per student for the certificate, `subjectId` the new `awards.id` (REQ-BEH-007) | `BEHAVIOR_STUDENT_NOT_IN_SCOPE` | Yes, Key required |
 | GET | `/api/v1/behavior/students/{id}/recognition` | `behavior.points.view` (`own-children`, `self` for families) | none | Points this term, house, badges, awards (hot query 5) | none beyond K.1 | Safe; `ETag` |
 | GET | `/api/v1/behavior/students/{id}/portfolio` | `behavior.badges.view` (`own-children`, `self`) | none | Portfolio items across years (Tier 2, TC-BEH-601) | none beyond K.1 | Safe |
 | PUT | `/api/v1/behavior/students/{id}/portfolio` | `behavior.badges.edit` (staff) or the student for `visible` and `position` of own items (Open point 5) | items order and visibility, selected-work file ids | 200 | `BEHAVIOR_CONCURRENCY_CONFLICT` | Yes, by `If-Match` |
-| POST | `/api/v1/behavior/students/{id}/portfolio/export` | `behavior.badges.view` (`own-children`, `self`); Open point 5 | `{ format: pdf \| zip }` | 202; Documents compiles the book | none beyond K.1 | Yes, Key required |
+| POST | `/api/v1/behavior/students/{id}/portfolio/export` | `behavior.badges.view` (`own-children`, `self`); Open point 5 | `{ format: pdf \| zip }` | 202; writes a `portfolio_exports` row and sends `GenerateDocument` with that row's id as `subjectId`; Documents compiles the book | none beyond K.1 | Yes, Key required |
 
 ### 4.6 Students and analytics (`StudentEndpoints.cs`, `AnalyticsEndpoints.cs`)
 
@@ -329,7 +332,7 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 | `behavior.audit.recorded.v1` | `tenantId` | Every write, every transition, every narrative read, every restricted-flag change | Audit |
 | `behavior.usage.recorded.v1` | `tenantId` | `BehaviorUsageMeterJob`: incidents, point entries, badges | Platform |
 
-Behavior sends `GenerateDocument` to Documents for award certificates and portfolio books on `nibras.behavior`, which document 11 §2.5 binds into `documents.commands` (Open point 8, closed); the reply `documents.document.generated.v1` comes back on `behavior.events` (section 6.2). It sends `RequestNotification` on `nibras.behavior`, which document 11 §2.5 binds into `notification.commands`, for the reviewer's task, the plan review reminder and the correction notice after a dismissal, which Appendix C does not list (Open point 9).
+Behavior sends `GenerateDocument` to Documents for award certificates and portfolio books on `nibras.behavior`, which document 11 §2.5 binds into `documents.commands` (Open point 8, closed); the reply `documents.document.generated.v1` comes back on `behavior.events` (section 6.2). The command's `subjectId` is the row the document is for: the `awards.id` for a certificate (one command per student award), the `portfolio_exports.id` for a portfolio book (section 3.6). The reply carries the same `subjectId`, which is how the consumer finds the row to update. It sends `RequestNotification` on `nibras.behavior`, which document 11 §2.5 binds into `notification.commands`, for the reviewer's task, the plan review reminder and the correction notice after a dismissal, which Appendix C does not list (Open point 9).
 
 ### 6.2 Consumed
 
@@ -349,7 +352,7 @@ Queues are those of `11-messaging-architecture.md` §2.5 and §2.3 for Behavior:
 | `platform.plan.changed.v1`, `platform.feature-flag.changed.v1`, `platform.terminology.changed.v1`, `platform.custom-field.changed.v1` | `behavior.tenant-lifecycle` | `PlatformContextConsumer` | Tenant context, the Open Badges and portfolio flags | `tenantId` plus `occurredAt` |
 | `identity.role.changed.v1`, `identity.permissions.changed.v1` | `behavior.tenant-lifecycle` | building-block permission cache | Evicts the permission cache | `permissionVersion` |
 | `reporting.data-quality.issue-detected.v1` | `behavior.tenant-lifecycle` | `DataQualityIssueConsumer` | Acts only on Behavior entity types (for example a category with no points) | `ruleCode` plus `occurredAt` |
-| `documents.document.generated.v1` | `behavior.events` (document 11 §2.5) | `DocumentGeneratedConsumer` | Writes `documentId` on the award or portfolio book the request was made for: for an award, `awards.generated_document_id`, with `certificate_status` set to `Generated` (REQ-BEH-007, TC-BEH-316); for a portfolio book, the id the export link opens. A `subjectId` Behavior does not own is ignored | `documentId` |
+| `documents.document.generated.v1` | `behavior.events` (document 11 §2.5) | `DocumentGeneratedConsumer` | Finds the row by the payload's `subjectId`, which is the `awards.id` or `portfolio_exports.id` the `GenerateDocument` carried (section 6.1), and writes `documentId` on it: for an award, `awards.generated_document_id`, with `certificate_status` set to `Generated` (REQ-BEH-007, TC-BEH-316); for a portfolio book, `portfolio_exports.generated_document_id`, the id the export link opens, with `status` set to `Generated` (REQ-BEH-008, TC-BEH-345). A `subjectId` Behavior does not own is ignored (TC-BEH-345); a second delivery changes nothing (TC-BEH-346) | `documentId` |
 | `DeprovisionTenant`, `DeleteTenantData` and the Saga 10 commands | `behavior.commands` | `Features/TenantLifecycle/` | Tenant lifecycle | `(sagaId, stepKey)` |
 
 ---
@@ -570,6 +573,7 @@ src/Services/Behavior/                                                Behavior a
 │   │   ├── OpenBadgeCredential.cs                                    signed credential with hashed recipient
 │   │   ├── Award.cs                                                  term award with its certificate
 │   │   ├── PortfolioItem.cs                                          item across years (Tier 2)
+│   │   ├── PortfolioExport.cs                                        one export request and the book's document id
 │   │   └── Events/                                                   domain events
 │   │       └── BadgeAwarded.cs                                       becomes behavior.badge.awarded.v1
 │   ├── References/                                                   read-only copies
@@ -650,7 +654,7 @@ src/Services/Behavior/                                                Behavior a
 │   │   │   ├── GetRecognitionQuery.cs                                record: student id
 │   │   │   ├── GetRecognitionHandler.cs                              hot query 5
 │   │   │   ├── SavePortfolioHandler.cs                               item order and visibility
-│   │   │   ├── ExportPortfolioHandler.cs                             asks Documents to compile the book
+│   │   │   ├── ExportPortfolioHandler.cs                             portfolio_exports row, then asks Documents to compile the book
 │   │   │   ├── StudentRecognitionValidator.cs                        student in scope
 │   │   │   └── StudentRecognitionEndpoints.cs                        /students/{id}/recognition and /portfolio routes
 │   │   ├── StudentIncidents/                                         one student's incidents
@@ -680,7 +684,7 @@ src/Services/Behavior/                                                Behavior a
 │   │   ├── SettingsChangedConsumer.cs                                platform.settings.changed.v1 for scope behavior
 │   │   ├── PlatformContextConsumer.cs                                plan, flags, terminology, custom fields
 │   │   ├── DataQualityIssueConsumer.cs                               reporting.data-quality.issue-detected.v1 for Behavior types
-│   │   └── DocumentGeneratedConsumer.cs                              documents.document.generated.v1 from behavior.events; stores the certificate id
+│   │   └── DocumentGeneratedConsumer.cs                              documents.document.generated.v1 from behavior.events; stores the certificate or book id by subjectId
 │   ├── Sagas/                                                        where a process manager goes; Behavior owns none, so the template does not create this folder here
 │   ├── ReadModels/                                                   response shapes
 │   │   ├── IncidentRow.cs                                            list row without narrative
@@ -714,7 +718,7 @@ src/Services/Behavior/                                                Behavior a
 │   │   │   ├── ConsequenceConfiguration.cs                           consequences, detention_sessions
 │   │   │   ├── PlanConfiguration.cs                                  behavior_plans, plan_reviews
 │   │   │   ├── PointConfiguration.cs                                 point_entries (list partition), term_point_totals, daily_award_counters
-│   │   │   ├── RecognitionConfiguration.cs                           badges, badge_awards, open_badge_credentials, awards, portfolio_items
+│   │   │   ├── RecognitionConfiguration.cs                           badges, badge_awards, open_badge_credentials, awards, portfolio_items, portfolio_exports
 │   │   │   └── ReferenceConfigurations.cs                            ref_students, ref_sections, ref_staff_users, ref_houses
 │   │   ├── Migrations/                                               expand-and-contract migrations, never at startup
 │   │   │   ├── 20260901000000_Initial.cs                             first schema with row-level security and the first year partition
@@ -848,6 +852,8 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 | TC-BEH-342 | Contract | Every V1 record in `Nibras.Contracts.Behavior` matches its schema; Pact provider verification for Bff.Web and Bff.Mobile |
 | TC-BEH-343 | Integration | Dismissing an incident after the guardian was notified sends a correction and publishes the negative points entry once |
 | TC-BEH-344 | Integration | Portfolio export when the student leaves produces one book through Documents with every visible item (REQ-BEH-008) |
+| TC-BEH-345 | Integration | `POST /api/v1/behavior/students/{id}/portfolio/export` writes one `portfolio_exports` row and sends one `GenerateDocument` whose `subjectId` is that row's id; the matching `documents.document.generated.v1` sets `generated_document_id` and `status = Generated` on that row only; a reply whose `subjectId` is no Behavior award or export is acknowledged and changes nothing (REQ-BEH-008) |
+| TC-BEH-346 | Integration | `DocumentGeneratedConsumer` delivered twice, once for an award and once for a portfolio export: each row is written once, the inbox holds one entry per message, and `certificate_status` and `status` stay `Generated` |
 | TC-BEH-760 | Unit, property | Point balances, term totals, the consequence ladder's window count and the review deadline across the campus work week give the same result with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn; `+5` and `-2` stay `+3` under each, and every stored or published value uses the invariant culture (REQ-PLAT-019) |
 | TC-BEH-761 | Integration | A guardian notice for a decided incident is requested in the guardian's preferred language (as `TC-BEH-003` (Appendix R) requires) with the category name taken from the category's own name in that language, and an Open Badges 3.0 credential for a badge with an Arabic name keeps that name intact in UTF-8 and still validates |
 
@@ -934,6 +940,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | `documents.document.generated.v1` consumer on `behavior.events` added to section 6.2 and the tree; open point 8 closed against document 11; section 6.1 names the `documents.commands` and `notification.commands` bindings; the no-Google row of section 14.1 cites `TC-MOB-988` instead of the font-shaping test `TC-PLAT-009`. Earlier remediation rounds added no row here. Awaiting Group C re-review |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Section 3.6 adds `portfolio_exports`, whose `generated_document_id` holds the portfolio book's id (the ER diagram and tree follow); sections 4.5, 6.1 and 6.2 state that the `GenerateDocument` `subjectId` is the `awards.id` or `portfolio_exports.id` and that the consumer finds the row by it; section 14 defines TC-BEH-345 (portfolio path, unknown `subjectId` ignored) and TC-BEH-346 (deliver-twice), cited from section 6.2. Awaiting Group C re-review |
 
 ## How this document is verified
 

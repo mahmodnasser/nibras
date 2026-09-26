@@ -13,6 +13,7 @@ The scripts that generated and validate the plan documents that are not written 
 | `gen-tc-registry.mjs` | `docs/plan/16-annex-test-case-registry.md`: every test case, its one owner, what it proves, who cites it (ADR-0020) | `node tools/plan-build/gen-tc-registry.mjs` |
 | `rescore-workflow.js` | The reviewer workflow of a scorecard round (Workflow tool script), writing `parts/score-<group>.md` | run through the Workflow tool |
 | `tc-worklist.mjs` | Per-document work lists for kit-lint R20 findings, in `parts/tc-work/` | `node tools/plan-build/tc-worklist.mjs --write` |
+| `capacity-28.mjs` | Nothing: `TC-PERF-800`, it recomputes every figure of parts 2.5, 2.8, 4.3 to 4.5 and 5 of `docs/plan/28-capacity-and-cost-model.md` from the inputs that document states and exits 1 on a mismatch | `node tools/plan-build/capacity-28.mjs` (`--verbose` lists every figure); `capacity-28.ps1`, `capacity-28.sh` |
 | `gen-20.mjs` | `docs/plan/20-traceability-matrix.md` from 03, 17, 31, 34 and the sheets | `node tools/plan-build/gen-20.mjs`, once document 34 is complete |
 
 `wb-prompt.md` is the writer prompt for one work-breakdown part; `parts/wb-scope-<part>.md` is that part's requirement list. `parts/brief-findings.md` logs the brief defects found while planning, to be applied under ADR-0019.

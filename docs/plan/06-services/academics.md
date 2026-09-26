@@ -619,7 +619,7 @@ The kindergarten daily sheet (section 5.10) has no Appendix B resource. Its rout
 
 ## 12. Caching and hot queries
 
-The caching map is `21-performance-engineering.md` section 1.5 (teaching assignments per staff member, curriculum per subject and grade, upcoming assignments per section, homework load per section and day, reference copies) and the hot queries are section 3.5 (seven queries, `ix_teaching_assignments_staff` to `ux_attempts_open`, submissions list-partitioned by academic year). Additions:
+The caching map is `21-performance-engineering.md` section 1.5 (teaching assignments per staff member, curriculum per subject and grade, upcoming assignments per section, homework load per section and day, reference copies) and the hot queries are section 3.5 (eight queries: 1 to 7 with `ix_teaching_assignments_staff` to `ux_attempts_open`, submissions list-partitioned by academic year, and 10, the kindergarten daily-sheet class view of section 5.10 with `ix_daily_sheets_section_date` and `ix_daily_sheet_entries_sheet`, never cached). Numbers 8 and 9 are the job queries below. Additions:
 
 | Addition | Detail |
 |---|---|
@@ -1035,6 +1035,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | Round 4 added the `DailySheet` aggregate (section 4.11), its routes (section 5.10), `DailySheetSendJob` and folders, and re-scored open point 1 to 3 x 3, without adding a row; this row records it. Round 5: open point 1 now cites Open Question 31, which carries the daily-sheet Appendix B and C amendment in `docs/project/OPEN_QUESTIONS.md` and document 01 with the same score. Awaiting Group C re-review |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Section 12 counts eight hot queries in document 21 §3.5 and names query 10 (the daily-sheet class view) with `ix_daily_sheets_section_date` and `ix_daily_sheet_entries_sheet`, as document 21 now lists them. Awaiting Group C re-review |
 
 ## How this document is verified
 

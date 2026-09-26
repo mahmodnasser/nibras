@@ -26,12 +26,12 @@ Saga designs for the multi-service workflows are in `13-workflows-and-sagas.md`.
 | Attendance | 11 | 2 | 2 |
 | Behavior | 0 | 1 | 4 |
 | Documents | 0 | 2 | 3 |
-| Finance | 20 | 6 | 3 |
+| Finance | 18 | 6 | 3 |
 | Hr | 0 | 4 | 5 |
 | Identity | 9 | 9 | 1 |
 | Notification | 7 | 0 | 1 |
 | Operations | 0 | 5 | 5 |
-| Platform | 9 | 7 | 1 |
+| Platform | 11 | 7 | 1 |
 | Requests | 6 | 1 | 3 |
 | Scheduling | 8 | 0 | 2 |
 | School | 1 | 4 | 2 |
@@ -60,13 +60,13 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `BR-ASM-012` | Promotion eligibility | Assessment | `PromotionEligibilityRulesTests` | `Nibras.Assessment.Domain.Rules.PromotionEligibilityRule` | Academic → pass marks, promotion rules | yes | 2 |
 | `BR-ASM-013` | Honors thresholds | Assessment | `HonorsThresholdRulesTests` | `Nibras.Assessment.Domain.Rules.HonorsThresholdRule` | Academic → promotion rules | yes | 2 |
 | `BR-ASM-014` | Grade change after lock creates a new version | Assessment | `GradeChangeAfterLockRulesTests` | `Nibras.Assessment.Domain.Rules.GradeChangeAfterLockRule` | Academic → publish windows | no | 2 |
-| `BR-ATT-001` | Daily versus per-period derivation | Attendance | `AttendanceDerivationRulesTests` | `Nibras.Attendance.Domain.Rules.AttendanceDerivationRule` | Attendance → mode, codes | no | 2 |
+| `BR-ATT-001` | Daily versus per-period derivation | Attendance | `AttendanceDerivationRulesTests` | `Nibras.Attendance.Domain.Rules.AttendanceDerivationRule` | Attendance → mode, codes | yes | 2 |
 | `BR-ATT-002` | Attendance lock window | Attendance | `AttendanceLockWindowRulesTests` | `Nibras.Attendance.Domain.Rules.AttendanceLockWindowRule` | Attendance → lock window | no | 2 |
 | `BR-ATT-003` | Approved leave pre-fills excused | Attendance | `ApprovedLeaveExcuseRulesTests` | `Nibras.Attendance.Domain.Rules.ApprovedLeaveExcuseRule` | Attendance → excuse rules, codes | no | 2 |
 | `BR-ATT-004` | Late converts to absent | Attendance | `LateToAbsentRulesTests` | `Nibras.Attendance.Domain.Rules.LateToAbsentRule` | Attendance → cut-off times, codes | no | 2 |
-| `BR-ATT-005` | Late accumulation adds a derived absence | Attendance | `LateAccumulationRulesTests` | `Nibras.Attendance.Domain.Rules.LateAccumulationRule` | Attendance → thresholds and ladder | no | 2 |
-| `BR-ATT-006` | Consecutive absence threshold | Attendance | `ConsecutiveAbsenceRulesTests` | `Nibras.Attendance.Domain.Rules.ConsecutiveAbsenceRule` | Attendance → thresholds and ladder | no | 2 |
-| `BR-ATT-007` | Cumulative absence ladder | Attendance | `CumulativeAbsenceLadderRulesTests` | `Nibras.Attendance.Domain.Rules.CumulativeAbsenceLadderRule` | Attendance → thresholds and ladder | no | 2 |
+| `BR-ATT-005` | Late accumulation adds a derived absence | Attendance | `LateAccumulationRulesTests` | `Nibras.Attendance.Domain.Rules.LateAccumulationRule` | Attendance → thresholds and ladder | yes | 2 |
+| `BR-ATT-006` | Consecutive absence threshold | Attendance | `ConsecutiveAbsenceRulesTests` | `Nibras.Attendance.Domain.Rules.ConsecutiveAbsenceRule` | Attendance → thresholds and ladder | yes | 2 |
+| `BR-ATT-007` | Cumulative absence ladder | Attendance | `CumulativeAbsenceLadderRulesTests` | `Nibras.Attendance.Domain.Rules.CumulativeAbsenceLadderRule` | Attendance → thresholds and ladder | yes | 2 |
 | `BR-ATT-008` | Attendance percentage denominator | Attendance | `AttendancePercentageRulesTests` | `Nibras.Attendance.Domain.Rules.AttendancePercentageRule` | Attendance → excuse rules | yes | 2 |
 | `BR-ATT-009` | Mid-term section move splits the record | Attendance | `SectionMoveAttendanceRulesTests` | `Nibras.Attendance.Domain.Rules.SectionMoveAttendanceRule` | none | no | 2 |
 | `BR-ATT-010` | Offline mark arriving after the lock window | Attendance | `OfflineAttendanceSyncRulesTests` | `Nibras.Attendance.Domain.Rules.OfflineAttendanceSyncRule` | Attendance → lock window | no | 2 |
@@ -81,26 +81,26 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `BR-FIN-008` | Payment allocation order | Finance | `PaymentAllocationRulesTests` | `Nibras.Finance.Domain.Rules.PaymentAllocationRule` | Finance → allocation order | yes | 3 |
 | `BR-FIN-009` | Overpayment becomes credit | Finance | `OverpaymentCreditRulesTests` | `Nibras.Finance.Domain.Rules.OverpaymentCreditRule` | Finance → allocation order | yes | 3 |
 | `BR-FIN-010` | Refund from credit versus from payment | Finance | `RefundSourceRulesTests` | `Nibras.Finance.Domain.Rules.RefundSourceRule` | Finance → payment methods | yes | 3 |
-| `BR-FIN-011` | Rounding per currency | Finance | `CurrencyRoundingRulesTests` | `Nibras.Finance.Domain.Rules.CurrencyRoundingRule` | General → currency | yes | 1 |
+| `BR-FIN-011` | Rounding per currency | Finance | `CurrencyRoundingRulesTests` | `Nibras.Finance.Domain.Rules.CurrencyRoundingRule` | General → currency | yes | 1 (owner 3, note below) |
 | `BR-FIN-012` | Tax inclusive versus exclusive per item | Finance | `TaxInclusiveExclusiveRulesTests` | `Nibras.Finance.Domain.Rules.TaxInclusiveExclusiveRule` | Finance → tax | yes | 3 |
 | `BR-FIN-013` | Gapless numbering per series under concurrency | Finance | `GaplessNumberingRulesTests` | `Nibras.Finance.Domain.Rules.GaplessNumberingRule` | Finance → numbering series | no | 3 |
 | `BR-FIN-014` | Posted documents are immutable | Finance | `PostedDocumentImmutabilityRulesTests` | `Nibras.Finance.Domain.Rules.PostedDocumentImmutabilityRule` | none | yes | 3 |
 | `BR-FIN-015` | Cheque bounce reversal and fee | Finance | `ChequeBounceRulesTests` | `Nibras.Finance.Domain.Rules.ChequeBounceRule` | Finance → payment methods, late fee rules | yes | 3 |
 | `BR-FIN-016` | Service restriction rules | Finance | `ServiceRestrictionRulesTests` | `Nibras.Finance.Domain.Rules.ServiceRestrictionRule` | Finance → restriction rules | yes | 3 |
-| `BR-FIN-017` | Active student definition for SaaS billing (**contested**: in conflict with master brief Section 36 and REQ-PLT-009, which bill a tenant by the students enrolled on the billing date, prorated by day, pending Open Question 30 (RISK-52)) | Finance | `ActiveStudentCountRulesTests` | `Nibras.Finance.Domain.Rules.ActiveStudentCountRule` | none | no | 1 |
-| `BR-FIN-018` | Proration on a plan change | Finance | `PlanChangeProrationRulesTests` | `Nibras.Finance.Domain.Rules.PlanChangeProrationRule` | none | yes | 1 |
+| `BR-FIN-017` | Active student definition for SaaS billing | Platform | `ActiveStudentCountRulesTests` | `Nibras.Platform.Domain.Rules.ActiveStudentCountRule` | none | yes | 1 |
+| `BR-FIN-018` | Proration on a plan change | Platform | `PlanChangeProrationRulesTests` | `Nibras.Platform.Domain.Rules.PlanChangeProrationRule` | none | yes | 1 |
 | `BR-FIN-019` | Split payers by percentage | Finance | `SplitPayerRulesTests` | `Nibras.Finance.Domain.Rules.SplitPayerRule` | General → currency | yes | 3 |
 | `BR-SCD-001` | Hard versus soft constraints | Scheduling | `TimetableConstraintRulesTests` | `Nibras.Scheduling.Domain.Rules.TimetableConstraintRule` | none | yes | 2 |
-| `BR-SCD-002` | Consecutive-period limit | Scheduling | `ConsecutivePeriodRulesTests` | `Nibras.Scheduling.Domain.Rules.ConsecutivePeriodRule` | General → work week | no | 2 |
-| `BR-SCD-003` | Part-time availability and weekly load | Scheduling | `PartTimeAvailabilityRulesTests` | `Nibras.Scheduling.Domain.Rules.PartTimeAvailabilityRule` | none | no | 2 |
-| `BR-SCD-004` | Travel time between campuses | Scheduling | `CampusTravelTimeRulesTests` | `Nibras.Scheduling.Domain.Rules.CampusTravelTimeRule` | none | no | 2 |
+| `BR-SCD-002` | Consecutive-period limit | Scheduling | `ConsecutivePeriodRulesTests` | `Nibras.Scheduling.Domain.Rules.ConsecutivePeriodRule` | General → work week | yes | 2 |
+| `BR-SCD-003` | Part-time availability and weekly load | Scheduling | `PartTimeAvailabilityRulesTests` | `Nibras.Scheduling.Domain.Rules.PartTimeAvailabilityRule` | none | yes | 2 |
+| `BR-SCD-004` | Travel time between campuses | Scheduling | `CampusTravelTimeRulesTests` | `Nibras.Scheduling.Domain.Rules.CampusTravelTimeRule` | none | yes | 2 |
 | `BR-SCD-005` | Cover fairness score | Scheduling | `CoverFairnessRulesTests` | `Nibras.Scheduling.Domain.Rules.CoverFairnessRule` | none | yes | 2 |
 | `BR-SCD-006` | Publishing does not alter recorded attendance | Scheduling | `TimetablePublishEffectiveDateRulesTests` | `Nibras.Scheduling.Domain.Rules.TimetablePublishEffectiveDateRule` | Attendance → lock window | no | 2 |
-| `BR-SCD-007` | Room booking holds and buffers | Scheduling | `RoomBookingRulesTests` | `Nibras.Scheduling.Domain.Rules.RoomBookingRule` | none | no | 2 |
-| `BR-ADM-001` | Age eligibility by cut-off date | Admissions | `AgeEligibilityRulesTests` | `Nibras.Admissions.Domain.Rules.AgeEligibilityRule` | General → calendars | no | 4 |
+| `BR-SCD-007` | Room booking holds and buffers | Scheduling | `RoomBookingRulesTests` | `Nibras.Scheduling.Domain.Rules.RoomBookingRule` | none | yes | 2 |
+| `BR-ADM-001` | Age eligibility by cut-off date | Admissions | `AgeEligibilityRulesTests` | `Nibras.Admissions.Domain.Rules.AgeEligibilityRule` | General → calendars | yes | 4 |
 | `BR-ADM-002` | Required documents by grade and nationality | Admissions | `RequiredDocumentRulesTests` | `Nibras.Admissions.Domain.Rules.RequiredDocumentRule` | none | no | 4 |
-| `BR-ADM-003` | Seat capacity and override | Admissions | `SeatCapacityRulesTests` | `Nibras.Admissions.Domain.Rules.SeatCapacityRule` | none | no | 4 |
-| `BR-ADM-004` | Offer expiry | Admissions | `OfferExpiryRulesTests` | `Nibras.Admissions.Domain.Rules.OfferExpiryRule` | General → time zone | no | 4 |
+| `BR-ADM-003` | Seat capacity and override | Admissions | `SeatCapacityRulesTests` | `Nibras.Admissions.Domain.Rules.SeatCapacityRule` | none | yes | 4 |
+| `BR-ADM-004` | Offer expiry | Admissions | `OfferExpiryRulesTests` | `Nibras.Admissions.Domain.Rules.OfferExpiryRule` | General → time zone | yes | 4 |
 | `BR-ADM-005` | Waiting-list ranking with sibling priority | Admissions | `WaitingListRankingRulesTests` | `Nibras.Admissions.Domain.Rules.WaitingListRankingRule` | none | yes | 4 |
 | `BR-ADM-006` | Duplicate applicant detection | Admissions | `DuplicateApplicantRulesTests` | `Nibras.Admissions.Domain.Rules.DuplicateApplicantRule` | General → languages | no | 4 |
 | `BR-IDN-001` | Permission dependency | Identity | `PermissionDependencyRulesTests` | `Nibras.Identity.Domain.Rules.PermissionDependencyRule` | none | no | 1 |
@@ -119,12 +119,12 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `BR-NOT-005` | SMS credit check before send | Notification | `SmsCreditRulesTests` | `Nibras.Notification.Domain.Rules.SmsCreditRule` | Notifications → SMS credit limits | yes | 1 |
 | `BR-NOT-006` | Preference resolution order | Notification | `PreferenceResolutionRulesTests` | `Nibras.Notification.Domain.Rules.PreferenceResolutionRule` | Notifications → channel availability | no | 1 |
 | `BR-RQS-001` | Approval chain routing by amount | Requests | `AmountRoutingRulesTests` | `Nibras.Requests.Domain.Rules.AmountRoutingRule` | Requests → approval chains | yes | 3 |
-| `BR-RQS-002` | Approval chain routing by duration | Requests | `DurationRoutingRulesTests` | `Nibras.Requests.Domain.Rules.DurationRoutingRule` | Requests → approval chains | no | 3 |
-| `BR-RQS-003` | SLA calendars per campus | Requests | `SlaCalendarRulesTests` | `Nibras.Requests.Domain.Rules.SlaCalendarRule` | Requests → SLAs | no | 3 |
+| `BR-RQS-002` | Approval chain routing by duration | Requests | `DurationRoutingRulesTests` | `Nibras.Requests.Domain.Rules.DurationRoutingRule` | Requests → approval chains | yes | 3 |
+| `BR-RQS-003` | SLA calendars per campus | Requests | `SlaCalendarRulesTests` | `Nibras.Requests.Domain.Rules.SlaCalendarRule` | Requests → SLAs | yes | 3 |
 | `BR-RQS-004` | Auto-approval conditions | Requests | `AutoApprovalRulesTests` | `Nibras.Requests.Domain.Rules.AutoApprovalRule` | Requests → approval chains | yes | 3 |
 | `BR-RQS-005` | Escalation on breach | Requests | `SlaEscalationRulesTests` | `Nibras.Requests.Domain.Rules.SlaEscalationRule` | Requests → SLAs | no | 3 |
 | `BR-RQS-006` | Effect execution and compensation | Requests | `RequestEffectSagaRulesTests` | `Nibras.Requests.Domain.Rules.RequestEffectSagaRule` | Requests → fees | no | 3 |
-| `BR-WEL-001` | Visibility levels | Wellbeing | `WellbeingVisibilityRulesTests` | `Nibras.Wellbeing.Domain.Rules.WellbeingVisibilityRule` | none | yes | 1 |
+| `BR-WEL-001` | Visibility levels | Wellbeing | `WellbeingVisibilityRulesTests` | `Nibras.Wellbeing.Domain.Rules.WellbeingVisibilityRule` | none | no | 1 (owner 5, note below) |
 | `BR-WEL-002` | Break-glass access | Wellbeing | `BreakGlassRulesTests` | `Nibras.Wellbeing.Domain.Rules.BreakGlassRule` | Security → session timeout | no | 5 |
 | `BR-WEL-003` | Events carry no clinical detail | Wellbeing | `WellbeingEventPayloadRulesTests` | `Nibras.Wellbeing.Domain.Rules.WellbeingEventPayloadRule` | none | no | 5 |
 | `BR-WEL-004` | Medication authorization and sending home | Wellbeing | `MedicationAuthorizationRulesTests` | `Nibras.Wellbeing.Domain.Rules.MedicationAuthorizationRule` | none | no | 5 |
@@ -136,15 +136,44 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `BR-PLT-006` | Tenant export completeness | Platform | `TenantExportRulesTests` | `Nibras.Platform.Domain.Rules.TenantExportRule` | Security → export approval rules | no | 1 |
 | `BR-L10N-001` | Arabic search normalization | Platform | `ArabicNormalizationRulesTests` | `Nibras.Platform.Domain.Rules.ArabicNormalizationRule` | General → languages | no | 1 |
 | `BR-L10N-002` | Numeral rendering | Platform | `NumeralRenderingRulesTests` | `Nibras.Platform.Domain.Rules.NumeralRenderingRule` | General → numerals | no | 1 |
-| `BR-L10N-003` | Hijri display, Gregorian source of truth | Scheduling | `HijriDisplayRulesTests` | `Nibras.Scheduling.Domain.Rules.HijriDisplayRule` | General → calendars, time zone | no | 1 |
+| `BR-L10N-003` | Hijri display, Gregorian source of truth | Scheduling | `HijriDisplayRulesTests` | `Nibras.Scheduling.Domain.Rules.HijriDisplayRule` | General → calendars, time zone | yes | 1 (owner 2, note below) |
 | `BR-L10N-004` | Amounts in words in both languages | Finance | `AmountInWordsRulesTests` | `Nibras.Finance.Domain.Rules.AmountInWordsRule` | Finance → receipt layout | yes | 3 |
-| `BR-L10N-005` | Arabic plural forms | Notification | `ArabicPluralRulesTests` | `Nibras.Notification.Domain.Rules.ArabicPluralRule` | Notifications → templates | no | 1 |
+| `BR-L10N-005` | Arabic plural forms | Notification | `ArabicPluralRulesTests` | `Nibras.Notification.Domain.Rules.ArabicPluralRule` | Notifications → templates | yes | 1 |
 | `BR-L10N-006` | Pinned culture on every host | Platform | `CultureInvarianceRulesTests` | `Nibras.Platform.Domain.Rules.CultureInvarianceRule` | none | no | 1 |
-| `BR-L10N-007` | Bilingual names and fallback | School | `BilingualNameRulesTests` | `Nibras.School.Domain.Rules.BilingualNameRule` | General → languages | no | 1 |
+| `BR-L10N-007` | Bilingual names and fallback | School | `BilingualNameRulesTests` | `Nibras.School.Domain.Rules.BilingualNameRule` | General → languages | no | 1 (owner 2, note below) |
 
-**`BR-FIN-017` is contested, not settled.** It is in conflict with master brief Section 36 and REQ-PLT-009, which bill a tenant by the students enrolled on the billing date, prorated by day, pending Open Question 30 (RISK-52). `34-work-breakdown.md` SL-PLT-010 builds the billing-date count as the default in force, and the rule stays in conflict with it until the product owner decides; its test class and mutation target (Section 6) stand for whichever count the decision keeps.
+**Rules whose Phase precedes their owning service.** The Phase column is the earliest `34-work-breakdown.md` slice that names the rule, and for the rows below that slice belongs to another service or to a building block, which applies the rule on its own side ahead of the owner, as the slice describes. The rule class named in the Implementation column, in the owner's Domain project, with its test class and, for Sections 5 and 6, its property-based and mutation tests, is built in the owner's phase, from the slice in the last column. Where the last column reads "none in document 34", no slice of the owning service names the rule, so the rule is built only by the first slice, outside the owner Appendix S gives it; that is a disagreement between Appendix S and document 34, recorded here and in Open points rather than resolved:
 
-**Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification is derived from the rule text and is confirmed or corrected by the business-rules-reviewer agent during Group F review.
+| Rule | Owner, and its build phase in document 05 | First slice naming it, phase and service | Owner's first slice naming it |
+|---|---|---|---|
+| `BR-FIN-011` | Finance, phase 3 | SL-API-003, phase 1, BuildingBlocks | SL-FIN-400, phase 3 |
+| `BR-WEL-001` | Wellbeing, phase 5 | SL-AUD-004, phase 1, Audit | SL-WEL-600, phase 5 |
+| `BR-L10N-003` | Scheduling, phase 2 | SL-L10N-002, phase 1, BuildingBlocks | SL-SCD-216, phase 2 |
+| `BR-L10N-007` | School, phase 2 | SL-DOC-002, phase 1, Documents | SL-SCH-210, phase 2 |
+
+**`BR-FIN-017` is settled.** It is decided by ADR-0027 (Accepted by the product owner on 2026-09-26, Open Question 30, brief v9.7): a tenant is billed on the students enrolled on the billing date, prorated by day from a mid-month enrollment and counted for the month in which they leave, as master brief Section 36 and REQ-PLT-009 state. Platform owns and computes it (`34-work-breakdown.md` SL-PLT-010), Finance does not, and BR-PLT-005's active-student meter is this count; RISK-52 is Closed.
+
+**Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification was first derived from the rule text by a keyword match, and then reviewed rule by rule at remediation round 6 (2026-09-26): all 95 rules were read in full in Appendix S against the criterion of Appendix V, money, dates and weighted averages, read as any rule that computes, counts or compares a number, an amount, a date or a duration. 78 derived values were confirmed and the 17 below were corrected, which gives 55 rules marked "yes" where the keyword match gave 40. The review was made by the plan editor; the business-rules-reviewer agent confirms it at the next Group F review.
+
+| Rule | Derived | Reviewed | Why |
+|---|---|---|---|
+| `BR-ATT-001` | no | yes | Derives the day status from a count of absent periods against a threshold |
+| `BR-ATT-005` | no | yes | Adds one derived absence per N lates, a floor division recomputed from the live count |
+| `BR-ATT-006` | no | yes | Counts consecutive school days, skipping non-school days and resetting, and fires once |
+| `BR-ATT-007` | no | yes | Counts cumulative absences per year against an ordered ladder whose rungs fire once each |
+| `BR-FIN-017` | no | yes | Counts students enrolled on the billing date and prorates a mid-month joiner by day, with the rounding Appendix S states (ADR-0027, see below) |
+| `BR-SCD-002` | no | yes | Counts a run of consecutive periods within a day, with breaks ignored |
+| `BR-SCD-003` | no | yes | Checks interval containment in availability windows and a weekly period count against a maximum |
+| `BR-SCD-004` | no | yes | Measures the gap between periods on two campuses against a travel time |
+| `BR-SCD-007` | no | yes | Extends a booking interval by setup and teardown buffers and tests the overlap |
+| `BR-ADM-001` | no | yes | Computes age in whole years on a cut-off date, leap days included |
+| `BR-ADM-003` | no | yes | Compares outstanding offers plus enrolled students with the seat capacity |
+| `BR-ADM-004` | no | yes | Counts calendar days from the issue date in the campus time zone to the expiry instant |
+| `BR-RQS-002` | no | yes | Counts working days on the campus calendar, holidays excluded, before the bands apply |
+| `BR-RQS-003` | no | yes | Measures working hours on a campus calendar with pauses; the Requests sheet already plans its property tests |
+| `BR-WEL-001` | yes | no | Matched on "summary" in its text; it is an audience rule with no arithmetic, and its tests are the access tests of the Wellbeing sheet |
+| `BR-L10N-003` | no | yes | Converts between the Umm al-Qura and Gregorian calendars, a date computation with a round trip to hold |
+| `BR-L10N-005` | no | yes | Selects an Arabic plural category from the number by modular arithmetic |
 
 ### 3. Workflows
 
@@ -252,7 +281,7 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 | Service | Rules under mutation testing |
 |---|---|
 | Assessment | `BR-ASM-001`, `BR-ASM-002`, `BR-ASM-003`, `BR-ASM-004`, `BR-ASM-005`, `BR-ASM-006`, `BR-ASM-007`, `BR-ASM-008`, `BR-ASM-009`, `BR-ASM-010`, `BR-ASM-011`, `BR-ASM-012`, `BR-ASM-013`, `BR-ASM-014` |
-| Finance | `BR-FIN-001`, `BR-FIN-002`, `BR-FIN-003`, `BR-FIN-004`, `BR-FIN-005`, `BR-FIN-006`, `BR-FIN-007`, `BR-FIN-008`, `BR-FIN-009`, `BR-FIN-010`, `BR-FIN-011`, `BR-FIN-012`, `BR-FIN-013`, `BR-FIN-014`, `BR-FIN-015`, `BR-FIN-016`, `BR-FIN-017` (contested, Open Question 30, RISK-52; see Section 2), `BR-FIN-018`, `BR-FIN-019`, `BR-L10N-004` |
+| Finance | `BR-FIN-001`, `BR-FIN-002`, `BR-FIN-003`, `BR-FIN-004`, `BR-FIN-005`, `BR-FIN-006`, `BR-FIN-007`, `BR-FIN-008`, `BR-FIN-009`, `BR-FIN-010`, `BR-FIN-011`, `BR-FIN-012`, `BR-FIN-013`, `BR-FIN-014`, `BR-FIN-015`, `BR-FIN-016`, `BR-FIN-019`, `BR-L10N-004` |
 | Identity | `BR-IDN-001`, `BR-IDN-002`, `BR-IDN-003`, `BR-IDN-004`, `BR-IDN-005`, `BR-IDN-006`, `BR-IDN-007`, `BR-IDN-008`, `BR-IDN-009` |
 | Attendance | `BR-ATT-001`, `BR-ATT-002`, `BR-ATT-003`, `BR-ATT-004`, `BR-ATT-005`, `BR-ATT-006`, `BR-ATT-007`, `BR-ATT-008`, `BR-ATT-009`, `BR-ATT-010`, `BR-ATT-011` |
 | School | `BR-L10N-007` |
@@ -294,7 +323,7 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 
 | Point | Default | Owner | L | I | Score | In the register |
 |---|---|---|---|---|---|---|
-| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent at a Group F review. Not yet done: none of Group F rounds 1 to 4 recorded that review, so the classification stands as derived until the review record below says otherwise | Architect | 2 | 2 | 4 | none |
+| The property-based classification was reviewed by the plan editor, not yet by the business-rules-reviewer agent | The reviewed classification of Section 2 stands: every rule read in full at remediation round 6, 17 derived values corrected with their reasons. The business-rules-reviewer agent confirms or corrects it at the next Group F review, and a later correction goes into the review list of `gen-31.mjs` with its reason | Architect | 1 | 2 | 2 | none |
 | Promotion eligibility and status changes in School are workflows, not Appendix S rules | Tested per transition; add a rule to Appendix S under a version bump if an arithmetic threshold appears | Architect | 2 | 2 | 4 | none |
 
 ## Review record
@@ -306,6 +335,9 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 | 2026-09-26 | Round-2 scorecard, Group F, then remediation round 3 | Blocked on Completeness, Consistency, Risk honesty and Testability; the transition-test ids still missing |
 | 2026-09-26 | Round-3 scorecard, Group F, then remediation round 4 | Blocked on Completeness, because Section 3 still listed no transition-test ids; the transition-test column was generated from Appendix R's test tables in remediation round 4 |
 | 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Blocked on Consistency, by document 34's SL-ACA-207, not by this document; the transition-test column was found complete. Amended: the Purpose, Dependencies and verification rows name document 34, and through it document 17, as the source of the Phase column; the seven workflows whose Phase precedes their owning service (WF-RQS-01, WF-WEL-01, WF-WEL-02, WF-WEL-04, WF-HR-01, WF-OPS-01 and WF-DATA-01) are marked with the owner's phase and explained in a note under Section 3; `BR-FIN-017` is marked contested pending Open Question 30 (RISK-52) in Sections 2 and 6; the property-based open point records that its review has not yet been done |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Group F was approved with minor gaps; for this document, the property-based review was still undone and rules built before their owning service had no note. Amended: the property-based classification reviewed rule by rule, 17 values corrected with reasons in Section 2 (40 "yes" derived, 55 after review), and the open point now waits only on the reviewer agent's confirmation; 4 rules whose Phase precedes their owning service (BR-FIN-011, BR-WEL-001, BR-L10N-003, BR-L10N-007) are marked with the owner's phase and explained in a note under Section 2, as the workflows are under Section 3 |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Group F was approved with minor gaps; for this document, the implementation cells of `BR-FIN-017` and `BR-FIN-018` named Finance while the open points said Platform builds them. Closed at the source: Appendix S now gives both rules to Platform (ADR-0027), so their owner and implementation cells name `Nibras.Platform.Domain.Rules` and the open point on rules built only by another service no longer arises |
+| 2026-09-26 | Open Question 30 decided (ADR-0027) | Amended: `BR-FIN-017` is no longer marked contested in Sections 2 and 6; Section 2 states the decision (the master brief Section 36 count, owned and computed by Platform, brief v9.7) and its property-based reason follows the rewritten rule; RISK-52 is Closed |
 
 ## How this document is verified
 

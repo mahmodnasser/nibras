@@ -54,9 +54,13 @@ if (existsSync(D34)) {
 }
 const phaseOf = (id, owner) => built.get(id) || phase.get(owner) || '?';
 // Rules whose default is contested by an open product-owner decision. Their rows and the
-// mutation targets carry the mark, so no reader takes them as settled.
-const CONTESTED = {
-  'BR-FIN-017': 'in conflict with master brief Section 36 and REQ-PLT-009, which bill a tenant by the students enrolled on the billing date, prorated by day, pending Open Question 30 (RISK-52)',
+// mutation targets carry the mark, so no reader takes them as settled. Empty since
+// ADR-0027 (Accepted 2026-09-26) decided Open Question 30 and closed RISK-52.
+const CONTESTED = {};
+// Rules a product-owner decision settled after a conflict, stated under Section 2 so the
+// reader sees the decision rather than the old conflict.
+const DECIDED = {
+  'BR-FIN-017': 'decided by ADR-0027 (Accepted by the product owner on 2026-09-26, Open Question 30, brief v9.7): a tenant is billed on the students enrolled on the billing date, prorated by day from a mid-month enrollment and counted for the month in which they leave, as master brief Section 36 and REQ-PLT-009 state. Platform owns and computes it (`34-work-breakdown.md` SL-PLT-010), Finance does not, and BR-PLT-005\'s active-student meter is this count; RISK-52 is Closed',
 };
 
 const pascal = (s) => s.replace(/[^A-Za-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean)
@@ -74,8 +78,34 @@ for (const block of S.split(/\n(?=### BR-)/).slice(1)) {
   const base = test.replace(/Tests$/, '').replace(/Rules$/, 'Rule');
   const arithmetic = /\b(average|weight|round|pro[- ]?rat|fee|discount|allocat|gpa|percent|tax|\bcap\b|accru|amount|scholarship|refund|credit|prorat|rank|denominator|total|sum|balance|installment|instalment|boundar|score)/i
     .test(h[2] + ' ' + ruleText);
-  rules.push({ id: h[1], name: h[2].trim(), owner, params, test, impl: 'Nibras.' + owner + '.Domain.Rules.' + base, arithmetic, phase: phaseOf(h[1], owner) });
+  rules.push({ id: h[1], name: h[2].trim(), owner, params, test, impl: 'Nibras.' + owner + '.Domain.Rules.' + base, arithmetic, derived: arithmetic, phase: phaseOf(h[1], owner) });
 }
+// ---- the property-based classification review (remediation round 6, 2026-09-26) -------
+// The keyword match above is a first pass. Each of the rules below was read in full in
+// Appendix S and its classification corrected against the criterion of Appendix V
+// ("money, dates and weighted averages") and of Section 2: a rule is "yes" when it
+// computes, counts or compares a number, an amount, a date or a duration over inputs a
+// generator can vary. Every rule not listed was read and its derived value confirmed.
+const CLASSIFICATION_REVIEW = {
+  'BR-ATT-001': [true, 'derives the day status from a count of absent periods against a threshold'],
+  'BR-ATT-005': [true, 'adds one derived absence per N lates, a floor division recomputed from the live count'],
+  'BR-ATT-006': [true, 'counts consecutive school days, skipping non-school days and resetting, and fires once'],
+  'BR-ATT-007': [true, 'counts cumulative absences per year against an ordered ladder whose rungs fire once each'],
+  'BR-FIN-017': [true, 'counts students enrolled on the billing date and prorates a mid-month joiner by day, with the rounding Appendix S states (ADR-0027, see below)'],
+  'BR-SCD-002': [true, 'counts a run of consecutive periods within a day, with breaks ignored'],
+  'BR-SCD-003': [true, 'checks interval containment in availability windows and a weekly period count against a maximum'],
+  'BR-SCD-004': [true, 'measures the gap between periods on two campuses against a travel time'],
+  'BR-SCD-007': [true, 'extends a booking interval by setup and teardown buffers and tests the overlap'],
+  'BR-ADM-001': [true, 'computes age in whole years on a cut-off date, leap days included'],
+  'BR-ADM-003': [true, 'compares outstanding offers plus enrolled students with the seat capacity'],
+  'BR-ADM-004': [true, 'counts calendar days from the issue date in the campus time zone to the expiry instant'],
+  'BR-RQS-002': [true, 'counts working days on the campus calendar, holidays excluded, before the bands apply'],
+  'BR-RQS-003': [true, 'measures working hours on a campus calendar with pauses; the Requests sheet already plans its property tests'],
+  'BR-L10N-003': [true, 'converts between the Umm al-Qura and Gregorian calendars, a date computation with a round trip to hold'],
+  'BR-L10N-005': [true, 'selects an Arabic plural category from the number by modular arithmetic'],
+  'BR-WEL-001': [false, 'matched on "summary" in its text; it is an audience rule with no arithmetic, and its tests are the access tests of the Wellbeing sheet'],
+};
+for (const r of rules) if (CLASSIFICATION_REVIEW[r.id]) r.arithmetic = CLASSIFICATION_REVIEW[r.id][0];
 
 // ---- workflows --------------------------------------------------------------
 const flows = [];
@@ -145,11 +175,31 @@ p('**How to read the implementation column.** Each rule is one class in the owni
 p();
 p('| Rule | Name | Owner | Test class | Implementation | Parameters (Appendix G) | Property-based | Phase |');
 p('|---|---|---|---|---|---|---|---|');
-for (const r of rules) p('| `' + r.id + '` | ' + r.name + (CONTESTED[r.id] ? ' (**contested**: ' + CONTESTED[r.id] + ')' : '') + ' | ' + r.owner + ' | `' + r.test + '` | `' + r.impl + '` | ' + r.params.replace(/\|/g, '/') + ' | ' + (r.arithmetic ? 'yes' : 'no') + ' | ' + r.phase + ' |');
+// A rule first named by a slice of another service before its owner is built, marked as
+// the workflows of Section 3 are.
+const earlyRules = rules.filter((r) => phase.has(r.owner) && /^\d$/.test(r.phase) && +r.phase < +phase.get(r.owner));
+for (const r of rules) p('| `' + r.id + '` | ' + r.name + (CONTESTED[r.id] ? ' (**contested**: ' + CONTESTED[r.id] + ')' : '') + ' | ' + r.owner + ' | `' + r.test + '` | `' + r.impl + '` | ' + r.params.replace(/\|/g, '/') + ' | ' + (r.arithmetic ? 'yes' : 'no') + ' | ' + r.phase + (earlyRules.includes(r) ? ' (owner ' + phase.get(r.owner) + ', note below)' : '') + ' |');
 p();
+if (earlyRules.length) {
+  p('**Rules whose Phase precedes their owning service.** The Phase column is the earliest `34-work-breakdown.md` slice that names the rule, and for the rows below that slice belongs to another service or to a building block, which applies the rule on its own side ahead of the owner, as the slice describes. The rule class named in the Implementation column, in the owner\'s Domain project, with its test class and, for Sections 5 and 6, its property-based and mutation tests, is built in the owner\'s phase, from the slice in the last column. Where the last column reads "none in document 34", no slice of the owning service names the rule, so the rule is built only by the first slice, outside the owner Appendix S gives it; that is a disagreement between Appendix S and document 34, recorded here and in Open points rather than resolved:');
+  p();
+  p('| Rule | Owner, and its build phase in document 05 | First slice naming it, phase and service | Owner\'s first slice naming it |');
+  p('|---|---|---|---|');
+  for (const r of earlyRules) {
+    const s = firstSlice.get(r.id);
+    const o = (firstOwnerSlice.get(r.id) || new Map()).get(r.owner);
+    p('| `' + r.id + '` | ' + r.owner + ', phase ' + phase.get(r.owner) + ' | ' + (s ? s.id + ', phase ' + s.ph + ', ' + s.service : 'none') + ' | ' + (o ? o.id + ', phase ' + o.ph : 'none in document 34') + ' |');
+  }
+  p();
+}
 for (const [id, why] of Object.entries(CONTESTED)) if (rules.some((r) => r.id === id)) p('**`' + id + '` is contested, not settled.** It is ' + why + '. `34-work-breakdown.md` SL-PLT-010 builds the billing-date count as the default in force, and the rule stays in conflict with it until the product owner decides; its test class and mutation target (Section 6) stand for whichever count the decision keeps.');
+for (const [id, why] of Object.entries(DECIDED)) if (rules.some((r) => r.id === id)) p('**`' + id + '` is settled.** It is ' + why + '.');
 p();
-p('**Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification is derived from the rule text and is confirmed or corrected by the business-rules-reviewer agent during Group F review.');
+p('**Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification was first derived from the rule text by a keyword match, and then reviewed rule by rule at remediation round 6 (2026-09-26): all ' + rules.length + ' rules were read in full in Appendix S against the criterion of Appendix V, money, dates and weighted averages, read as any rule that computes, counts or compares a number, an amount, a date or a duration. ' + (rules.length - Object.keys(CLASSIFICATION_REVIEW).length) + ' derived values were confirmed and the ' + Object.keys(CLASSIFICATION_REVIEW).length + ' below were corrected, which gives ' + rules.filter((r) => r.arithmetic).length + ' rules marked "yes" where the keyword match gave ' + rules.filter((r) => r.derived).length + '. The review was made by the plan editor; the business-rules-reviewer agent confirms it at the next Group F review.');
+p();
+p('| Rule | Derived | Reviewed | Why |');
+p('|---|---|---|---|');
+for (const r of rules) if (CLASSIFICATION_REVIEW[r.id]) p('| `' + r.id + '` | ' + (r.derived ? 'yes' : 'no') + ' | ' + (r.arithmetic ? 'yes' : 'no') + ' | ' + CLASSIFICATION_REVIEW[r.id][1][0].toUpperCase() + CLASSIFICATION_REVIEW[r.id][1].slice(1) + ' |');
 p();
 p('### 3. Workflows');
 p();
@@ -262,7 +312,9 @@ p('## Open points');
 p();
 p('| Point | Default | Owner | L | I | Score | In the register |');
 p('|---|---|---|---|---|---|---|');
-p('| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent at a Group F review. Not yet done: none of Group F rounds 1 to 4 recorded that review, so the classification stands as derived until the review record below says otherwise | Architect | 2 | 2 | 4 | none |');
+p('| The property-based classification was reviewed by the plan editor, not yet by the business-rules-reviewer agent | The reviewed classification of Section 2 stands: every rule read in full at remediation round 6, ' + Object.keys(CLASSIFICATION_REVIEW).length + ' derived values corrected with their reasons. The business-rules-reviewer agent confirms or corrects it at the next Group F review, and a later correction goes into the review list of `gen-31.mjs` with its reason | Architect | 1 | 2 | 2 | none |');
+const orphanRules = earlyRules.filter((r) => !(firstOwnerSlice.get(r.id) || new Map()).get(r.owner));
+if (orphanRules.length) p('| ' + orphanRules.map((r) => '`' + r.id + '`').join(' and ') + ' are owned by ' + [...new Set(orphanRules.map((r) => r.owner))].join(', ') + ' in Appendix S but built only by ' + [...new Set(orphanRules.map((r) => firstSlice.get(r.id).service))].join(', ') + ' slices in document 34 (Section 2 note) | The slices of document 34 stand: the rule class is written in the building service, which is the service that applies it, and Appendix S\'s owner is corrected under a record with a brief version bump, as ADR-0027 did for `BR-FIN-017` and `BR-FIN-018` | Architect | 3 | 2 | 6 | none |');
 p('| Promotion eligibility and status changes in School are workflows, not Appendix S rules | Tested per transition; add a rule to Appendix S under a version bump if an arithmetic threshold appears | Architect | 2 | 2 | 4 | none |');
 p();
 p('## Review record');
@@ -274,6 +326,9 @@ p('| 2026-09-22 | Round-1 scorecard, Group F | Blocked on Completeness, Consiste
 p('| 2026-09-26 | Round-2 scorecard, Group F, then remediation round 3 | Blocked on Completeness, Consistency, Risk honesty and Testability; the transition-test ids still missing |');
 p('| 2026-09-26 | Round-3 scorecard, Group F, then remediation round 4 | Blocked on Completeness, because Section 3 still listed no transition-test ids; the transition-test column was generated from Appendix R\'s test tables in remediation round 4 |');
 p('| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Blocked on Consistency, by document 34\'s SL-ACA-207, not by this document; the transition-test column was found complete. Amended: the Purpose, Dependencies and verification rows name document 34, and through it document 17, as the source of the Phase column; the seven workflows whose Phase precedes their owning service (WF-RQS-01, WF-WEL-01, WF-WEL-02, WF-WEL-04, WF-HR-01, WF-OPS-01 and WF-DATA-01) are marked with the owner\'s phase and explained in a note under Section 3; `BR-FIN-017` is marked contested pending Open Question 30 (RISK-52) in Sections 2 and 6; the property-based open point records that its review has not yet been done |');
+p('| 2026-09-26 | Round-5 scorecard, remediation round 6 | Group F was approved with minor gaps; for this document, the property-based review was still undone and rules built before their owning service had no note. Amended: the property-based classification reviewed rule by rule, ' + Object.keys(CLASSIFICATION_REVIEW).length + ' values corrected with reasons in Section 2 (' + rules.filter((r) => r.derived).length + ' "yes" derived, ' + rules.filter((r) => r.arithmetic).length + ' after review), and the open point now waits only on the reviewer agent\'s confirmation; ' + earlyRules.length + ' rules whose Phase precedes their owning service (' + earlyRules.map((r) => r.id).join(', ') + ') are marked with the owner\'s phase and explained in a note under Section 2, as the workflows are under Section 3' + (orphanRules.length ? ', and the ' + orphanRules.length + ' of them no slice of their owner names (' + orphanRules.map((r) => r.id).join(', ') + ') are a new open point' : '') + ' |');
+p('| 2026-09-26 | Round-6 scorecard, remediation round 7 | Group F was approved with minor gaps; for this document, the implementation cells of `BR-FIN-017` and `BR-FIN-018` named Finance while the open points said Platform builds them. Closed at the source: Appendix S now gives both rules to Platform (ADR-0027), so their owner and implementation cells name `Nibras.Platform.Domain.Rules` and the open point on rules built only by another service no longer arises |');
+p('| 2026-09-26 | Open Question 30 decided (ADR-0027) | Amended: `BR-FIN-017` is no longer marked contested in Sections 2 and 6; Section 2 states the decision (the master brief Section 36 count, owned and computed by Platform, brief v9.7) and its property-based reason follows the rewritten rule; RISK-52 is Closed |');
 p();
 p('## How this document is verified');
 p();

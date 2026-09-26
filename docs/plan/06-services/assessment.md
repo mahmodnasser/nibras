@@ -33,7 +33,7 @@ Assessment and Reporting turns marks into results a school can defend. It owns t
 |---|---|
 | Assessment structures | Per subject, section and grading period: categories with weights totalling 100, components with maximum marks, mandatory and droppable flags, drop-lowest, best-of, due dates, entry deadlines (REQ-ASM-001, REQ-ASM-002) |
 | Grading schemes | Percentage, letter, GPA, descriptive, standards-based, pass or fail, effort and conduct; every scheme versioned and immutable once published; assignment of schemes to stages (REQ-ASM-003, REQ-ASM-004) |
-| Mark entry | The grid with keyboard navigation and paste, absent, exempt and incomplete codes, comments, change history; offline drafts replayed from the device; the import of graded coursework from Academics (REQ-ASM-005 to REQ-ASM-008) |
+| Mark entry | The grid with keyboard navigation and paste, absent, exempt and incomplete codes, comments, change history; offline drafts replayed from the device; the import of graded coursework from Academics (REQ-ASM-005 to REQ-ASM-008); scores an external LTI tool posts, received from Platform as the `RecordToolScore` command and held as marks awaiting the teacher (REQ-ACA-030, REQ-INT-016, SL-ASM-400, phase 4) |
 | Moderation, approval, publishing, locking | Adjustments stored with the original value and reason, approval by someone other than the entering teacher, publish windows per audience, the lock, unlock under high-risk permission (REQ-ASM-013 to REQ-ASM-015) |
 | Result calculation | BR-ASM-001 to BR-ASM-013 in `Assessment.Worker`, reproducible from stored inputs and the scheme version, term and year results, rank, promotion eligibility, honors (REQ-ASM-020 to REQ-ASM-023) |
 | Report cards | Report Card Studio templates, the comment bank, teacher and AI-drafted comments in review, the report-card batch saga (Saga 7), versioned and immutable cards, withholding under a finance restriction, parent acknowledgment (REQ-ASM-024 to REQ-ASM-029, REQ-ASM-035) |
@@ -88,6 +88,18 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 
 **`components`**: `structure_id uuid`, `category_id uuid`, `section_id uuid`, `department_id uuid`, `name LocalizedText`, `max_mark numeric(9,2)` (> 0), `mandatory boolean`, `droppable boolean`, `due_on date`, `entry_due_at timestamptz`, `source_assignment_id uuid null` (Academics assignment whose grades import here), `exam_id uuid null`, `state smallint` (`Open`, `Entered`, `Validated`, `Moderated`), `submitted_for_approval_at timestamptz null`.
 
+**`component_outcomes`** (child of `AssessmentStructure`; the evidence link of Appendix W feature 42, REQ-ASM-033, SL-ASM-219). One row says that a component's marks are evidence for one learning outcome. Academics owns `Outcome` and, in Tier 2, its `StandardMapping` to a CASE standard (Appendix F; `06-services/academics.md` §4.4). Assessment keeps the outcome id only and never reads `nibras_academics`.
+
+| Field | Type | Null | Notes |
+|---|---|---|---|
+| `component_id` | uuid | no | The component whose marks count as evidence |
+| `outcome_id` | uuid | no | The Academics `Outcome` id, as the structure editor chose it from the Academics outcome list for the structure's subject and grade level. It is a reference by id, not a foreign key |
+| `section_id`, `subject_id` | uuid | no | Copied from the structure so that the section heatmap reads one index without joining the structure |
+| `weight` | numeric(5,2) | no | Default 1.00, range 0.01 to 1.00. The share of the component's marks that counts for this outcome when the component also serves other outcomes |
+| `sort_order` | smallint | no | Column order of the heatmap, following the editor's order |
+
+Unique `(tenant_id, component_id, outcome_id) WHERE deleted_at IS NULL`. Index `ix_component_outcomes_section (tenant_id, section_id, subject_id, outcome_id) INCLUDE (component_id, weight) WHERE deleted_at IS NULL`.
+
 **Invariants**
 
 1. Category weights of a published structure total exactly 100.00 (BR-ASM-001).
@@ -96,6 +108,8 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 4. A structure cannot change weights, add or remove components after its section and grading period are `Locked`; the attempt fails with `ASSESSMENT_MARKS_LOCKED`.
 5. A structure with marks cannot be deleted; its components can be retired only while no mark exists.
 6. `scheme_version` is pinned at publish and never changes for that structure; a recalculation with any other version fails with `ASSESSMENT_SCHEME_VERSION_MISMATCH`.
+7. A component links to at most 12 outcomes, each once. The links change with the structure, through the same `If-Match` edit, and are frozen with the structure once its section period is `Locked` (`ASSESSMENT_MARKS_LOCKED`). A link never changes a mark or a result: `component_outcomes` is read only by the mastery computation of section 4.5.
+8. A component with no link is valid. It counts toward results as before and adds nothing to the heatmap.
 
 ### 3.2 SectionPeriod (aggregate root: the WF-ASM-01 state of one section in one grading period)
 
@@ -124,7 +138,9 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 | `state` | smallint | no | `Draft`, `Entered`, `Moderated`, `Approved`, `Locked` |
 | `scheme_version` | int | no | Copied from the structure |
 | `entered_by` | uuid | no | For the self-approval check |
-| `source` | smallint | no | grid, paste, submission import, offline replay, grade change |
+| `source` | smallint | no | grid, paste, submission import, offline replay, grade change, tool score |
+| `source_tool_id` | uuid | yes | The Platform LTI tool whose score the cell holds, set only when `source` is tool score; the grid shows the tool's name from it |
+| `source_score_id` | uuid | yes | The Platform `LtiScore` id carried as `sagaId` by `RecordToolScore`; unique per tenant where not null, so a replayed command writes nothing |
 | `comment_id` | uuid | yes | Pointer to `mark_comments` (side table, Confidential) |
 | `client_token` | uuid | yes | Offline draft key; replay returns the first result |
 
@@ -140,6 +156,7 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 4. A moderation adjustment keeps the original value and a reason in `moderation_records` (REQ-ASM-013, TC-ASM-003).
 5. An offline draft for an unapproved component is accepted (device wins); for an approved or locked component it is refused and returned as a proposed grade change (Appendix M.3).
 6. The same `client_token` replayed returns the first result and writes nothing.
+7. A tool score (`RecordToolScore`, SL-ASM-400) lands in the component whose `source_assignment_id` is the command's `assignmentId`, scaled to `max_mark` as `SubmissionGradedConsumer` scales a graded submission, as a `Draft` mark with `source` tool score and `entered_by` the teacher of the launch; it counts only when the teacher keeps or changes it and submits the component, so no tool ever moves a mark past `Draft` or publishes one. It is applied only while the component is `Open` or `Entered` and the section period is in `MarkEntry`; otherwise it is refused with `ASSESSMENT_MARKS_LOCKED` and reported back to Platform. It replaces only a `Draft` cell that holds the same tool's earlier score with an older timestamp; a value the teacher entered is kept, and the tool score is recorded in `mark_changes` only (TC-ASM-338, TC-ASM-339).
 
 ### 3.4 GradeScheme (aggregate root, versioned)
 
@@ -238,12 +255,15 @@ Every tenant-owned table carries the base columns of `10-data-architecture.md` p
 
 `student_refs`, `section_refs`, `staff_refs`, `teaching_assignment_refs`, `grading_period_refs`, `term_refs`, `account_restriction_refs`, `exam_session_refs`: section 8. They carry `tenant_id`, `source_version` and `reconciled_at`, no `xmin`.
 
+There is no copy of Academics outcomes or standard mappings. Appendix E has no Academics curriculum event to keep such a copy current, so `component_outcomes` holds only the outcome id. The outcome's code, statement and CASE standard are shown by the client from Academics' own `GET /api/v1/academics/outcomes` (open point 8).
+
 ```mermaid
 erDiagram
     ASSESSMENT_STRUCTURE ||--|{ CATEGORY : weights
     CATEGORY ||--|{ COMPONENT : contains
     SECTION_PERIOD ||--o{ ASSESSMENT_STRUCTURE : governs
     COMPONENT ||--o{ MARK : cells
+    COMPONENT ||--o{ COMPONENT_OUTCOME : evidences
     MARK ||--o{ MARK_CHANGE : history
     MARK ||--o{ MODERATION_RECORD : adjusted_by
     GRADE_SCHEME ||--|{ GRADE_SCHEME_VERSION : versions
@@ -278,7 +298,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
 | GET | `/api/v1/assessment/structures?sectionId=&gradingPeriodId=` | `assessment.structures.view` | query | `AssessmentStructure` with categories and components | none beyond K.1 | Safe; `ETag` |
-| POST | `/api/v1/assessment/structures` | `assessment.structures.create` | `StructureModel`: section, subject, period, scheme, categories, components | 201 `Draft` | `ASSESSMENT_VALIDATION_FAILED` (weights not 100, mandatory droppable) | Key optional |
+| POST | `/api/v1/assessment/structures` | `assessment.structures.create` | `StructureModel`: section, subject, period, scheme, categories, components, each component with its `outcomes[]` of `{ outcomeId, weight }` (section 3.1 `component_outcomes`) | 201 `Draft` | `ASSESSMENT_VALIDATION_FAILED` (weights not 100, mandatory droppable) | Key optional |
 | PUT | `/api/v1/assessment/structures/{id}` | `assessment.structures.edit` | `StructureModel`, `If-Match` | 200 | `ASSESSMENT_MARKS_LOCKED`, `ASSESSMENT_CONCURRENCY_CONFLICT` | Yes, by `If-Match` |
 | POST | `/api/v1/assessment/structures/{id}/publish` | `assessment.structures.edit` | `{}` | 200 `Published`, scheme version pinned | `ASSESSMENT_VALIDATION_FAILED` | Yes, state-guarded |
 | POST | `/api/v1/assessment/structures/{id}/copy` | `assessment.structures.create` | `{ targetSectionIds[] }` | 200 per-target results | per target: `ASSESSMENT_MARKS_LOCKED` | Yes, Key required |
@@ -299,7 +319,7 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 
 | Method | Path | Permission | Request | Response | Errors | Idempotent |
 |---|---|---|---|---|---|---|
-| GET | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/marks` | `assessment.marks.view` (own-sections for teachers) | none | `MarkGrid`: roster rows with score, code, state, row version | none beyond K.1 | Safe; never cached (REQ-ASM-007) |
+| GET | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/marks` | `assessment.marks.view` (own-sections for teachers) | none | `MarkGrid`: roster rows with score, code, state, row version, and the source, naming the LTI tool for a tool score awaiting the teacher (SL-ASM-400) | none beyond K.1 | Safe; never cached (REQ-ASM-007) |
 | PUT | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/marks` | `assessment.marks.enter` (own-sections) | `EnterMarksRequest`: changed cells with row versions, pasted blocks allowed | 200 per-cell results | per cell: `ASSESSMENT_MARK_OUT_OF_RANGE`, `ASSESSMENT_MARKS_LOCKED`, `ASSESSMENT_CONCURRENCY_CONFLICT` | Yes, Key required |
 | POST | `/api/v1/assessment/marks/sync` | `assessment.marks.enter` | Up to 500 queued drafts with `idempotencyKey`, `occurredAt`, `entityVersion` (via Bff.Mobile) | 200 per-action results: accepted, returned-as-grade-change | per action: `ASSESSMENT_MARKS_LOCKED`, `ASSESSMENT_MARK_OUT_OF_RANGE` | Yes, per action key |
 | POST | `/api/v1/assessment/sections/{sectionId}/components/{componentId}/submit` | `assessment.marks.enter` | `{}` | 200 component `Validated`; publishes `assessment.marks.entered.v1` | `ASSESSMENT_MARK_GRID_INCOMPLETE` listing students without a mark, absence or exemption | Yes, state-guarded |
@@ -327,7 +347,19 @@ Paths follow `22-api-conventions-and-error-catalog.md` §1. Every endpoint also 
 | POST | `/api/v1/assessment/grading-periods/{id}/results/recalculate` | `assessment.marks.approve` | `{ sectionIds[] }` | 202 job (document 22 §6) | `ASSESSMENT_SCHEME_VERSION_MISMATCH` | Yes, Key required |
 | GET | `/api/v1/assessment/year-results?academicYearId=&sectionId=` | `assessment.marks.view` | query | Year averages, promotion outcome with reasons, honors band | none beyond K.1 | Safe |
 | GET | `/api/v1/assessment/analysis?gradingPeriodId=&subjectId=&kind=` | `assessment.marks.view` (department, campus) | `kind` = distribution, subject, teacher, cohort, item | Aggregates; groups under 10 students suppressed | none beyond K.1 | Safe |
-| GET | `/api/v1/assessment/students/{id}/standards-heatmap` | `assessment.marks.view` (staff scopes) | none | Proficiency per standard with a suggested next step at rung 2 (Tier 2) | none beyond K.1 | Safe |
+| GET | `/api/v1/assessment/students/{id}/standards-heatmap?subjectId=&gradingPeriodId=` | `assessment.marks.view` (own-sections, department, campus; refused for self and own-children) | query; `subjectId` required, `gradingPeriodId` optional (the whole academic year to date when absent) | One student's row of the mastery computation below: a cell per linked outcome with `percent`, `level`, `evidenceCount`, and `nextStep` at rung 2 or `null` with `suggestion: "off"` (Tier 2) | `ASSESSMENT_PERMISSION_DENIED` for family callers, `ASSESSMENT_VALIDATION_FAILED` (`subjectId` missing, or a grading period outside the student's year) | Safe; not cached (section 11) |
+| GET | `/api/v1/assessment/sections/{id}/standards-heatmap?subjectId=&gradingPeriodId=&after=&limit=` | `assessment.marks.view` (own-sections, department, campus; refused for self and own-children) | query; `subjectId` required, `gradingPeriodId` optional; keyset on `studentId` with `after`, `limit` default 50 and cap 200 | The class heatmap of feature 42. `outcomes[]` (`outcomeId`, `sortOrder`, `componentCount`) in the editor's order. `classCells[]` per outcome over the whole section (`studentsAssessed`, `meanPercent`, `levelCounts[]`). `students[]` for the page, bounded to the students with an interval in the section (`student_section_intervals`), each with `studentId`, `nameEn`, `nameAr` from `student_refs` and one cell per outcome. `nextStep` for the class at rung 2 or `null` with `suggestion: "off"`. Also `asOf` and `nextCursor` (Tier 2) | `ASSESSMENT_NOT_FOUND` (section not in `section_refs`), `ASSESSMENT_PERMISSION_DENIED` (family caller, or a section outside the caller's scope), `ASSESSMENT_VALIDATION_FAILED` (`subjectId` missing, `limit` above 200, or a grading period outside the section's year) | Safe; not cached (section 11) |
+
+**Mastery computation (feature 42, REQ-ASM-033, SL-ASM-219).** `GetStandardsHeatmapHandler` computes the heatmap on read, per student and per outcome, from rows Assessment owns. It writes nothing and publishes nothing.
+
+1. **Evidence.** A mark counts when its component has a `component_outcomes` row for the outcome, belongs to the section and subject asked for, and falls in the asked grading period, or anywhere in the academic year to date when no period is given. The mark must be in `Entered`, `Moderated`, `Approved` or `Locked`. A `Draft` never counts, so an unsubmitted tool score (section 3.3 invariant 7) or offline draft moves no cell. The score used is `makeup_score` when set, otherwise `raw_score` as moderated. A mark coded `exempt`, or coded `absent` with no makeup, is not evidence for the outcome. It is left out of both sides and counted in the cell's `missingCount`. This departs from BR-ASM-007, where an absence counts zero toward the term result, because an absence says nothing about what the student has mastered.
+2. **Percentage.** A student's cell is `percent = Σ(score × weight) ÷ Σ(max_mark × weight) × 100` over that evidence. It is held unrounded at `numeric(12,6)` and shown rounded to whole numbers. `evidenceCount` is the number of marks counted. A cell with no evidence is `notAssessed`, with no percentage and no level.
+3. **Level.** The level is the `proficiency_level` of the band that contains the percentage. The bands come from the latest published version of the standards-based scheme that `grade_scheme_assignments` gives the section's grade level and subject. The lookup is the half-open lookup of BR-ASM-009 (`LetterGradeBoundaryRule`). When no standards-based scheme is assigned, `level` is `null` and the cell shows the percentage alone.
+4. **Class cell.** For each outcome, `studentsAssessed` counts the section's students with evidence. `meanPercent` is the mean of their unrounded percentages. `levelCounts[]` counts those students per level. The class cells are computed over the whole section, whatever page of students is returned.
+5. **Next step (rung 2, autonomy 2 "Suggests").** This runs only when the tenant has turned rung 2 on (Platform feature flags, section 6.2 `PlatformContextConsumer`). `NextStepRanker`, an ML.NET linear model with its `model_version` pinned like `predicted_grades`, ranks the outcomes. For the class, the inputs per outcome are the share of students below level 2 (below 50 percent when there are no levels), `meanPercent`, the change in `meanPercent` since the previous grading period, `evidenceCount`, and the days since the latest evidence. For one student, the inputs are the same features taken from that student's cells. The output is at most three outcome ids with each factor's contribution, and the Because panel shows those contributions. When rung 2 is off or the model cannot be loaded, `nextStep` is `null` and `suggestion` is `"off"`. The heatmap itself does not change. That is the raw heatmap Appendix W feature 42 degrades to. The suggestion never changes a mark, a result or a plan.
+6. **Labels.** The response carries outcome ids, not outcome text. The client resolves each id's code, statement and CASE standard through Academics' `GET /api/v1/academics/outcomes?subjectId=&gradeLevelId=` (`academics.curriculum.view`, which teachers hold for their own sections under Appendix I G07). An id that Academics no longer lists is shown as a retired outcome (open point 8).
+
+Tests: `TC-ASM-340` to `TC-ASM-344` (section 14). The Appendix W demo test `TC-ASM-811` runs the class view end to end.
 | GET | `/api/v1/assessment/students/{id}/predicted-grades` | `assessment.marks.view` (staff scopes only; refused for self and own-children) | none | Internal bands (Tier 2) | `ASSESSMENT_PERMISSION_DENIED` for family callers | Safe |
 
 ### 4.6 Report cards
@@ -465,6 +497,7 @@ Queues from `11-messaging-architecture.md`: `assessment.reference-copies`, `asse
 | `IssueTranscript` | commands | `IssueTranscriptHandler` | Issues the transcript, replies `TranscriptIssued` (Saga 5 step 3, Saga 6) | `(sagaId, stepKey)` |
 | `OpenGradeAppeal` | commands | `OpenGradeAppealHandler` | Creates the appeal in `Submitted` from the request (WF-ASM-02 as an effect) | `requestId` |
 | `ApplyExamAccommodation`, `RemoveExamAccommodation` | commands | `ExamAccommodationHandler` | Sets or clears the candidate's accommodation for the sitting; replies `EffectApplied` | `requestId` |
+| `RecordToolScore` (`assessment.commands.record-tool-score.v1`, from `nibras.platform`, no saga; document 11 §2.4) | commands | `RecordToolScoreHandler` | Writes the LTI tool's score as a `Draft` mark awaiting the teacher, scaled to `max_mark`, with the tool as its source (section 3.3 invariant 7); never publishes it; replies `ToolScoreRecorded`, or `ToolScoreFailed` with `ASSESSMENT_MARKS_LOCKED` for a locked or submitted component (SL-ASM-400) | `sagaId`, the Platform `LtiScore` id, stored as `marks.source_score_id`; inbox by message id |
 | `platform.tenant.*`, `platform.settings.changed.v1`, `platform.plan.changed.v1`, `platform.feature-flag.changed.v1`, `platform.terminology.changed.v1` | reference-copies | Tenant lifecycle and platform context consumers | Provisioning, suspension, deletion, cache eviction when `scope = academic` | `tenantId` plus `occurredAt` |
 | `identity.role.changed.v1`, `identity.permissions.changed.v1` | reference-copies | building-block permission cache | Evicts the permission cache | `permissionVersion` |
 
@@ -651,6 +684,7 @@ The caching table is `21-performance-engineering.md` §1.6 and the hot queries w
 | One student's report-card versions | `ix_report_cards_student (tenant_id, student_id, grading_period_id, version_number DESC)` | under 20, 1 command, p95 10 ms | not cached; the PDF link is signed per request | Guardian path |
 | Mark draft sync | `ux_marks_cell` plus an inbox lookup per action | at most 500 actions, 3 commands per 100 actions | not cached | Mobile replay path |
 | Exam paper access check | `ix_exam_papers_exam (tenant_id, exam_id)` | 1, 1 command, p95 5 ms | not cached (every open is logged) | Security path |
+| Section standards heatmap (feature 42, section 4.5) | `ix_component_outcomes_section (tenant_id, section_id, subject_id, outcome_id) INCLUDE (component_id, weight)`, then `ux_marks_cell` for those components, aggregated in one grouped query per request; the page of students is keyset on `student_id` | At most 200 students and 60 linked outcomes a page; 2 commands (the links, then the grouped marks joined to `student_refs`), p95 80 ms; the ranker adds under 10 ms in process | not cached: it reads `Entered` marks while entry is still open, and marks being entered are never cached (below). A teacher's next open must show the mark saved a moment ago | New in remediation round 7; document 21 §3.6 has no feature 42 query yet |
 
 Never cached, restated because it binds the code: marks while they are being entered, moderation notes, grade-change rationale, exam paper files and links, predicted grades, report-card PDFs (a signed URL per request).
 
@@ -688,6 +722,7 @@ src/Services/Assessment/                                          Assessment and
 │   │   ├── AssessmentStructure.cs                                aggregate root: weights total 100, pinned scheme version, lock guard
 │   │   ├── Category.cs                                           weight, drop-lowest, best-of
 │   │   ├── Component.cs                                          maximum mark, mandatory, droppable, due date, entry state
+│   │   ├── ComponentOutcome.cs                                   evidence link to an Academics outcome id with weight; at most 12 per component, frozen at lock
 │   │   └── Events/                                               domain events raised by the aggregate
 │   │       └── ComponentSubmitted.cs                             becomes assessment.marks.entered.v1
 │   ├── SectionPeriods/                                           aggregate: the WF-ASM-01 state of one section in one grading period
@@ -714,7 +749,8 @@ src/Services/Assessment/                                          Assessment and
 │   │   ├── YearResult.cs                                         year average, cumulative GPA, promotion outcome and reasons, honors band
 │   │   ├── ResultCalculator.cs                                   domain service composing the rules in the order Appendix S states them
 │   │   ├── CalculationInputs.cs                                  value object: ordered inputs and their SHA-256 hash for reproducibility
-│   │   └── PredictedGrade.cs                                     Tier 2 internal band, never family-facing
+│   │   ├── PredictedGrade.cs                                     Tier 2 internal band, never family-facing
+│   │   └── MasteryCalculator.cs                                  feature 42: evidence, weighted percentage, level through the BR-ASM-009 lookup, class cells (section 4.5)
 │   ├── ReportCards/                                              aggregates: ReportCardTemplate, ReportCard, the batch saga state
 │   │   ├── ReportCardTemplate.cs                                 template with placeholders validated against the data model
 │   │   ├── ReportCard.cs                                         versioned card: immutable once published, superseded by n plus 1
@@ -840,11 +876,16 @@ src/Services/Assessment/                                          Assessment and
 │   │   │   ├── RecalculateResultsHandler.cs                      publishes assessment.commands.compute-results.v1, returns the job
 │   │   │   ├── RecalculateResultsValidator.cs                    pinned scheme version
 │   │   │   └── RecalculateResultsEndpoint.cs                     POST /api/v1/assessment/grading-periods/{id}/results/recalculate
-│   │   ├── GetResultAnalysis/                                    distribution, comparisons, cohort, item analysis, heatmap, predicted
+│   │   ├── GetResultAnalysis/                                    distribution, comparisons, cohort, item analysis, predicted
 │   │   │   ├── GetResultAnalysisQuery.cs                         record: kind and filters
 │   │   │   ├── GetResultAnalysisHandler.cs                       aggregates with suppression under 10 students
-│   │   │   ├── GetResultAnalysisValidator.cs                     staff scopes only for predicted grades and heatmap
-│   │   │   └── GetResultAnalysisEndpoint.cs                      GET /analysis, /students/{id}/standards-heatmap, /students/{id}/predicted-grades
+│   │   │   ├── GetResultAnalysisValidator.cs                     staff scopes only for predicted grades
+│   │   │   └── GetResultAnalysisEndpoint.cs                      GET /analysis, /students/{id}/predicted-grades
+│   │   ├── GetStandardsHeatmap/                                  feature 42 mastery and next step, per student and per class (SL-ASM-219)
+│   │   │   ├── GetStandardsHeatmapQuery.cs                       record: student or section id, subject id, optional grading period, keyset cursor and limit
+│   │   │   ├── GetStandardsHeatmapHandler.cs                     links, grouped evidence, MasteryCalculator, then INextStepRanker when rung 2 is on
+│   │   │   ├── GetStandardsHeatmapValidator.cs                   subject required, limit at most 200, staff scopes only
+│   │   │   └── GetStandardsHeatmapEndpoint.cs                    GET /students/{id}/standards-heatmap and /sections/{id}/standards-heatmap
 │   │   ├── ManageReportCardTemplates/                            templates, validation, comment bank
 │   │   │   ├── ManageReportCardTemplateCommand.cs                record: operation and template or bank entry
 │   │   │   ├── ManageReportCardTemplateHandler.cs                placeholder resolution against a sample student
@@ -895,6 +936,9 @@ src/Services/Assessment/                                          Assessment and
 │   │   │   ├── ComputePromotionDecisionsHandler.cs               Saga 4 step 2, BR-ASM-012 and BR-ASM-013
 │   │   │   ├── OpenGradeAppealHandler.cs                         Saga 6 effect: appeal in Submitted
 │   │   │   └── ExamAccommodationHandler.cs                       Saga 6 effects: apply and remove an accommodation
+│   │   ├── ToolScores/                                           LTI tool scores from Platform, phase 4 (SL-ASM-400)
+│   │   │   ├── RecordToolScoreHandler.cs                         RecordToolScore on assessment.commands: Draft mark with the tool as source, reply to Platform
+│   │   │   └── ToolScoreScaling.cs                               scoreGiven over scoreMaximum scaled to max_mark, the SubmissionGradedConsumer rule
 │   │   └── TenantLifecycle/                                      Saga 1, 2 and 10 command handlers
 │   │       ├── ProvisionTenantHandler.cs                         seeds default schemes from the country template, replies TenantProvisioned
 │   │       ├── DeleteTenantDataHandler.cs                        deletes the tenant's rows per partition, replies with counts
@@ -934,7 +978,8 @@ src/Services/Assessment/                                          Assessment and
 │   │   ├── IAssessmentReadContext.cs                             AsNoTracking sources
 │   │   ├── IStudentDirectory.cs                                  School over gRPC with a cached fallback
 │   │   ├── IGradingPeriodDirectory.cs                            School grading-period lookup
-│   │   └── IDocumentLinks.cs                                     signed links from Documents for cards, transcripts and papers
+│   │   ├── IDocumentLinks.cs                                     signed links from Documents for cards, transcripts and papers
+│   │   └── INextStepRanker.cs                                    rung 2 next-step ranking; returns nothing when rung 2 is off or the model is missing
 │   ├── Permissions/                                              constants that match Appendix B
 │   │   └── AssessmentPermissions.cs                              every assessment.* permission, one constant each
 │   └── DependencyInjection.cs                                    AddAssessmentApplication(): handlers, validators, consumers, saga
@@ -944,10 +989,11 @@ src/Services/Assessment/                                          Assessment and
 │   │   ├── AssessmentDbContext.cs                                pooled, named Tenant and SoftDelete filters, audit columns, xmin, SET LOCAL app.tenant_id
 │   │   ├── CompiledQueries/                                      EF.CompileAsyncQuery for the hottest reads
 │   │   │   ├── MarkGridQuery.cs                                  document 21 §3.6 query 1
-│   │   │   └── StudentTermResultQuery.cs                         query 3
+│   │   │   ├── StudentTermResultQuery.cs                         query 3
+│   │   │   └── SectionStandardsHeatmapQuery.cs                   feature 42 grouped evidence query of section 11
 │   │   ├── CompiledModel/                                        generated compiled model
 │   │   ├── Configurations/                                       one configuration per aggregate and reference, tenant_id first in every index
-│   │   │   ├── StructureConfigurations.cs                        assessment_structures, assessment_categories, components
+│   │   │   ├── StructureConfigurations.cs                        assessment_structures, assessment_categories, components, component_outcomes
 │   │   │   ├── SectionPeriodConfiguration.cs                     section_periods, publish_windows
 │   │   │   ├── MarkConfigurations.cs                             marks list-partitioned by academic year, mark_changes, moderation_records, mark_comments
 │   │   │   ├── SchemeConfigurations.cs                           grade_schemes, grade_scheme_versions, grade_bands, grade_scheme_assignments
@@ -977,6 +1023,8 @@ src/Services/Assessment/                                          Assessment and
 │   │   └── DocumentLinkClient.cs                                 5-minute signed links bound to the caller
 │   ├── Reconciliation/                                           nightly reference-copy checksum
 │   │   └── ReferenceCopyReconciler.cs                            compares, repairs by replay, raises a data-quality issue
+│   ├── Models/                                                   rung 2 classical models run in process
+│   │   └── NextStepRanker.cs                                     ML.NET linear model behind INextStepRanker, pinned model_version, factor contributions for the Because panel
 │   └── DependencyInjection.cs                                    AddAssessmentInfrastructure()
 ├── Nibras.Assessment.Api/                                        the HTTP host, image nibras/assessment-api
 │   ├── Nibras.Assessment.Api.csproj                              project file
@@ -985,7 +1033,7 @@ src/Services/Assessment/                                          Assessment and
 │   │   ├── StructureEndpoints.cs                                 /api/v1/assessment/structures and /grade-schemes
 │   │   ├── MarkEndpoints.cs                                      /sections/{id}/components/{id}/marks, /marks, /moderation-queue, /components
 │   │   ├── GradingPeriodEndpoints.cs                             /grading-periods/{id}/approve, publish-windows, lock, unlock, results
-│   │   ├── ResultEndpoints.cs                                    /students/{id}/term-results, /sections/{id}/results, /year-results, /analysis
+│   │   ├── ResultEndpoints.cs                                    /students/{id}/term-results, /sections/{id}/results, /year-results, /analysis, both /standards-heatmap routes
 │   │   ├── ReportCardEndpoints.cs                                /report-card-templates, /comment-bank, /report-cards
 │   │   ├── TranscriptEndpoints.cs                                /students/{id}/transcript(s), /transcripts
 │   │   ├── GradeChangeEndpoints.cs                               /grade-changes
@@ -1029,6 +1077,7 @@ src/Services/Assessment/                                          Assessment and
     │   │   ├── HonorsThresholdRulesTests.cs                      BR-ASM-013
     │   │   ├── GradeChangeAfterLockRulesTests.cs                 BR-ASM-014
     │   │   ├── ResultCalculatorTests.cs                          composition order and inputs hash stability
+│   │   ├── MasteryCalculatorTests.cs                         TC-ASM-340 evidence, weights, exempt and absent, level lookup
     │   │   ├── SectionPeriodTests.cs                             separation of duties, lock and unlock guards
     │   │   └── ExamPaperTests.cs                                 setter and reviewer rules, copy count
     │   ├── Features/                                             handler tests with fakes for the ports
@@ -1041,6 +1090,7 @@ src/Services/Assessment/                                          Assessment and
     │   ├── Nibras.Assessment.IntegrationTests.csproj             references Api, Worker and the Testing block
     │   ├── Fixtures/                                             AssessmentWebAppFactory and worker host, two seeded tenants
     │   ├── Endpoints/                                            each endpoint against the real stack
+│   │   └── StandardsHeatmapEndpointTests.cs                  TC-ASM-341 to TC-ASM-344, the student and class heatmap values
     │   ├── Persistence/                                          row-level security, SERIALIZABLE lock race, query budgets
     │   ├── Messaging/                                            outbox publish, inbox deduplication, consumer replay
     │   ├── Workflows/                                            one class per Appendix R workflow
@@ -1120,6 +1170,14 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 | TC-ASM-335 | Integration | Graded submission imports once into the linked component and never into a locked one |
 | TC-ASM-336 | Contract | Every V1 record matches its schema; no rationale or comment text in a payload |
 | TC-ASM-337 | Contract | Provider pacts for Bff.Web and Bff.Mobile |
+| TC-ASM-338 | Integration | `RecordToolScore` delivered twice with the same `sagaId` (and once more redelivered by the broker with a new message id) leaves exactly one `Draft` mark with the tool as its source, one `mark_changes` row and one `ToolScoreRecorded` reply; nothing is published until the teacher submits the component (SL-ASM-400, with `TC-INT-036` of document 23) |
+| TC-ASM-339 | Integration | `RecordToolScore` for a component in a `Locked` section period, delivered twice, writes no mark and sends one `ToolScoreFailed` with `ASSESSMENT_MARKS_LOCKED`; a tool score for a cell the teacher already entered keeps the teacher's value and records the score in the history only |
+| TC-ASM-340 | Unit | `MasteryCalculator` worked example. Component A (max 20) is linked to outcome O1 at weight 1.00, and the student scores 15. Component B (max 10) is linked to O1 at 0.50 and O2 at 1.00, and the student scores 4. Component C, linked to O1, is coded `exempt`. Result: O1 `percent` 68.000000 (17 of 25), level 2 on bands 0-50, 50-70, 70-85, 85-100, `evidenceCount` 2, `missingCount` 1. O2 `percent` 40.000000, level 1. A `Draft` mark in A changes nothing. With no standards-based scheme assigned, `level` is `null` and the percentages are the same (feature 42, REQ-ASM-033) |
+| TC-ASM-341 | Integration | `GET /students/{id}/standards-heatmap` returns the TC-ASM-340 cells for the seeded student. A `RecordToolScore` `Draft` in component A leaves the response byte-identical. After the teacher submits A with 18, O1 reads 76.000000 at level 3 (SL-ASM-219, the per-student view) |
+| TC-ASM-342 | Integration | `GET /sections/{id}/standards-heatmap` on a four-student section with O1 at 68, 90, 45 and one student with no evidence returns `studentsAssessed` 3, `meanPercent` 67.666667 and `levelCounts` [1, 1, 0, 1] for levels 1 to 4. The fourth student is `notAssessed`. A student whose section interval ended before the request is not in `students[]`. With `limit` 2, the first page holds 2 students and a `nextCursor`, the second page the other 2, and `classCells` are equal on both pages (SL-ASM-219, the per-class view; the class view `TC-ASM-811` (Appendix W) demonstrates) |
+| TC-ASM-343 | Integration | With rung 2 off, or with the model file missing, both routes return `nextStep: null` and `suggestion: "off"`, and cells equal to those of the rung-on response. With rung 2 on, the fixture returns at most 3 outcome ids with O2 first and a contribution for each of the five factors of section 4.5 step 5 |
+| TC-ASM-344 | Integration, security | A parent (own-children) and a student (self) get `ASSESSMENT_PERMISSION_DENIED` on both routes. A teacher of another section gets the same code on the section route. Tenant B's section id gives `ASSESSMENT_NOT_FOUND`. `limit` 201 gives `ASSESSMENT_VALIDATION_FAILED`. The section route issues 2 commands (the query budget of section 11) |
+| TC-ASM-345 | Web end to end | The mark grid in Arabic right-to-left shows a tool-score `Draft` cell whose source is a tool named in Latin script ("GeoGebra 6") and a second tool named in Arabic. Each name sits in its own `nbBidiIsolate` span (`14-design-system-and-ux.md` Section 5). The Latin name keeps its internal order and does not pull the score or the "awaiting the teacher" badge out of place. The cell's accessible name reads the tool name, the score and the Draft state in that order. It runs in the four theme and direction combinations on Chromium, Firefox and WebKit (SL-ASM-400, phase 4) |
 | TC-SEC-160 to TC-SEC-164, TC-SEC-201 | Security | T-ASM-01 to T-ASM-06 |
 | `TC-WEL-003` (Appendix R) | Integration | Accommodation applied per sitting (REQ-ASM-009) |
 | TC-ASM-760 | Unit, property | Every Appendix S example of the fourteen BR-ASM rule classes gives the same result, to the last stored digit, with the process culture set to `ar-SA`, `en-US` and `de-DE` in turn; 84.995 still reads 85.00 under each (BR-ASM-008, REQ-PLAT-019) |
@@ -1134,6 +1192,7 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 | Right-to-left output | Report cards and transcripts are rendered by Documents from Assessment's merge values, in both languages with Arabic shaping; the mark grid is right-to-left in the web client | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries, compared byte for byte between the Linux and Windows runs of Documents (`TC-PLAT-003` (document 33)); TC-ASM-101 and the other web end-to-end specs run in all four theme and direction combinations (document 33 part 2) | Linux; the PDF comparison on Linux and Windows |
 | Arabic search and collation | Assessment runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language (`ar-x-icu` or `en-x-icu`) | The culture test inside the built image, which checks the collations exist, `TC-PLAT-004` (document 33) | Linux |
 | Devices without Google services | A published report card is announced through Notification, which reaches such a device in-app while the app is open and by email; the card itself opens from the Bff.Mobile document link without any Google service | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | Device pass, per release |
+| LTI tool scores in the grid (phase 4, SL-ASM-400 with Platform's SL-INT-412) | A tool score lands as a `Draft` cell whose source is the tool. The grid shows `LtiTool.name`, a single string in whatever script the administrator typed, so it is never translated and is always wrapped in the `nbBidiIsolate` span. A Latin tool name inside the Arabic grid keeps its order and leaves the score and the Draft badge at their logical places. The score arrives as a decimal and is scaled to `max_mark` with the invariant culture (`ToolScoreScaling`), so a host culture with a comma decimal separator changes nothing | `TC-ASM-345` (the right-to-left tool name); `TC-ASM-338` and `TC-ASM-339` with `TC-INT-036` (document 23) for the path itself; `TC-ASM-760` for culture-invariant scaling | `ci-web.yml` Playwright on Chromium, Firefox and WebKit in the four theme and direction combinations, on `ubuntu-latest`; the integration tests in `ci-service.yml` on `ubuntu-latest` (Assessment is not one of Appendix X's Windows projects) |
 
 ---
 
@@ -1195,6 +1254,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | 5. Closed by ADR-0019, but not with this sheet's default. Appendix B kept its existing `assessment.exams` resource and gained a `print-paper` action beside `approve-paper`, rather than a new `assessment.exam-paper` resource, and Appendix R WF-ASM-03 now guards `Approved → PrintRequested` with `assessment.exams.print-paper` | The print-request endpoint of section 4.9 checks `assessment.exams.print-paper`; the `approve-paper` workaround is withdrawn. Appendix I gives the Academic Coordinator G09 including `print-paper` | Closed | None; a print-only role can now be granted separately | 1 | 1 | 1 | none |
 | 6. Document 11 binds `requests.request.approved.v1` to `assessment.events`, but every Assessment effect arrives as a command | The consumer acknowledges and discards | Messaging owner | Unbinding removes a queue with no behaviour | 1 | 1 | 1 | none |
 | 7. Appendix B puts `seat` under `assessment.exams` while Scheduling owns `SeatingPlan` | Per-candidate seat override only (Decisions in force) | Architect | A full seating generator here would duplicate Scheduling's | 2 | 2 | 4 | none |
+| 8. Feature 42 (the class view that `08-web-structure.md` §7.10 hands to this sheet). The data path is now specified: `component_outcomes` (section 3.1), the mastery computation and `GET /sections/{id}/standards-heatmap` (section 4.5), the section 11 query, and `TC-ASM-340` to `TC-ASM-344`. Two things stay open. Appendix E has no Academics curriculum event, so Assessment cannot keep a copy of outcome codes, statements or CASE mappings. And the mastery rule has no Appendix S identifier of its own | The response carries outcome ids, and the web resolves them with one call to Academics' `GET /api/v1/academics/outcomes`, which is the second call Section 9 of document 08 allows. An outcome Academics retires is shown as retired. The rule is implemented as `MasteryCalculator`, which reuses the BR-ASM-009 lookup and is tested by `TC-ASM-340`, until an ADR adds a BR and, if wanted, an `academics.outcome.changed.v1` event for a copy | Assessment lead, with the Academics lead for the event | A teacher without `academics.curriculum.view` sees outcome ids without labels. An outcome Academics deletes outright leaves an unlabeled column. The rule has a test but no business-rule identifier to trace | 2 | 2 | 4 | none |
 
 ## Review record
 
@@ -1202,6 +1262,8 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | SL-ASM-400: the `RecordToolScore` command consumer on `assessment.commands` (`RecordToolScoreHandler`, idempotent on the Platform score id kept as `marks.source_score_id`), the tool score landing as a `Draft` mark awaiting the teacher (section 3.3 invariant 7, `source_tool_id`), `GetMarkGrid` naming the tool, and the deliver-twice tests `TC-ASM-338` and `TC-ASM-339`. Awaiting the round 6 score |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Feature 42 data path (REQ-ASM-033, SL-ASM-219). Added `component_outcomes`, which links a component to an Academics outcome id with a weight (section 3.1 invariants 7 and 8), and `StructureModel` now carries it. This sheet's section 4.5 adds the mastery computation (evidence, weighted percentage, level through the BR-ASM-009 lookup, class cells, and the rung 2 `NextStepRanker` with its inputs and its raw-heatmap fallback), and adds `GET /api/v1/assessment/sections/{id}/standards-heatmap` (keyset, bounded to the section, not cached) with the student route restated. Also new: the section 11 hot-query row, the folder-tree entries, and `TC-ASM-340` to `TC-ASM-344`, which assert heatmap values for student and class, with `TC-ASM-811` as the demo test. Open point 8 holds the missing outcome event and the missing BR identifier. The platform-notes row for the LTI tool-score path is new, with `TC-ASM-345` for the right-to-left tool name. Awaiting the round 7 score |
 
 ## How this document is verified
 

@@ -312,6 +312,7 @@ The command catalog, by target. A compensation command is acknowledged by the re
 | Assessment | `ConfirmYearResultsLocked`, `ComputePromotionDecisions` | `nibras.school` | 4, steps 1 and 2 | reply `YearResultsLocked` or `YearResultsNotLocked`; reply `PromotionDecisionsComputed` |
 | Assessment | `IssueTranscript` | `nibras.school`, `nibras.requests` | 5, step 3; 6 | reply `TranscriptIssued` |
 | Assessment | `OpenGradeAppeal`, `ApplyExamAccommodation`, `RemoveExamAccommodation` | `nibras.requests` | 6 | `assessment.grade-change.approved.v1` when an appeal ends in a change; reply `EffectApplied` |
+| Assessment | `RecordToolScore` | `nibras.platform` | none; LTI Assignment and Grade Services, one per accepted `FullyGraded` score, sent by `PostLtiScore` (`06-services/platform.md` §5.13 and §7.1, SL-INT-412) | reply `ToolScoreRecorded`, or `ToolScoreFailed` carrying `ASSESSMENT_MARKS_LOCKED` for a locked or submitted component |
 | Scheduling | `CopyTimetableSkeleton`, `DeleteTimetableVersion` | `nibras.school` | 4, step 7 | reply `TimetableSkeletonCreated`, `TimetableVersionDeleted` |
 | Scheduling | `AssignSubstitution`, `ReleaseSubstitution`, `ApproveRoomBooking`, `CancelRoomBooking` | `nibras.requests` | 6 | `scheduling.substitution.assigned.v1`, `scheduling.timetable.changed.v1`, `scheduling.room-booking.approved.v1` |
 | Attendance | `ApplyExcusedLeave`, `RecordLateArrival`, `IssueGatePass`, `CancelGatePass`, `UpdateAuthorizedPickups`, `RestorePreviousMarks` | `nibras.requests` | 6 | `attendance.excuse.approved.v1`, `attendance.attendance.marked.v1`, `attendance.gate-pass.issued.v1`; reply `EffectApplied` |
@@ -342,6 +343,8 @@ The rows marked worker job are the section 2.4 worker-job keys: a service sends 
 
 **Effect replies.** Every effect command above answers the Requests saga with exactly one reply on `nibras.<target>`: `EffectApplied` (`requests.replies.effect-applied.v1`) when the change took effect, or `EffectFailed` (`requests.replies.effect-failed.v1`) carrying the Appendix K code when the aggregate refused it. This is the `<Step>Failed` rule of Section 8 applied to effects, named here so that no service invents its own failure reply.
 
+**Tool scores from LTI.** `RecordToolScore` (`assessment.commands.record-tool-score.v1`) is a command outside any saga, like `GenerateDocument` from an endpoint: Platform's `PostLtiScore` writes it to the outbox in the transaction that stores the tool's score, and it reaches `assessment.commands` through the section 2.3 default binding of `assessment.commands.#` on `nibras.platform`, so no new binding is needed. It still carries the envelope of this section: `sagaId` is the id of Platform's `LtiScore` row, `stepKey` is `record-tool-score`, and `partitionKey = sagaId`. Assessment's `RecordToolScoreHandler` is idempotent on that id through the inbox and on the mark cell, writes the score as a `Draft` mark with the tool as its source, never publishes it, and answers on `nibras.assessment` with `ToolScoreRecorded` (`platform.replies.tool-score-recorded.v1`) or `ToolScoreFailed` (`platform.replies.tool-score-failed.v1`), which `platform.replies` already binds. The score is a command, not an event, because it asks Assessment to change a mark it owns, and master brief Section 8 keeps synchronous calls for queries.
+
 Saga 7 sends no command: `assessment.report-cards.generation-requested.v1` is the command, as doc 13 records. Saga 8's per-invoice render is `GenerateDocument` published by `Finance.Worker` on `nibras.finance`, which the Finance broker user may do because the worker shares the service's user.
 
 #### 2.5 Consumer queues per service
@@ -365,6 +368,7 @@ One table per data-owning service, in Appendix L order. The two common queues of
 | `platform.usage` | `*.usage.recorded.v1` bound on all twenty exchanges; this is the cross-cutting event of Appendix E and includes `ai.usage.recorded.v1` | bulk | `tenantId` | 32 | B 5 | standard; usage is additive, so a parked message is replayed into the same period and never lost |
 | `platform.events` | `notification.notification.delivered.v1`, `notification.notification.failed.v1`, `audit.integrity-check.failed.v1`, `ai.index.rebuild-completed.v1`, `requests.request.approved.v1` | standard | `userId`, `tenantId`, `requestId` | 16 | S 4 | standard |
 | `platform.saga-outcomes` | `identity.user.invited.v1`\*, `school.academic-year.opened.v1`\*, `reporting.projection.rebuild-completed.v1`, `documents.export.completed.v1`\*, `documents.document.generated.v1`, `audit.retention.partition-detached.v1` | standard | per key; the handler correlates by `correlationId` | 16 | S 4 | standard |
+| `platform.reference-copies` | `school.student.enrolled.v1`\*, `school.student.status-changed.v1`: the enrolment and leaving dates of `ref_student_enrolment_periods`, from which Platform computes the billable active-student count (BR-FIN-017, ADR-0027) | standard | `studentId` | 16 | S 4 | standard |
 | `platform.replies` | `platform.replies.#` on the nineteen other exchanges | standard | `sagaId` | 16 | C 3 | standard |
 | `platform.commands` | also on `nibras.requests` (`OpenSubjectRequest`) | standard | `sagaId` | 16 | C 3 | standard |
 
@@ -401,7 +405,7 @@ One table per data-owning service, in Appendix L order. The two common queues of
 |---|---|---|---|---|---|---|
 | `assessment.reference-copies` | `school.academic-year.opened.v1`, `school.academic-year.closed.v1`, `school.term.started.v1`, `school.section.created.v1`, `school.section.changed.v1`, `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.student.promoted.v1`, `school.student.profile-updated.v1`, `academics.teaching-assignment.changed.v1`, `finance.account.restricted.v1`, `finance.account.cleared.v1` | standard | `tenantId`, `sectionId`, `studentId`, `staffId` | 16 | S 4 | standard |
 | `assessment.events` | `academics.submission.graded.v1`, `scheduling.exam-timetable.published.v1`, `requests.request.approved.v1` | standard | `assignmentId`, `tenantId`, `requestId` | 16 | S 4 | standard |
-| `assessment.commands` | also on `nibras.school`, `nibras.requests` | standard | `sagaId` | 16 | C 3 | standard |
+| `assessment.commands` | also on `nibras.school`, `nibras.requests`; `RecordToolScore` from `nibras.platform` through the `<service>.commands` default of section 2.3 (section 2.4, "Tool scores from LTI") | standard | `sagaId` | 16 | C 3 | standard |
 | `assessment-worker.results.bulk` | `assessment.commands.compute-results.v1` on `nibras.assessment`, published by the Api when a batch starts (doc 13 saga 7 step 2) or when `ComputePromotionDecisions` arrives | bulk | `tenantId` | 4 | B 5 | standard |
 | `assessment-worker.report-cards.bulk` | `documents.document.generated.v1` | bulk | `subjectId` | 32 | B 5 | standard; the batch orchestration of doc 13 saga 7 counts these, so a parked outcome shows as "stalled" in the batch, never as done |
 
@@ -590,7 +594,7 @@ Every key marked with an asterisk above is required by another plan document and
 | `school.section.created.v1`, `school.section.changed.v1` | Communication, Behavior, Operations, Wellbeing | `10-data-architecture.md` section 6 reference copies |
 | `school.staff.created.v1` | Communication, Requests | same |
 | `school.staff.left.v1` | Communication | same |
-| `school.student.enrolled.v1` | Requests; Admissions as a saga outcome | same; doc 13 saga 3 |
+| `school.student.enrolled.v1` | Requests; Admissions as a saga outcome; Platform | same; doc 13 saga 3; ADR-0027 (Platform computes BR-FIN-017 from its own copy) |
 | `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | Wellbeing | `10-data-architecture.md` section 6 |
 | `platform.tenant.provisioned.v1` | Documents | `10-data-architecture.md` section 6, branding copy |
 | `identity.user.invited.v1`, `school.academic-year.opened.v1`, `documents.export.completed.v1` | Platform | doc 13 sagas 1 and 2 outcomes |
@@ -1146,6 +1150,8 @@ Each suite carries one test-case identifier from this document's block `TC-MSG-7
 | 2026-09-20 | drafted, sections 1.1 to 1.6 | continued |
 | 2026-09-21 | drafted, sections 2 to 12 and the closing sections | awaiting Group C review |
 | 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | Section 2.4 Notification row and section 2.5 `notification.commands` now bind every `RequestNotification` sender the sheets declare, adding `nibras.communication`, `nibras.documents`, `nibras.reporting`, `nibras.behavior`, `nibras.wellbeing`, `nibras.hr` and `nibras.operations`, with the rule that a Wellbeing request carries the template id and recipient only. Section 2.2: Operations keeps the returned document id; `operations.events` binds `documents.document.generated.v1` (`DocumentGeneratedConsumer`), and the `behavior.events` row names its consumer. Section 12 adds the command-sender binding convention test |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Section 2.4 catalogs `RecordToolScore` (`assessment.commands.record-tool-score.v1`), sent on `nibras.platform` by the LTI score route of SL-INT-412 outside any saga, with its replies `ToolScoreRecorded` and `ToolScoreFailed` and a paragraph on its envelope; section 2.5's `assessment.commands` row names it as arriving through the `nibras.platform` default binding. Awaiting the round 6 score |
+| 2026-09-26 | Open Question 30 decided (ADR-0027) | Section 2.5 adds `platform.reference-copies` (`school.student.enrolled.v1`, `school.student.status-changed.v1`) for Platform's billable active-student count, and section 2.6 adds Platform to the consumers of `school.student.enrolled.v1`. `finance.usage.recorded.v1` stays bound by `platform.usage` because Finance still publishes the `api-calls` meter; it no longer carries an `active-students` meter |
 
 ## How this document is verified
 

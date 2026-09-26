@@ -2,7 +2,7 @@
 
 > Service sheet, plan document 06, Group C. Names from Appendix L; events from Appendix E; permissions from Appendix B; error codes from Appendix K; settings categories from Appendix G. This sheet adds detail to reference architecture section 8.11 and never contradicts its table 8.0.
 
-Finance is the school's fee ledger: what each student is charged, who pays it, what has been paid, and every correction, all as immutable posted documents in gapless numbered series. It turns fee structures into per-student plans and installments, runs bulk invoice runs, takes payments by every instrument including cheques and an online gateway it never exposes card data to, allocates them by rule, drives the reminder ladder and the audited service restrictions, closes the cashier day to 0.00, and exports the month to accounting and e-invoicing. It holds more business rules than any other service (twenty of the ninety-five in `31-business-rules-and-workflows.md`) and six workflows, so the sheet specifies each money path to the column and the transaction.
+Finance is the school's fee ledger: what each student is charged, who pays it, what has been paid, and every correction, all as immutable posted documents in gapless numbered series. It turns fee structures into per-student plans and installments, runs bulk invoice runs, takes payments by every instrument including cheques and an online gateway it never exposes card data to, allocates them by rule, drives the reminder ladder and the audited service restrictions, closes the cashier day to 0.00, and exports the month to accounting and e-invoicing. It holds more business rules than any other service (eighteen of the ninety-five in `31-business-rules-and-workflows.md`) and six workflows, so the sheet specifies each money path to the column and the transaction.
 
 | Fact | Value (quoted from `05-service-catalog.md` and Appendix L) |
 |---|---|
@@ -41,7 +41,6 @@ Finance is the school's fee ledger: what each student is charged, who pays it, w
 | Cashier | Shifts with a float, counts per instrument, discrepancy escalation, deposit slips and the signed day close (WF-FIN-06, REQ-FIN-028 to REQ-FIN-030) |
 | Finance clearance | The finance item of the withdrawal clearance (Saga 5 step 1) |
 | Reports and exports | Collections, aging, outstanding by grade, discounts granted, revenue forecast, cash flow, tax, defaulters (REQ-FIN-031); the accounting export and the e-invoicing plug-in interface (REQ-FIN-032) |
-| Active-student count | The monthly count Platform bills on, published to Platform as `finance.usage.recorded.v1`. **Default in force (Open Question 30, still open, RISK-52):** students enrolled on the billing date, prorated by day from a mid-month enrollment, as master brief Section 36 and REQ-PLT-009 state. BR-FIN-017 ("enrolled at least one day of the month", no proration) and SL-PLT-010, which lists it, contradict that default until the product owner decides (open point 3) |
 | Rule classes | The twenty rule classes of `31-business-rules-and-workflows.md` section 2 owned by Finance, including BR-L10N-004 (amounts in words) |
 
 ## 2. Not responsible for
@@ -59,7 +58,7 @@ Finance is the school's fee ledger: what each student is charged, who pays it, w
 | Holding a report card, blocking re-enrolment or an activity place | Assessment, Admissions, Operations | Finance publishes `finance.account.restricted.v1` and `finance.account.cleared.v1`; the restricted service consumes them (BR-FIN-016 edge case) |
 | Transport routes, library loans, activity places and the amount they charge | Operations | Operations decides the charge; Finance posts it from the event and never recomputes it |
 | Payroll, salaries and payslips | Hr | Finance registers the payroll period for the accounting export pack; no amount crosses (Appendix J) |
-| The platform's own invoices to a school, subscriptions and plan limits | Platform (`TenantInvoice`, `Subscription`) | Finance supplies the active-student count only; BR-FIN-018 ownership is open point 3 |
+| The platform's own invoices to a school, subscriptions and plan limits | Platform (`TenantInvoice`, `Subscription`) | Platform also computes the billable active-student count (BR-FIN-017) and the plan-change proration (BR-FIN-018) from its own copy of School's enrolment events (ADR-0027); Finance supplies nothing to tenant billing |
 | A general ledger, chart of accounts screens, expenses and budgets | Optional Ledger service (Tier 3, Appendix L.5); expenses and budgets are Tier 2 | REQ-FIN-034: served by the accounting export; budgets are open point 5 |
 | Read models, dashboards and the aging projection used by Student 360 | Reporting | Reporting projects `finance_balance_facts` from Finance's events (balance figures only, Appendix J.3) |
 | The audit store | Audit | Finance emits `finance.audit.recorded.v1` through the outbox for every transition and every sensitive read |
@@ -71,7 +70,6 @@ Finance is the school's fee ledger: what each student is charged, who pays it, w
 | Range or identifier | What it binds here |
 |---|---|
 | REQ-FIN-001 to REQ-FIN-043 | Every row of the FIN area in `03-requirements-catalog.md`; REQ-FIN-033 (Tier 2 budgets) and REQ-FIN-034 (Tier 3 ledger) are bounded by open point 5 and section 2 |
-| REQ-PLT-009, REQ-PLT-010 | Platform rows whose rules BR-FIN-017 and BR-FIN-018 are assigned to Finance by document 31; REQ-PLT-009's count is the default in force for Open Question 30, and BR-FIN-017 contradicts it until decided (open point 3) |
 | REQ-RQS-014 | The request fee posted by `PostRequestFee` (Saga 6 step 1) |
 | REQ-SEC-010 | `svc_finance` with no `BYPASSRLS`, its own RabbitMQ and Redis ACL users |
 | REQ-PRV-007 | Financial documents retained 10 years, then archived read-only (`FinanceArchiveJob`) |
@@ -363,7 +361,7 @@ Invariants: `cleared` only when every balance of the student across payers is 0.
 
 ### 4.18 Reference copies (read-only, section 9)
 
-`ref_students` (`student_id`, `student_number`, `name_en`, `name_ar`, `section_id`, `grade_level_id`, `campus_id`, `status`, `fee_plan_code`, `source_version`, `reconciled_at`), `ref_student_status_periods` (`student_id`, `status`, `from_date`, `to_date`) for BR-FIN-017, `ref_guardian_links` (`guardian_id`, `student_ids`, `name_en`, `name_ar`, `preferred_language`, `contact_order`, `pays`), `ref_admitted_applicants` (`application_id`, `student_id`, `guardian_ids`, `academic_year_id`), `ref_tenant_state` and `ref_settings` (the Finance, General, Requests and Integrations categories of Appendix G). Every copy carries `tenant_id`, `source_version` and `reconciled_at` and no Sensitive field.
+`ref_students` (`student_id`, `student_number`, `name_en`, `name_ar`, `section_id`, `grade_level_id`, `campus_id`, `status`, `fee_plan_code`, `source_version`, `reconciled_at`), `ref_guardian_links` (`guardian_id`, `student_ids`, `name_en`, `name_ar`, `preferred_language`, `contact_order`, `pays`), `ref_admitted_applicants` (`application_id`, `student_id`, `guardian_ids`, `academic_year_id`), `ref_tenant_state` and `ref_settings` (the Finance, General, Requests and Integrations categories of Appendix G). Every copy carries `tenant_id`, `source_version` and `reconciled_at` and no Sensitive field.
 
 ### 4.19 How a number is allocated
 
@@ -638,7 +636,7 @@ Reference architecture table 8.0 names no service with Finance as a request-path
 |---|---|---|---|---|---|
 | `FeePlanCatalog` | `ListFeePlanNames(academic_year_id, page_token)` | plan code, name `LocalizedText`, grade level id | 5 s | Admissions (fee plan names copy, seeded at provisioning and on reactivation) | 2 commands |
 | `FeePlanCatalog` | `Checksum(academic_year_id)` | `md5` over `(plan_code, updated_at)` | 30 s | Admissions nightly reconciliation | 1 command |
-| `Usage` | `Recount(meter, period_start, period_end)` | quantity for `active-students` under the Open Question 30 default in force (REQ-PLT-009; open point 3) | 30 s | Platform monthly re-sum (BR-PLT-005) | 2 commands |
+| `Usage` | `Recount(meter, period_start, period_end)` | quantity for `api-calls`, the only meter Finance publishes; the billable active-student count is Platform's (BR-FIN-017, ADR-0027) | 30 s | Platform monthly re-sum (BR-PLT-005) | 2 commands |
 | `Reconciliation` | `Snapshot(projection_kind, page_token)` | balance facts: invoice id, student id, totals, balance, status; no payer bank or gateway data | 5 s per page | Reporting rebuild of `finance_balance_facts` | 1 command per page |
 
 ---
@@ -667,7 +665,7 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 | `finance.cash-session.closed.v1` | A cashier shift closes, with the declared and counted totals and the accepted difference | `campusId` | Reporting, Audit |
 | `finance.deposit.recorded.v1` | A deposit slip is recorded against one or more closed shifts | `campusId` | Reporting, Audit |
 | `finance.day.closed.v1` | Balanced day close | `campusId` | Reporting, Audit |
-| `finance.usage.recorded.v1` | Monthly active-student count under the Open Question 30 default in force (REQ-PLT-009; BR-FIN-017 contested, open point 3), meter `active-students` | `tenantId` | Platform |
+| `finance.usage.recorded.v1` | The `api-calls` batches of the Web block only (`23-integrations-and-public-api.md` §2.5); Finance publishes no `active-students` meter, which Platform computes (BR-FIN-017, ADR-0027) | `tenantId` | Platform |
 | `finance.audit.recorded.v1` | Every workflow transition, every approval, every access-logged read of a Sensitive column | `tenantId` | Audit |
 
 Commands and replies Finance sends, on `nibras.finance` (document 11 section 2.4): `GenerateDocument` to Documents (invoices, receipts, credit notes, refund advice, statements, award and undertaking letters, day-close report), `RequestNotification` to Notification (workflow messages without a catalogued trigger), and the replies `FeePlanVoided`, `FeePlansVoided`, `ClearanceBlocked`, `ClearanceItemCancelled`, `EffectApplied` or `EffectFailed`, `ImportBatchValidated`, `ImportBatchPreviewed`, `ImportBatchCommitted`, `ImportRolledBack`, `TenantProvisioned`, `TenantDeprovisioned`, `TenantDataDeleted` and the tier-migration replies. Worker jobs `finance.commands.run-invoice-batch.v1`, `finance.commands.run-reminder-ladder.v1` and `finance.commands.generate-statements.v1` are internal to the service.
@@ -690,7 +688,7 @@ Queues are those of document 11 section 2.5 for Finance plus the two common queu
 | `school.academic-year.closed.v1` | `finance.reference-copies` | `AcademicYearClosedConsumer` | Marks the year's invoice partition for archive under `FinanceArchiveJob`; new reversals route to the current year (TC-FIN-012) |
 | `school.term.started.v1` | `finance.reference-copies` | `TermStartedConsumer` | Marks the term's installment periods ready for an invoice run on the accountant home |
 | `school.student.enrolled.v1` | `finance.reference-copies` | `StudentEnrolledConsumer` | Creates `ref_students`; releases and allocates held payments once (REQ-FIN-043); pro-rata start date for a mid-year joiner |
-| `school.student.status-changed.v1` | `finance.reference-copies` | `StudentStatusChangedConsumer` | Status and `ref_student_status_periods` (the active-student count, open point 3); a leaver's unissued installments are pro-rated (BR-FIN-002 or BR-FIN-003) and the rest cancelled |
+| `school.student.status-changed.v1` | `finance.reference-copies` | `StudentStatusChangedConsumer` | Status in `ref_students`; a leaver's unissued installments are pro-rated (BR-FIN-002 or BR-FIN-003) and the rest cancelled |
 | `school.student.promoted.v1` | `finance.reference-copies` | `StudentPromotedConsumer` | Grade level in the copy; next-year plan comes from Saga 4's command, not from this event |
 | `school.student.profile-updated.v1` | `finance.reference-copies` | `StudentProfileUpdatedConsumer` | Names in the copy |
 | `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | `finance.reference-copies` | `GuardianLinkConsumer` | `ref_guardian_links` and the `pays` flag; creates the guardian payer and a 100 percent share when a student has none |
@@ -726,7 +724,7 @@ State types and feature folders are fixed by `31-business-rules-and-workflows.md
 | Saga 6 (WF-RQS-01) | Participant, step 1 and effects | Saga | none here | `Features/RequestFee/`, `Features/RequestEffects/` | `PostRequestFee` and `ReverseRequestFee`; `RegenerateInstallments`, `AttachDiscount`, `DetachDiscount`, `RequestRefund`, `WithdrawRefundRequest`, `ChangePayer`, `RevertPayer`, each keyed on `requestId` |
 | Saga 9 (WF-DATA-01) | Target service for balances | Saga | none here | `Features/ImportBatch/` | `ValidateImportBatch`, `DryRunImportBatch`, `CommitImportBatch` (opening balances as `opening-balance` invoices), `RollbackImport` (a committed opening balance is reversed by credit note inside the 7-day window, never deleted) |
 | Saga 1, 2, 10 | Participant | Saga | none here | `Features/TenantLifecycle/` | Provision, delete tenant data, dedicated-database copy and purge |
-| WF-ADM-02, WF-ASM-01, WF-SCH-04, WF-OPS-01, WF-OPS-02, WF-OPS-03, WF-HR-04, WF-PLT-02 | Touched | Single or effect (document 13 section 1) | none here | consumers in section 7.2 | Overdue input to re-enrolment; restriction input to report cards; campus transfer re-issues unissued installments under the new campus series; charges from Operations; payroll period registration; active-student count to Platform |
+| WF-ADM-02, WF-ASM-01, WF-SCH-04, WF-OPS-01, WF-OPS-02, WF-OPS-03, WF-HR-04, WF-PLT-02 | Touched | Single or effect (document 13 section 1) | none here | consumers in section 7.2 | Overdue input to re-enrolment; restriction input to report cards; campus transfer re-issues unissued installments under the new campus series; charges from Operations; payroll period registration; nothing for WF-PLT-02, whose count and proration are Platform's (ADR-0027) |
 
 ```mermaid
 stateDiagram-v2
@@ -847,7 +845,7 @@ stateDiagram-v2
 
 | Copy | Source events | Fields kept | Reconciliation | Staleness tolerated |
 |---|---|---|---|---|
-| `ref_students`, `ref_student_status_periods` | `school.student.enrolled.v1`, `school.student.status-changed.v1`, `school.student.promoted.v1`, `school.student.profile-updated.v1`, `admissions.offer.accepted.v1`, `admissions.re-enrollment.confirmed.v1`, `admissions.re-enrollment.declined.v1` | as `10-data-architecture.md` section 6, plus the status periods | Nightly 02:00 in the band's time zone, `ReferenceCopyReconciliationJob` against School `ReferenceReconciliation.Checksum` for `student`; a mismatch replays from `ListSnapshotPage` and raises `reporting.data-quality.issue-detected.v1` | Minutes; a payment for an unseen student is held, never refused |
+| `ref_students` | `school.student.enrolled.v1`, `school.student.status-changed.v1`, `school.student.promoted.v1`, `school.student.profile-updated.v1`, `admissions.offer.accepted.v1`, `admissions.re-enrollment.confirmed.v1`, `admissions.re-enrollment.declined.v1` | as `10-data-architecture.md` section 6 | Nightly 02:00 in the band's time zone, `ReferenceCopyReconciliationJob` against School `ReferenceReconciliation.Checksum` for `student`; a mismatch replays from `ListSnapshotPage` and raises `reporting.data-quality.issue-detected.v1` | Minutes; a payment for an unseen student is held, never refused |
 | `ref_guardian_links` | `school.guardian.updated.v1`, `identity.guardian-link.created.v1` | ids, names, language, contact order, `pays`; never contact details | Nightly against School `Checksum` for `guardian-link` | Minutes; a new payer is created on the first event |
 | `ref_admitted_applicants` | `admissions.offer.accepted.v1` | application, guardians, year | Dropped when the student's enrolment arrives; nightly purge of entries older than 90 days | Hours |
 | `ref_tenant_state`, `ref_settings` | `platform.*` keys of the tenant-lifecycle queue | status, read-only date, limits, flags; the Appendix G categories Finance reads | Nightly against Platform | Seconds to minutes; a settings change applies to documents posted after it |
@@ -869,7 +867,6 @@ Quartz.NET triggers run in `Finance.Worker`; each trigger publishes the worker c
 | `DayCloseReminderJob` | 23:00 campus time zone | Triggers the finance daily balance for a campus whose day is not closed (document 21 section 11) | `finance.day.closed.v1` when balanced; otherwise a data-quality finding | none |
 | `GatewaySettlementReconciliationJob` | Daily 04:00 tenant time zone | Pulls the provider settlement file through `IPaymentGateway`, matches by reference hash, records differences (REQ-FIN-039) | `reporting.data-quality.issue-detected.v1` is Reporting's; Finance raises the accountant-home item and `finance.audit.recorded.v1` | Result record |
 | `StatementJob` | Monthly on day 1 after 10:00, and on demand | Generates statements per payer on `finance-worker.statements.bulk` | `GenerateDocument` per payer | "Statements: 412 of 800" |
-| `ActiveStudentCountJob` | Monthly, day 1, 02:00 tenant time zone | Counts the active students from `ref_student_status_periods` under the Open Question 30 default in force: students enrolled on the billing date, prorated by day from a mid-month enrollment (REQ-PLT-009). BR-FIN-017's count (at least one day of the month) is the contested alternative, built only if the product owner chooses it (open point 3, RISK-52) | `finance.usage.recorded.v1` | none |
 | `SeriesYearRolloverJob` | Daily 23:30 tenant time zone, acting on 31 December | Creates next year's series rows and closes the old ones after midnight | `finance.audit.recorded.v1` | none |
 | `ReferenceCopyReconciliationJob` | Nightly 02:00 band time zone | Section 9 | `reporting.data-quality.issue-detected.v1` on a mismatch (Appendix E jobs table) | none |
 | `InvariantAuditJob` | Nightly 01:00 band time zone | 1 percent sample of aggregates and every `account_balances` row recomputed from postings (document 21 section 11) | a finding on a difference | none |
@@ -1106,13 +1103,10 @@ src/Services/Finance/                                                         Fi
 │   │   ├── PostedDocumentImmutabilityRule.cs                                 BR-FIN-014
 │   │   ├── ChequeBounceRule.cs                                               BR-FIN-015
 │   │   ├── ServiceRestrictionRule.cs                                         BR-FIN-016
-│   │   ├── ActiveStudentCountRule.cs                                         the active-student count: REQ-PLT-009 default in force, BR-FIN-017 contested (open point 3)
-│   │   ├── PlanChangeProrationRule.cs                                        BR-FIN-018 (open point 3)
 │   │   ├── SplitPayerRule.cs                                                 BR-FIN-019
 │   │   └── AmountInWordsRule.cs                                              BR-L10N-004, Arabic and English
 │   ├── References/                                                           slim read-only copies rebuilt from events, reconciled nightly
 │   │   ├── StudentReference.cs                                               id, number, names, section, grade, campus, status, plan code
-│   │   ├── StudentStatusPeriod.cs                                            status intervals for the active-student count
 │   │   ├── GuardianLinkReference.cs                                          guardian, children, language, pays flag
 │   │   ├── AdmittedApplicantReference.cs                                     accepted offer waiting for enrolment
 │   │   ├── TenantStateReference.cs                                           status, read-only date, limits, flags
@@ -1469,7 +1463,7 @@ src/Services/Finance/                                                         Fi
 │   │   │   ├── CashierConfigurations.cs                                      cashier_shifts, shift_counts, day_closes
 │   │   │   ├── RestrictionConfigurations.cs                                  restriction rules, restrictions, exemptions
 │   │   │   ├── OperationalConfigurations.cs                                  clearance items, reminders, statement runs, exports, e-invoicing, settlements
-│   │   │   └── ReferenceConfigurations.cs                                    ref_students, ref_student_status_periods, ref_guardian_links, ref_admitted_applicants, ref_tenant_state, ref_settings
+│   │   │   └── ReferenceConfigurations.cs                                    ref_students, ref_guardian_links, ref_admitted_applicants, ref_tenant_state, ref_settings
 │   │   ├── Migrations/                                                       expand-and-contract migrations, bundled by migrate.yml, never run at startup
 │   │   │   ├── 20261101000000_Initial.cs                                     first schema with row-level security, the postings grant and the first partitions
 │   │   │   └── FinanceDbContextModelSnapshot.cs                              EF Core model snapshot
@@ -1495,7 +1489,7 @@ src/Services/Finance/                                                         Fi
 │   ├── Grpc/                                                                 clients and the exposed service implementations
 │   │   ├── SchoolDirectoryClient.cs                                          StudentDirectory and GuardianDirectory: deadline, retry, breaker, fallback
 │   │   ├── FeePlanCatalogService.cs                                          FeePlanCatalog methods
-│   │   ├── UsageService.cs                                                   Usage.Recount under the same count as ActiveStudentCountJob
+│   │   ├── UsageService.cs                                                   Usage.Recount for the api-calls meter only
 │   │   └── ReconciliationService.cs                                          Snapshot for the Reporting rebuild
 │   ├── Reconciliation/                                                       nightly reference-copy checks
 │   │   └── ReferenceCopyReconciler.cs                                        compares checksums, repairs by replay, raises a finding
@@ -1528,7 +1522,6 @@ src/Services/Finance/                                                         Fi
 │   │   ├── DayCloseReminderJob.cs                                            23:00 campus time zone daily balance
 │   │   ├── GatewaySettlementReconciliationJob.cs                             daily 04:00 settlement match
 │   │   ├── StatementJob.cs                                                   monthly; publishes finance.commands.generate-statements.v1
-│   │   ├── ActiveStudentCountJob.cs                                          monthly finance.usage.recorded.v1
 │   │   ├── SeriesYearRolloverJob.cs                                          year boundary series rows
 │   │   ├── ReferenceCopyReconciliationJob.cs                                 nightly checksum against School
 │   │   ├── InvariantAuditJob.cs                                              nightly sample and balance recompute
@@ -1544,7 +1537,7 @@ src/Services/Finance/                                                         Fi
 └── tests/                                                                    the service's own suites; cross-service suites are under /tests
     ├── Nibras.Finance.UnitTests/                                             domain and handlers, no containers
     │   ├── Domain/                                                           one class per aggregate: invariants of section 4
-    │   ├── Rules/                                                            the twenty rule test classes of document 31, table-driven and property-based, under ar-SA, en-US and de-DE
+    │   ├── Rules/                                                            the eighteen rule test classes of document 31, table-driven and property-based, under ar-SA, en-US and de-DE
     │   ├── Features/                                                         handler tests with fakes for the ports
     │   ├── Sagas/                                                            InvoiceRunSaga transitions with a fake clock
     │   └── Consumers/                                                        deliver-twice and out-of-order tests per consumer
@@ -1607,7 +1600,6 @@ Existing identifiers are reused; new ones are minted from `TC-FIN-601` upward, a
 | TC-FIN-618 | A 300.00 SAR write-off approved by a second person posts its own document and the balance reads 0.00 (REQ-FIN-019) | Integration |
 | TC-FIN-619 | A 150.00 SAR ad hoc trip charge adds 1 statement line and raises the balance by 150.00 (REQ-FIN-007) | Integration |
 | TC-FIN-620 | With the ZATCA plug-in enabled each posted invoice is submitted once and the month's export contains every posting (REQ-FIN-032) | Integration |
-| TC-FIN-621 | The October active-student count follows the Open Question 30 default in force (REQ-PLT-009: enrolled on the billing date, prorated by day, the same figure Platform's `TC-PLT-103` asserts) and `Usage.Recount` returns the same figure; BR-FIN-017's three examples replace this expectation only if the product owner chooses that rule (open point 3) | Integration |
 | TC-FIN-622 | `PostRequestFee` delivered twice posts one invoice; `ReverseRequestFee` posts a credit note and is a no-op when no fee exists | Integration, `Messaging/` |
 | TC-FIN-623 | `AssignFeePlan` delivered twice keeps one active plan; `VoidFeePlan` after issue reverses by credit note | Integration |
 | TC-FIN-624 | `RaiseClearanceItem` replies `ClearanceBlocked` with the exact outstanding amount, then publishes `finance.account.cleared.v1` after payment | Integration |
@@ -1617,7 +1609,7 @@ Existing identifiers are reused; new ones are minted from `TC-FIN-601` upward, a
 | TC-FIN-628 | Reading payer bank details writes an access-log audit entry in the same transaction and fails the read when the audit write fails (Appendix J rule 8) | Integration |
 | TC-FIN-629 | No Finance event payload, gRPC response or cache value contains a gateway reference, IBAN or card digit (schema and cache scan) | Contract |
 | TC-FIN-630 | Every Finance rule class of document 31 runs its Appendix S examples under `ar-SA`, `en-US` and `de-DE` with identical results (REQ-TST-004) | Unit, `Rules/` |
-| TC-FIN-631 | Stryker.NET mutation score of 80 percent or better on the twenty rule classes (REQ-TST-008) | Nightly |
+| TC-FIN-631 | Stryker.NET mutation score of 80 percent or better on the eighteen rule classes (REQ-TST-008) | Nightly |
 | TC-FIN-632 | Parent A requesting parent B's invoice id receives `FINANCE_NOT_FOUND` with no hint of the record (T-FIN-06) | Integration |
 | TC-FIN-633 | Reminder ladder rerun on the same day sends no rung twice; late fee stops at the BR-FIN-007 cap after 8 weeks | Integration, `Jobs/` |
 | TC-FIN-750 | With the process culture set to `ar-SA`, `en-US` and then `de-DE`, the receipt payload Finance sends in `GenerateDocument` for a JOD payment of 1,250.500 carries the amount as `1250.500` with a `.` separator and Latin digits, the currency `JOD`, ISO 8601 dates, and the amount in words from `AmountInWordsRule` in both languages (BR-L10N-004), byte-identical across the three runs; the rendered bilingual receipt then matches its baseline (`TC-TST-208`, document 16) | Integration, on `ubuntu-latest` (REQ-L10N-012, REQ-PLAT-019) |
@@ -1635,7 +1627,7 @@ Existing identifiers are reused; new ones are minted from `TC-FIN-601` upward, a
 
 **Signature features.** Finance owns none. It serves Appendix W features 1 (the accountant's Today cards), 10 (fee plans and discounts a school changes itself), 27 (a balance that drills to its postings) and 38 (the plug-in kit, through `EInvoicingPluginHost`; open point 12 holds the country plug-ins' phase), cited by their numbers. Each feature's moment, rung, autonomy, the requirements and slices that build it, its Appendix O step and its demo test are held once, in the "Signature feature trace" table of `32-product-differentiation-and-demo.md`, and are not copied here.
 
-Rule test classes, one per rule, each carrying its Appendix S examples as theory rows: `InstallmentGenerationRulesTests`, `ProRataByDaysRulesTests`, `ProRataByMonthsRulesTests`, `DiscountStackingRulesTests`, `SiblingDiscountRulesTests`, `ScholarshipCapRulesTests`, `LateFeeAccrualRulesTests`, `PaymentAllocationRulesTests`, `OverpaymentCreditRulesTests`, `RefundSourceRulesTests`, `CurrencyRoundingRulesTests`, `TaxInclusiveExclusiveRulesTests`, `GaplessNumberingRulesTests`, `PostedDocumentImmutabilityRulesTests`, `ChequeBounceRulesTests`, `ServiceRestrictionRulesTests`, `ActiveStudentCountRulesTests`, `PlanChangeProrationRulesTests`, `SplitPayerRulesTests`, `AmountInWordsRulesTests`. Query budgets are the `TC-PERF-1NN` rows that `QueryBudget.Tests` generates from document 21 section 3.9 and section 12 of this sheet.
+Rule test classes, one per rule, each carrying its Appendix S examples as theory rows: `InstallmentGenerationRulesTests`, `ProRataByDaysRulesTests`, `ProRataByMonthsRulesTests`, `DiscountStackingRulesTests`, `SiblingDiscountRulesTests`, `ScholarshipCapRulesTests`, `LateFeeAccrualRulesTests`, `PaymentAllocationRulesTests`, `OverpaymentCreditRulesTests`, `RefundSourceRulesTests`, `CurrencyRoundingRulesTests`, `TaxInclusiveExclusiveRulesTests`, `GaplessNumberingRulesTests`, `PostedDocumentImmutabilityRulesTests`, `ChequeBounceRulesTests`, `ServiceRestrictionRulesTests`, `SplitPayerRulesTests`, `AmountInWordsRulesTests`. Query budgets are the `TC-PERF-1NN` rows that `QueryBudget.Tests` generates from document 21 section 3.9 and section 12 of this sheet.
 
 ---
 
@@ -1702,7 +1694,7 @@ Likelihood (L) and impact (I) use the 1 to 5 scales of `18-risk-register.md` Sec
 |---|---|---|---|---|---|---|---|---|
 | 1 | `10-data-architecture.md` section 1 says `SERIALIZABLE` on number allocation and cites BR-FIN-014; document 21 section 3.9 query 4 uses `UPDATE series ... RETURNING` under `SERIALIZABLE` with index `ux_series_code (tenant_id, code)` | This sheet's row lock under `READ COMMITTED` with `ux_series_campus_code`; both documents are aligned in their next revision and doc 10's citation becomes BR-FIN-013 | Data architect | Resolved 2026-09-22: documents 10 and 21 now describe the row lock and cite this section | 1 | 1 | 1 | none |
 | 2 | Appendix B has no `finance.payers` resource and no read permission for bank details | `finance.payers.view`, `.create`, `.edit` and `.view-bank-details` (high) guard sections 5.3 and 11.1; the workaround under `finance.plans.*` and `finance.refunds.approve` is gone | Product owner, Appendix B amendment | Resolved 2026-09-22 (ADR-0019): Appendix B carries `finance.payers` with the four names this sheet proposed, Appendix B rule 5 logs every `view-bank-details` read, and Appendix I gives the Accountant `finance.payers.*` in G14 with `view-bank-details` in G15 under four eyes | 1 | 1 | 1 | none |
-| 3 | BR-FIN-017 and BR-FIN-018 are SaaS-billing rules assigned to Finance by document 31, while REQ-PLT-009 and REQ-PLT-010 are Platform's; REQ-PLT-009 ("counted on the billing date, prorated by day") contradicts BR-FIN-017 ("enrolled at least one day in the month") | **Still open: Open Question 30.** Default in force: the brief and REQ-PLT-009, students enrolled on the billing date, prorated by day from a mid-month enrollment, because master brief Section 36 outranks Appendix S and puts the definition in the contract. Finance's `ActiveStudentCountJob` and `Usage.Recount` compute that count and publish `finance.usage.recorded.v1`; BR-FIN-017 ("at least one day of the month", no proration) and SL-PLT-010, which lists BR-FIN-017 among what it covers, contradict the default until the product owner decides, and an ADR with a brief version bump then corrects the losing side. `PlanChangeProrationRule` (BR-FIN-018) is built and tested in Finance but has no Finance caller; moving BR-FIN-018 to Platform is proposed by the same ADR | Product owner, with the architect | Platform bills on a different active-student figure than the contract states, or invoices are reissued after launch; BR-PLT-005's reconciliation of the Finance figure against the Platform meter blocks invoicing on any disagreement meanwhile | 4 | 4 | 16 | RISK-52 |
+| 3 | BR-FIN-017 and BR-FIN-018 are SaaS-billing rules assigned to Finance by document 31, while REQ-PLT-009 and REQ-PLT-010 are Platform's; REQ-PLT-009 ("counted on the billing date, prorated by day") contradicts BR-FIN-017 ("enrolled at least one day in the month") | Master brief Section 36's count, computed and owned by Platform | Product owner, with the architect | Closed 2026-09-26 by ADR-0027 (Open Question 30, Accepted; brief v9.7): BR-FIN-017 is rewritten to Section 36 (enrolled, prorated by day from the enrollment date, a leaver counted in full for the month of leaving, rounded once on the total to two places) and, with BR-FIN-018 (downgrade at the next renewal), is owned by Platform. Finance no longer counts: `ActiveStudentCountJob`, `ActiveStudentCountRule`, `PlanChangeProrationRule`, `StudentStatusPeriod` and `ref_student_status_periods` are removed, `finance.usage.recorded.v1` and `Usage.Recount` carry `api-calls` only, and the retired Finance count test's assertion moved to Platform's TC-PLT-103 | 1 | 1 | 1 | none |
 | 4 | Appendix G's rounding default ("half-up, 2 decimals") does not say JOD is 3 decimals, and BR-FIN-011 says half away from zero | Decimals are the currency's ISO 4217 minor unit, so a JOD tenant gets 3 with no per-tenant correction; this sheet still uses half away from zero for credit notes, which agrees with half-up on positive amounts | Product owner | Resolved 2026-09-22 (ADR-0019): Appendix G's Finance rounding row now reads "decimals follow the currency's ISO 4217 minor units: 3 for JOD, 2 for SAR and AED", and BR-FIN-011 names the scale as the ISO 4217 minor unit | 1 | 1 | 1 | none |
 | 5 | REQ-FIN-033 expenses and budgets (Tier 2, WF-OPS-01) have no Finance entity or permission in Appendices B and F | Not built in the Tier 1 service; a `Budget` aggregate and `finance.budgets` permission arrive with the Tier 2 phase under an ADR | Product owner | WF-OPS-01's budget check has no owner until then | 2 | 2 | 4 | none |
 | 6 | Appendix R names events Appendix E lacks: `finance.scholarship.awarded.v1` (WF-FIN-04), `finance.payer.changed.v1` (WF-FIN-05), `finance.cash-session.closed.v1` and `finance.deposit.recorded.v1` (WF-FIN-06), and `audit.action.recorded.v1` everywhere | Section 7.1 publishes all four keys at the transitions that raise them, and `finance.audit.recorded.v1` is the only audit form Finance writes. Workflow messages that still have no Appendix C row (reversal escalation, scholarship evidence request and award letter, sponsor undertaking and reminder, shift escalation) keep going through `RequestNotification` | Architect, Appendix R and E amendment | Resolved 2026-09-22 (ADR-0019): Appendix E carries the four Finance keys with their payloads and consumers, and its cross-cutting paragraph states that the audit entry Appendix R names is the publishing service's own `<service>.audit.recorded.v1`, so there is no shared audit key. The Appendix C rows for the five workflow messages were not added and remain proposed | 2 | 1 | 2 | none |
@@ -1718,6 +1710,7 @@ Likelihood (L) and impact (I) use the 1 to 5 scales of `18-risk-register.md` Sec
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Open Question 30 decided (ADR-0027) | Finance no longer computes the billable active-student count: the responsibility, requirement and ownership rows, `ActiveStudentCountJob`, `ActiveStudentCountRule.cs`, `PlanChangeProrationRule.cs`, `StudentStatusPeriod.cs` and `ref_student_status_periods` are removed; `finance.usage.recorded.v1` and `Usage.Recount` keep the `api-calls` meter only; the retired Finance count test retired, its assertion moved to Platform's TC-PLT-103; rule classes counted as eighteen per document 31; open point 3 closed |
 
 ## How this document is verified
 

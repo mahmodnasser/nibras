@@ -171,7 +171,7 @@ stateDiagram-v2
 
 **Process monitor.** Row per saga: tenant name, plan, state, elapsed against the 10-minute deadline, a 19-cell service grid coloured by status with the verbatim last error on hover, and the actions `Retry step`, `Compensate now` and `Abandon`, mapped to `platform.jobs.retry`, `platform.jobs.cancel` and `platform.tenants.delete` from Appendix B. The signup page polls the same state and shows "Creating your school: 14 of 19 services ready".
 
-**Tests.** Class `TenantProvisioningSagaTests` in `Nibras.Platform.IntegrationTests/Sagas/`. `TC-PLT-005` (Appendix R) proves the transition in general; `TC-PLT-780` to `TC-PLT-782`, defined here, each fail one step and assert what that step's position adds: which reverse commands run, in which order, and what the journal and the tenant row hold afterwards.
+**Tests.** Class `TenantProvisioningSagaTests` in `Nibras.Platform.IntegrationTests/Sagas/`. `TC-PLT-005` (Appendix R) proves the transition in general; `TC-PLT-780` to `TC-PLT-782`, defined here, each fail one step and assert what that step's position adds: which reverse commands run, in which order, and what the journal and the tenant row hold afterwards. `TC-PLT-783` and `TC-PLT-784`, also defined here, are the deliver-twice and compensate-twice scenarios. In every saga below, a scenario whose Test case cell holds a method name is a test method of the saga's class, not a test case; the deliver-twice and run-twice scenarios all carry a test case identifier.
 
 | Scenario | Expected outcome | Test case |
 |---|---|---|
@@ -182,9 +182,9 @@ stateDiagram-v2
 | Step 4 fails | Invitation revoked, schemas dropped, tenant row in `Compensated` | TC-PLT-781 |
 | Step 5 or 6 fails | Steps 2 to 4 reversed in order, journal complete | TC-PLT-782 |
 | Deadline passed while retrying | Alert raised, retries continue, state visible as `TimedOut` | TC-PLT-550 |
-| `TenantProvisioned` reply delivered twice | Second reply ignored, step count unchanged | `ProvisionTenantReply_DeliveredTwice_Ignored` |
-| Compensation runs twice | Second run is a no-op on every service | `Compensation_RunTwice_NoSecondEffect` |
-| Platform Api killed after 9 of 19 replies | On restart the saga resumes from persisted `Steps`; no service provisions twice | `WorkerKilledMidFanOut_Resumes_NoDuplicates` |
+| `TenantProvisioned` reply delivered twice | Second reply ignored, step count unchanged | TC-PLT-783 |
+| Compensation runs twice | Second run is a no-op on every service | TC-PLT-784 |
+| Platform Api killed after 9 of 19 replies | On restart the saga resumes from persisted `Steps`; no service provisions twice (test method `WorkerKilledMidFanOut_Resumes_NoDuplicates`) | TC-PLT-786 |
 
 #### Saga 2. Tenant deletion (WF-PLT-03)
 
@@ -243,8 +243,8 @@ stateDiagram-v2
 | Full path | Certificate lists every service with counts, `platform.tenant.deleted.v1` once | `TC-PLT-026` (Appendix R) |
 | Step 6: one service never confirms | Saga in `Stuck` after 24 h, certificate withheld, operator alerted | `DeleteTenantData_ServiceSilent_Stuck_NoCertificate` |
 | Step 8 fails | Retried; certificate withheld until the partition is detached | `DetachAuditPartition_Fails_Retried` |
-| `DeleteTenantData` delivered twice | Second delivery replies the stored counts, deletes nothing further | `DeleteTenantData_DeliveredTwice_StableCounts` |
-| Platform Api killed during step 6 | Resume continues with the unconfirmed services only | `WorkerKilledMidDeletion_Resumes_NoDoubleCount` |
+| `DeleteTenantData` delivered twice | Second delivery replies the stored counts, deletes nothing further | TC-PLT-785 |
+| Platform Api killed during step 6 | Resume continues with the unconfirmed services only (test method `WorkerKilledMidDeletion_Resumes_NoDoubleCount`) | TC-PLT-787 |
 | Export requested while suspended | Completes (BR-PLT-006, second example) | TC-PLT-552 |
 
 #### Saga 3. Enrolment from an accepted offer (WF-ADM-01, `DepositPaid → Enrolled`)
@@ -305,8 +305,8 @@ stateDiagram-v2
 | Step 3 fails | Enrolment withdrawn; no fee plan; no invitations | `AssignFeePlan_Fails_EnrolmentWithdrawn` |
 | Step 5 fails | Steps 4, 3, 2 reversed; accounts deactivated not deleted | `GenerateLetter_Fails_AccountsDeactivatedNotDeleted` |
 | Finance silent for 45 minutes | Three retries then compensation; timeline visible | `AssignFeePlan_Timeout_Compensates` |
-| Outcome event delivered twice | Step advances once | `OutcomeEvent_DeliveredTwice_SingleAdvance` |
-| Admissions Api killed after step 3 | On restart step 4 is sent once, not twice | `WorkerKilledAfterStep3_Resumes_NoDuplicateInvite` |
+| Outcome event delivered twice | Step advances once | TC-ADM-780 |
+| Admissions Api killed after step 3 | On restart step 4 is sent once, not twice (test method `WorkerKilledAfterStep3_Resumes_NoDuplicateInvite`) | TC-ADM-781 |
 
 #### Saga 4. Year-end rollover (WF-SCH-02)
 
@@ -431,8 +431,8 @@ stateDiagram-v2
 | Step 4 fails | Transcript revoked, student still enrolled, timetable still valid | `GenerateCertificate_Fails_StudentStaysEnrolled` |
 | Step 6 fails | Retried; withdrawal stands; operator alerted at 3 attempts | `DeactivateAccount_Fails_WithdrawalStands` |
 | Blocked for 60 days | `Cancelled`, must be raised again | `ClearanceBlocked_60Days_Cancelled` |
-| Clearance reply delivered twice | Item status unchanged on the second | `ClearanceReply_DeliveredTwice_Ignored` |
-| School Api killed between steps 3 and 4 | Resume sends step 4 once | `WorkerKilledAfterTranscript_Resumes_NoDuplicateCertificate` |
+| Clearance reply delivered twice | Item status unchanged on the second | TC-SCH-780 |
+| School Api killed between steps 3 and 4 | Resume sends step 4 once (test method `WorkerKilledAfterTranscript_Resumes_NoDuplicateCertificate`) | TC-SCH-781 |
 
 #### Saga 6. Request fulfilment (WF-RQS-01, `Approved → Completed`)
 
@@ -490,11 +490,11 @@ stateDiagram-v2
 | Target service refuses the effect | Earlier steps compensated, failing step named to the requester | `TC-RQS-004` (Appendix R) |
 | Transfer-certificate type: certificate fails after 3 retries | Fee reversed by credit note, status unchanged, request shows "effects failed" | `RequestEffectSagaRulesTests` (BR-RQS-006, first example) |
 | Same request retried after the fix | Fee posts once, certificate once, status changes once | `RequestEffectSagaRulesTests` (second example) |
-| Effect message delivered twice | No second fee | `RequestEffectSagaRulesTests` (third example) |
+| Effect message delivered twice | No second fee (BR-RQS-006, third example, which `RequestEffectSagaRulesTests` also runs as a rule example) | TC-RQS-780 |
 | Step 1 fails | No effect attempted, request in `EffectFailed` | `PostFee_Fails_NoEffectSent` |
 | Document step fails | Effects reversed in reverse order, fee reversed | `GenerateDocument_Fails_EffectsReversedInOrder` |
 | Owning service silent 45 minutes | Compensation after 3 attempts | `Effect_Timeout_Compensates` |
-| Requests Api killed after the effect outcome arrived | Resume sends the document step once | `WorkerKilledAfterEffect_Resumes_NoDuplicateDocument` |
+| Requests Api killed after the effect outcome arrived | Resume sends the document step once (test method `WorkerKilledAfterEffect_Resumes_NoDuplicateDocument`) | TC-RQS-781 |
 
 #### Saga 7. Report-card batch (WF-ASM-01, `Locked → Published`)
 
@@ -551,7 +551,7 @@ stateDiagram-v2
 | Restricted account | Card withheld, released on `finance.account.cleared.v1` | `RestrictedAccount_CardWithheld_ReleasedOnClear` |
 | No progress 10 minutes | Alert raised, resume from per-student status | `Batch_Stalled_AlertAndResume` |
 | Publish fails after 300 notifications | 300 stay delivered, the rest retried, no duplicate delivery | `Publish_PartialFailure_RemainderRetried` |
-| `documents.document.generated.v1` delivered twice | Student status unchanged, count unchanged | `GeneratedEvent_DeliveredTwice_SingleCount` |
+| `documents.document.generated.v1` delivered twice | Student status unchanged, count unchanged | TC-ASM-780 |
 
 #### Saga 8. Invoice run (WF-FIN-01, `InvoiceRunQueued → Issued`)
 
@@ -600,7 +600,7 @@ stateDiagram-v2
 |---|---|---|
 | 5,000 students in one run | All invoices numbered in sequence with no gap, inside the batch budget | `TC-FIN-001` (Appendix R) |
 | Run repeated for the same period | No duplicate invoice | `TC-FIN-002` (Appendix R) |
-| Finance.Worker killed after 3,240 invoices | Resume posts the remaining 1,760, sequence unbroken | `WorkerKilledMidRun_Resumes_NoGapNoDuplicate` |
+| Finance.Worker killed after 3,240 invoices | Resume posts the remaining 1,760, sequence unbroken (test method `WorkerKilledMidRun_Resumes_NoGapNoDuplicate`) | TC-FIN-780 |
 | Killed between number allocation and commit | The number is not lost: the transaction rolled back with it | `KilledBeforeCommit_NoGap` |
 | Step 3 fails for one invoice | Invoice stays issued, PDF retried, run continues | `RenderInvoice_Fails_InvoiceStandsPdfRetried` |
 | Officer cancels after 1,000 issued | 1,000 credit notes, invoices untouched, run in `Reversed` | `CancelMidRun_CreditNotesNotDeletes` |
@@ -665,10 +665,10 @@ stateDiagram-v2
 | Dry run under 24 h old | Batched commit starts with an import identifier | `TC-DATA-004` (Appendix R) |
 | A batch fails mid-import | Import reversed as a unit, no partial data | `TC-DATA-005` (Appendix R) |
 | Rollback inside the window | Created rows removed, updated rows restored, conflicts reported | `TC-DATA-006` (Appendix R) |
-| Documents.Worker killed after batch 7 of 20 | Resume commits 8 to 20 once; row count exact | `WorkerKilledMidCommit_Resumes_ExactRowCount` |
+| Documents.Worker killed after batch 7 of 20 | Resume commits 8 to 20 once; row count exact (test method `WorkerKilledMidCommit_Resumes_ExactRowCount`) | TC-DATA-791 |
 | Target service silent on step 3 | Retried, then administrator told | `DryRun_Timeout_Reported` |
-| `CommitImportBatch` delivered twice | Second delivery replies the stored result, writes nothing | `CommitBatch_DeliveredTwice_NoDuplicateRows` |
-| Rollback runs twice | Second run finds nothing to restore | `Rollback_RunTwice_NoOp` |
+| `CommitImportBatch` delivered twice | Second delivery replies the stored result, writes nothing | TC-DATA-789 |
+| Rollback runs twice | Second run finds nothing to restore | TC-DATA-790 |
 
 #### Saga 10. Tier migration (reference architecture Section 14; entered from WF-PLT-02)
 
@@ -829,6 +829,8 @@ Master brief Section 11 names five effects executed automatically on approval; A
 | 2026-09-20 | drafted | awaiting Group D review |
 | 2026-09-26 | Group D scorecard, rounds 1 and 2 | Blocked. Round 2 found Saga 10's 15-minute window against `TC-DATA-010`'s 5 minutes, Saga 10's scenarios without test identifiers, one identifier for three Saga 1 failure scenarios, `Purge now` against the cooling-off rule, and Open Question 27 missing from the open points |
 | 2026-09-26 | Round 3 remediation | Saga 10 quotes document 10's 5-minute window and has no early purge; `TC-DATA-780` to `TC-DATA-788` and `TC-PLT-780` to `TC-PLT-782` defined; Open Questions 27 and 29 added to the open points; awaiting the round 3 score |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Every deliver-twice and run-twice saga scenario now carries a test case identifier defined once here: `TC-PLT-783` to `TC-PLT-785`, `TC-ADM-780`, `TC-SCH-780`, `TC-RQS-780`, `TC-ASM-780`, `TC-DATA-789` and `TC-DATA-790`; method names left in the tables are stated to be test methods, not test cases. Awaiting the round 6 score |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Every worker-killed resume scenario now carries a test case identifier defined once here: `TC-PLT-786` (Saga 1), `TC-PLT-787` (Saga 2), `TC-ADM-781` (Saga 3), `TC-SCH-781` (Saga 5), `TC-RQS-781` (Saga 6), `TC-FIN-780` (Saga 8) and `TC-DATA-791` (Saga 9). Saga 7's crash row already cites `TC-ASM-006` (Appendix R). Each method name is kept in the expected-outcome cell as the test method. The rows of "How this document is verified" list the new identifiers. Awaiting the round 7 score |
 
 ## How this document is verified
 
@@ -839,9 +841,9 @@ Master brief Section 11 names five effects executed automatically on approval; A
 | Every Mermaid block is a `stateDiagram-v2` with a terminal state and every transition labelled | Kit-lint R17 (every block opens with a known diagram type) and R29 (every `stateDiagram-v2` block here and in Appendix R has a `--> [*]` exit and a label on every transition). That no block here uses another diagram type is checked by the `plan-consistency-checker` agent at the Group D review | Lint (`/lint-plan`); Group D review |
 | Every saga has a compensation or an explicit "last, irreversible" for every step | Review step: the `architecture-reviewer` agent walks every step table in section 3 against the saga-design skill checklist at the Group D review and on every change to section 3 | Group D review; each change to section 3 |
 | Saga 10's read-only window is the number document 10 owns | Review step: the `plan-consistency-checker` agent compares the 5-minute budget of Saga 10 step 4, its state diagram and `TC-DATA-780` and `TC-DATA-784` with REQ-DATA-027 and `TC-DATA-010` in `10-data-architecture.md`, on every change to either document; in the product, `TC-DATA-010` on the load tier fails a window of 5 minutes or more | Review; load tier before each general-availability release |
-| Every saga scenario that names a test case uses one defined once | Kit-lint R20: `TC-PLT-780` to `TC-PLT-782` and `TC-DATA-780` to `TC-DATA-788` are defined here and nowhere else, and every cited identifier resolves to one definition | Lint (`/lint-plan`) |
-| Every saga step is idempotent | The deliver-twice test per step in `<SagaName>SagaTests` | Service integration suites, phase of the owning service |
-| A killed worker loses and duplicates nothing | The `WorkerKilled*` test per saga (master brief Section 8, item 12) | Service integration suites and the phase 6 chaos drill |
+| Every saga scenario that names a test case uses one defined once | Kit-lint R20: `TC-PLT-780` to `TC-PLT-787`, `TC-ADM-780`, `TC-ADM-781`, `TC-SCH-780`, `TC-SCH-781`, `TC-RQS-780`, `TC-RQS-781`, `TC-ASM-780`, `TC-FIN-780` and `TC-DATA-780` to `TC-DATA-791` are defined here and nowhere else, and every cited identifier resolves to one definition | Lint (`/lint-plan`) |
+| Every saga step is idempotent | The deliver-twice and run-twice scenarios of section 3, each a test case: `TC-PLT-783` to `TC-PLT-785`, `TC-ADM-780`, `TC-SCH-780`, `TC-RQS-780`, `TC-ASM-780`, `TC-DATA-788` to `TC-DATA-790`; Sagas 4 and 8 prove a repeated run by `TC-SCH-015` and `TC-FIN-002` (Appendix R). Each runs in `<SagaName>SagaTests` | Service integration suites, phase of the owning service |
+| A killed worker loses and duplicates nothing | The worker-killed resume scenario of each saga whose table has one, each a test case defined in section 3: `TC-PLT-786` (Saga 1), `TC-PLT-787` (Saga 2), `TC-ADM-781` (Saga 3), `TC-SCH-781` (Saga 5), `TC-RQS-781` (Saga 6), `TC-ASM-006` (Appendix R, Saga 7), `TC-FIN-780` (Saga 8) and `TC-DATA-791` (Saga 9); the test methods are named `WorkerKilled<Where>_Resumes_<Property>` (master brief Section 8, item 12) | Service integration suites and the phase 6 chaos drill |
 | Every transition writes an audit event through the outbox | Architecture test that no transition bypasses the pipeline; Audit integration test that every `<service>.audit.recorded.v1` lands in the chain | `tests/Architecture.Tests`, Audit integration suite |
 | One transition test per Appendix R row | In the plan, kit-lint R32: the owning service sheet's Test plan cites every transition test of each workflow it owns, and R08: every Appendix R workflow carries test case identifiers. In code, the product build adds to the traceability check of SL-TST-005 a comparison of the `[TestCase]` traits with the Appendix R transition identifiers, over the per-transition workflow test kit of SL-TST-004 | Lint (`/lint-plan`); `ci-service.yml` from SL-TST-005 |
 | Every state enum lives in Domain | Architecture test on `*State` types | `tests/Architecture.Tests` |

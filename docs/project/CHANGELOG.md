@@ -1,5 +1,21 @@
 # Changelog
 
+## v9.7 brief, 2026-09-26
+
+The product owner answered Open Question 30 with the recommended answer and approved the plan.
+
+**Brief.** Appendix S aligned with master brief Section 36 (ADR-0027, Accepted): BR-FIN-017 is the billable active-student count, students enrolled on the billing date prorated by day, owned and computed by Platform; BR-PLT-005's active-student meter is that count; BR-FIN-018 is owned by Platform and a downgrade takes effect at the next renewal. All three brief files bumped to v9.7.
+
+**Plan.** Open Question 30 moved to the settled questions in `OPEN_QUESTIONS.md` and document 01 (thirty remain open); RISK-52 Closed, document 18's heat map and top ten recomputed (RISK-48 enters at rank 10), and document 00 matches; document 03's REQ-PLT-009 open point resolved; document 29 indexes ADR-0027 (twenty-seven records, two Accepted); SL-PLT-010 and document 31's generator state the decision instead of the conflict. The service sheets and the regenerated documents follow in the next change.
+
+## v9.6 brief, 2026-09-26
+
+Remediation round 6: the non-blocking gaps the round-5 scorecard listed, across all six groups.
+
+**Brief.** Appendix N's N-05 and N-08 use the `/bff/mobile/v1/` prefix of document 22 (ADR-0026, proposed); all three brief files bumped to v9.6.
+
+**Plan.** LTI Assignment and Grade Services built: SL-INT-412 (Platform) and SL-ASM-400 (Assessment) under CAP-INT-02, the `RecordToolScore` command in document 11 and both sheets; document 34 now 726 slices and 1,724 slice-days, ranges unchanged (ADR-0025). `tools/plan-build/capacity-28.mjs` recomputes document 28's figures (160, none mismatched) and backs TC-PERF-800. Document 31 gained the property-based classification review and footnotes for rules built before their owner. Document 02 re-checked with 46 web calls: capabilities unverified in all ten competitors fell from 24 to 14 (snippet sources labelled). Web routes for signature features 15, 33, 36 and 42; saga deliver-twice and compensate-twice cases given test ids; RISK-54 carries eight residuals; Open Question 9 aligned with the phase 3 e-invoicing slices; document 07 §10.3 is the single architecture-rule list; new tests for the timetable PDF route and the generated-document consumers.
+
 ## v9.5 brief, 2026-09-26
 
 Scorecard rounds 4 and 5. Round 4 approved Group E; Groups C and F stayed blocked on named gaps, which remediation round 5 closed.

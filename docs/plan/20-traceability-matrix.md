@@ -22,12 +22,12 @@ One row per requirement, from its identifier to the service that owns it, the wo
 | Requirements built by at least one slice | 858 |
 | Requirements satisfied by a gate named in document 34 rather than a slice | 2 |
 | Requirements with a test identifier | 860 |
-| Of which the identifier comes from document 03 or a service sheet's test plan | 533 |
-| Of which the identifier is a derived acceptance test (Section 2) | 327 |
+| Of which an identifier comes from document 03 or a service sheet's test plan | 533 |
+| Of which an identifier is a derived acceptance test (Section 2) | 328, 1 of them beside a test from a test plan, because another document already cites the derived test |
 
 ### 2. Derived acceptance tests
 
-Every requirement in document 03 has an acceptance criterion: either an existing test identifier or a Given, When, Then line with a concrete number. Where it is the latter and no service sheet's test plan names a test for it yet, the requirement's acceptance test takes the identifier **`TC-<AREA>-(950 + requirement number)`**, so the acceptance test of REQ-ATT-014 is TC-ATT-964, specified by that requirement's Given, When, Then line. No other test in the kit uses the 950 to 999 range, and no area has more than 49 requirements, so the rule is collision-free. When the slice that builds the requirement writes the test, it uses this identifier and the matrix stays true without an edit.
+Every requirement in document 03 has an acceptance criterion: either an existing test identifier or a Given, When, Then line with a concrete number. Where it is the latter and no service sheet's test plan names a test for it yet, the requirement's acceptance test takes the identifier **`TC-<AREA>-(950 + requirement number)`**, so the acceptance test of REQ-IDN-001 is TC-IDN-951, specified by that requirement's Given, When, Then line. A requirement that has a test from a test plan also carries its derived test when another plan document already cites that derived identifier, so a cited derived test always has a slice that writes it; the registry in `16-annex-test-case-registry.md` counts the same derived tests. No other test in the kit uses the 950 to 999 range, and no area has more than 49 requirements, so the rule is collision-free. When the slice that builds the requirement writes the test, it uses this identifier and the matrix stays true without an edit.
 
 ### 3. Columns
 
@@ -101,8 +101,8 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-PLT-006 | A tenant can export all its data at every lifecycle state, including read-only and pending deletion | 1 | Platform | WF-PLT-03 | BR-PLT-006 | 06-services/platform.md | 1 | SL-PLT-012 | TC-PLT-956 | any | Planned |
 | REQ-PLT-007 | Tenant deletion is a saga across every service with a 30-day cooling-off period and a final certificate of ... | 1 | Platform | WF-PLT-03 | BR-PLT-003 | 06-services/platform.md | 1 | SL-PLT-013, SL-IDN-036 | TC-PRV-901 | any | Planned |
 | REQ-PLT-008 | Plans are priced per active student with tiers, add-on modules, monthly and annual terms, coupons, several ... | 1 | Platform | WF-PLT-02 | none | 06-services/platform.md | 1 | SL-PLT-008 | TC-PLT-958 | any | Planned |
-| REQ-PLT-009 | A student counts as active for billing only with the status enrolled on the billing date, prorated by day f... | 1 | Platform | none | BR-FIN-017 | 06-services/platform.md | 1 | SL-PLT-010, SL-PLT-010 | TC-FIN-621, TC-PLT-103 | any | Planned |
-| REQ-PLT-010 | An upgrade takes effect immediately with proration by day, and a downgrade takes effect at the next renewal... | 1 | Platform | WF-PLT-02 | BR-FIN-018 | 06-services/platform.md | 1 | SL-PLT-009 | TC-PLT-102 | any | Planned |
+| REQ-PLT-009 | A student counts as active for billing only with the status enrolled on the billing date, prorated by day f... | 1 | Platform | none | BR-FIN-017 | 06-services/platform.md | 1 | SL-PLT-010 | TC-PLT-103, TC-PLT-126, TC-PLT-128 | any | Planned |
+| REQ-PLT-010 | An upgrade takes effect immediately with proration by day, and a downgrade takes effect at the next renewal... | 1 | Platform | WF-PLT-02 | BR-FIN-018 | 06-services/platform.md | 1 | SL-PLT-009 | TC-PLT-102, TC-PLT-131 | any | Planned |
 | REQ-PLT-011 | Plan limits on students, storage, SMS credits, and AI usage warn softly before the limit and block hard at it | 1 | Platform | none | BR-PLT-001 | 06-services/platform.md | 1 | SL-PLT-010 | TC-PLT-961 | any | Planned |
 | REQ-PLT-012 | Services publish usage events and Platform aggregates them for limits, billing, and the tenant health score | 1 | Platform | none | BR-PLT-005 | 06-services/platform.md | 1 | SL-PLT-010, SL-IDN-037 | TC-PLT-962 | any | Planned |
 | REQ-PLT-013 | Tenant invoices are issued, payments recorded through the manual or gateway adapter, reminders sent at 7, 1... | 1 | Platform | WF-PLT-03 | BR-PLT-002 | 06-services/platform.md | 1 | SL-PLT-011 | TC-PLT-104 | any | Planned |
@@ -224,7 +224,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-ACA-027 | Online classes run through Jitsi or LiveKit with attendance captured from participation | 2 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-218 | TC-ACA-977 | any | Planned |
 | REQ-ACA-028 | The kindergarten daily sheet records meals, naps, mood, activities, consented photos, and a note to guardia... | 2 | Academics | none | none | 06-services/academics.md | 2, 4 | SL-ACA-209, SL-ACA-400, SL-ACA-401, SL-ACA-402, SL-ACA-403, SL-ACA-404 | TC-ACA-001, TC-ACA-424, TC-ACA-425, TC-ACA-426 | any | Planned |
 | REQ-ACA-029 | A daily job sends an assignment-due reminder the evening before to students and, for young grades, guardians | 1 | Academics | none | none | 06-services/academics.md | 2 | SL-ACA-208 | TC-ACA-416 | any | Planned |
-| REQ-ACA-030 | LTI 1.3 launches external learning tools from an assignment or resource | 2 | Academics | none | none | 06-services/academics.md | 4 | SL-ACA-405 | TC-ACA-980 | any | Planned |
+| REQ-ACA-030 | LTI 1.3 launches external learning tools from an assignment or resource | 2 | Academics | none | none | 06-services/academics.md | 4 | SL-ACA-405, SL-INT-412, SL-ASM-400 | TC-ACA-980 | any | Planned |
 | REQ-ASM-001 | An assessment structure per subject and grading period defines categories, weights, drop-lowest, best-of, m... | 1 | Assessment | none | BR-ASM-001, BR-ASM-003, BR-ASM-004, BR-ASM-005 | 06-services/assessment.md | 2 | SL-ASM-201, SL-ASM-210 | TC-ASM-951 | any | Planned |
 | REQ-ASM-002 | An empty category is re-weighted across the remaining categories rather than counted as zero | 1 | Assessment | none | BR-ASM-002 | 06-services/assessment.md | 2 | SL-ASM-201 | TC-ASM-952 | any | Planned |
 | REQ-ASM-003 | Grading schemes support percentage, letter, GPA, descriptive, standards-based with proficiency levels, pass... | 1 | Assessment | none | BR-ASM-009, BR-ASM-010 | 06-services/assessment.md | 2 | SL-ASM-202, SL-ASM-210 | TC-ASM-953 | any | Planned |
@@ -257,7 +257,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-ASM-030 | Transcripts span years and carry a verification code | 1 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-215, SL-ASM-216, SL-ASM-220 | TC-ASM-980 | any | Planned |
 | REQ-ASM-031 | Predicted grades are computed for internal use and are never shown to a family | 2 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-219 | TC-ASM-330 | any | Planned |
 | REQ-ASM-032 | Result analysis covers distribution, subject comparison, teacher comparison, cohort trends, and item analysis | 1 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-218 | TC-ASM-982 | any | Planned |
-| REQ-ASM-033 | A standards heatmap per student and class suggests a next step from the curriculum mapping, at rung 2 degra... | 2 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-219 | TC-ASM-002 | any | Planned |
+| REQ-ASM-033 | A standards heatmap per student and class suggests a next step from the curriculum mapping, at rung 2 degra... | 2 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-219 | TC-ASM-002, TC-ASM-340 | any | Planned |
 | REQ-ASM-034 | A daily job publishes `assessment.marks.overdue.v1` for components past their entry deadline, escalating fr... | 1 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-208 | TC-ASM-331 | any | Planned |
 | REQ-ASM-035 | Publishing report cards notifies guardians and students by push and email | 1 | Assessment | WF-ASM-01 | none | 06-services/assessment.md | 2 | SL-ASM-214 | TC-ASM-332 | any | Planned |
 | REQ-ASM-036 | A student reads feedback with the mark, comment, rubric, and the scheme the mark came from | 1 | Assessment | none | none | 06-services/assessment.md | 2 | SL-ASM-217, SL-MOB-215 | TC-ASM-601 | any | Planned |
@@ -272,7 +272,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-SCD-009 | What-if copies of a timetable can be compared and one is published with version history | 1 | Scheduling | none | none | 06-services/scheduling.md | 2 | SL-SCD-206, SL-SCD-210 | TC-SCD-959 | any | Planned |
 | REQ-SCD-010 | Conflicts block publishing unless overridden with a recorded reason | 1 | Scheduling | none | none | 06-services/scheduling.md | 2 | SL-SCD-208, SL-SCD-210 | TC-SCD-118 | any | Planned |
 | REQ-SCD-011 | Publishing a timetable mid-term does not alter attendance already recorded | 1 | Scheduling | none | BR-SCD-006 | 06-services/scheduling.md | 2 | SL-SCD-208 | TC-SCD-119 | any | Planned |
-| REQ-SCD-012 | Timetables are viewable by section, teacher, room, and student, printable to PDF, and published as iCal feeds | 1 | Scheduling | none | none | 06-services/scheduling.md | 2 | SL-SCD-209, SL-SCD-211, SL-SCD-218, SL-MOB-208 | TC-SCD-121 | any | Planned |
+| REQ-SCD-012 | Timetables are viewable by section, teacher, room, and student, printable to PDF, and published as iCal feeds | 1 | Scheduling | none | none | 06-services/scheduling.md | 2 | SL-SCD-209, SL-SCD-211, SL-SCD-218, SL-MOB-208 | TC-SCD-121, TC-SCD-135 | any | Planned |
 | REQ-SCD-013 | Staff absence from Hr leave triggers substitution suggestions ranked by availability, subject, and workload... | 1 | Scheduling | WF-HR-01 | BR-SCD-005 | 06-services/scheduling.md | 2 | SL-SCD-212, SL-SCD-214, SL-SCD-215 | TC-HR-003 | any | Planned |
 | REQ-SCD-014 | Accepting a substitution assigns cover, notifies the substitute urgently, and updates the timetable | 1 | Scheduling | WF-HR-01 | none | 06-services/scheduling.md | 2 | SL-SCD-213, SL-MOB-207 | TC-SCD-801 | any | Planned |
 | REQ-SCD-015 | Cover fairness is tracked per teacher and shown in the suggestion reasons | 1 | Scheduling | none | BR-SCD-005 | 06-services/scheduling.md | 2 | SL-SCD-212, SL-SCD-215 | TC-SCD-965 | any | Planned |
@@ -446,7 +446,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-BEH-005 | Houses accumulate points, and points awarded from two devices both apply | 1 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-401, SL-BEH-406, SL-BEH-413, SL-MOB-409 | TC-BEH-314 | any | Planned |
 | REQ-BEH-006 | Badges are awarded and exported as Open Badges 3.0 | 2 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-408 | TC-BEH-315 | any | Planned |
 | REQ-BEH-007 | Awards and certificates are issued for recognition | 1 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-407, SL-BEH-413 | TC-BEH-316 | any | Planned |
-| REQ-BEH-008 | A student portfolio collects achievements, badges, house points, certificates and selected work across year... | 2 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-409, SL-BEH-413, SL-MOB-409 | TC-BEH-001, TC-BEH-344 | any | Planned |
+| REQ-BEH-008 | A student portfolio collects achievements, badges, house points, certificates and selected work across year... | 2 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-409, SL-BEH-413, SL-MOB-409 | TC-BEH-001, TC-BEH-344, TC-BEH-345 | any | Planned |
 | REQ-BEH-009 | Behavior analytics are available by student, class, time, location and category | 1 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-410, SL-BEH-413 | TC-BEH-317 | any | Planned |
 | REQ-BEH-010 | Sensitive incidents restrict visibility to the elevated permission, and parents see only what policy allows | 1 | Behavior | none | BR-WEL-001 | 06-services/behavior.md | 4 | SL-BEH-405, SL-BEH-412 | TC-BEH-318 | any | Planned |
 | REQ-BEH-011 | Public ranking of individual students is opt-out by design, while house points may be displayed | 1 | Behavior | none | none | 06-services/behavior.md | 4 | SL-BEH-406, SL-BEH-413 | TC-BEH-319 | any | Planned |
@@ -716,7 +716,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-MOB-035 | The shared Android APK stays under 25 MB per ABI | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-211 | TC-MOB-985 | Android, iOS | Planned |
 | REQ-MOB-036 | Screens render from the local cache first and refresh in the background, with heavy parsing in isolates and... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-210 | TC-MOB-986 | Android, iOS | Planned |
 | REQ-MOB-037 | The app provides home-screen widgets for today's timetable and the next due item, quick actions, haptics, a... | 1 | cross-cutting | none | none | 09 | 2, 4 | SL-MOB-212, SL-MOB-406 | TC-MOB-987 | Android, iOS | Planned |
-| REQ-MOB-038 | Supported devices are Android 8 and later including devices without Google services, iOS 15 and later, and ... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-BFF-761 | Android, iOS | Planned |
+| REQ-MOB-038 | Supported devices are Android 8 and later including devices without Google services, iOS 15 and later, and ... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-BFF-761, TC-MOB-988 | Android, iOS | Planned |
 | REQ-MOB-039 | A Huawei push adapter plugs in behind `IPushSender` | 2 | Notification | none | none | 06-services/notification.md | 1 | SL-NOT-002 | TC-MOB-989 | Android, iOS | Planned |
 | REQ-MOB-040 | The app is distributed through Google Play, the App Store, AppGallery where it matters, and a signed APK ch... | 1 | cross-cutting | none | none | 09 | 2 | SL-MOB-202 | TC-MOB-990 | Android, iOS | Planned |
 | REQ-MOB-041 | A white-label app is published under the school's own developer accounts, and the school owns the listing, ... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-MOB-001 | TC-MOB-991 | Android, iOS | Planned |
@@ -765,7 +765,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 | REQ-INT-013 | Webhook secrets rotate with an overlap window so that rotation is not an outage | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-INT-003 | TC-INT-963 | any | Planned |
 | REQ-INT-014 | The public REST API and iCal feeds ship in phase 3 | 1 | Platform | none | none | 06-services/platform.md | 3 | SL-INT-400, SL-INT-401, SL-INT-402, SL-INT-403, SL-INT-404, SL-INT-405, SL-INT-406, SL-INT-410 | TC-INT-964 | any | Planned |
 | REQ-INT-015 | OneRoster 1.2 rostering export is provided | 1 | Platform | none | none | 06-services/platform.md | 3 | SL-INT-407, SL-INT-408, SL-INT-409, SL-INT-410 | TC-INT-965 | any | Planned |
-| REQ-INT-016 | Nibras acts as an LTI 1.3 platform in phase 4 and supports QTI 3, Open Badges 3.0 and CASE in phase 5 | 1 | Platform | none | none | 06-services/platform.md | 4, 5 | SL-INT-411, SL-INT-600, SL-INT-601, SL-INT-602 | TC-INT-966 | any | Planned |
+| REQ-INT-016 | Nibras acts as an LTI 1.3 platform in phase 4 and supports QTI 3, Open Badges 3.0 and CASE in phase 5 | 1 | Platform | none | none | 06-services/platform.md | 4, 5 | SL-INT-411, SL-INT-412, SL-ASM-400, SL-INT-600, SL-INT-601, SL-INT-602 | TC-INT-966 | any | Planned |
 | REQ-INT-017 | A plug-in kit gives partners contracts, a sample implementation and a certification checklist for regional ... | 1 | Platform | none | none | 06-services/platform.md | 1 | SL-INT-004 | TC-INT-002 | any | Planned |
 | REQ-INT-018 | Every external provider sits behind an interface and is replaceable without touching business code | 1 | cross-cutting | none | none | 23 | 3 | SL-FIN-414, SL-FIN-444, SL-FIN-448, SL-FIN-449, SL-FIN-450, SL-FIN-451, SL-FIN-452, SL-RQS-413, SL-COM-403, SL-DOC-400, SL-INT-402, SL-INT-404 | TC-INT-968 | any | Planned |
 | REQ-INT-019 | The product degrades gracefully when the AI, SMS or payment provider is down | 1 | cross-cutting | none | none | 23 | 3 | SL-FIN-415, SL-FIN-420, SL-FIN-429, SL-FIN-444, SL-FIN-450, SL-FIN-452, SL-RQS-413, SL-COM-403, SL-COM-416, SL-DOC-401 | TC-INT-969 | any | Planned |
@@ -934,6 +934,7 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 
 | Date | Reviewer | Result |
 |---|---|---|
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a requirement with a test from a test plan also carries its derived test when another plan document cites it (REQ-MOB-038 carries TC-MOB-988), so this document and the registry count the same derived tests; the Section 2 example names a requirement whose acceptance test is its derived test |
 | 2026-09-26 | Generated | 860 requirements, every one mapped to a test |
 
 ## How this document is verified

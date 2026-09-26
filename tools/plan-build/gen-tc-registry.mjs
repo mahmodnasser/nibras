@@ -13,6 +13,7 @@ import { buildContext, testCaseOwnership } from '../kit-lint/kit-lint.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const OUT = 'docs/plan/16-annex-test-case-registry.md';
+const TC_HISTORY = /^docs\/(project\/|plan\/30-)/;
 const ctx = buildContext(root);
 const own = testCaseOwnership(ctx);
 
@@ -44,7 +45,10 @@ for (const id of [...ids].sort((a, b) => a.localeCompare(b, 'en'))) {
   // The annex never counts as a citation of itself, or each run would feed the next.
   const citedBy = [...new Set((own.cites.get(id) || []).filter((c) => c.file !== OUT).map((c) => short(c.file)))];
   const req = own.derivedReq(id);
-  if (req) { derived.push({ id, req, citedBy }); continue; }
+  // A derived acceptance test counts when a current plan document cites it; one quoted only
+  // by the history documents (30 and docs/project) is not a test anyone writes. gen-20.mjs
+  // assigns exactly these, so the two counts agree.
+  if (req) { if ((own.cites.get(id) || []).some((c) => c.file !== OUT && !TC_HISTORY.test(c.file))) derived.push({ id, req, citedBy }); continue; }
   const defs = own.defs.get(id);
   if (!defs) { problems.push(id + ' has no definition'); continue; }
   const files = [...new Set(defs.map((d) => d.file))];
@@ -131,6 +135,7 @@ p('## Review record');
 p();
 p('| Date | Reviewer | Result |');
 p('|---|---|---|');
+p('| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a derived acceptance test counts when a current plan document cites it, not one quoted only by the scorecard or the project history, which is the set document 20 assigns |');
 p('| ' + new Date().toISOString().slice(0, 10) + ' | Generated | ' + rows.length + ' test cases and ' + derived.length + ' derived acceptance tests |');
 p();
 p('## How this document is verified');

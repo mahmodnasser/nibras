@@ -1,8 +1,8 @@
 # Nibras: Project State
 
-**Phase:** Planning complete, awaiting the product owner's approval. All 36 plan documents (00 to 34, with the 16 annex) are written and lint-clean. Scorecard round 5 (document 30): **all six groups approved at 4 on every axis**. Document 00 lists the decisions needed.
-**Kit version:** v9, brief v9.5 (ADR-0019, ADR-0020, ADR-0021, ADR-0023, ADR-0025; ADR-0022 and ADR-0024 change only the plan), on `github.com/mahmodnasser/nibras`, branch `main`.
-**Last updated:** 2026-09-26, scorecard rounds 4 and 5, remediation round 5, document 00
+**Phase:** Planning complete. **The plan is approved by the product owner on 2026-09-26; phase 1 (Foundation) is next.** All 36 plan documents (00 to 34, with the 16 annex) are written. Scorecard round 5 (document 30): all six groups approved at 4 on every axis. The same day the product owner decided Open Question 30 with the recommended answer (ADR-0027, Accepted: a tenant is billed on students enrolled on the billing date, prorated by day, computed by Platform), which closed RISK-52. Document 00 lists the decisions still open; each has a default in force.
+**Kit version:** v9, brief v9.7 (ADR-0019, ADR-0020, ADR-0021, ADR-0023, ADR-0025, ADR-0026, ADR-0027; ADR-0022 and ADR-0024 change only the plan). Accepted records: ADR-0019 and ADR-0027. On `github.com/mahmodnasser/nibras`, branch `main`.
+**Last updated:** 2026-09-26, Open Question 30 decided (ADR-0027) and the plan approved by the product owner
 
 ## Done: complete and lint-clean
 
@@ -15,7 +15,7 @@
 | E | 15 deployment and operations; 16 test strategy; **17 roadmap (79 capabilities, MVP cut line)**; 18 risk register; 19 dependency inventory (147 dependencies, 142 verified at source) |
 | F | 22 API conventions; 23 integrations; 24 localization; 25 assist ladder; 26 migration toolkit; 27 compliance; 28 capacity and cost; 29 ADR index; 31 rules and workflows assigned to code (generated); 32 differentiation and demo; 33 platform support |
 
-## Done: document 34, the work breakdown (79 capabilities, 724 slices, 1,721 slice-days; 858 requirements built by slices, 2 Tier 3 explained)
+## Done: document 34, the work breakdown (79 capabilities, 726 slices, 1,724 slice-days; 858 requirements built by slices, 2 Tier 3 explained)
 
 | Step | Phases | Slices | State |
 |---|---|---|---|
@@ -43,8 +43,11 @@
 
 Then: rounds 4 and 5. Round 4 approved Group E and left C and F blocked on named gaps; remediation round 5 closed them (document 11 bindings, the Scheduling, Operations, Behavior and Wellbeing sheets, SL-ACA-405 for the LTI launch in phase 4, conditional e-invoicing slices, Open Question 31, ADR-0025 and brief v9.5 with launch at 61 to 95 weeks). Round 5 approved C and F. Document 00 written.
 
+Then: remediation round 6 closed the round-5 non-blocking gaps across all six groups (LTI grade return built, the capacity recomputation script, document 02 re-checked, ADR-0026 and brief v9.6); round 6 re-scored every group.
+
 ## Next: exactly where to resume
 
-1. **Product-owner approval.** Hold the decisions workshop of document 00 Section 6: Open Questions 29 and 30 first, then 27, 28, 3, 14, 24, 26 and 31, then ADR-0024, ADR-0025 and the Proposed records phase 1 builds on. Record each answer in `OPEN_QUESTIONS.md` and, where it changes the brief, in an ADR with its version bump.
-2. **Non-blocking gaps from round 5** (document 30 Section 5, each sized in minutes or hours). The most material: LTI Assignment and Grade Services is in scope in document 23 but no slice builds it, so REQ-ACA-030's grade return needs a phase 4 slice beside SL-ACA-405. Also: document 23 open point 7 still describes the old SL-FIN-444; Open Question 31 is missing from document 29's question table; test ids for the new timetable-PDF route and the Operations and Behavior generated-document consumers; `academics.md` still says document 21 has seven queries.
-3. Once approved, start phase 1 with `/build-foundation`.
+1. **Finish the design review.** Align the service sheets with ADR-0027 (the Finance sheet's count job and open point 3, the Platform sheet's billing sections and open points), regenerate the generated documents (31, 34, 20 and the 16 annex) and re-run `node tools/kit-lint/kit-lint.mjs .` until it exits clean.
+2. **Start phase 1 with `/build-foundation`.**
+3. Alongside phase 1, hold the decisions workshop of document 00 Section 6 for the questions still open: 29 first, then 27, 28, 3 with 9, 14, 24, 26 and 31, then ADR-0024 to ADR-0026 and the Proposed records phase 1 builds on. Record each answer in `OPEN_QUESTIONS.md` and, where it changes the brief, in an ADR with its version bump.
+4. Any gaps round 6 still lists are in document 30 Section 5.

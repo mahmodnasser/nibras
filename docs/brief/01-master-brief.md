@@ -1,4 +1,4 @@
-# Nibras (نبراس): Master Brief v9.5
+# Nibras (نبراس): Master Brief v9.7
 
 **The premium open-source school management platform**
 

@@ -2,7 +2,7 @@
 
 > Group E. The coverage matrix is **quoted from Appendix V** and the load scenarios are **quoted from Appendix N**; both are normative. This document adds what the plan owes on top of them: the pyramid per layer with its tool, runner and gate; the `tests/` tree; naming and fixtures; the two interceptors that turn a query budget into a failing test; the generated suites with their sizes and inputs; the contract, business-rule, workflow, interface, document and non-functional suites; the test data tiers and staging anonymization; the quality gates per phase; the flaky-test policy; acceptance; coverage enforcement; and the platform cases allocated by document 33. Requirement area: `TST`.
 
-**Group** E · **Requirement areas covered** `TST`, with `PLAT` cases by reference · **Last updated** 2026-09-26 by the round-4 scorecard remediation (the derived-test count, the macOS leg of `TC-PLAT-013`, the phase 3 and 4 demo-gate cells)
+**Group** E · **Requirement areas covered** `TST`, with `PLAT` cases by reference · **Last updated** 2026-09-26, remediation round 7 (the round-6 scorecard: the derived-test count, and this line brought up to the change log)
 
 **Rule for reading.** Where a value here and a value in Appendix V, Appendix N or Appendix X disagree, the appendix wins and this document is the defect. The mechanism of the generated permission-matrix and tenant-isolation suites is described in document 12, parts 4.3 and 4.4; this document cites it and adds only sizes, inputs and where the suites run. Every claim in this document ends in a test case identifier, a pipeline stage, or a drill on a calendar, because master brief Section 19 says proof, not belief.
 
@@ -20,7 +20,7 @@ Master brief Section 24 fixes the shape: many fast unit tests on domain and appl
 | `<Service>.Api` and `.Worker` | Endpoint and consumer integration through `NibrasWebAppFactory<TProgram>`; Problem Details and pagination contract; query-budget assertion per handler | xUnit, the command-counting interceptor (part 3.4) | Integration stage | Zero handlers over budget without an ADR attribute |
 | Generated suites | Permission matrix, tenant isolation, response shape per role | `tests/PermissionMatrix.Tests/Generator/` (document 07 part 4, built by SL-IDN-014) and `TenantIsolation.Tests/Generator` (document 12), both in the `tests/` tree of part 3.1 | Sampled per pull request; full at size nightly in the Test environment | One isolation failure blocks the release |
 | `src/Contracts` | Consumer-driven contracts for gRPC and backend-for-frontend REST; message schema baselines per `v<n>` record | PactNet, JSON schema baselines | `Contracts.Tests`, on every change to `src/Contracts/**` and to a consumer or provider | Provider verification green before merge; a changed baseline is a new version |
-| Architecture | Layer, building-block and shape rules | NetArchTest and two source scans, the twenty-four rules in document 07 | Every `ci-service.yml` | All green; a new project is covered the moment it exists |
+| Architecture | Layer, building-block and shape rules | NetArchTest with source, model and solution scans, the thirty-three rules in document 07 part 10.3, the single list of architecture rules (SL-TST-003 builds the pack) | Every `ci-service.yml` | All green; a new project is covered the moment it exists |
 | Workflows and sagas | One test per transition, failure and compensation row in Appendix R; sagas add timeout, mid-flight failure and worker-kill | Testcontainers, `FakeClock`, container stop and restart | Integration stage | 312 transition rows, each with its identifier present in the suite |
 | Web, Angular | Unit, a story per state, end-to-end, accessibility, visual snapshots, bundle budgets | Vitest, Storybook, Playwright, axe-core, the Angular build budgets | `ci-web.yml`: Chromium, Firefox, WebKit | axe clean, zero snapshot difference, budgets met |
 | Mobile, Flutter | Widget, golden in both directions, integration on emulators, the device pass | `flutter test`, `integration_test`, five physical devices | `ci-mobile.yml` on Linux for goldens; Windows for kiosk goldens; macOS for iOS artefacts and goldens | Goldens accepted only from the Linux run (TC-PLAT-016); device pass recorded per release |
@@ -78,7 +78,7 @@ The following table is quoted verbatim from Appendix V.3. Nothing is done on the
 | Runbook | Executed in a game day within ninety days of being written | manual | operations calendar | An unexercised runbook is fiction |
 | Plan document | Scorecard at 4 or better on every axis, clean `kit-lint` | review | `/score-plan`, `/lint-plan` | Per group |
 
-The test case format is the one in Appendix V.2 and the `test-case-writing` skill: `Covers`, `Level`, `Platform`, `Automated` with the test name, then Given, When, Then with concrete numbers. Every automated test carries its identifier as an xUnit trait, a Playwright annotation or a Flutter tag. `20-traceability-matrix.md` is not generated from those traits: `tools/plan-build/gen-20.mjs` generates it from documents 03, 17, 31 and 34 and the service sheets' test plans, and kit-lint R23 fails when it differs from what the generator produces today. Once code exists, the traits are what the traceability check of SL-TST-005 reads, so that a requirement whose test identifier appears in no trait fails the pipeline. Each of the 327 derived acceptance tests of document 20 Section 2 is written by the slice that document 20's Slices column names for its requirement, as part of that slice's definition of done.
+The test case format is the one in Appendix V.2 and the `test-case-writing` skill: `Covers`, `Level`, `Platform`, `Automated` with the test name, then Given, When, Then with concrete numbers. Every automated test carries its identifier as an xUnit trait, a Playwright annotation or a Flutter tag. `20-traceability-matrix.md` is not generated from those traits: `tools/plan-build/gen-20.mjs` generates it from documents 03, 17, 31 and 34 and the service sheets' test plans, and kit-lint R23 fails when it differs from what the generator produces today. Once code exists, the traits are what the traceability check of SL-TST-005 reads, so that a requirement whose test identifier appears in no trait fails the pipeline. Each of the 328 derived acceptance tests of document 20 Section 2 is written by the slice that document 20's Slices column names for its requirement, as part of that slice's definition of done.
 
 ---
 
@@ -90,8 +90,8 @@ Reference architecture Section 1 fixes six entries under `tests/`; document 07 p
 
 ```text
 tests/                                            cross-service suites; each runs in ci-service.yml for the service that changed, in full nightly
-├── Architecture.Tests/                           NetArchTest rules for every project in Nibras.sln; the twenty-four rules are listed in document 07
-│   ├── Rules/                                    one class per rule group: Layers, BuildingBlocks, Contracts, Services, Handlers, Persistence, Hosts
+├── Architecture.Tests/                           NetArchTest rules for every project in Nibras.sln; the thirty-three rules are listed in document 07
+│   ├── Rules/                                    one class per rule group, as document 07 part 4 lists them, GrpcHopRules included
 │   ├── Fixtures/                                 loads every assembly from the solution, so a new service is covered without editing a test
 │   └── Nibras.Architecture.Tests.csproj          references every src project
 ├── Contracts.Tests/                              Pact and message schema tests, part 5 of this document
@@ -448,7 +448,7 @@ The end-to-end specs are few and named: one per workflow in master brief Section
 | Golden tests | Every key screen from document 09, `ltr` and `rtl`, light and dark, phone and tablet | Linux is the only authoritative runner; Windows produces the kiosk goldens; macOS produces the iOS goldens | A golden regenerated elsewhere is refused (TC-PLAT-016); fonts are bundled so goldens are stable |
 | Integration tests | The eight Appendix M.5 offline tests, sign-in with second factor, the sync storm shape of Appendix N at unit scale, deep links, push handling | Android emulator API 26 and API 34 in `ci-mobile.yml` | Airplane mode is toggled through the emulator console, not simulated in code |
 | Kiosk goldens | Gate, front desk and clinic modes | Windows runner | Part of the Windows kiosk MSIX gate in document 33 |
-| Device pass | Low-end Android 8, Android 14, iPhone SE, iPad, one device without Google services, per Appendix X.2 | Manual, per release | Three Arabic screens on each device (TC-PLAT-009), the battery-restriction explanation (TC-PLAT-011), the 30-day token replay on the iPhone SE (TC-PLAT-010), cold start under 3 s and 60 frames per second on the low-end Android device; recorded in the release notes with the build number |
+| Device pass | Low-end Android 8, Android 14, iPhone SE, iPad, one device without Google services, per Appendix X.2 | Manual, per release | Three Arabic screens on each device (TC-PLAT-009), the battery-restriction explanation (TC-PLAT-011), the 30-day token replay on the iPhone SE (TC-PLAT-010), cold start under 3 s and 60 frames per second on the low-end Android device; on the device without Google services, the separate no-Google APK signs in, syncs offline attendance, receives push in-app while open and falls back to email, after `TC-NOT-610` (Notification sheet) has proved the same fallback in the pipeline (`33-platform-support-and-dev-environments.md` §7); recorded in the release notes with the build number |
 
 ### 8.3 Mobile web and the progressive web application
 
@@ -775,7 +775,7 @@ The first run of R20 found 206 identifiers defined in more than one document and
 
 | Document | What this document takes from it |
 |---|---|
-| 07 | The `tests/` tree at folder level, the Testing block surface, the twenty-four architecture rules |
+| 07 | The `tests/` tree at folder level, the Testing block surface, the thirty-three architecture rules of part 10.3 |
 | 12 | The generated suite mechanisms, the penetration-test scope, the seeded administrator safeguards |
 | 13 | The saga list and the compensation designs the saga tests drive |
 | 15 | Environments, the production slow-query thresholds, the migration and rollout order |
@@ -807,6 +807,8 @@ The first run of R20 found 206 identifiers defined in more than one document and
 | 2026-09-26 | Scorecard remediation, theme 8 (ADR-0023) | Amended: the demo gate in part 12.2 and the signature-feature row of part 14 | none |
 | 2026-09-26 | Round-2 scorecard, Group E, then remediation round 3 | Blocked for the group on consistency, feasibility and risk honesty; for this document the soak on a nightly-rebuilt tier, the restore drill under two identifiers and the claim that document 20 is generated from traits. Amended: the load tier's week split into a nightly gate window and a weekly soak window (part 10.2) with `TC-TST-790` and an open point for the Appendix N.2 departure; `TC-TST-216` (per release, staging) and `TC-DATA-020` (quarterly, under load) stated as two drills with one identifier each; part 2 corrected on how document 20 is generated and who writes each derived acceptance test; `macos-latest` added to the `dev-smoke` runners of `TC-PLAT-013` | none |
 | 2026-09-26 | Round-3 scorecard, Group E, then remediation round 4 | Blocked for the group on consistency; for this document the derived-test count and the macOS leg. Amended: part 2 says 327 derived acceptance tests, as document 20 counts them; the `TC-PLAT-013` row says, as document 33 does, that the `macos-latest` leg proves setup and builds only (`TC-PLAT-800`) and reports the container check unavailable, so the case runs on Linux and Windows; the phase 3 and 4 cells of the Demo script row in part 12.2 name the substitutions still running, in the same words as the demo column of `17-roadmap.md` | none |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Amended: the architecture-rule count now reads thirty-three in part 1, the part 3.1 tree and the dependency table, as document 07 part 10.3 counts them after it became the single list of architecture rules; the device-pass lane names the no-Google fallback check and `TC-NOT-610` | none |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended: part 2 says 328 derived acceptance tests, the figure `gen-20.mjs` and `gen-tc-registry.mjs` now both compute after their definitions of a derived test were aligned (TC-MOB-988 is carried by REQ-MOB-038 in document 20); the Last updated line names this round | none |
 
 ---
 

@@ -557,7 +557,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 
 | Decision | Source | Default if unanswered | Impact if wrong |
 |---|---|---|---|
-| Route prefix `/bff/mobile/v1/` | `22-api-conventions-and-error-catalog.md` §1.1 and Spectral rule; document 09 uses the same prefix | As stated | Document 15 and Appendix N still write `/bff-mobile/...` for two load and alert paths; Open point 1 |
+| Route prefix `/bff/mobile/v1/` | `22-api-conventions-and-error-catalog.md` §1.1 and Spectral rule; document 09 uses the same prefix | As stated | Document 15 and Appendix N use the same prefix since ADR-0026 (brief v9.6) |
 | The app talks to Bff.Mobile only, so single-service screens use an allow-listed pass-through | `09-mobile-structure.md` (Dio against Bff.Mobile only); `12-security-privacy-safety.md` §1.2 | As stated | A per-screen composed endpoint for every mobile screen would multiply routes without adding value |
 | Conflict rules are decided by the owning service; Bff.Mobile maps outcomes | Appendix M.3 | As stated | A rule here would be business logic in a BFF (REQ-BFF-001) |
 | The server never refuses a request because of the app version | Master brief Section 37 | As stated | A refusal would strand queued work on a device that cannot yet upgrade |
@@ -581,7 +581,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 
 | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
 |---|---|---|---|---|---|---|---|
-| 1. Document 09's half is closed: `09-mobile-structure.md` now uses `/bff/mobile/v1/`, with `minimumVersionPolicyUrl` at `/bff/mobile/v1/config/version`. Still open: Appendix N and `15-deployment-and-operations.md` write `/bff-mobile/home/principal` and `/bff-mobile/sync/batch`, where document 22 requires `/bff/mobile/v1/` | `/bff/mobile/v1/` everywhere; the load scenarios and the `MobileSyncRejections` alert read `/bff/mobile/v1/home/principal` and `/bff/mobile/v1/sync/batch` | Mobile lead, with the Appendix N owner and the document 15 owner | A load scenario or an alert rule written against the old path measures nothing until it is corrected. The app and the Gateway already agree | 2 | 2 | 4 | none |
+| 1. Closed 2026-09-26. Documents 09 and 22 use `/bff/mobile/v1/`; ADR-0026 (brief v9.6) corrected Appendix N (N-05 and N-08) to `/bff/mobile/v1/home/principal` and `/bff/mobile/v1/sync/batch`, and document 15's alert 28 reads the same | `/bff/mobile/v1/` everywhere | Mobile lead | None left | 1 | 1 | 1 | none |
 | 2. Only Attendance names a change feed for its entity group; the other sources (Scheduling, School, Communication, Requests, Behavior, Identity) do not yet name one | Each source exposes `GET .../changes?checkpoint=` in its sheet; until it does, its group is served as a snapshot with `ETag`, which is correct but costs data | Tech lead, per service sheet | Teacher data usage rises towards the 2 MB budget (TC-MOB-715) | 3 | 2 | 6 | none |
 | 3. `09-mobile-structure.md` §2.7 matches visitors against "the cached list" in gate mode; the Attendance sheet never sends the watchlist to a device | Offline check-ins queue and are matched on the server at sync; gate mode shows "watchlist not checked offline" on the pending row | Security owner with the mobile lead | A device-held watchlist would put names and instructions on a device that can be lost | 2 | 4 | 8 | none |
 | 4. Bus attendant mode needs an Operations transport read permission that Appendix B lists only as `operations.transport.view` without a mode scope | `operations.transport.view` scoped to the attendant's route through the device session | Operations lead | An attendant could read other routes' rosters | 2 | 3 | 6 | none |
@@ -592,6 +592,8 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Checked against documents 08, 09 and 15 and Appendix N: document 09 uses `/bff/mobile/v1/` (its §7 `config/version` and `apiBaseUrl`), so the Decisions in force row and open point 1 record only the remaining disagreement, Appendix N N-05 and N-08 and document 15 alert 28, which still write `/bff-mobile/`. Open point 1 now says the Appendix N half needs a brief ADR. Earlier remediation rounds added no row here. Awaiting Group C re-review |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | The row above is superseded. Open point 1 is closed by ADR-0026 (brief v9.6): Appendix N now uses `/bff/mobile/v1/` (N-05 `/bff/mobile/v1/home/principal`, N-08 `/bff/mobile/v1/sync/batch`), and document 15's alert 28 reads the same. No further brief ADR is needed. The old prefix now appears only in history: the review rows, the scorecard and ADR-0026 itself. Awaiting the round 7 score |
 
 ## How this document is verified
 

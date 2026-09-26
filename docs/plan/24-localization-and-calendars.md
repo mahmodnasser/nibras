@@ -812,6 +812,9 @@ Two points that stood here in v9 are settled by the v9.1 brief and now sit in De
 | 2026-09-26 | Group F review, round 3 | Blocked: the group scored below 4 on Completeness, because document 31 listed no transition-test ids per workflow | None of the group's blocking gaps was in this document; this record stopped at "awaiting the round 3 score" (Completeness, not blocking) |
 | 2026-09-26 | Group F review, round 4 | Blocked: the group scored below 4 on Consistency, because SL-ACA-207 in document 34 built `LaunchLtiTool` in phase 2 against the default of document 17 | None in this document; this record still recorded no round-3 verdict (Completeness, not blocking) |
 | 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Amended; awaiting the round 5 score | The round 3 and round 4 verdicts recorded above; nothing else in this document changed |
+| 2026-09-26 | Group F review, round 5 | Approved with minor gaps | None in this document; this record states the verdict |
+| 2026-09-26 | Group F review, round 6 | Approved with minor gaps | None in this document; the round-6 scorecard found only that this record stopped at the round 5 score |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended; awaiting the round 7 score | The round 5 and round 6 verdicts recorded above; nothing else in this document changed |
 
 ## How this document is verified
 

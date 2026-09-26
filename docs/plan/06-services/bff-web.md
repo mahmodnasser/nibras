@@ -601,6 +601,7 @@ Likelihood (L) and impact (I) use the 1 to 5 scales of `18-risk-register.md` Sec
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Checked against documents 08 and 12: both use `/bff/web/v1/` (`GET /bff/web/v1/me/bootstrap` and `/me/permissions`), so the Decisions in force row names them as agreeing and open point 1 is closed; neither document 08 nor 12 still writes `/api/v1/bff-web/`, which survives only in open point 1's history and in scorecard quotations. Earlier remediation rounds changed this sheet without adding a row; this row records it. Awaiting Group C re-review |
 
 ## How this document is verified
 

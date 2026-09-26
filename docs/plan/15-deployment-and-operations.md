@@ -2,7 +2,7 @@
 
 > Plan document for the Nibras platform. Group E. It refines reference architecture Sections 6, 11, 12, 13, 15, 16 and 17 and master brief Sections 7.6, 7.7, 23, 31 and 34; it does not re-derive them. Where this document and a brief disagree, the brief wins and this document is the defect, unless an ADR records the deviation.
 
-**Group** E · **Requirement areas covered** INF, with PERF where scaling touches capacity and SEC where secrets touch operations · **Last updated** 2026-09-26 by the round-4 scorecard remediation (the macOS leg of `dev-smoke.yml` aligned with document 33)
+**Group** E · **Requirement areas covered** INF, with PERF where scaling touches capacity and SEC where secrets touch operations · **Last updated** 2026-09-26, remediation round 7 (the round-6 scorecard; this line brought up to the review record, which lists every amendment through round 7)
 
 ## Purpose
 
@@ -426,7 +426,7 @@ Every alert is named in PascalCase, fires on the condition stated, carries a sev
 | 25 | `WarmUpJobMissed` | `nibras_platform_warmup_completed_timestamp_seconds{tenant_id}` older than first period minus 10 min for any tenant on a school day | Sev2 | page | `warm-up-job-missed.md` |
 | 26 | `CalendarScaleUpMissed` | Attendance or Gateway ready replicas below the band's peak minimum at first period minus 15 min | Sev2 | page | `calendar-scale-up-missed.md` |
 | 27 | `SafeguardingFlagUnacknowledged` | A safeguarding flag not acknowledged 15 min after it was raised (master brief Section 38) | Sev2 | page | `safeguarding-flag-unacknowledged.md` |
-| 28 | `MobileSyncRejections` | `POST /bff-mobile/sync/batch` rejecting over 1% of batches for 5 min; sync must queue, never shed (Appendix N, N-08) | Sev2 | page | `mobile-sync-rejections.md` |
+| 28 | `MobileSyncRejections` | `POST /bff/mobile/v1/sync/batch` rejecting over 1% of batches for 5 min; sync must queue, never shed (Appendix N, N-08) | Sev2 | page | `mobile-sync-rejections.md` |
 | 29 | `SigningKeyOverlapEnding` | The previous OpenIddict signing key retires in under 7 days while tokens minted with it are still valid | Sev2 | page | `signing-key-overlap-ending.md` |
 | 30 | `PdfRenderFailures` | Gotenberg render failures over 5% for 10 min, or a PDF snapshot mismatch in production canaries | Sev2 | page | `pdf-render-failures.md` |
 | 31 | `HostDiskCritical` (single server) | Any host volume over 90%, including the backup disk | Sev2 | page, or email to the school administrator on an appliance | `host-disk.md` |
@@ -886,6 +886,8 @@ stateDiagram-v2
 | 2026-09-26 | Scorecard remediation, theme 8 | Amended under ADR-0023: the demo gate (REQ-TST-022, built by SL-TST-006) added to the evidence the approval gate requires, with its row in the brief sources and the verification table | none |
 | 2026-09-26 | Round-2 scorecard, Group E (blocked on consistency, feasibility and risk honesty), remediation round 3 | Amended: `macos-latest` joins `dev-smoke.yml` beside `ubuntu-latest` and `windows-latest` (parts 2.1, 4 and 4.4), with open point 6 on the runner's container engine; the restore drills take one identifier each, `TC-TST-216` for the per-release timed restore on staging and `TC-DATA-020` for the quarterly drill under load, stated the same way in documents 16 and 18; a VMware drill for the `.ova` image added to parts 7 and 8; `tests/load/` corrected to `tests/Load/` as documents 07 and 16 spell it; the weekly soak added to the approval-gate evidence; the `TC-INF-101` to `TC-INF-114` ownership row corrected; the theme 4 blocking item is gone, since SL-INF-617 now says sixty-three | none |
 | 2026-09-26 | Round-3 scorecard, Group E (blocked on consistency), remediation round 4 | Amended to match document 33 on the macOS leg: parts 2.1, 4.4 and the verification tables now say `macos-latest` proves the setup and the builds only (`TC-PLAT-800`) and reports the container check as unavailable, because hosted Apple-silicon runners lack nested virtualisation; the container start is proved on `ubuntu-latest` and `windows-latest`; open point 6 restated and re-scored against that known limit, from 3 x 2 to 3 x 1 | none |
+| 2026-09-26 | Round-5 scorecard, remediation round 6 | Amended: alert 28 reads `POST /bff/mobile/v1/sync/batch`, the prefix of document 22, as Appendix N does since ADR-0026 (brief v9.6) | none |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended: the Last updated line names remediation round 7, as the change log below it does | none |
 
 ## How this document is verified
 

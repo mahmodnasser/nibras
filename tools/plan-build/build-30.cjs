@@ -9,7 +9,7 @@ const OUT = path.join(__dirname, '..', '..', 'docs', 'plan', '30-plan-scorecard.
 const AXES = ['Completeness', 'Consistency', 'Feasibility', 'Risk honesty', 'Testability', 'Distinctiveness', 'Portability'];
 const G = ['A', 'B', 'C', 'D', 'E', 'F'];
 // The date each round was scored. The current round is the last one.
-const ROUND_DATES = ['2026-09-22', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26'];
+const ROUND_DATES = ['2026-09-22', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26'];
 
 const readRound = (dir) => {
   const scores = {};

@@ -17,8 +17,8 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 
 | Measure | Value |
 |---|---|
-| Test cases defined in one document | 1644 |
-| Derived acceptance tests (950 to 999), owned by their requirement | 329 |
+| Test cases defined in one document | 1681 |
+| Derived acceptance tests (950 to 999), owned by their requirement | 328 |
 | Identifiers defined in two documents or cited with no definition | 0 |
 | Areas | 36 |
 
@@ -70,10 +70,10 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-ACA-424 | Academics sheet, line 958 | A teacher marks lunch "most" for 18 children of a kindergarten section in one bulk call and adds a nap for 3. Each child has one sheet for the day, a… | document 20 |
 | TC-ACA-425 | Academics sheet, line 959 | At the campus send time the send job marks each non-empty sheet Sent and sends one notification per child. A photo appears only on the sheets of chil… | document 20 |
 | TC-ACA-426 | Academics sheet, line 960 | A sent sheet changed by the teacher becomes Corrected, keeps a revision row and sends one correction notice. An offline change carrying the older ver… | document 20 |
-| TC-ACA-601 | document 08, line 672 | Student / Assignment and submission / /student/coursework/:assignmentId / card, file-upload, button, badge (state), error-state (grading started) / 7… | Appendix Q, document 03, Academics sheet, document 20 |
+| TC-ACA-601 | document 08, line 678 | Student / Assignment and submission / /student/coursework/:assignmentId / card, file-upload, button, badge (state), error-state (grading started) / 7… | Appendix Q, document 03, Academics sheet, document 20 |
 | TC-ACA-602 | Academics sheet, line 933 | Given a submission the teacher has started grading, when the student resubmits from the phone, then the resubmission is refused with 409 ACADEMICS_RE… | Appendix Q, document 03, Academics sheet, document 20 |
 | TC-ACA-760 | Academics sheet, line 961 | With the process culture set to ar-SA, en-US and de-DE in turn, the homework-load minutes of one section's day, the late flag of a submission one sec… | Academics sheet, document 20 |
-| TC-ACA-810 | Appendix W, line 37 | 19 / Kindergarten daily sheet / "I know how the day went" / 1 / 1 surfaces / 2 / Academics | Appendix O, Appendix W, document 01, Academics sheet, document 32, project/OPEN_QUESTIONS.md |
+| TC-ACA-810 | Appendix W, line 37 | 19 / Kindergarten daily sheet / "I know how the day went" / 1 / 1 surfaces / 2 / Academics | Appendix O, Appendix W, document 01, Academics sheet, document 29, document 32, project/OPEN_QUESTIONS.md |
 | TC-ADM-001 | Appendix R, line 694 | Applied to UnderReview / All required documents attached and virus-scanned / Application enters the configured review pipeline | document 03, Admissions sheet, document 20, document 31 |
 | TC-ADM-002 | Appendix R, line 695 | UnderReview to Assessed / Assessment and interview outcomes recorded / Decision screen unlocked for the officer | document 03, Admissions sheet, document 20 |
 | TC-ADM-003 | Appendix R, line 696 | Assessed to Offered / Seat available in the requested grade level / Offer letter generated with an expiry date | document 03, document 20 |
@@ -86,10 +86,10 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-ADM-014 | Appendix R, line 736 | SettlementChecked to SeatReserved / Account clear and next-year grade level exists / Seat reserved against the next-year section plan | none |
 | TC-ADM-015 | Appendix R, line 737 | NoResponse to SeatReleased / Window closed with no reply after both reminders / Seat returned to admissions, family notified | document 03, Admissions sheet, document 20 |
 | TC-ADM-016 | Appendix R, line 738 | SeatReserved to Enrolled / Next-year sections published / Enrollment written and the fee plan assigned | Admissions sheet, School sheet, document 31 |
-| TC-ADM-301 | document 08, line 700 | Registrar / Registrar Today / /registrar / bento-grid, card, stat-tile, list, bar-chart (per stage) / 7 / admissions.applications.view / no / U.6 | Appendix Q, document 03, Admissions sheet, document 20 |
-| TC-ADM-302 | document 08, line 701 | Registrar / Inquiries / /registrar/inquiries / data-table, filters, panel, button (convert) / 7 / admissions.inquiries.view / no / U.6 | Appendix Q, document 03, document 20 |
-| TC-ADM-303 | document 08, line 704 | Registrar / Offers and waiting list / /registrar/offers / data-table, badge (expiry clock), dialog (make, withdraw, extend) / 7 / admissions.offers.v… | Appendix Q, document 03, document 20 |
-| TC-ADM-304 | document 08, line 705 | Registrar / Enrollment / /registrar/enrollment / select (section), stat-tile (seats), error-state (full, waiting list offered), dialog (override reas… | Appendix Q, document 03, document 20 |
+| TC-ADM-301 | document 08, line 706 | Registrar / Registrar Today / /registrar / bento-grid, card, stat-tile, list, bar-chart (per stage) / 7 / admissions.applications.view / no / U.6 | Appendix Q, document 03, Admissions sheet, document 20 |
+| TC-ADM-302 | document 08, line 707 | Registrar / Inquiries / /registrar/inquiries / data-table, filters, panel, button (convert) / 7 / admissions.inquiries.view / no / U.6 | Appendix Q, document 03, document 20 |
+| TC-ADM-303 | document 08, line 710 | Registrar / Offers and waiting list / /registrar/offers / data-table, badge (expiry clock), dialog (make, withdraw, extend) / 7 / admissions.offers.v… | Appendix Q, document 03, document 20 |
+| TC-ADM-304 | document 08, line 711 | Registrar / Enrollment / /registrar/enrollment / select (section), stat-tile (seats), error-state (full, waiting list offered), dialog (override reas… | Appendix Q, document 03, document 20 |
 | TC-ADM-305 | Admissions sheet, line 865 | Given a grade with every seat taken and the registrar's offer refused with ADMISSIONS_CAPACITY_OVERRIDE_REQUIRED, when a colleague holding admissions… | Appendix Q, document 03, Admissions sheet, document 20 |
 | TC-ADM-401 | Admissions sheet, line 867 | AgeEligibilityRulesTests (BR-ADM-001): the three Appendix S examples, the 29 February edge and the Hijri input / Unit | Admissions sheet |
 | TC-ADM-402 | Admissions sheet, line 868 | RequiredDocumentRulesTests (BR-ADM-002): union of 4 documents, missing and expired documents named / Unit | none |
@@ -120,6 +120,8 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-ADM-427 | Admissions sheet, line 893 | Twelve declined families with reasons appear grouped by category in the export (REQ-ADM-023) / Integration | document 20 |
 | TC-ADM-428 | Admissions sheet, line 894 | The applicant identifier is stored encrypted, compared only by HMAC, and destroyed by the retention job / Integration | none |
 | TC-ADM-760 | Admissions sheet, line 895 | Given the public form in Arabic, when a guardian types the phone number and the national identifier in Arabic-Indic digits, then the phone is stored… | Admissions sheet |
+| TC-ADM-780 | document 13, line 308 | Outcome event delivered twice / Step advances once | document 13 |
+| TC-ADM-781 | document 13, line 309 | Admissions Api killed after step 3 / On restart step 4 is sent once, not twice (test method WorkerKilledAfterStep3_Resumes_NoDuplicateInvite) | document 13 |
 | TC-AI-201 | Ai sheet, line 883 | An AI draft is never published unreviewed (with TC-ASM-327 in Assessment) / Integration across Ai and Assessment | Appendix Q, document 03, Ai sheet, Assessment sheet, document 08, document 20, document 25, document 27 |
 | TC-AI-601 | Ai sheet, line 890 | With every feature code off, every assist endpoint answers AI_DISABLED_FOR_TENANT and the Appendix Q UAT steps not marked AI pass (REQ-AI-001) / End-… | Ai sheet, document 20, document 25 |
 | TC-AI-602 | Ai sheet, line 891 | With no provider configured, a comment draft makes exactly one outbound call, to the local model endpoint (REQ-AI-002) / Integration with egress capt… | Ai sheet, document 20 |
@@ -128,7 +130,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-AI-605 | Ai sheet, line 894 | A student withdrawn through school.student.status-changed.v1 has 0 chunks within 60 seconds; a second delivery changes nothing; an index-source comma… | Ai sheet, document 20 |
 | TC-AI-606 | Ai sheet, line 895 | Index-source commands for versions 5, 3, 4 of one record leave version 5 / Integration | Ai sheet, document 11 |
 | TC-AI-607 | Ai sheet, line 896 | A teacher with own-sections scope asking about absent students gets only their sections' students; the plan shows the scope predicate applied before… | Ai sheet, document 20, document 25 |
-| TC-AI-608 | Ai sheet, line 897 | With the model endpoint stopped, a comment draft returns 200 at rung 1 with the comment bank reference, degraded: true and no error (REQ-AI-008) / In… | Ai sheet, document 20, document 25, document 30 |
+| TC-AI-608 | Ai sheet, line 897 | With the model endpoint stopped, a comment draft returns 200 at rung 1 with the comment bank reference, degraded: true and no error (REQ-AI-008) / In… | document 02, Ai sheet, document 20, document 25, document 30 |
 | TC-AI-609 | Ai sheet, line 898 | 50 drafts write 50 call-log rows with feature, user and token counts and no text, and 50 ai.usage.recorded.v1 (REQ-AI-010) / Integration | Ai sheet, document 20 |
 | TC-AI-610 | Ai sheet, line 899 | A draft accepted after editing is stored edited by Assessment and the acceptance is audited (REQ-AI-011) / End-to-end | document 20 |
 | TC-AI-611 | Ai sheet, line 900 | An Arabic announcement drafted from 3 bullets names the 3 inputs as sources and requires the edit-or-send step (REQ-AI-012) / Integration | Ai sheet, document 20 |
@@ -161,38 +163,38 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-AI-638 | Ai sheet, line 927 | Every golden set of document 25 §6.1 meets the §6.2 thresholds in both languages, with Arabic within 5 points of English / ai-eval pipeline stage | Ai sheet, document 25 |
 | TC-AI-750 | Ai sheet, line 928 | The same Arabic and English source records chunked and slotted with the process culture set to ar-SA, then en-US, then the invariant culture give byt… | Ai sheet |
 | TC-AI-751 | Ai sheet, line 929 | An Arabic source whose text carries the bidirectional controls U+202E, U+2066 and U+2069 is embedded and slotted without them, a retrieved chunk carr… | Ai sheet |
-| TC-AI-800 | document 25, line 553 | Given the stored harness results of the previous release, in which report-comment-draft passed its rubric at 96 percent in Arabic, when a release can… | document 25 |
-| TC-AI-801 | document 25, line 554 | Given a tenant whose drafting features use the released model tag, when a new model tag or a new template version is registered and the harness has n… | document 25 |
-| TC-AI-802 | document 25, line 555 | Given a release candidate whose 20-item Arabic drafting sample for report-comment-draft was scored by two raters who disagree on 5 items (25 percent)… | document 25, document 30 |
-| TC-API-001 | document 22, line 813 | Given a list endpoint whose declared maximum is 200, when a client requests pageSize=1000, then the response is 200 rather than 400 with pageSize 200… | document 03, document 20, document 22 |
-| TC-API-002 | document 22, line 814 | Given 1,001 seeded rows, when a client walks a keyset list forwards and backwards at pageSize 50 in every declared sort, then each row appears exactl… | document 03, document 20, document 22 |
-| TC-API-003 | document 22, line 815 | Given a nextCursor issued for sort=+lastName,+id on the students list, when it is sent with another sort, another filter or to another endpoint, then… | document 22 |
-| TC-API-010 | document 22, line 816 | Given a list endpoint that declares its filterable and sortable fields, when each of the 12 operators of §3.1 is sent and sort=lastName is requested,… | document 03, document 20, document 22 |
-| TC-API-011 | document 22, line 817 | Given a string value holding a literal comma sent as %2C in filter[name][in], when the grammar parses it, then it is one list member, not two, and a… | none |
-| TC-API-012 | document 22, line 818 | Given the §3.1 limits, when a request carries 10 predicates, a 100-member list and a 200-character value, then it is accepted, and when any one carri… | none |
-| TC-API-013 | document 22, line 819 | Given a field classified Sensitive in Appendix J, when a client sends filter[medicalNotes][contains]=asthma, then it is 403 SCHOOL_PERMISSION_DENIED… | none |
-| TC-API-014 | document 22, line 820 | Given a teacher whose data scope is section 4B, when the teacher filters the students list by the section id of 5A, then the response holds 0 rows, b… | document 22 |
-| TC-API-020 | document 22, line 821 | Given two clients that read the same student at the same ETag, when both send PATCH with that If-Match, then the first is 200 and the second is 409 _… | document 03, document 20, document 22 |
-| TC-API-021 | document 22, line 822 | Given an aggregate root, when PUT, PATCH or DELETE arrives without If-Match, then each is 400 _VALIDATION_FAILED with field If-Match and the stored r… | document 03, document 20, document 22 |
-| TC-API-022 | document 22, line 823 | Given an attendance mark POST with an Idempotency-Key that succeeded, when the same key and body are sent 23 hours later, then the reply is 200 with… | document 03, document 20, document 22 |
-| TC-API-023 | document 22, line 824 | Given a stored Idempotency-Key, when the same key arrives with a different body, then it is 400 _VALIDATION_FAILED with field Idempotency-Key and par… | none |
-| TC-API-024 | document 22, line 825 | Given a request with an Idempotency-Key still running, when a second request with the same key arrives, then it is 409 _CONCURRENCY_CONFLICT with Ret… | none |
-| TC-API-025 | document 22, line 826 | Given redis-state stopped through Testcontainers, when a POST reaches an endpoint marked x-nibras-idempotency: required, then it is 503 _DEPENDENCY_U… | document 22 |
-| TC-API-030 | document 22, line 827 | Given the generated docs/api/error-codes.json, when the missing-translation report runs over the Angular and Flutter bundles, then every catalog code… | document 03, document 20, document 22, document 24 |
-| TC-API-031 | document 22, line 828 | Given every catalog code, when the per-code snapshot test runs, then each error body is Problem Details with type urn:nibras:problem:<code>, the exac… | document 03, document 20, document 22 |
-| TC-API-032 | document 22, line 829 | Given a guardian surface, when each code with parentSafe: false is rendered, then the snapshot shows the generic message with the reference number an… | document 03, document 20, document 22 |
-| TC-API-033 | document 22, line 830 | Given an error whose detail names a session identifier, when the web and mobile clients render it, then the message comes from the bundle for the cod… | document 03, document 20, document 22 |
-| TC-API-040 | document 22, line 831 | Given a report-card batch of 800 cards, when it is started, then the reply is 202 with Location of the job resource, at most one jobProgress per seco… | document 03, document 20, document 22 |
-| TC-API-041 | document 22, line 832 | Given a running job at 312 of 800 units, when POST /jobs/{id}/cancel is sent, then the job ends in cancelled with a partial summary counting the unit… | document 03, document 20, document 22 |
-| TC-API-050 | document 22, line 833 | Given 500 attendance marks of which 3 are invalid, sent in independent mode, then the reply is 200 with a summary of 497 succeeded and 3 failed, each… | document 03, document 20, document 22 |
-| TC-API-051 | document 22, line 834 | Given 500 items of which 1 is invalid, sent in allOrNothing mode, then the reply is 200 with 499 items rolledBack and the failing item carrying its p… | document 22 |
-| TC-API-052 | document 22, line 835 | Given a bulk request of 501 items, then it is 400 _VALIDATION_FAILED with params.maxItems 500 and no item is processed / REQ-API-017 | document 22 |
-| TC-API-060 | document 22, line 836 | Given the Gateway limit of 600 unauthenticated requests per minute per address, when the 601st arrives inside the minute, then it is 429 GATEWAY_RATE… | document 03, document 20, document 22 |
-| TC-API-061 | document 22, line 837 | Given the service write policy of 120 per minute per user, when the 121st write arrives, then it is 429 <SERVICE>_RATE_LIMITED with params.scope user… | document 22, document 23 |
-| TC-API-062 | document 22, line 838 | Given a tenant at its plan quota, when one more metered call arrives, then it is 402 PLATFORM_PLAN_LIMIT_REACHED with params.limit, params.usage and… | document 22, document 23 |
-| TC-API-070 | document 22, line 839 | Given a gRPC call to School without nibras-tenant-id on a method that is not platform-scoped, when it arrives, then the callee refuses it before the… | document 03, document 20, document 22 |
-| TC-API-071 | document 22, line 840 | Given a gRPC call whose nibras-tenant-id differs from the service token's tenant claim, when it arrives, then it is PERMISSION_DENIED with code _TENA… | document 22 |
-| TC-API-072 | document 22, line 841 | Given an inbound gRPC call carrying nibras-hop: 1, when its handler opens a second gRPC call, then the call is refused with FAILED_PRECONDITION and <… | document 03, document 20, document 22, document 30 |
+| TC-AI-800 | document 25, line 556 | Given the stored harness results of the previous release, in which report-comment-draft passed its rubric at 96 percent in Arabic, when a release can… | document 25 |
+| TC-AI-801 | document 25, line 557 | Given a tenant whose drafting features use the released model tag, when a new model tag or a new template version is registered and the harness has n… | document 25 |
+| TC-AI-802 | document 25, line 558 | Given a release candidate whose 20-item Arabic drafting sample for report-comment-draft was scored by two raters who disagree on 5 items (25 percent)… | document 25 |
+| TC-API-001 | document 22, line 816 | Given a list endpoint whose declared maximum is 200, when a client requests pageSize=1000, then the response is 200 rather than 400 with pageSize 200… | document 03, document 20, document 22 |
+| TC-API-002 | document 22, line 817 | Given 1,001 seeded rows, when a client walks a keyset list forwards and backwards at pageSize 50 in every declared sort, then each row appears exactl… | document 03, document 20, document 22 |
+| TC-API-003 | document 22, line 818 | Given a nextCursor issued for sort=+lastName,+id on the students list, when it is sent with another sort, another filter or to another endpoint, then… | document 22 |
+| TC-API-010 | document 22, line 819 | Given a list endpoint that declares its filterable and sortable fields, when each of the 12 operators of §3.1 is sent and sort=lastName is requested,… | document 03, document 20, document 22 |
+| TC-API-011 | document 22, line 820 | Given a string value holding a literal comma sent as %2C in filter[name][in], when the grammar parses it, then it is one list member, not two, and a… | none |
+| TC-API-012 | document 22, line 821 | Given the §3.1 limits, when a request carries 10 predicates, a 100-member list and a 200-character value, then it is accepted, and when any one carri… | none |
+| TC-API-013 | document 22, line 822 | Given a field classified Sensitive in Appendix J, when a client sends filter[medicalNotes][contains]=asthma, then it is 403 SCHOOL_PERMISSION_DENIED… | none |
+| TC-API-014 | document 22, line 823 | Given a teacher whose data scope is section 4B, when the teacher filters the students list by the section id of 5A, then the response holds 0 rows, b… | document 22 |
+| TC-API-020 | document 22, line 824 | Given two clients that read the same student at the same ETag, when both send PATCH with that If-Match, then the first is 200 and the second is 409 _… | document 03, document 20, document 22 |
+| TC-API-021 | document 22, line 825 | Given an aggregate root, when PUT, PATCH or DELETE arrives without If-Match, then each is 400 _VALIDATION_FAILED with field If-Match and the stored r… | document 03, document 20, document 22 |
+| TC-API-022 | document 22, line 826 | Given an attendance mark POST with an Idempotency-Key that succeeded, when the same key and body are sent 23 hours later, then the reply is 200 with… | document 03, document 20, document 22 |
+| TC-API-023 | document 22, line 827 | Given a stored Idempotency-Key, when the same key arrives with a different body, then it is 400 _VALIDATION_FAILED with field Idempotency-Key and par… | none |
+| TC-API-024 | document 22, line 828 | Given a request with an Idempotency-Key still running, when a second request with the same key arrives, then it is 409 _CONCURRENCY_CONFLICT with Ret… | none |
+| TC-API-025 | document 22, line 829 | Given redis-state stopped through Testcontainers, when a POST reaches an endpoint marked x-nibras-idempotency: required, then it is 503 _DEPENDENCY_U… | document 22 |
+| TC-API-030 | document 22, line 830 | Given the generated docs/api/error-codes.json, when the missing-translation report runs over the Angular and Flutter bundles, then every catalog code… | document 03, document 20, document 22, document 24 |
+| TC-API-031 | document 22, line 831 | Given every catalog code, when the per-code snapshot test runs, then each error body is Problem Details with type urn:nibras:problem:<code>, the exac… | document 03, document 20, document 22 |
+| TC-API-032 | document 22, line 832 | Given a guardian surface, when each code with parentSafe: false is rendered, then the snapshot shows the generic message with the reference number an… | document 03, document 20, document 22 |
+| TC-API-033 | document 22, line 833 | Given an error whose detail names a session identifier, when the web and mobile clients render it, then the message comes from the bundle for the cod… | document 03, document 20, document 22 |
+| TC-API-040 | document 22, line 834 | Given a report-card batch of 800 cards, when it is started, then the reply is 202 with Location of the job resource, at most one jobProgress per seco… | document 03, document 20, document 22 |
+| TC-API-041 | document 22, line 835 | Given a running job at 312 of 800 units, when POST /jobs/{id}/cancel is sent, then the job ends in cancelled with a partial summary counting the unit… | document 03, document 20, document 22 |
+| TC-API-050 | document 22, line 836 | Given 500 attendance marks of which 3 are invalid, sent in independent mode, then the reply is 200 with a summary of 497 succeeded and 3 failed, each… | document 03, document 20, document 22 |
+| TC-API-051 | document 22, line 837 | Given 500 items of which 1 is invalid, sent in allOrNothing mode, then the reply is 200 with 499 items rolledBack and the failing item carrying its p… | document 22 |
+| TC-API-052 | document 22, line 838 | Given a bulk request of 501 items, then it is 400 _VALIDATION_FAILED with params.maxItems 500 and no item is processed / REQ-API-017 | document 22 |
+| TC-API-060 | document 22, line 839 | Given the Gateway limit of 600 unauthenticated requests per minute per address, when the 601st arrives inside the minute, then it is 429 GATEWAY_RATE… | document 03, document 20, document 22 |
+| TC-API-061 | document 22, line 840 | Given the service write policy of 120 per minute per user, when the 121st write arrives, then it is 429 <SERVICE>_RATE_LIMITED with params.scope user… | document 22, document 23 |
+| TC-API-062 | document 22, line 841 | Given a tenant at its plan quota, when one more metered call arrives, then it is 402 PLATFORM_PLAN_LIMIT_REACHED with params.limit, params.usage and… | document 22, document 23 |
+| TC-API-070 | document 22, line 842 | Given a gRPC call to School without nibras-tenant-id on a method that is not platform-scoped, when it arrives, then the callee refuses it before the… | document 03, document 20, document 22 |
+| TC-API-071 | document 22, line 843 | Given a gRPC call whose nibras-tenant-id differs from the service token's tenant claim, when it arrives, then it is PERMISSION_DENIED with code _TENA… | document 22 |
+| TC-API-072 | document 22, line 844 | Given an inbound gRPC call carrying nibras-hop: 1, when its handler opens a second gRPC call, then the call is refused with FAILED_PRECONDITION and <… | document 03, document 04, document 05, document 07, document 20, document 22, document 30 |
 | TC-ASM-001 | Appendix R, line 812 | MarkEntry to Validated / Every enrolled student has a mark, an absence, or an exemption / Entry accepted for moderation | Appendix W, document 03, Assessment sheet, document 20, document 31, project/DECISIONS/0020-one-definition-per-test-case.md |
 | TC-ASM-002 | Appendix R, line 813 | MarkEntry to Validated / A mark exceeds the maximum for the component / Rejected at entry with the offending cell highlighted | document 03, Assessment sheet, document 20 |
 | TC-ASM-003 | Appendix R, line 814 | Validated to Moderated / Moderator holds assessment.marks.moderate for the subject / Adjustment stored with the original value and the reason | document 03, Assessment sheet, document 20 |
@@ -211,54 +213,63 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-ASM-024 | Appendix R, line 891 | Approved to PrintRequested / Requester holds assessment.exams.print-paper / Copy count fixed to the registered candidates plus spares | document 03, Assessment sheet, document 20, project/KIT_V9_1_CHANGES.md |
 | TC-ASM-025 | Appendix R, line 892 | Printed to Released / Exam day reached and invigilator identified / Packet released, any extra open attempt refused | none |
 | TC-ASM-026 | Appendix R, line 893 | UnderReview to UnderReview / A teacher without the reviewer role opens the paper / Refused, attempt audited and alerted | document 03, Assessment sheet, document 20, document 31 |
-| TC-ASM-101 | Assessment sheet, line 1083 | UAT / Locked mark change refused with ASSESSMENT_POST_LOCK_CHANGE_REFUSED and the appeal offered | Appendix Q, document 03, Assessment sheet, document 08, document 20 |
-| TC-ASM-201 | Assessment sheet, line 1084 | UAT, security / A teacher cannot approve their own marks | Appendix Q, document 03, document 20 |
-| TC-ASM-301 | Assessment sheet, line 1086 | Unit, property, mutation / WeightedCategoryAverageRulesTests (BR-ASM-001) | Assessment sheet |
-| TC-ASM-302 | Assessment sheet, line 1087 | Unit, property, mutation / CategoryReweightRulesTests (BR-ASM-002) | none |
-| TC-ASM-303 | Assessment sheet, line 1088 | Unit, property, mutation / DropLowestRulesTests (BR-ASM-003) | none |
-| TC-ASM-304 | Assessment sheet, line 1089 | Unit, property, mutation / BestOfNRulesTests (BR-ASM-004) | none |
-| TC-ASM-305 | Assessment sheet, line 1090 | Unit, property, mutation / MandatoryComponentRulesTests (BR-ASM-005) | none |
-| TC-ASM-306 | Assessment sheet, line 1091 | Unit, property, mutation / LateJoinerReweightRulesTests (BR-ASM-006) | none |
-| TC-ASM-307 | Assessment sheet, line 1092 | Unit, property, mutation / AbsentAndExemptComponentRulesTests (BR-ASM-007) | none |
-| TC-ASM-308 | Assessment sheet, line 1093 | Unit, property, mutation / GradeRoundingRulesTests (BR-ASM-008): 84.995 reads 85.00, raw kept | none |
-| TC-ASM-309 | Assessment sheet, line 1094 | Unit, property, mutation / LetterGradeBoundaryRulesTests (BR-ASM-009) | none |
-| TC-ASM-310 | Assessment sheet, line 1095 | Unit, property, mutation / GpaConversionRulesTests (BR-ASM-010) | none |
-| TC-ASM-311 | Assessment sheet, line 1096 | Unit, property, mutation / RankRulesTests (BR-ASM-011): ties at 91.50 share rank 1, next is 3 | none |
-| TC-ASM-312 | Assessment sheet, line 1097 | Unit, property, mutation / PromotionEligibilityRulesTests (BR-ASM-012) with reasons | none |
-| TC-ASM-313 | Assessment sheet, line 1098 | Unit, property, mutation / HonorsThresholdRulesTests (BR-ASM-013) | none |
-| TC-ASM-314 | Assessment sheet, line 1099 | Unit, mutation / GradeChangeAfterLockRulesTests (BR-ASM-014) | none |
-| TC-ASM-315 | Assessment sheet, line 1100 | Pipeline / Stryker.NET mutation score at or above 80 percent on every class of Domain/Rules/ | Assessment sheet |
-| TC-ASM-316 | Assessment sheet, line 1101 | Integration / Reproducibility: a 2024-25 card recomputed after a 2025-26 scheme change equals the original (REQ-ASM-023) | Assessment sheet, document 20 |
-| TC-ASM-317 | Assessment sheet, line 1102 | Integration / Kindergarten descriptive and grade-10 percentage cards each use their own scheme (REQ-ASM-004) | document 20 |
-| TC-ASM-318 | Assessment sheet, line 1103 | Integration / Two teachers on two devices see each other's saves with no stale read and no Redis key for draft marks (REQ-ASM-007) | document 20 |
-| TC-ASM-319 | Assessment sheet, line 1104 | Integration / Grid save of 25 marks issues one batched update, p95 under 500 ms during an N-02 batch (REQ-PERF-024) | document 20 |
-| TC-ASM-320 | Assessment sheet, line 1105 | Integration / PermissionMatrix twins for every endpoint and role; denied responses leak no record | Assessment sheet |
-| TC-ASM-321 | Assessment sheet, line 1106 | Integration / TenantIsolation attacks on every endpoint, consumer and command | none |
-| TC-ASM-322 | Assessment sheet, line 1107 | Integration / Query budgets of document 21 §3.6 queries 1 to 8 and the section 11 additions | none |
-| TC-ASM-323 | Assessment sheet, line 1108 | Integration / Every consumer and command delivered twice changes state once | none |
-| TC-ASM-324 | Assessment sheet, line 1109 | Integration / SERIALIZABLE lock: a mark committed concurrently with the lock is either before it or refused | none |
-| TC-ASM-325 | Assessment sheet, line 1110 | Integration / Restricted account: card withheld, released on finance.account.cleared.v1 | none |
-| TC-ASM-326 | Assessment sheet, line 1111 | Integration / Template with an unresolved placeholder refused | none |
-| TC-ASM-327 | Assessment sheet, line 1112 | Integration / Unreviewed AI draft never rendered (with TC-AI-201) | Ai sheet |
-| TC-ASM-328 | Assessment sheet, line 1113 | Integration / Published card QR verifies and parent acknowledgment records the time (REQ-ASM-029) | document 20 |
-| TC-ASM-329 | Assessment sheet, line 1114 | Integration / Transcript of 3 years with a verifying code; a planted mismatch gives ASSESSMENT_TRANSCRIPT_NOT_REPRODUCIBLE | none |
-| TC-ASM-330 | Assessment sheet, line 1115 | Integration / Predicted grades absent from every family-facing response (REQ-ASM-031) | document 20 |
-| TC-ASM-331 | Assessment sheet, line 1116 | Integration / Overdue job notifies the teacher on day 1 and the coordinator on day 3 (REQ-ASM-034) | document 20 |
-| TC-ASM-332 | Assessment sheet, line 1117 | Integration / Publish fans out once to 25 students and their guardians (REQ-ASM-035) | document 20 |
-| TC-ASM-333 | Assessment sheet, line 1118 | Integration / Offline draft for an approved component returns a proposed grade change, not an overwrite | none |
-| TC-ASM-334 | Assessment sheet, line 1119 | Integration / ConfirmYearResultsLocked and ComputePromotionDecisions replies for Saga 4, twice each | none |
-| TC-ASM-335 | Assessment sheet, line 1120 | Integration / Graded submission imports once into the linked component and never into a locked one | none |
-| TC-ASM-336 | Assessment sheet, line 1121 | Contract / Every V1 record matches its schema; no rationale or comment text in a payload | none |
-| TC-ASM-337 | Assessment sheet, line 1122 | Contract / Provider pacts for Bff.Web and Bff.Mobile | none |
-| TC-ASM-601 | Assessment sheet, line 1085 | UAT / Student reads feedback with mark, comment, rubric and scheme | Appendix Q, document 03, document 08, document 20 |
-| TC-ASM-760 | Assessment sheet, line 1125 | Unit, property / Every Appendix S example of the fourteen BR-ASM rule classes gives the same result, to the last stored digit, with the process cultu… | Assessment sheet, document 20 |
-| TC-ASM-761 | Assessment sheet, line 1126 | Integration / A report card rendered for a tenant whose numeral setting is Arabic-Indic shows marks, averages and GPA in Arabic-Indic digits in the A… | Assessment sheet, document 20 |
+| TC-ASM-101 | Assessment sheet, line 1133 | UAT / Locked mark change refused with ASSESSMENT_POST_LOCK_CHANGE_REFUSED and the appeal offered | Appendix Q, document 03, Assessment sheet, document 08, document 20 |
+| TC-ASM-201 | Assessment sheet, line 1134 | UAT, security / A teacher cannot approve their own marks | Appendix Q, document 03, document 20 |
+| TC-ASM-301 | Assessment sheet, line 1136 | Unit, property, mutation / WeightedCategoryAverageRulesTests (BR-ASM-001) | Assessment sheet |
+| TC-ASM-302 | Assessment sheet, line 1137 | Unit, property, mutation / CategoryReweightRulesTests (BR-ASM-002) | none |
+| TC-ASM-303 | Assessment sheet, line 1138 | Unit, property, mutation / DropLowestRulesTests (BR-ASM-003) | none |
+| TC-ASM-304 | Assessment sheet, line 1139 | Unit, property, mutation / BestOfNRulesTests (BR-ASM-004) | none |
+| TC-ASM-305 | Assessment sheet, line 1140 | Unit, property, mutation / MandatoryComponentRulesTests (BR-ASM-005) | none |
+| TC-ASM-306 | Assessment sheet, line 1141 | Unit, property, mutation / LateJoinerReweightRulesTests (BR-ASM-006) | none |
+| TC-ASM-307 | Assessment sheet, line 1142 | Unit, property, mutation / AbsentAndExemptComponentRulesTests (BR-ASM-007) | none |
+| TC-ASM-308 | Assessment sheet, line 1143 | Unit, property, mutation / GradeRoundingRulesTests (BR-ASM-008): 84.995 reads 85.00, raw kept | none |
+| TC-ASM-309 | Assessment sheet, line 1144 | Unit, property, mutation / LetterGradeBoundaryRulesTests (BR-ASM-009) | none |
+| TC-ASM-310 | Assessment sheet, line 1145 | Unit, property, mutation / GpaConversionRulesTests (BR-ASM-010) | none |
+| TC-ASM-311 | Assessment sheet, line 1146 | Unit, property, mutation / RankRulesTests (BR-ASM-011): ties at 91.50 share rank 1, next is 3 | none |
+| TC-ASM-312 | Assessment sheet, line 1147 | Unit, property, mutation / PromotionEligibilityRulesTests (BR-ASM-012) with reasons | none |
+| TC-ASM-313 | Assessment sheet, line 1148 | Unit, property, mutation / HonorsThresholdRulesTests (BR-ASM-013) | none |
+| TC-ASM-314 | Assessment sheet, line 1149 | Unit, mutation / GradeChangeAfterLockRulesTests (BR-ASM-014) | none |
+| TC-ASM-315 | Assessment sheet, line 1150 | Pipeline / Stryker.NET mutation score at or above 80 percent on every class of Domain/Rules/ | Assessment sheet |
+| TC-ASM-316 | Assessment sheet, line 1151 | Integration / Reproducibility: a 2024-25 card recomputed after a 2025-26 scheme change equals the original (REQ-ASM-023) | Assessment sheet, document 20 |
+| TC-ASM-317 | Assessment sheet, line 1152 | Integration / Kindergarten descriptive and grade-10 percentage cards each use their own scheme (REQ-ASM-004) | document 20 |
+| TC-ASM-318 | Assessment sheet, line 1153 | Integration / Two teachers on two devices see each other's saves with no stale read and no Redis key for draft marks (REQ-ASM-007) | document 20 |
+| TC-ASM-319 | Assessment sheet, line 1154 | Integration / Grid save of 25 marks issues one batched update, p95 under 500 ms during an N-02 batch (REQ-PERF-024) | document 20 |
+| TC-ASM-320 | Assessment sheet, line 1155 | Integration / PermissionMatrix twins for every endpoint and role; denied responses leak no record | Assessment sheet |
+| TC-ASM-321 | Assessment sheet, line 1156 | Integration / TenantIsolation attacks on every endpoint, consumer and command | none |
+| TC-ASM-322 | Assessment sheet, line 1157 | Integration / Query budgets of document 21 §3.6 queries 1 to 8 and the section 11 additions | none |
+| TC-ASM-323 | Assessment sheet, line 1158 | Integration / Every consumer and command delivered twice changes state once | none |
+| TC-ASM-324 | Assessment sheet, line 1159 | Integration / SERIALIZABLE lock: a mark committed concurrently with the lock is either before it or refused | none |
+| TC-ASM-325 | Assessment sheet, line 1160 | Integration / Restricted account: card withheld, released on finance.account.cleared.v1 | none |
+| TC-ASM-326 | Assessment sheet, line 1161 | Integration / Template with an unresolved placeholder refused | none |
+| TC-ASM-327 | Assessment sheet, line 1162 | Integration / Unreviewed AI draft never rendered (with TC-AI-201) | Ai sheet |
+| TC-ASM-328 | Assessment sheet, line 1163 | Integration / Published card QR verifies and parent acknowledgment records the time (REQ-ASM-029) | document 20 |
+| TC-ASM-329 | Assessment sheet, line 1164 | Integration / Transcript of 3 years with a verifying code; a planted mismatch gives ASSESSMENT_TRANSCRIPT_NOT_REPRODUCIBLE | none |
+| TC-ASM-330 | Assessment sheet, line 1165 | Integration / Predicted grades absent from every family-facing response (REQ-ASM-031) | document 20 |
+| TC-ASM-331 | Assessment sheet, line 1166 | Integration / Overdue job notifies the teacher on day 1 and the coordinator on day 3 (REQ-ASM-034) | document 20 |
+| TC-ASM-332 | Assessment sheet, line 1167 | Integration / Publish fans out once to 25 students and their guardians (REQ-ASM-035) | document 20 |
+| TC-ASM-333 | Assessment sheet, line 1168 | Integration / Offline draft for an approved component returns a proposed grade change, not an overwrite | none |
+| TC-ASM-334 | Assessment sheet, line 1169 | Integration / ConfirmYearResultsLocked and ComputePromotionDecisions replies for Saga 4, twice each | none |
+| TC-ASM-335 | Assessment sheet, line 1170 | Integration / Graded submission imports once into the linked component and never into a locked one | none |
+| TC-ASM-336 | Assessment sheet, line 1171 | Contract / Every V1 record matches its schema; no rationale or comment text in a payload | none |
+| TC-ASM-337 | Assessment sheet, line 1172 | Contract / Provider pacts for Bff.Web and Bff.Mobile | none |
+| TC-ASM-338 | Assessment sheet, line 1173 | Integration / RecordToolScore delivered twice with the same sagaId (and once more redelivered by the broker with a new message id) leaves exactly one… | Assessment sheet, Platform sheet, document 30 |
+| TC-ASM-339 | Assessment sheet, line 1174 | Integration / RecordToolScore for a component in a Locked section period, delivered twice, writes no mark and sends one ToolScoreFailed with ASSESSME… | Assessment sheet, document 30 |
+| TC-ASM-340 | Assessment sheet, line 1175 | Unit / MasteryCalculator worked example. Component A (max 20) is linked to outcome O1 at weight 1.00, and the student scores 15. Component B (max 10)… | Assessment sheet, document 20 |
+| TC-ASM-341 | Assessment sheet, line 1176 | Integration / GET /students/{id}/standards-heatmap returns the TC-ASM-340 cells for the seeded student. A RecordToolScore Draft in component A leaves… | none |
+| TC-ASM-342 | Assessment sheet, line 1177 | Integration / GET /sections/{id}/standards-heatmap on a four-student section with O1 at 68, 90, 45 and one student with no evidence returns studentsA… | document 08 |
+| TC-ASM-343 | Assessment sheet, line 1178 | Integration / With rung 2 off, or with the model file missing, both routes return nextStep: null and suggestion: "off", and cells equal to those of t… | none |
+| TC-ASM-344 | Assessment sheet, line 1179 | Integration, security / A parent (own-children) and a student (self) get ASSESSMENT_PERMISSION_DENIED on both routes. A teacher of another section ge… | Assessment sheet |
+| TC-ASM-345 | Assessment sheet, line 1180 | Web end to end / The mark grid in Arabic right-to-left shows a tool-score Draft cell whose source is a tool named in Latin script ("GeoGebra 6") and… | Assessment sheet, Platform sheet |
+| TC-ASM-601 | Assessment sheet, line 1135 | UAT / Student reads feedback with mark, comment, rubric and scheme | Appendix Q, document 03, document 08, document 20 |
+| TC-ASM-760 | Assessment sheet, line 1183 | Unit, property / Every Appendix S example of the fourteen BR-ASM rule classes gives the same result, to the last stored digit, with the process cultu… | Assessment sheet, document 20 |
+| TC-ASM-761 | Assessment sheet, line 1184 | Integration / A report card rendered for a tenant whose numeral setting is Arabic-Indic shows marks, averages and GPA in Arabic-Indic digits in the A… | Assessment sheet, document 20 |
+| TC-ASM-780 | document 13, line 554 | documents.document.generated.v1 delivered twice / Student status unchanged, count unchanged | document 13 |
 | TC-ASM-810 | Appendix W, line 24 | 6 / Report Card Studio with QR verification / "Eight hundred report cards, verified" / 1, comments at 3 / 3 drafts / 1 / Assessment | Appendix O, Appendix W, Assessment sheet, document 08, document 32, project/DECISIONS/0020-one-definition-per-test-case.md |
-| TC-ASM-811 | Appendix W, line 60 | 42 / Mastery and next step / "I saw the gap and what to teach next" / 2, degrades to the raw heatmap / 2 suggests / 2 / Assessment | Appendix O, Appendix W, Assessment sheet, document 32 |
+| TC-ASM-811 | Appendix W, line 60 | 42 / Mastery and next step / "I saw the gap and what to teach next" / 2, degrades to the raw heatmap / 2 suggests / 2 / Assessment | Appendix O, Appendix W, Assessment sheet, document 08, document 30, document 32 |
 | TC-ATT-001 | Appendix R, line 928 | Open to Marked / Teacher holds a teaching assignment for that session / Register saved, absent students queued for alerting | Appendix L, Appendix W, Attendance sheet, document 31, project/DECISIONS/0020-one-definition-per-test-case.md |
 | TC-ATT-002 | Appendix R, line 929 | Open to NotMarked / Grace period passed with no submission / Escalation raised, session still markable with a reason | document 03, Attendance sheet, document 20 |
-| TC-ATT-003 | Appendix R, line 930 | Marked to AbsenceAlerted / Guardian has a verified channel and quiet hours allow it / Alert delivered or deferred, never silently dropped | document 01, document 03, Attendance sheet, document 13, document 16, document 18, document 20, document 30, project/DECISIONS/0020-one-definition-per-test-case.md, project/OPEN_QUESTIONS.md |
-| TC-ATT-004 | Appendix R, line 931 | ExcuseSubmitted to ExcuseApproved / Submitted within the excuse window by a linked guardian / Day changed to excused, counters recalculated | document 03, Attendance sheet, document 20 |
+| TC-ATT-003 | Appendix R, line 930 | Marked to AbsenceAlerted / Guardian has a verified channel and quiet hours allow it / Alert delivered or deferred, never silently dropped | document 01, document 03, Attendance sheet, document 13, document 16, document 18, document 20, project/DECISIONS/0020-one-definition-per-test-case.md, project/OPEN_QUESTIONS.md |
+| TC-ATT-004 | Appendix R, line 931 | ExcuseSubmitted to ExcuseApproved / Submitted within the excuse window by a linked guardian / Day changed to excused, counters recalculated | document 03, Attendance sheet, document 20, document 30 |
 | TC-ATT-005 | Appendix R, line 932 | Marked to ThresholdReached / Absence rate crosses the configured limit / Flag raised with the reasons that produced it | document 03, Attendance sheet, document 20 |
 | TC-ATT-006 | Appendix R, line 933 | Marked to Marked / Offline register syncs after a server register exists / Conflict shown to the teacher, no silent overwrite | Attendance sheet, document 31 |
 | TC-ATT-011 | Appendix R, line 964 | Requested to UnderReview / Requester is a linked guardian with pickup rights / Review task raised for the homeroom teacher | Attendance sheet, document 31 |
@@ -267,14 +278,14 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-ATT-014 | Appendix R, line 967 | PassIssued to Verified / Code unused and inside the validity window / Collector photo and identity shown to the gate officer | Attendance sheet, document 16 |
 | TC-ATT-015 | Appendix R, line 968 | PassIssued to PassIssued / Same code presented a second time / Refused as already used, attempt logged | document 03, Attendance sheet, document 12, document 18, document 20 |
 | TC-ATT-016 | Appendix R, line 969 | Verified to Released / Gate officer confirms the handover / Early-leave attendance written, guardian notified | document 03, Attendance sheet, document 20, document 31 |
-| TC-ATT-101 | document 08, line 736 | Principal / Unmarked attendance / /principal/attendance / list, avatar, button (nudge), empty-state (all marked) / 7 / attendance.student-attendance.… | Appendix Q, document 03, Attendance sheet, document 20 |
-| TC-ATT-102 | document 08, line 752 | Principal / Emergency mode / /principal/emergency / top-bar (emergency banner), stat-tile (accounted, not yet), list (by location), button (broadcast… | Appendix Q, document 03, Attendance sheet, document 20 |
-| TC-ATT-201 | document 08, line 643 | Teacher / Register / /teacher/classes/:sectionId/attendance / student-header, seating-chart, attendance-list, attendance-mark, exception-bar, lock-wi… | Appendix Q, document 03, Attendance sheet, document 20 |
-| TC-ATT-202 | document 08, line 644 | Teacher / Register, all present then exceptions / same route, mode / as above plus toast / 7 / attendance.student-attendance.mark / yes / U.4 | Appendix Q, document 03, document 04, Attendance sheet, document 08, document 20, document 21 |
+| TC-ATT-101 | document 08, line 744 | Principal / Unmarked attendance / /principal/attendance / list, avatar, button (nudge), empty-state (all marked) / 7 / attendance.student-attendance.… | Appendix Q, document 03, Attendance sheet, document 20 |
+| TC-ATT-102 | document 08, line 761 | Principal / Emergency mode / /principal/emergency / top-bar (emergency banner), stat-tile (accounted, not yet), list (by location), button (broadcast… | Appendix Q, document 03, Attendance sheet, document 20 |
+| TC-ATT-201 | document 08, line 648 | Teacher / Register / /teacher/classes/:sectionId/attendance / student-header, seating-chart, attendance-list, attendance-mark, exception-bar, lock-wi… | Appendix Q, document 03, Attendance sheet, document 20 |
+| TC-ATT-202 | document 08, line 649 | Teacher / Register, all present then exceptions / same route, mode / as above plus toast / 7 / attendance.student-attendance.mark / yes / U.4 | Appendix Q, document 03, document 04, Attendance sheet, document 08, document 20, document 21 |
 | TC-ATT-203 | Attendance sheet, line 1158 | UAT, end to end / Given a teacher whose device is in airplane mode, when they mark the second class of the day, then marking works with a clear offli… | Appendix Q, document 03, document 20 |
 | TC-ATT-204 | Attendance sheet, line 1159 | UAT, end to end / Given a colleague who marked one of the same students differently from another device, when the teacher's device syncs, then both v… | Appendix Q, document 03, document 20 |
-| TC-ATT-205 | document 08, line 659 | Homeroom / Student 360 (homeroom scope) / /homeroom/students/:studentId / student-header, tabs, timeline, filters, key-value, badge (exists, closed)… | Appendix Q, document 03, Attendance sheet, document 20 |
-| TC-ATT-206 | document 08, line 657 | Homeroom / Excuse review / /homeroom/excuses / list, panel, file-upload (view through short-lived link), dialog (reject reason) / 7 / attendance.excu… | Appendix Q, document 03, Attendance sheet, document 20 |
+| TC-ATT-205 | document 08, line 665 | Homeroom / Student 360 (homeroom scope) / /homeroom/students/:studentId / student-header, tabs, timeline, filters, key-value, badge (exists, closed)… | Appendix Q, document 03, Attendance sheet, document 20 |
+| TC-ATT-206 | document 08, line 663 | Homeroom / Excuse review / /homeroom/excuses / list, panel, file-upload (view through short-lived link), dialog (reject reason) / 7 / attendance.excu… | Appendix Q, document 03, Attendance sheet, document 20 |
 | TC-ATT-207 | Attendance sheet, line 1160 | UAT, end to end / Given a homeroom teacher reviewing a submitted excuse, when they approve it, then the register updates to excused, the guardian is… | Appendix Q, document 03, Attendance sheet, document 20 |
 | TC-ATT-301 | Attendance sheet, line 1162 | Unit / AttendanceDerivationRulesTests: every BR-ATT-001 example and edge case | Attendance sheet |
 | TC-ATT-302 | Attendance sheet, line 1163 | Unit / AttendanceLockWindowRulesTests: BR-ATT-002 at 09:39 and 09:41, Riyadh and Dubai | Attendance sheet |
@@ -325,7 +336,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-ATT-761 | Attendance sheet, line 1210 | Integration / Given a guardian whose device is registered without Google services and whose app is closed, when their child is marked absent, then th… | Attendance sheet |
 | TC-ATT-810 | Appendix W, line 21 | 3 / Sixty-second attendance / "Done before the bell stopped" / 1 / 1 surfaces / 1 / Attendance | Appendix O, Appendix W, Attendance sheet, document 32, project/DECISIONS/0020-one-definition-per-test-case.md, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
 | TC-ATT-811 | Appendix W, line 26 | 8 / Safety and dismissal with gate passes / "I know who collected the child" / 1 / 1 surfaces / 1 / Attendance | Appendix O, Appendix W, Attendance sheet, document 08, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
-| TC-ATT-812 | Appendix W, line 44 | 26 / Exception-only attendance / "The register was already half filled" / 1 / 4 acts, the pre-fill only / 1 / Attendance | Appendix O, Appendix P, Appendix W, document 02, Attendance sheet, document 30, document 32 |
+| TC-ATT-812 | Appendix W, line 44 | 26 / Exception-only attendance / "The register was already half filled" / 1 / 4 acts, the pre-fill only / 1 / Attendance | Appendix O, Appendix P, Appendix W, document 02, Attendance sheet, document 32 |
 | TC-ATT-813 | Appendix W, line 50 | 32 / Emergency mode with reunification / "Every child accounted for in four minutes" / 1 / 1 surfaces / 1 / Attendance | Appendix O, Appendix P, Appendix W, document 02, Attendance sheet, document 08, document 32 |
 | TC-AUD-001 | Appendix W, line 32 | 14 / Trust by design: audit, consent, export, erasure / "We can answer any question about any record" / 1 / 1 surfaces / 1 / Audit | Appendix O, document 03, Audit sheet, document 08, document 20, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
 | TC-AUD-002 | Appendix W, line 49 | 31 / Guardian transparency on sensitive access / "I can see who looked at my child's file" / 1 / 1 surfaces / 1 / Audit | Appendix O, Appendix P, document 02, document 03, document 04, Audit sheet, document 20, document 32 |
@@ -354,44 +365,46 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-BEH-004 | Appendix R, line 1282 | GuardianNotified to PlanOpened / Severity or repetition meets the plan threshold / Plan created with a named owner and a review date | Behavior sheet |
 | TC-BEH-005 | Appendix R, line 1283 | UnderReview to Dismissed / Evidence does not support the record / Points reversed, correction sent, signal recalculated | Behavior sheet, document 12 |
 | TC-BEH-006 | Appendix R, line 1284 | FollowUpDue to Closed / Outcome and evidence recorded / Intervention closed, timeline entry visible on Student 360 | Behavior sheet, document 31 |
-| TC-BEH-310 | Behavior sheet, line 816 | Integration / "Helping others" +5 and "late to class" -2 each recorded once give a balance of +3 (REQ-BEH-001) | Behavior sheet, document 20 |
-| TC-BEH-311 | Behavior sheet, line 817 | Integration / An incident with 2 students and 1 witness stores all 3 with roles and publishes one behavior.incident.recorded.v1 (REQ-BEH-002) | document 20 |
-| TC-BEH-312 | Behavior sheet, line 818 | Integration / The 3rd low-severity incident in the window schedules a detention and publishes behavior.consequence.assigned.v1 (REQ-BEH-003) | document 20 |
-| TC-BEH-313 | Behavior sheet, line 819 | Integration, job / A plan with a review date in 14 days becomes FollowUpDue on the date and reminds the owner; 5 working days overdue escalates (REQ-… | document 20 |
-| TC-BEH-314 | Behavior sheet, line 820 | Integration / +5 from device A and +3 from device B offline for the same student both apply: balance rises by 8; the same key twice applies once (REQ… | Behavior sheet, document 20 |
-| TC-BEH-315 | Behavior sheet, line 821 | Integration / An awarded badge exports as an Open Badges 3.0 credential that validates and names the school as issuer, with a hashed recipient (REQ-B… | document 20 |
-| TC-BEH-316 | Behavior sheet, line 822 | Integration / A term award requests a certificate through GenerateDocument and stores the document id with its QR code (REQ-BEH-007) | Behavior sheet, document 20 |
-| TC-BEH-317 | Behavior sheet, line 823 | Integration / 40 incidents in a term analysed by location sum to 40 (REQ-BEH-009) | document 20 |
-| TC-BEH-318 | Behavior sheet, line 824 | Integration / A restricted incident is absent for a teacher without view-restricted; a parent sees only policy-visible incidents (REQ-BEH-010) | Behavior sheet, document 20 |
-| TC-BEH-319 | Behavior sheet, line 825 | Integration / Individual leaderboard disabled: house totals show and no individual ranking is returned (REQ-BEH-011) | Behavior sheet, document 20 |
-| TC-BEH-320 | Behavior sheet, line 826 | Integration / Every narrative read writes one behavior.audit.recorded.v1 in the read transaction; a failing audit write fails the read | Behavior sheet, document 18 |
-| TC-BEH-321 | Behavior sheet, line 827 | Integration / A guardian's response for an incident involving two children names only their own child (T-BEH-02, with TC-SEC-251) | Behavior sheet |
-| TC-BEH-322 | Behavior sheet, line 828 | Integration / A safeguarding-linked incident returns existence only and BEHAVIOR_INCIDENT_LINKED_TO_CONCERN for the narrative | Behavior sheet |
-| TC-BEH-323 | Behavior sheet, line 829 | Integration / behavior.incident.recorded.v1 payload carries no narrative, witness or rationale field (contract) | Behavior sheet |
-| TC-BEH-324 | Behavior sheet, line 830 | Integration / Incident backdated beyond the window fails with BEHAVIOR_INCIDENT_WINDOW_PASSED | none |
-| TC-BEH-325 | Behavior sheet, line 831 | Integration / Points above the teacher's daily ceiling fail with BEHAVIOR_POINTS_LIMIT_EXCEEDED and name the remaining balance | none |
-| TC-BEH-326 | Behavior sheet, line 832 | Integration / A sanction above the head of year's authority stays PendingApproval with BEHAVIOR_SANCTION_REQUIRES_APPROVAL until a vice principal app… | none |
-| TC-BEH-327 | Behavior sheet, line 833 | Integration / A student outside the recorder's scope fails with BEHAVIOR_STUDENT_NOT_IN_SCOPE | none |
-| TC-BEH-328 | Behavior sheet, line 834 | Integration / Second award of a one-time badge returns BEHAVIOR_BADGE_ALREADY_AWARDED with the original date | none |
-| TC-BEH-329 | Behavior sheet, line 835 | Integration / Open Badges signing failure keeps the award, shows pending, and the retry job issues it later | none |
-| TC-BEH-330 | Behavior sheet, line 836 | Integration / Two reviewers decide at once: the second gets BEHAVIOR_CONCURRENCY_CONFLICT naming the first | none |
-| TC-BEH-331 | Behavior sheet, line 837 | Integration, job / Review deadline passes (1 working day for high severity across a weekend of the campus work week) and escalates once | Behavior sheet |
-| TC-BEH-332 | Behavior sheet, line 838 | Integration, job / Guardian notice 24 hours after decision alerts the decider once | none |
-| TC-BEH-333 | Behavior sheet, line 839 | Integration, job / A student who left 3 years and 1 day ago has narrative, witnesses and rationale nulled; category, date and points remain (REQ-PRV-… | document 20 |
-| TC-BEH-334 | Behavior sheet, line 840 | Integration / term_point_totals equals the sum of entries after 1,000 random awards and reversals; the invariant job repairs a planted drift | none |
-| TC-BEH-335 | Behavior sheet, line 841 | Integration / PermissionMatrix twins for every endpoint in section 4 and every role of Appendix I | Behavior sheet |
-| TC-BEH-336 | Behavior sheet, line 842 | Integration / TenantIsolation attack on every endpoint, consumer and command; row-level security with the filter removed | none |
-| TC-BEH-337 | Behavior sheet, line 843 | Integration, perf / Query budgets of document 21 §3.14 queries 1 to 6 with the command counter | Behavior sheet |
-| TC-BEH-338 | Behavior sheet, line 844 | Integration, perf / The section 11 additions within budget | Behavior sheet |
-| TC-BEH-339 | Behavior sheet, line 845 | Integration / Every consumer in section 6.2 delivered twice changes state once | Behavior sheet |
-| TC-BEH-340 | Behavior sheet, line 846 | Integration / Cache invalidation by the real event for every §1.14 entry | none |
-| TC-BEH-341 | Behavior sheet, line 847 | Integration / Reference-copy reconciliation repairs a planted difference and raises one finding | none |
-| TC-BEH-342 | Behavior sheet, line 848 | Contract / Every V1 record in Nibras.Contracts.Behavior matches its schema; Pact provider verification for Bff.Web and Bff.Mobile | none |
-| TC-BEH-343 | Behavior sheet, line 849 | Integration / Dismissing an incident after the guardian was notified sends a correction and publishes the negative points entry once | none |
-| TC-BEH-344 | Behavior sheet, line 850 | Integration / Portfolio export when the student leaves produces one book through Documents with every visible item (REQ-BEH-008) | Behavior sheet, document 20 |
-| TC-BEH-601 | Behavior sheet, line 814 | UAT / Badges, house points and selected work across years on the portfolio page | Appendix Q, Behavior sheet, document 08 |
-| TC-BEH-760 | Behavior sheet, line 851 | Unit, property / Point balances, term totals, the consequence ladder's window count and the review deadline across the campus work week give the same… | Behavior sheet, document 20 |
-| TC-BEH-761 | Behavior sheet, line 852 | Integration / A guardian notice for a decided incident is requested in the guardian's preferred language (as TC-BEH-003 (Appendix R) requires) with t… | Behavior sheet |
+| TC-BEH-310 | Behavior sheet, line 820 | Integration / "Helping others" +5 and "late to class" -2 each recorded once give a balance of +3 (REQ-BEH-001) | Behavior sheet, document 20 |
+| TC-BEH-311 | Behavior sheet, line 821 | Integration / An incident with 2 students and 1 witness stores all 3 with roles and publishes one behavior.incident.recorded.v1 (REQ-BEH-002) | document 20 |
+| TC-BEH-312 | Behavior sheet, line 822 | Integration / The 3rd low-severity incident in the window schedules a detention and publishes behavior.consequence.assigned.v1 (REQ-BEH-003) | document 20 |
+| TC-BEH-313 | Behavior sheet, line 823 | Integration, job / A plan with a review date in 14 days becomes FollowUpDue on the date and reminds the owner; 5 working days overdue escalates (REQ-… | document 20 |
+| TC-BEH-314 | Behavior sheet, line 824 | Integration / +5 from device A and +3 from device B offline for the same student both apply: balance rises by 8; the same key twice applies once (REQ… | Behavior sheet, document 20 |
+| TC-BEH-315 | Behavior sheet, line 825 | Integration / An awarded badge exports as an Open Badges 3.0 credential that validates and names the school as issuer, with a hashed recipient (REQ-B… | document 20 |
+| TC-BEH-316 | Behavior sheet, line 826 | Integration / A term award requests a certificate through GenerateDocument and stores the document id with its QR code (REQ-BEH-007) | Behavior sheet, document 20 |
+| TC-BEH-317 | Behavior sheet, line 827 | Integration / 40 incidents in a term analysed by location sum to 40 (REQ-BEH-009) | document 20 |
+| TC-BEH-318 | Behavior sheet, line 828 | Integration / A restricted incident is absent for a teacher without view-restricted; a parent sees only policy-visible incidents (REQ-BEH-010) | Behavior sheet, document 20 |
+| TC-BEH-319 | Behavior sheet, line 829 | Integration / Individual leaderboard disabled: house totals show and no individual ranking is returned (REQ-BEH-011) | Behavior sheet, document 20 |
+| TC-BEH-320 | Behavior sheet, line 830 | Integration / Every narrative read writes one behavior.audit.recorded.v1 in the read transaction; a failing audit write fails the read | Behavior sheet, document 18 |
+| TC-BEH-321 | Behavior sheet, line 831 | Integration / A guardian's response for an incident involving two children names only their own child (T-BEH-02, with TC-SEC-251) | Behavior sheet |
+| TC-BEH-322 | Behavior sheet, line 832 | Integration / A safeguarding-linked incident returns existence only and BEHAVIOR_INCIDENT_LINKED_TO_CONCERN for the narrative | Behavior sheet |
+| TC-BEH-323 | Behavior sheet, line 833 | Integration / behavior.incident.recorded.v1 payload carries no narrative, witness or rationale field (contract) | Behavior sheet |
+| TC-BEH-324 | Behavior sheet, line 834 | Integration / Incident backdated beyond the window fails with BEHAVIOR_INCIDENT_WINDOW_PASSED | none |
+| TC-BEH-325 | Behavior sheet, line 835 | Integration / Points above the teacher's daily ceiling fail with BEHAVIOR_POINTS_LIMIT_EXCEEDED and name the remaining balance | none |
+| TC-BEH-326 | Behavior sheet, line 836 | Integration / A sanction above the head of year's authority stays PendingApproval with BEHAVIOR_SANCTION_REQUIRES_APPROVAL until a vice principal app… | none |
+| TC-BEH-327 | Behavior sheet, line 837 | Integration / A student outside the recorder's scope fails with BEHAVIOR_STUDENT_NOT_IN_SCOPE | none |
+| TC-BEH-328 | Behavior sheet, line 838 | Integration / Second award of a one-time badge returns BEHAVIOR_BADGE_ALREADY_AWARDED with the original date | none |
+| TC-BEH-329 | Behavior sheet, line 839 | Integration / Open Badges signing failure keeps the award, shows pending, and the retry job issues it later | none |
+| TC-BEH-330 | Behavior sheet, line 840 | Integration / Two reviewers decide at once: the second gets BEHAVIOR_CONCURRENCY_CONFLICT naming the first | none |
+| TC-BEH-331 | Behavior sheet, line 841 | Integration, job / Review deadline passes (1 working day for high severity across a weekend of the campus work week) and escalates once | Behavior sheet |
+| TC-BEH-332 | Behavior sheet, line 842 | Integration, job / Guardian notice 24 hours after decision alerts the decider once | none |
+| TC-BEH-333 | Behavior sheet, line 843 | Integration, job / A student who left 3 years and 1 day ago has narrative, witnesses and rationale nulled; category, date and points remain (REQ-PRV-… | document 20 |
+| TC-BEH-334 | Behavior sheet, line 844 | Integration / term_point_totals equals the sum of entries after 1,000 random awards and reversals; the invariant job repairs a planted drift | none |
+| TC-BEH-335 | Behavior sheet, line 845 | Integration / PermissionMatrix twins for every endpoint in section 4 and every role of Appendix I | Behavior sheet |
+| TC-BEH-336 | Behavior sheet, line 846 | Integration / TenantIsolation attack on every endpoint, consumer and command; row-level security with the filter removed | none |
+| TC-BEH-337 | Behavior sheet, line 847 | Integration, perf / Query budgets of document 21 §3.14 queries 1 to 6 with the command counter | Behavior sheet |
+| TC-BEH-338 | Behavior sheet, line 848 | Integration, perf / The section 11 additions within budget | Behavior sheet |
+| TC-BEH-339 | Behavior sheet, line 849 | Integration / Every consumer in section 6.2 delivered twice changes state once | Behavior sheet |
+| TC-BEH-340 | Behavior sheet, line 850 | Integration / Cache invalidation by the real event for every §1.14 entry | none |
+| TC-BEH-341 | Behavior sheet, line 851 | Integration / Reference-copy reconciliation repairs a planted difference and raises one finding | none |
+| TC-BEH-342 | Behavior sheet, line 852 | Contract / Every V1 record in Nibras.Contracts.Behavior matches its schema; Pact provider verification for Bff.Web and Bff.Mobile | none |
+| TC-BEH-343 | Behavior sheet, line 853 | Integration / Dismissing an incident after the guardian was notified sends a correction and publishes the negative points entry once | none |
+| TC-BEH-344 | Behavior sheet, line 854 | Integration / Portfolio export when the student leaves produces one book through Documents with every visible item (REQ-BEH-008) | Behavior sheet, document 20 |
+| TC-BEH-345 | Behavior sheet, line 855 | Integration / POST /api/v1/behavior/students/{id}/portfolio/export writes one portfolio_exports row and sends one GenerateDocument whose subjectId is… | Behavior sheet, document 20, document 30 |
+| TC-BEH-346 | Behavior sheet, line 856 | Integration / DocumentGeneratedConsumer delivered twice, once for an award and once for a portfolio export: each row is written once, the inbox holds… | Behavior sheet, document 30 |
+| TC-BEH-601 | Behavior sheet, line 818 | UAT / Badges, house points and selected work across years on the portfolio page | Appendix Q, Behavior sheet, document 08 |
+| TC-BEH-760 | Behavior sheet, line 857 | Unit, property / Point balances, term totals, the consequence ladder's window count and the review deadline across the campus work week give the same… | Behavior sheet, document 20 |
+| TC-BEH-761 | Behavior sheet, line 858 | Integration / A guardian notice for a decided incident is requested in the guardian's preferred language (as TC-BEH-003 (Appendix R) requires) with t… | Behavior sheet |
 | TC-BEH-810 | Appendix W, line 36 | 18 / Student portfolio and recognition / "Everything they achieved, theirs to keep" / 1 / 1 surfaces / 2 / Behavior | Appendix O, Appendix W, Behavior sheet, document 32 |
 | TC-BFF-001 | Bff.Web sheet, line 496 | Architecture / No Bff.* project references a Domain project or a database driver (REQ-BFF-001) | Bff.Web sheet, document 20 |
 | TC-BFF-002 | Bff.Web sheet, line 497 | End to end / Student 360 page loads with at most 2 browser API calls (REQ-BFF-002) | document 20 |
@@ -453,7 +466,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-BFF-753 | Bff.Web sheet, line 526 | End to end / Natural-language search returns 202 with Ai's job; polling the job route returns the rows of the plan's list calls, each authorized by i… | Ai sheet, Bff.Web sheet, document 20, document 34 |
 | TC-BFF-754 | Bff.Web sheet, line 527 | Contract / With the process culture set to ar-SA, every composed payload example filled from the Arabic demo tenant stays under 32 KB after Brotli, a… | Bff.Web sheet, document 20, document 21 |
 | TC-BFF-760 | Bff.Mobile sheet, line 518 | Unit / With the process culture set to ar-SA, en-US and de-DE in turn, X-Nibras-Client: mobile-android/2.3.1 parses to the same version and policy, a… | Bff.Mobile sheet, document 20 |
-| TC-BFF-761 | Bff.Mobile sheet, line 519 | Integration / A device registered with pushStrategy: none is accepted and passed to Notification as a device without push; with the app open it recei… | Bff.Mobile sheet, document 20 |
+| TC-BFF-761 | Bff.Mobile sheet, line 519 | Integration / A device registered with pushStrategy: none is accepted and passed to Notification as a device without push; with the app open it recei… | Bff.Mobile sheet, document 20, document 30 |
 | TC-BFF-762 | Bff.Mobile sheet, line 520 | Integration / Under the default in force of Open Question 29, a queued check-in answer code is forwarded once to Wellbeing's check-in sync with its k… | Bff.Mobile sheet |
 | TC-COM-001 | Appendix W, line 35 | 17 / Photo and media consent enforced at publishing / "That child's photo cannot be posted" / 1 / 1 surfaces / 1 / Communication | Appendix O, document 03, Communication sheet, document 18, document 20, document 32 |
 | TC-COM-002 | Appendix W, line 40 | 22 / Policy and handbook acknowledgment / "Everyone signed, and we can prove it" / 1 / 1 surfaces / 2 / Communication | Appendix O, document 03, Communication sheet, document 08, document 20, document 32 |
@@ -492,7 +505,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-006 | Appendix R, line 1948 | Committed to RolledBack / Rollback requested inside the window / Created rows removed, updated rows restored, conflicts reported | Documents sheet, document 10, document 12, document 13, document 18, document 26, document 31 |
 | TC-DATA-007 | document 10, line 607 | Master brief Section 7.3; reference architecture Section 8, table 8.0 / Slim read-only copies from events only / No copy holds a Sensitive or level S… | document 03, document 10, document 15, document 20 |
 | TC-DATA-008 | document 10, line 614 | Master brief Section 19, Conventions / UUID v7, xmin, snake_case, audit columns, soft delete / Persistence convention tests pass for every service mo… | document 03, document 20 |
-| TC-DATA-010 | document 10, line 608 | Reference architecture Section 14, tier migration / Shared to dedicated and back without data loss / Zero lost writes, zero cross-tenant rows, read-o… | document 03, document 04, Platform sheet, document 10, document 13, document 20, document 30 |
+| TC-DATA-010 | document 10, line 608 | Reference architecture Section 14, tier migration / Shared to dedicated and back without data loss / Zero lost writes, zero cross-tenant rows, read-o… | document 03, document 04, Platform sheet, document 10, document 13, document 20 |
 | TC-DATA-011 | Reporting sheet, line 876 | Integration, load / Projection lag under 60 s under N-01 load | document 03, document 04, Reporting sheet, document 10, document 20 |
 | TC-DATA-012 | Reporting sheet, line 877 | Integration / Rebuild reproduces row counts and checksums | document 03, Reporting sheet, document 10, document 20 |
 | TC-DATA-013 | document 10, line 610 | Master brief Section 19, read replica / Replica-lag awareness / Reads fall back to the primary when lag exceeds 30 s | document 03, Reporting sheet, document 10, document 20, document 21 |
@@ -500,7 +513,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-015 | document 10, line 616 | BR-FIN-014 / Posted documents immutable through archive / Archive role is read-only | none |
 | TC-DATA-016 | document 10, line 617 | Appendix M / Nothing sensitive on a device / Mobile cache schema has no column classified above Confidential | none |
 | TC-DATA-020 | document 10, line 612 | Reference architecture Section 13; WF-INF-03 / Single-tenant restore without touching others / Quarterly drill passes with the ordering in Section 9 | document 03, Audit sheet, document 10, document 15, document 16, document 18, document 20, document 34 |
-| TC-DATA-301 | document 08, line 626 | School admin / Imports / /admin/imports / stepper, file-upload, data-table (error report), progress-ring, dialog (rollback) / 7 / documents.imports.v… | Appendix Q, Documents sheet |
+| TC-DATA-301 | document 08, line 630 | School admin / Imports / /admin/imports / stepper, file-upload, data-table (error report), progress-ring, dialog (rollback) / 7 / documents.imports.v… | Appendix Q, Documents sheet |
 | TC-DATA-302 | document 10, line 686 | Given a 10,000-row import from the Excel template whose dry run reported 12 row errors, when the 12 rows are fixed and the import is committed, then… | Appendix Q, document 03, document 20 |
 | TC-DATA-303 | document 10, line 687 | Given a committed import, when its dry run is re-read and the import is rolled back inside the window, then the dry run wrote nothing, a checksum of… | Appendix Q, document 03, Documents sheet, document 20, document 26 |
 | TC-DATA-640 | document 10, line 604 | Master brief Section 19, DbContext and model / Pooled context with per-lease accessor; named filters / A context leased without a tenant throws on fi… | document 03, document 10, document 20 |
@@ -511,7 +524,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-645 | document 10, line 685 | Given a consumed message whose envelope carries tenant B and whose payload names tenant A's identifiers, when the handler runs, then nothing is writt… | document 03, document 10, document 20, document 21 |
 | TC-DATA-750 | document 10, line 688 | Given the Nibras PostgreSQL image on ubuntu-latest and every service model, when the persistence convention test reads every <field>_ar and <field>_e… | document 10 |
 | TC-DATA-751 | document 10, line 689 | Given the persistence building block's suite run once with the host time zone UTC and once with Asia/Amman, and with the process culture ar-SA, on ub… | document 10 |
-| TC-DATA-780 | document 13, line 729 | Shared to dedicated, 20 services, no writes during the window / Reconciliation matches, switch inside 5 minutes, tenant unfrozen, source retained | Platform sheet, document 13, document 30 |
+| TC-DATA-780 | document 13, line 729 | Shared to dedicated, 20 services, no writes during the window / Reconciliation matches, switch inside 5 minutes, tenant unfrozen, source retained | Platform sheet, document 13 |
 | TC-DATA-781 | document 13, line 730 | Step 1 fails for one service / No copy started, empty databases dropped, tenant untouched | none |
 | TC-DATA-782 | document 13, line 731 | Step 2 exceeds 6 hours / Alert, copy continues; operator may abort to Compensated | none |
 | TC-DATA-783 | document 13, line 732 | Step 5 reports a mismatch / Source reactivated first, then copies dropped; tenant never lost writes | none |
@@ -519,11 +532,14 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-785 | document 13, line 734 | Switch back inside cooling-off / Connection returned to the source, delta from the target replayed by the reverse saga | none |
 | TC-DATA-786 | document 13, line 735 | Cooling-off not yet ended / No PurgeSourceRows is sent and no operator action can send one; on the fake clock one minute past the end, every service… | none |
 | TC-DATA-787 | document 13, line 736 | Platform Api killed during step 3 / Resume continues from each service's checkpoint, no double copy | none |
-| TC-DATA-788 | document 13, line 737 | CopyTenantRows delivered twice / Second delivery resumes from the checkpoint and copies nothing twice | Platform sheet, document 13, document 30 |
-| TC-DATA-800 | document 26, line 607 | Given a fixture of identifiers for every row of §3.4, each with a valid form and a form with one digit changed, when the country's NationalIdValidato… | document 26 |
-| TC-DATA-801 | document 26, line 608 | Given one cell per row of §3.5, when the date rules parse them under each of the three cultures, then 1432-05-10 becomes 2011-04-14 and the preview s… | document 26 |
-| TC-DATA-802 | document 26, line 609 | Given amount cells written in Western, Arabic-Indic and extended digits with the Arabic decimal and thousands separators, when §3.6 parses them under… | document 26 |
-| TC-DATA-803 | document 26, line 610 | Given the fixture file and committed golden output of each adapter in §6, when the adapter runs under ar-SA and en-US on the ubuntu and windows runne… | document 26 |
+| TC-DATA-788 | document 13, line 737 | CopyTenantRows delivered twice / Second delivery resumes from the checkpoint and copies nothing twice | Platform sheet, document 13 |
+| TC-DATA-789 | document 13, line 670 | CommitImportBatch delivered twice / Second delivery replies the stored result, writes nothing | document 13 |
+| TC-DATA-790 | document 13, line 671 | Rollback runs twice / Second run finds nothing to restore | document 13 |
+| TC-DATA-791 | document 13, line 668 | Documents.Worker killed after batch 7 of 20 / Resume commits 8 to 20 once; row count exact (test method WorkerKilledMidCommit_Resumes_ExactRowCount) | document 13 |
+| TC-DATA-800 | document 26, line 610 | Given a fixture of identifiers for every row of §3.4, each with a valid form and a form with one digit changed, when the country's NationalIdValidato… | document 26 |
+| TC-DATA-801 | document 26, line 611 | Given one cell per row of §3.5, when the date rules parse them under each of the three cultures, then 1432-05-10 becomes 2011-04-14 and the preview s… | document 26 |
+| TC-DATA-802 | document 26, line 612 | Given amount cells written in Western, Arabic-Indic and extended digits with the Arabic decimal and thousands separators, when §3.6 parses them under… | document 26 |
+| TC-DATA-803 | document 26, line 613 | Given the fixture file and committed golden output of each adapter in §6, when the adapter runs under ar-SA and en-US on the ubuntu and windows runne… | document 26 |
 | TC-DOC-001 | Appendix W, line 27 | 9 / Go live in a day: import with dry run and rollback / "We moved in a morning" / 1 / 1 surfaces / 1 / Documents | Appendix O, Appendix P, document 02, Documents sheet, document 26, document 32 |
 | TC-DOC-002 | Documents sheet, line 1239 | Demo, end to end / Appendix O minute 9: the QR code on a printed report card opens the public verification page, which confirms the card in both lang… | Appendix O, Appendix W, Documents sheet, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-DOC-301 | Documents sheet, line 1241 | UAT / Birth certificate upload scanned and accepted; missing-document count drops | Appendix Q, Documents sheet, document 08 |
@@ -574,7 +590,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DOC-353 | Documents sheet, line 1290 | Integration / Legal hold keeps a file past its retention; the job reports it skipped | none |
 | TC-DOC-760 | Documents sheet, line 1291 | Integration / A CSV import saved on Windows in Windows-1256 with carriage returns, whose mapping declares dd/MM/yyyy dates, Hijri dates of birth and… | Documents sheet, document 20 |
 | TC-DOC-761 | Documents sheet, line 1292 | Integration / A bilingual template whose Arabic body mixes Arabic text, Latin names and numbers renders the Arabic version right to left with the num… | Documents sheet, document 20 |
-| TC-DOC-801 | Appendix W, line 54 | 36 / School memory: portfolio and yearbook / "The yearbook made itself" / 1 / 1 surfaces / 2 / Documents | Appendix O, Appendix W, document 03, Documents sheet, document 20, document 32, project/DECISIONS/0019-brief-v9-1-corrections.md, project/KIT_V9_1_CHANGES.md |
+| TC-DOC-801 | Appendix W, line 54 | 36 / School memory: portfolio and yearbook / "The yearbook made itself" / 1 / 1 surfaces / 2 / Documents | Appendix O, Appendix W, document 03, Documents sheet, document 08, document 20, document 32, project/DECISIONS/0019-brief-v9-1-corrections.md, project/KIT_V9_1_CHANGES.md |
 | TC-FIN-001 | Appendix R, line 1007 | InvoiceRunQueued to Issued / 5,000 students in one run inside the batch budget / All invoices numbered in sequence with no gap | Appendix O, document 03, Finance sheet, document 13, document 20, document 31, document 32, project/DECISIONS/0020-one-definition-per-test-case.md |
 | TC-FIN-002 | Appendix R, line 1008 | InvoiceRunQueued to Issued / Run repeated for the same period / No duplicate invoice produced | document 03, Finance sheet, document 13, document 20 |
 | TC-FIN-003 | Appendix R, line 1009 | Issued to PartiallyPaid / Payment less than the balance and above the minimum / Balance recalculated, receipt issued for the part paid | none |
@@ -611,55 +627,55 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-FIN-054 | Appendix R, line 1197 | Discrepant to Escalated / Second count still outside the tolerance / Finance officer notified with both counts | none |
 | TC-FIN-055 | Appendix R, line 1198 | Reconciled to Deposited / Banking slip reference supplied / Deposit recorded against the session | Finance sheet |
 | TC-FIN-056 | Appendix R, line 1199 | Closed to Closed / Cashier attempts to edit a closed session / Refused, adjustment offered in the next session | Finance sheet, document 31 |
-| TC-FIN-401 | document 08, line 714 | Accountant / Accountant Today / /accountant / bento-grid, card, stat-tile, list, sparkline / 7 / finance.payments.view / no / U.7 | Appendix Q, document 03, Finance sheet, document 20 |
-| TC-FIN-402 | document 08, line 715 | Accountant / Invoices and batch run / /accountant/invoices / data-table, stepper (preview, approve, run), progress-ring, badge (series) / 7 / finance… | Appendix Q |
-| TC-FIN-403 | document 08, line 717 | Accountant / Payments and receipts / /accountant/payments / grid, select (method, currency), error-state (overpayment, currency mismatch inline), but… | Appendix Q, document 03, document 20 |
-| TC-FIN-404 | Finance sheet, line 1582 | Given a posted invoice of 2,750.00 SAR, when the accountant records 3,200.00 SAR against it, then the payment is refused with FINANCE_PAYMENT_EXCEEDS… | Appendix Q, document 03, document 20 |
-| TC-FIN-405 | Finance sheet, line 1583 | Given an invoice in the SAR series, when a payment in AED is recorded against it, then it is refused with FINANCE_CURRENCY_MISMATCH, the message show… | Appendix Q, document 03, document 20 |
-| TC-FIN-406 | document 08, line 718 | Accountant / Bounced cheque / /accountant/payments/:paymentId / dialog (mark bounced), timeline, badge / 7 / finance.payments.view / no / U.7 | Appendix Q, document 03, document 20 |
-| TC-FIN-407 | document 08, line 720 | Accountant / Refunds, credit notes, write-offs / /accountant/adjustments / data-table, stepper, badge (held for approval), dialog / 7 / finance.refun… | Appendix Q |
-| TC-FIN-408 | Finance sheet, line 1584 | Given a 1,200.00 SAR refund requested by the accountant and held for approval, when the principal, a different user within the approval limit, approv… | Appendix Q, document 03, Finance sheet, document 20 |
-| TC-FIN-409 | document 08, line 719 | Accountant / Cashier day close / /accountant/cashier / stat-tile (expected, counted, difference), list (documents that differ), error-state (blocked)… | Appendix Q, document 03, Finance sheet, document 20 |
-| TC-FIN-410 | Finance sheet, line 1585 | Given a cashier day blocked by a 25.00 SAR discrepancy, when the discrepancy is corrected and the day is closed, then the day balances to 0.00 SAR, t… | Appendix Q, document 03, Finance sheet, document 20 |
-| TC-FIN-411 | document 08, line 723 | Accountant / Collections and aging / /accountant/collections / bar-chart (aging buckets), data-table, stepper (reminder ladder), explain-number / 7 /… | Appendix Q, document 03, Finance sheet, document 20 |
-| TC-FIN-501 | Finance sheet, line 1586 | Appendix Q parent pays 450.00 AED in one flow and receives the receipt / End-to-end | Appendix Q, document 03, document 08, document 20 |
+| TC-FIN-401 | document 08, line 722 | Accountant / Accountant Today / /accountant / bento-grid, card, stat-tile, list, sparkline / 7 / finance.payments.view / no / U.7 | Appendix Q, document 03, Finance sheet, document 20 |
+| TC-FIN-402 | document 08, line 723 | Accountant / Invoices and batch run / /accountant/invoices / data-table, stepper (preview, approve, run), progress-ring, badge (series) / 7 / finance… | Appendix Q |
+| TC-FIN-403 | document 08, line 725 | Accountant / Payments and receipts / /accountant/payments / grid, select (method, currency), error-state (overpayment, currency mismatch inline), but… | Appendix Q, document 03, document 20 |
+| TC-FIN-404 | Finance sheet, line 1575 | Given a posted invoice of 2,750.00 SAR, when the accountant records 3,200.00 SAR against it, then the payment is refused with FINANCE_PAYMENT_EXCEEDS… | Appendix Q, document 03, document 20 |
+| TC-FIN-405 | Finance sheet, line 1576 | Given an invoice in the SAR series, when a payment in AED is recorded against it, then it is refused with FINANCE_CURRENCY_MISMATCH, the message show… | Appendix Q, document 03, document 20 |
+| TC-FIN-406 | document 08, line 726 | Accountant / Bounced cheque / /accountant/payments/:paymentId / dialog (mark bounced), timeline, badge / 7 / finance.payments.view / no / U.7 | Appendix Q, document 03, document 20 |
+| TC-FIN-407 | document 08, line 728 | Accountant / Refunds, credit notes, write-offs / /accountant/adjustments / data-table, stepper, badge (held for approval), dialog / 7 / finance.refun… | Appendix Q |
+| TC-FIN-408 | Finance sheet, line 1577 | Given a 1,200.00 SAR refund requested by the accountant and held for approval, when the principal, a different user within the approval limit, approv… | Appendix Q, document 03, Finance sheet, document 20 |
+| TC-FIN-409 | document 08, line 727 | Accountant / Cashier day close / /accountant/cashier / stat-tile (expected, counted, difference), list (documents that differ), error-state (blocked)… | Appendix Q, document 03, Finance sheet, document 20 |
+| TC-FIN-410 | Finance sheet, line 1578 | Given a cashier day blocked by a 25.00 SAR discrepancy, when the discrepancy is corrected and the day is closed, then the day balances to 0.00 SAR, t… | Appendix Q, document 03, Finance sheet, document 20 |
+| TC-FIN-411 | document 08, line 731 | Accountant / Collections and aging / /accountant/collections / bar-chart (aging buckets), data-table, stepper (reminder ladder), explain-number / 7 /… | Appendix Q, document 03, Finance sheet, document 20 |
+| TC-FIN-501 | Finance sheet, line 1579 | Appendix Q parent pays 450.00 AED in one flow and receives the receipt / End-to-end | Appendix Q, document 03, document 08, document 20 |
 | TC-FIN-550 | document 13, line 608 | Quiet hours at notification time / Deferred, not dropped | document 03, Notification sheet, document 20 |
 | TC-FIN-551 | document 32, line 263 | R-15 / Record a payment and allocate it across two invoices, for feature 10, which minute 10 already shows / 3 (CAP-FIN-02) | Appendix O, document 32, project/DECISIONS/0020-one-definition-per-test-case.md |
-| TC-FIN-601 | Finance sheet, line 1590 | 50 concurrent receipt posts yield 50 consecutive numbers with 0 gaps and 0 duplicates (REQ-FIN-036) / Integration, Numbering/ | Finance sheet, document 20 |
-| TC-FIN-602 | Finance sheet, line 1591 | A post that fails validation after the series row was locked leaves next_number unchanged / Integration | none |
-| TC-FIN-603 | Finance sheet, line 1592 | A bounce that posts into RCT and INV in parallel with a cashier receipt and an ad hoc invoice never deadlocks (code-ordered locks) / Integration | none |
-| TC-FIN-604 | Finance sheet, line 1593 | A poster waiting over 5 s on a series lock receives FINANCE_CONCURRENCY_CONFLICT and nothing is written / Integration | none |
-| TC-FIN-605 | Finance sheet, line 1594 | The first receipt after the year boundary in Amman is RCT-2027-0001 and RCT-2026 refuses posts / Integration, Jobs/ | Finance sheet |
-| TC-FIN-606 | Finance sheet, line 1595 | A draft invoice response never contains a number (BR-FIN-013 edge case) / Integration | none |
-| TC-FIN-607 | Finance sheet, line 1596 | JOD amounts store and serialize at 3 decimals, SAR and AED at 2, across API, gRPC and PDF payload (BR-FIN-011) / Integration | Finance sheet |
-| TC-FIN-608 | Finance sheet, line 1597 | An update or delete on finance.postings by svc_finance fails at the database / Integration, Persistence/ | none |
-| TC-FIN-609 | Finance sheet, line 1598 | A deleted-at write on a posted invoice fails the ck_invoices_posted_not_deleted constraint / Integration | none |
-| TC-FIN-610 | Finance sheet, line 1599 | A callback delivered twice creates 1 payment and the second returns the first result (REQ-FIN-038) / Integration | Finance sheet, document 20 |
-| TC-FIN-611 | Finance sheet, line 1600 | A forged callback with a bad signature is refused and a callback whose re-read amount differs is not allocated / Integration | Finance sheet |
-| TC-FIN-612 | Finance sheet, line 1601 | No column in nibras_finance holds more than the last four digits of a card (REQ-FIN-037), checked by a schema scan / Integration | Finance sheet, document 20 |
-| TC-FIN-613 | Finance sheet, line 1602 | 100 settlements against 99 payments report 1 difference naming the document (REQ-FIN-039) / Integration | document 20 |
-| TC-FIN-614 | Finance sheet, line 1603 | A chargeback of 450.00 AED posts a credit note and leaves the original payment unchanged (REQ-FIN-040) / Integration | document 20 |
-| TC-FIN-615 | Finance sheet, line 1604 | A payment arriving 10 s before the student's enrolment event is applied once and nothing is dead-lettered (REQ-FIN-043) / Integration, Messaging/ | Finance sheet, document 20 |
-| TC-FIN-616 | Finance sheet, line 1605 | Day close with 40 invoices, 25 payments, 2 credit notes, 1 write-off balances to 0.00; a non-zero difference names the documents (REQ-FIN-030) / Inte… | document 20 |
-| TC-FIN-617 | Finance sheet, line 1606 | A mid-year plan change with 2 of 4 installments issued regenerates only 3 and 4 (REQ-FIN-011) / Integration | document 20 |
-| TC-FIN-618 | Finance sheet, line 1607 | A 300.00 SAR write-off approved by a second person posts its own document and the balance reads 0.00 (REQ-FIN-019) / Integration | document 20 |
-| TC-FIN-619 | Finance sheet, line 1608 | A 150.00 SAR ad hoc trip charge adds 1 statement line and raises the balance by 150.00 (REQ-FIN-007) / Integration | document 20 |
-| TC-FIN-620 | Finance sheet, line 1609 | With the ZATCA plug-in enabled each posted invoice is submitted once and the month's export contains every posting (REQ-FIN-032) / Integration | document 18, document 20, document 30, document 34 |
-| TC-FIN-621 | Finance sheet, line 1610 | The October active-student count follows the Open Question 30 default in force (REQ-PLT-009: enrolled on the billing date, prorated by day, the same… | document 20 |
-| TC-FIN-622 | Finance sheet, line 1611 | PostRequestFee delivered twice posts one invoice; ReverseRequestFee posts a credit note and is a no-op when no fee exists / Integration, Messaging/ | Finance sheet |
-| TC-FIN-623 | Finance sheet, line 1612 | AssignFeePlan delivered twice keeps one active plan; VoidFeePlan after issue reverses by credit note / Integration | Finance sheet |
-| TC-FIN-624 | Finance sheet, line 1613 | RaiseClearanceItem replies ClearanceBlocked with the exact outstanding amount, then publishes finance.account.cleared.v1 after payment / Integration | none |
-| TC-FIN-625 | Finance sheet, line 1614 | RollbackImport inside the window reverses committed opening balances by credit note and deletes nothing / Integration | none |
-| TC-FIN-626 | Finance sheet, line 1615 | A payment that clears the restriction threshold lifts it in the same transaction and publishes finance.account.cleared.v1 (BR-FIN-016 edge case) / In… | none |
-| TC-FIN-627 | Finance sheet, line 1616 | A library fine rising from 2.000 to 3.500 JOD over two events posts 2.000 then 1.500 and a replay of either posts nothing / Integration | none |
-| TC-FIN-628 | Finance sheet, line 1617 | Reading payer bank details writes an access-log audit entry in the same transaction and fails the read when the audit write fails (Appendix J rule 8)… | Finance sheet |
-| TC-FIN-629 | Finance sheet, line 1618 | No Finance event payload, gRPC response or cache value contains a gateway reference, IBAN or card digit (schema and cache scan) / Contract | Finance sheet |
-| TC-FIN-630 | Finance sheet, line 1619 | Every Finance rule class of document 31 runs its Appendix S examples under ar-SA, en-US and de-DE with identical results (REQ-TST-004) / Unit, Rules/ | Finance sheet, document 20 |
-| TC-FIN-631 | Finance sheet, line 1620 | Stryker.NET mutation score of 80 percent or better on the twenty rule classes (REQ-TST-008) / Nightly | document 20 |
-| TC-FIN-632 | Finance sheet, line 1621 | Parent A requesting parent B's invoice id receives FINANCE_NOT_FOUND with no hint of the record (T-FIN-06) / Integration | none |
-| TC-FIN-633 | Finance sheet, line 1622 | Reminder ladder rerun on the same day sends no rung twice; late fee stops at the BR-FIN-007 cap after 8 weeks / Integration, Jobs/ | none |
-| TC-FIN-750 | Finance sheet, line 1623 | With the process culture set to ar-SA, en-US and then de-DE, the receipt payload Finance sends in GenerateDocument for a JOD payment of 1,250.500 car… | Finance sheet, document 20 |
-| TC-FIN-751 | Finance sheet, line 1624 | The accounting export of a period for a tenant whose display culture is ar-SA and whose numerals are Arabic-Indic writes amounts with a . decimal poi… | Finance sheet, document 20 |
+| TC-FIN-601 | Finance sheet, line 1583 | 50 concurrent receipt posts yield 50 consecutive numbers with 0 gaps and 0 duplicates (REQ-FIN-036) / Integration, Numbering/ | Finance sheet, document 20 |
+| TC-FIN-602 | Finance sheet, line 1584 | A post that fails validation after the series row was locked leaves next_number unchanged / Integration | none |
+| TC-FIN-603 | Finance sheet, line 1585 | A bounce that posts into RCT and INV in parallel with a cashier receipt and an ad hoc invoice never deadlocks (code-ordered locks) / Integration | none |
+| TC-FIN-604 | Finance sheet, line 1586 | A poster waiting over 5 s on a series lock receives FINANCE_CONCURRENCY_CONFLICT and nothing is written / Integration | none |
+| TC-FIN-605 | Finance sheet, line 1587 | The first receipt after the year boundary in Amman is RCT-2027-0001 and RCT-2026 refuses posts / Integration, Jobs/ | Finance sheet |
+| TC-FIN-606 | Finance sheet, line 1588 | A draft invoice response never contains a number (BR-FIN-013 edge case) / Integration | none |
+| TC-FIN-607 | Finance sheet, line 1589 | JOD amounts store and serialize at 3 decimals, SAR and AED at 2, across API, gRPC and PDF payload (BR-FIN-011) / Integration | Finance sheet |
+| TC-FIN-608 | Finance sheet, line 1590 | An update or delete on finance.postings by svc_finance fails at the database / Integration, Persistence/ | none |
+| TC-FIN-609 | Finance sheet, line 1591 | A deleted-at write on a posted invoice fails the ck_invoices_posted_not_deleted constraint / Integration | none |
+| TC-FIN-610 | Finance sheet, line 1592 | A callback delivered twice creates 1 payment and the second returns the first result (REQ-FIN-038) / Integration | Finance sheet, document 20 |
+| TC-FIN-611 | Finance sheet, line 1593 | A forged callback with a bad signature is refused and a callback whose re-read amount differs is not allocated / Integration | Finance sheet |
+| TC-FIN-612 | Finance sheet, line 1594 | No column in nibras_finance holds more than the last four digits of a card (REQ-FIN-037), checked by a schema scan / Integration | Finance sheet, document 20 |
+| TC-FIN-613 | Finance sheet, line 1595 | 100 settlements against 99 payments report 1 difference naming the document (REQ-FIN-039) / Integration | document 20 |
+| TC-FIN-614 | Finance sheet, line 1596 | A chargeback of 450.00 AED posts a credit note and leaves the original payment unchanged (REQ-FIN-040) / Integration | document 20 |
+| TC-FIN-615 | Finance sheet, line 1597 | A payment arriving 10 s before the student's enrolment event is applied once and nothing is dead-lettered (REQ-FIN-043) / Integration, Messaging/ | Finance sheet, document 20 |
+| TC-FIN-616 | Finance sheet, line 1598 | Day close with 40 invoices, 25 payments, 2 credit notes, 1 write-off balances to 0.00; a non-zero difference names the documents (REQ-FIN-030) / Inte… | document 20 |
+| TC-FIN-617 | Finance sheet, line 1599 | A mid-year plan change with 2 of 4 installments issued regenerates only 3 and 4 (REQ-FIN-011) / Integration | document 20 |
+| TC-FIN-618 | Finance sheet, line 1600 | A 300.00 SAR write-off approved by a second person posts its own document and the balance reads 0.00 (REQ-FIN-019) / Integration | document 20 |
+| TC-FIN-619 | Finance sheet, line 1601 | A 150.00 SAR ad hoc trip charge adds 1 statement line and raises the balance by 150.00 (REQ-FIN-007) / Integration | document 20 |
+| TC-FIN-620 | Finance sheet, line 1602 | With the ZATCA plug-in enabled each posted invoice is submitted once and the month's export contains every posting (REQ-FIN-032) / Integration | document 01, document 18, document 20, document 23, document 34 |
+| TC-FIN-622 | Finance sheet, line 1603 | PostRequestFee delivered twice posts one invoice; ReverseRequestFee posts a credit note and is a no-op when no fee exists / Integration, Messaging/ | Finance sheet |
+| TC-FIN-623 | Finance sheet, line 1604 | AssignFeePlan delivered twice keeps one active plan; VoidFeePlan after issue reverses by credit note / Integration | Finance sheet |
+| TC-FIN-624 | Finance sheet, line 1605 | RaiseClearanceItem replies ClearanceBlocked with the exact outstanding amount, then publishes finance.account.cleared.v1 after payment / Integration | none |
+| TC-FIN-625 | Finance sheet, line 1606 | RollbackImport inside the window reverses committed opening balances by credit note and deletes nothing / Integration | none |
+| TC-FIN-626 | Finance sheet, line 1607 | A payment that clears the restriction threshold lifts it in the same transaction and publishes finance.account.cleared.v1 (BR-FIN-016 edge case) / In… | none |
+| TC-FIN-627 | Finance sheet, line 1608 | A library fine rising from 2.000 to 3.500 JOD over two events posts 2.000 then 1.500 and a replay of either posts nothing / Integration | none |
+| TC-FIN-628 | Finance sheet, line 1609 | Reading payer bank details writes an access-log audit entry in the same transaction and fails the read when the audit write fails (Appendix J rule 8)… | Finance sheet |
+| TC-FIN-629 | Finance sheet, line 1610 | No Finance event payload, gRPC response or cache value contains a gateway reference, IBAN or card digit (schema and cache scan) / Contract | Finance sheet |
+| TC-FIN-630 | Finance sheet, line 1611 | Every Finance rule class of document 31 runs its Appendix S examples under ar-SA, en-US and de-DE with identical results (REQ-TST-004) / Unit, Rules/ | Finance sheet, document 20 |
+| TC-FIN-631 | Finance sheet, line 1612 | Stryker.NET mutation score of 80 percent or better on the eighteen rule classes (REQ-TST-008) / Nightly | document 20 |
+| TC-FIN-632 | Finance sheet, line 1613 | Parent A requesting parent B's invoice id receives FINANCE_NOT_FOUND with no hint of the record (T-FIN-06) / Integration | none |
+| TC-FIN-633 | Finance sheet, line 1614 | Reminder ladder rerun on the same day sends no rung twice; late fee stops at the BR-FIN-007 cap after 8 weeks / Integration, Jobs/ | none |
+| TC-FIN-750 | Finance sheet, line 1615 | With the process culture set to ar-SA, en-US and then de-DE, the receipt payload Finance sends in GenerateDocument for a JOD payment of 1,250.500 car… | Finance sheet, document 20 |
+| TC-FIN-751 | Finance sheet, line 1616 | The accounting export of a period for a tenant whose display culture is ar-SA and whose numerals are Arabic-Indic writes amounts with a . decimal poi… | Finance sheet, document 20 |
+| TC-FIN-780 | document 13, line 603 | Finance.Worker killed after 3,240 invoices / Resume posts the remaining 1,760, sequence unbroken (test method WorkerKilledMidRun_Resumes_NoGapNoDupli… | document 13 |
 | TC-GW-001 | Gateway sheet, line 349 | Each of the routed prefixes reaches its cluster; /api/v1/ai/ and /api/v1/platform/tenant-resolution/ are not routable from outside / Integration | Gateway sheet |
 | TC-GW-002 | Gateway sheet, line 350 | Tenant resolved by custom domain, by subdomain and by header for mobile and credential callers; the header is ignored for web clients / Integration | none |
 | TC-GW-003 | Gateway sheet, line 351 | A tenant route with no resolvable tenant returns 400 GATEWAY_VALIDATION_FAILED; a platform route proceeds (REQ-GW-002) / Integration | document 20 |
@@ -731,20 +747,20 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-HR-624 | Hr sheet, line 1363 | Every terminal state of the four Hr workflows is reachable from every non-terminal state (document 13 section 5.2) / Unit, generated | none |
 | TC-HR-625 | Hr sheet, line 1364 | Import of 500 staff rows commits once when CommitImportBatch is delivered twice, and rollback restores the before-values / Integration, Messaging/ | Hr sheet |
 | TC-HR-626 | Hr sheet, line 1365 | The public application endpoint refuses an unpublished vacancy and a second application from the same email / Integration | none |
-| TC-HR-801 | document 08, line 761 | HR / HR Today / /hr / bento-grid, card, stat-tile, list / 7 / hr.leave.view / no / Appendix D HR officer row | Appendix Q, Hr sheet |
-| TC-HR-802 | document 08, line 765 | HR / Leave / /hr/leave / list, panel, stepper (substitution step before approval), error-state (exceeds balance, unpaid offered) / 7 / hr.leave.view… | Appendix Q, document 03, Hr sheet, document 20 |
+| TC-HR-801 | document 08, line 770 | HR / HR Today / /hr / bento-grid, card, stat-tile, list / 7 / hr.leave.view / no / Appendix D HR officer row | Appendix Q, Hr sheet |
+| TC-HR-802 | document 08, line 774 | HR / Leave / /hr/leave / list, panel, stepper (substitution step before approval), error-state (exceeds balance, unpaid offered) / 7 / hr.leave.view… | Appendix Q, document 03, Hr sheet, document 20 |
 | TC-HR-803 | Hr sheet, line 1334 | Given a teacher with 2 days of annual leave remaining, when the HR officer tries to approve a 3-day request, then approval is refused with HR_LEAVE_B… | Appendix Q, document 03, Hr sheet, document 20 |
-| TC-HR-804 | document 08, line 763 | HR / Staff file / /hr/staff/:staffId / tabs, key-value, file-upload, error-state (licence expired, assignment blocked) / 7 / hr.staff-files.view / no… | Appendix Q, document 03, document 20 |
-| TC-HR-805 | document 08, line 768 | HR / Payroll inputs / /hr/payroll / grid, key-value (components from contract), badge (period locked), error-state (adjustment in next period offered… | Appendix Q, document 03, Hr sheet, document 20 |
+| TC-HR-804 | document 08, line 772 | HR / Staff file / /hr/staff/:staffId / tabs, key-value, file-upload, error-state (licence expired, assignment blocked) / 7 / hr.staff-files.view / no… | Appendix Q, document 03, document 20 |
+| TC-HR-805 | document 08, line 777 | HR / Payroll inputs / /hr/payroll / grid, key-value (components from contract), badge (period locked), error-state (adjustment in next period offered… | Appendix Q, document 03, Hr sheet, document 20 |
 | TC-HR-806 | Hr sheet, line 1335 | Given a payroll period that has locked, when the HR officer adds or changes an input line for that period, then it is refused with HR_PAYROLL_PERIOD_… | Appendix Q, document 03, Hr sheet, document 20 |
-| TC-HR-807 | document 08, line 771 | HR / Document expiry / /hr/documents / data-table, badge (days left), button (request upload) / 7 / hr.staff-files.view / no / Appendix D HR officer… | Appendix Q, document 03, Hr sheet, document 20 |
+| TC-HR-807 | document 08, line 780 | HR / Document expiry / /hr/documents / data-table, badge (days left), button (request upload) / 7 / hr.staff-files.view / no / Appendix D HR officer… | Appendix Q, document 03, Hr sheet, document 20 |
 | TC-HR-810 | Appendix W, line 61 | 43 / Workload balance for staff / "Someone noticed before I burned out" / 2, degrades to load totals / 2 suggests / 2 / Hr | Appendix O, Appendix W, document 03, Hr sheet, document 08, document 20, document 32 |
-| TC-IDN-001 | Appendix R, line 104 | Invited to Registered / Token unused, unexpired, bound to this tenant / Account created, no permissions yet | document 03, Identity sheet, document 12, document 20, document 30, document 31 |
+| TC-IDN-001 | Appendix R, line 104 | Invited to Registered / Token unused, unexpired, bound to this tenant / Account created, no permissions yet | document 03, Identity sheet, document 12, document 20, document 31 |
 | TC-IDN-002 | Appendix R, line 105 | CodeEntered to Registered / Code active and seat quota not exhausted / Join request queued for approval | document 03, document 20 |
 | TC-IDN-003 | Appendix R, line 106 | Verified to PendingApproval / Contact channel proven in the same session / Request visible only to approvers of that campus | Identity sheet |
 | TC-IDN-004 | Appendix R, line 107 | PendingApproval to Approved / Approver holds identity.join-requests.approve in the same tenant / Role and scope granted, activation event published | document 03, document 20, project/KIT_V9_1_CHANGES.md |
 | TC-IDN-005 | Appendix R, line 108 | PendingApproval to Approved / Approver belongs to another tenant / Refused before the permission check, attempt audited | document 03, Identity sheet, document 12, document 20 |
-| TC-IDN-006 | Appendix R, line 109 | Invited to Expired / Clock past validity / Token rejected, no account created | document 03, Identity sheet, document 12, document 20, document 26, document 30, document 31 |
+| TC-IDN-006 | Appendix R, line 109 | Invited to Expired / Clock past validity / Token rejected, no account created | document 03, Identity sheet, document 12, document 20, document 26, document 31 |
 | TC-IDN-011 | Appendix R, line 140 | Registered to Verified / Both channels proven and no account exists for the same identity / Account usable with zero children visible | Identity sheet, document 31 |
 | TC-IDN-012 | Appendix R, line 141 | Verified to ClaimSubmitted / At most five open claims per account / Claim queued with evidence attached | Identity sheet |
 | TC-IDN-013 | Appendix R, line 142 | ClaimSubmitted to MatchProposed / Candidate sits in the registrar tenant and campus scope / Candidate shown with masked identifiers | document 03, Identity sheet, document 20 |
@@ -820,106 +836,108 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-INF-024 | Appendix R, line 2060 | Verifying to Failed / Integrity check does not pass / No traffic moved, earlier backup tried | document 15 |
 | TC-INF-025 | Appendix R, line 2061 | Verified to TrafficSwitched / Real-event flag set and verification passed / Traffic moved, tenants notified, status page updated | document 15 |
 | TC-INF-026 | Appendix R, line 2062 | Reported to Closed / Measured recovery time and recovery point recorded / Gaps against the objectives raised as actions | document 03, document 04, Platform sheet, document 15, document 20, document 31 |
-| TC-INF-101 | document 15, line 922 | Given an image built on merge, when the release is promoted through test and staging to production, then the digest in gitops/prod/ equals the digest… | document 03, document 15, document 20 |
-| TC-INF-102 | document 15, line 923 | Given every image in the registry, when its OCI referrers are listed, then each has a CycloneDX SBOM referrer and the security scan reads it / REQ-SE… | document 15 |
-| TC-INF-103 | document 15, line 924 | Given the test environment's admission controller, when an unsigned image and an image signed by an unknown key are deployed, then both are rejected… | document 03, document 15, document 20, document 34 |
-| TC-INF-104 | document 15, line 925 | Given every service dashboard, when the dashboard definitions are read, then each has the SLO panel and the runbook link panel / REQ-INF-017 | document 03, document 15, document 20 |
-| TC-INF-105 | document 15, line 926 | Given the appliance built by release.yml, when it completes first boot, then the signed release manifest lists every image digest and each digest equ… | document 15, document 34 |
-| TC-INF-106 | document 15, line 927 | Given an appliance with no network access, when a versioned offline upgrade bundle is applied, then the upgrade completes from the bundle alone after… | document 15, document 34 |
+| TC-INF-101 | document 15, line 924 | Given an image built on merge, when the release is promoted through test and staging to production, then the digest in gitops/prod/ equals the digest… | document 03, document 15, document 20 |
+| TC-INF-102 | document 15, line 925 | Given every image in the registry, when its OCI referrers are listed, then each has a CycloneDX SBOM referrer and the security scan reads it / REQ-SE… | document 15 |
+| TC-INF-103 | document 15, line 926 | Given the test environment's admission controller, when an unsigned image and an image signed by an unknown key are deployed, then both are rejected… | document 03, document 15, document 20, document 34 |
+| TC-INF-104 | document 15, line 927 | Given every service dashboard, when the dashboard definitions are read, then each has the SLO panel and the runbook link panel / REQ-INF-017 | document 03, document 15, document 20 |
+| TC-INF-105 | document 15, line 928 | Given the appliance built by release.yml, when it completes first boot, then the signed release manifest lists every image digest and each digest equ… | document 15, document 34 |
+| TC-INF-106 | document 15, line 929 | Given an appliance with no network access, when a versioned offline upgrade bundle is applied, then the upgrade completes from the bundle alone after… | document 15, document 34 |
 | TC-INF-107 | document 15, line 826 | Master brief Section 23; .claude/rules/deploy.md / Runbook per alert / Every alert annotation resolves to a file with the nine headings | document 03, document 15, document 20, document 34 |
-| TC-INF-108 | document 15, line 928 | Given the single-server Docker Compose profile, when CI starts it on one machine with the documented command, then every service reports ready and he… | document 03, document 15, document 20, document 30 |
+| TC-INF-108 | document 15, line 930 | Given the single-server Docker Compose profile, when CI starts it on one machine with the documented command, then every service reports ready and he… | document 02, document 03, document 15, document 20, document 30 |
 | TC-INF-109 | document 15, line 821 | Reference architecture Section 15; master brief Section 34 / Environments and the approval gate / A production sync without the gate evidence is refu… | document 03, document 15, document 20 |
 | TC-INF-110 | document 15, line 823 | Master brief Section 7.6 / OpenTelemetry, correlation id end to end / One correlation id from the Gateway to the last consumer in a trace of the abse… | Gateway sheet, document 15 |
 | TC-INF-111 | document 15, line 824 | Appendix L / nibras_ prefix, nibras.tenant_id / Metric and log conventions asserted by a test over the emitted names | document 03, document 15, document 20 |
 | TC-INF-112 | document 15, line 825 | Master brief Section 31 / Service levels, error budget, severities / SLO definitions match the quoted table; burn-rate alerts generated from them | document 03, document 04, document 15, document 20 |
 | TC-INF-113 | document 15, line 828 | Reference architecture Section 12 / Secrets and rotation / Every rotation runbook run once on staging before launch | document 03, document 15, document 20 |
-| TC-INF-114 | document 15, line 929 | Given a throwaway branch in the test environment, when one deliberate violation per ci-service.yml stage is committed (a warning, an unformatted file… | document 03, document 15, document 20 |
+| TC-INF-114 | document 15, line 931 | Given a throwaway branch in the test environment, when one deliberate violation per ci-service.yml stage is committed (a warning, an unformatted file… | document 03, document 15, document 20 |
 | TC-INF-801 | Appendix W, line 58 | 40 / Self-healing operations / "It fixed itself and told us what it did" / 1 / 4 acts / 1 / Platform | Appendix O, Appendix W, document 32, project/DECISIONS/0019-brief-v9-1-corrections.md, project/KIT_V9_1_CHANGES.md |
-| TC-INT-001 | Appendix W, line 42 | 24 / Open by default: API, webhooks, iCal, standards / "It talks to what we already use" / 1 / 1 surfaces / 2 / Platform | Appendix O, Appendix P, document 02, document 03, document 08, document 20, document 23, document 30, document 32, project/KIT_V9_1_CHANGES.md |
+| TC-INT-001 | Appendix W, line 42 | 24 / Open by default: API, webhooks, iCal, standards / "It talks to what we already use" / 1 / 1 surfaces / 2 / Platform | Appendix O, Appendix P, document 02, document 03, document 08, document 20, document 23, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-INT-002 | Appendix W, line 56 | 38 / Plug-in kit for regional integrations / "Our partner built the ministry export" / 1 / 1 surfaces / 2 / Platform | Appendix O, document 03, Platform sheet, document 20, document 23, document 27, document 32 |
-| TC-INT-003 | document 23, line 784 | Given a personal access token scoped to school.students.view for a teacher of one section, when it lists students, then only that section's students… | document 02, document 23 |
-| TC-INT-004 | document 23, line 785 | Given a tenant key created read-only, when a write scope is requested for it at creation, then creation is refused and no key or secret is issued / R… | document 23 |
-| TC-INT-005 | document 23, line 786 | Given a tenant key in use under load, when an administrator revokes it, then the first refused request lands within 5 seconds on each of three servic… | Platform sheet, document 23 |
-| TC-INT-006 | document 23, line 787 | Given a tenant key just created, when the database and the log store are scanned, then the secret appears in neither, and the key list shows only the… | Platform sheet, document 23 |
-| TC-INT-007 | document 23, line 788 | Given a small-plan tenant that has made 10,000 API calls today, when call 10,001 arrives, then it is refused with 402 PLATFORM_PLAN_LIMIT_REACHED, pa… | Platform sheet, document 23 |
-| TC-INT-010 | document 23, line 789 | Given a new endpoint in pendingVerification, when it echoes the challenge within 10 seconds it becomes active, and when it fails the three attempts a… | Platform sheet, document 23 |
-| TC-INT-011 | document 23, line 790 | Given a delivery whose X-Nibras-Timestamp is 301 seconds old, when the reference receiver checks it, then it is refused before the signature is compu… | document 23 |
-| TC-INT-012 | document 23, line 791 | Given the test vector of §4.4, when the C#, TypeScript, Python and PHP samples sign it, then each produces exactly the published sha256= value, and d… | document 02, document 23, document 30 |
-| TC-INT-013 | document 23, line 792 | Given a receiver fake answering 503, 429 with Retry-After, 410 and a timeout, when the dispatcher runs under an injected clock, then the attempts, th… | document 02, document 23, document 30 |
-| TC-INT-014 | document 23, line 793 | Given an endpoint in each state of the §4.7 diagram, when each trigger fires, then the endpoint reaches the diagram's target state, for example faili… | document 23 |
-| TC-INT-015 | document 23, line 794 | Given continuous deliveries and a rotation with a 24-hour overlap, when the secret rotates, then every attempt in the overlap carries two signatures,… | document 23 |
-| TC-INT-016 | document 23, line 795 | Given the eligibility table of §4.9, when an endpoint subscribes to a routing key outside it, then the subscription is refused, and every key in webh… | Platform sheet, document 23 |
+| TC-INT-003 | document 23, line 786 | Given a personal access token scoped to school.students.view for a teacher of one section, when it lists students, then only that section's students… | document 02, document 23 |
+| TC-INT-004 | document 23, line 787 | Given a tenant key created read-only, when a write scope is requested for it at creation, then creation is refused and no key or secret is issued / R… | document 23 |
+| TC-INT-005 | document 23, line 788 | Given a tenant key in use under load, when an administrator revokes it, then the first refused request lands within 5 seconds on each of three servic… | Platform sheet, document 23 |
+| TC-INT-006 | document 23, line 789 | Given a tenant key just created, when the database and the log store are scanned, then the secret appears in neither, and the key list shows only the… | Platform sheet, document 23 |
+| TC-INT-007 | document 23, line 790 | Given a small-plan tenant that has made 10,000 API calls today, when call 10,001 arrives, then it is refused with 402 PLATFORM_PLAN_LIMIT_REACHED, pa… | Platform sheet, document 23 |
+| TC-INT-010 | document 23, line 791 | Given a new endpoint in pendingVerification, when it echoes the challenge within 10 seconds it becomes active, and when it fails the three attempts a… | Platform sheet, document 23 |
+| TC-INT-011 | document 23, line 792 | Given a delivery whose X-Nibras-Timestamp is 301 seconds old, when the reference receiver checks it, then it is refused before the signature is compu… | document 23 |
+| TC-INT-012 | document 23, line 793 | Given the test vector of §4.4, when the C#, TypeScript, Python and PHP samples sign it, then each produces exactly the published sha256= value, and d… | document 02, document 23 |
+| TC-INT-013 | document 23, line 794 | Given a receiver fake answering 503, 429 with Retry-After, 410 and a timeout, when the dispatcher runs under an injected clock, then the attempts, th… | document 02, document 23 |
+| TC-INT-014 | document 23, line 795 | Given an endpoint in each state of the §4.7 diagram, when each trigger fires, then the endpoint reaches the diagram's target state, for example faili… | document 23 |
+| TC-INT-015 | document 23, line 796 | Given continuous deliveries and a rotation with a 24-hour overlap, when the secret rotates, then every attempt in the overlap carries two signatures,… | document 23 |
+| TC-INT-016 | document 23, line 797 | Given the eligibility table of §4.9, when an endpoint subscribes to a routing key outside it, then the subscription is refused, and every key in webh… | Platform sheet, document 23 |
 | TC-INT-020 | Gateway sheet, line 347 | Deprecated version headers, then GATEWAY_NOT_FOUND with the successor after the sunset / Integration with the fake clock | document 23 |
-| TC-INT-030 | document 23, line 796 | Given a staff calendar feed, when it is validated against RFC 5545 and one event then changes, then the feed validates and the changed event carries… | document 23 |
-| TC-INT-031 | document 23, line 797 | Given a tenant with 400 students in 20 sections, when the OneRoster 1.2 export runs, then the REST responses and the CSV binding validate against the… | Platform sheet, document 23 |
-| TC-INT-032 | document 23, line 798 | Given a tool registered by an administrator, when the standard body's reference tool performs an LTI 1.3 launch and posts a score, then the launch su… | Platform sheet, document 23 |
-| TC-INT-033 | document 23, line 799 | Given one item of each in-scope QTI 3 interaction, when it is exported and imported again, then the round trip yields an identical item / REQ-INT-016… | document 23 |
-| TC-INT-034 | document 23, line 800 | Given an awarded badge, when its Open Badges 3.0 credential is checked by an independent verifier, then it verifies / REQ-INT-016, REQ-BEH-006 | document 23 |
-| TC-INT-035 | document 23, line 801 | Given a CASE framework imported once, when the same framework is imported again, then no outcome is duplicated and changed items are updated in place… | document 23 |
-| TC-INT-040 | document 23, line 802 | Given a SAML assertion already accepted once, when the same assertion id is presented again, then sign-in is refused / REQ-IDN-010 | document 23 |
-| TC-INT-041 | document 23, line 803 | Given a SCIM client, when it creates a user, suspends a user and maps a group, then all three take effect, and a request that would assign a high-ris… | document 23 |
+| TC-INT-030 | document 23, line 798 | Given a staff calendar feed, when it is validated against RFC 5545 and one event then changes, then the feed validates and the changed event carries… | document 23 |
+| TC-INT-031 | document 23, line 799 | Given a tenant with 400 students in 20 sections, when the OneRoster 1.2 export runs, then the REST responses and the CSV binding validate against the… | Platform sheet, document 23 |
+| TC-INT-032 | document 23, line 800 | Given a tool registered by an administrator, when the standard body's reference tool performs an LTI 1.3 launch and posts a score, then the launch su… | Platform sheet, document 23, document 34 |
+| TC-INT-033 | document 23, line 801 | Given one item of each in-scope QTI 3 interaction, when it is exported and imported again, then the round trip yields an identical item / REQ-INT-016… | document 23 |
+| TC-INT-034 | document 23, line 802 | Given an awarded badge, when its Open Badges 3.0 credential is checked by an independent verifier, then it verifies / REQ-INT-016, REQ-BEH-006 | document 23 |
+| TC-INT-035 | document 23, line 803 | Given a CASE framework imported once, when the same framework is imported again, then no outcome is duplicated and changed items are updated in place… | document 23 |
+| TC-INT-036 | document 23, line 804 | Given a tool registered with grade access and launched by a teacher from a grade 4 science assignment, when it obtains a token by the client-credenti… | Assessment sheet, Platform sheet, document 17, document 23, document 30, document 34 |
+| TC-INT-037 | document 23, line 805 | Given the JoFotara e-invoicing plug-in version under certification and the national system's sandbox, when the §8.3 checklist runs, then the conforma… | document 18, document 23, document 30, document 34 |
+| TC-INT-040 | document 23, line 806 | Given a SAML assertion already accepted once, when the same assertion id is presented again, then sign-in is refused / REQ-IDN-010 | document 23 |
+| TC-INT-041 | document 23, line 807 | Given a SCIM client, when it creates a user, suspends a user and maps a group, then all three take effect, and a request that would assign a high-ris… | document 23 |
 | TC-INT-660 | Gateway sheet, line 346 | Keys and tokens are refused on every operation not tagged public / Generated suite | Platform sheet, document 23 |
-| TC-L10N-101 | document 08, line 735 | Principal / Approvals in Arabic / same route / as above, mirrored / 7 / requests.requests.approve / yes / U.2 | Appendix Q, document 03, Reporting sheet, document 20, document 24 |
-| TC-L10N-110 | document 24, line 841 | Given a tenant that overrides "Section" to "Class" and "Guardian" to "Parent", when every screen family, a report card, a receipt and a push notifica… | Platform sheet, document 24 |
-| TC-L10N-201 | document 08, line 648 | Teacher / Mark entry in Arabic / same route / as above; numerals per tenant, numbers isolated LTR / 7 / assessment.marks.enter / yes / U.4 | Appendix Q, document 03, document 20, document 24 |
-| TC-L10N-202 | document 08, line 662 | Homeroom / Class list print / /homeroom/print / data-table (print layout), avatar, button (print) / loading, error, no-permission / school.students.v… | Appendix O, Appendix Q, document 02, School sheet, document 17, document 18, document 24, document 32, project/KIT_V9_1_CHANGES.md |
+| TC-L10N-101 | document 08, line 743 | Principal / Approvals in Arabic / same route / as above, mirrored / 7 / requests.requests.approve / yes / U.2 | Appendix Q, document 03, Reporting sheet, document 20, document 24 |
+| TC-L10N-110 | document 24, line 844 | Given a tenant that overrides "Section" to "Class" and "Guardian" to "Parent", when every screen family, a report card, a receipt and a push notifica… | Platform sheet, document 24 |
+| TC-L10N-201 | document 08, line 653 | Teacher / Mark entry in Arabic / same route / as above; numerals per tenant, numbers isolated LTR / 7 / assessment.marks.enter / yes / U.4 | Appendix Q, document 03, document 20, document 24 |
+| TC-L10N-202 | document 08, line 668 | Homeroom / Class list print / /homeroom/print / data-table (print layout), avatar, button (print) / loading, error, no-permission / school.students.v… | Appendix O, Appendix Q, document 02, School sheet, document 17, document 18, document 24, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-L10N-301 | Documents sheet, line 1243 | UAT / Arabic transfer certificate renders right to left with a resolving QR code | Appendix O, Appendix Q, document 03, Documents sheet, Hr sheet, Operations sheet, Platform sheet, Reporting sheet, School sheet, Wellbeing sheet, document 08, document 17, document 20, document 24, document 32, project/KIT_V9_1_CHANGES.md |
-| TC-L10N-310 | document 24, line 842 | Given the Nibras database image, when show_trgm(nibras_ar_fold('محمد')) runs inside it, then it returns Arabic trigrams, so a similarity search on an… | Admissions sheet, Ai sheet, Bff.Web sheet, Communication sheet, Documents sheet, Hr sheet, Operations sheet, Platform sheet, School sheet, document 10, document 24 |
-| TC-L10N-311 | document 32, line 262 | R-01 / Arabic-aware search: a guardian's name typed with and without hamza or taa marbuta finds the same record, which is the "bilingual data" claim… | Appendix O, School sheet, document 17, document 24, document 30, document 32, project/KIT_V9_1_CHANGES.md |
-| TC-L10N-401 | document 08, line 725 | Accountant / Guardian statement / /accountant/statements/:guardianId / key-value, data-table, button (print), currency side per direction / 7 / finan… | Appendix Q, document 02, document 03, document 18, document 20, document 24, document 32 |
+| TC-L10N-310 | document 24, line 845 | Given the Nibras database image, when show_trgm(nibras_ar_fold('محمد')) runs inside it, then it returns Arabic trigrams, so a similarity search on an… | Admissions sheet, Ai sheet, Bff.Web sheet, Communication sheet, Documents sheet, Hr sheet, Operations sheet, Platform sheet, School sheet, document 10, document 24 |
+| TC-L10N-311 | document 32, line 262 | R-01 / Arabic-aware search: a guardian's name typed with and without hamza or taa marbuta finds the same record, which is the "bilingual data" claim… | Appendix O, School sheet, document 17, document 24, document 32, project/KIT_V9_1_CHANGES.md |
+| TC-L10N-401 | document 08, line 733 | Accountant / Guardian statement / /accountant/statements/:guardianId / key-value, data-table, button (print), currency side per direction / 7 / finan… | Appendix Q, document 02, document 03, document 18, document 20, document 24, document 32 |
 | TC-L10N-501 | Communication sheet, line 881 | Message translation with the original one tap away (REQ-COM-011) / End-to-end | Appendix Q, document 03, Communication sheet, document 08, document 18, document 20, document 24 |
-| TC-L10N-601 | document 08, line 670 | Student / Timetable / /student/timetable / timetable-grid, tabs (week, day) / 7 / scheduling.timetable.view / yes / U.9 | Appendix Q, Scheduling sheet, document 24 |
-| TC-L10N-620 | document 24, line 843 | Given a Ramadan bell schedule valid 2027-02-08 to 2027-03-09, when the clock reaches 2027-02-08 in Asia/Riyadh and in Asia/Dubai, then the attendance… | Scheduling sheet, document 24 |
-| TC-L10N-701 | document 08, line 778 | Counselor and nurse / Session note in Arabic / same route / as above with mixed-script note / 7 / wellbeing.counseling-cases.edit / no / U.10 | Appendix Q, Wellbeing sheet |
+| TC-L10N-601 | document 08, line 676 | Student / Timetable / /student/timetable / timetable-grid, tabs (week, day) / 7 / scheduling.timetable.view / yes / U.9 | Appendix Q, Scheduling sheet, document 24 |
+| TC-L10N-620 | document 24, line 846 | Given a Ramadan bell schedule valid 2027-02-08 to 2027-03-09, when the clock reaches 2027-02-08 in Asia/Riyadh and in Asia/Dubai, then the attendance… | Scheduling sheet, document 24 |
+| TC-L10N-701 | document 08, line 787 | Counselor and nurse / Session note in Arabic / same route / as above with mixed-script note / 7 / wellbeing.counseling-cases.edit / no / U.10 | Appendix Q, Wellbeing sheet |
 | TC-L10N-801 | Hr sheet, line 1339 | An Arabic service certificate with Hijri and Gregorian dates / End-to-end | Appendix Q, document 02, Hr sheet, document 08, document 18, document 24, document 32 |
-| TC-L10N-901 | document 24, line 844 | Given the operator console switched to Arabic, when every operator and administrator screen is opened, then each mirrors fully right to left and none… | Appendix Q, document 03, Platform sheet, document 20, document 24 |
+| TC-L10N-901 | document 24, line 847 | Given the operator console switched to Arabic, when every operator and administrator screen is opened, then each mirrors fully right to left and none… | Appendix Q, document 03, Platform sheet, document 20, document 24 |
 | TC-MOB-001 | Appendix W, line 30 | 12 / Offline-first mobile / "The corridor has no signal and it still worked" / 1 / 1 surfaces / 1 / Attendance | Appendix O, document 02, document 03, Attendance sheet, document 09, document 20, document 32 |
 | TC-MOB-002 | Appendix W, line 34 | 16 / White-label mobile apps / "It is our school's app" / 1 / 1 surfaces / 2 / Platform | Appendix O, document 03, document 20, document 32 |
 | TC-MOB-003 | Appendix W, line 52 | 34 / Teacher five-minute mode / "Four taps and I was teaching" / 1 / 1 surfaces / 1 / Bff.Mobile | Appendix O, document 03, Bff.Mobile sheet, document 20, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
 | TC-MOB-004 | Appendix W, line 53 | 35 / Parent calm screen / "Nothing needed me today, and it said so" / 1 / 1 surfaces / 1 / Bff.Mobile | Appendix O, document 03, Bff.Mobile sheet, document 20, document 32 |
 | TC-MOB-005 | Appendix W, line 62 | 44 / Low-bandwidth mode / "It worked on my old phone" / 1 / 1 surfaces / 1 / Bff.Mobile | Appendix O, Appendix P, document 03, Bff.Mobile sheet, document 09, document 16, document 20, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-MOB-101 | Bff.Mobile sheet, line 484 | UAT / Last synced morning brief with its as-of time offline | Appendix Q, document 08, document 09 |
-| TC-MOB-102 | document 09, line 1008 | Given a principal who queued actions from the approvals inbox in airplane mode (Appendix Q.1 steps 11 and 12), when the network is restored, then eac… | Appendix Q, document 09 |
-| TC-MOB-201 | document 08, line 641 | Teacher / Teacher Today / /teacher / bento-grid, card, register-card, list, as-of-badge / 7 / academics.teaching-assignments.view / yes / U.4 | Appendix Q, document 03, document 09, document 20, document 34 |
-| TC-MOB-202 | document 09, line 1009 | Given a teacher who marked a class of 25 in airplane mode with 2 absent and 1 late (Appendix Q.2 step 4), when the network is restored, then the queu… | Appendix Q, document 02, document 09 |
-| TC-MOB-203 | document 09, line 1010 | Given a homeroom teacher in airplane mode, when they add a note to a student's timeline, then the note shows at once with the offline badge, and afte… | Appendix Q, document 09 |
-| TC-MOB-501 | document 08, line 680 | Parent / Calm screen / /parent / bento-grid, card (one per child), empty-state ("nothing needs your attention"), as-of-badge / 7 / school.students.vi… | Appendix Q, document 09 |
+| TC-MOB-102 | document 09, line 1016 | Given a principal who queued actions from the approvals inbox in airplane mode (Appendix Q.1 steps 11 and 12), when the network is restored, then eac… | Appendix Q, document 09 |
+| TC-MOB-201 | document 08, line 646 | Teacher / Teacher Today / /teacher / bento-grid, card, register-card, list, as-of-badge / 7 / academics.teaching-assignments.view / yes / U.4 | Appendix Q, document 03, document 09, document 20, document 34 |
+| TC-MOB-202 | document 09, line 1017 | Given a teacher who marked a class of 25 in airplane mode with 2 absent and 1 late (Appendix Q.2 step 4), when the network is restored, then the queu… | Appendix Q, document 02, document 09 |
+| TC-MOB-203 | document 09, line 1018 | Given a homeroom teacher in airplane mode, when they add a note to a student's timeline, then the note shows at once with the offline badge, and afte… | Appendix Q, document 09 |
+| TC-MOB-501 | document 08, line 686 | Parent / Calm screen / /parent / bento-grid, card (one per child), empty-state ("nothing needs your attention"), as-of-badge / 7 / school.students.vi… | Appendix Q, document 09 |
 | TC-MOB-502 | Bff.Mobile sheet, line 485 | UAT / Report card opens from the local copy offline | Appendix Q, document 08, document 09 |
-| TC-MOB-601 | document 08, line 669 | Student / Student Today / /student / bento-grid, card, list (due), timetable-grid (today strip), as-of-badge / 7 / scheduling.timetable.view / yes /… | Appendix Q, document 09 |
-| TC-MOB-602 | document 09, line 1011 | Given a student whose timetable and due list were synced, when they open both in airplane mode and submit an assignment, then both screens render fro… | Appendix Q, document 03, document 09, document 20 |
+| TC-MOB-601 | document 08, line 675 | Student / Student Today / /student / bento-grid, card, list (due), timetable-grid (today strip), as-of-badge / 7 / scheduling.timetable.view / yes /… | Appendix Q, document 09 |
+| TC-MOB-602 | document 09, line 1019 | Given a student whose timetable and due list were synced, when they open both in airplane mode and submit an assignment, then both screens render fro… | Appendix Q, document 03, document 09, document 20 |
 | TC-MOB-701 | document 09, line 590 | Deliver the same queued action twice / One result, second returns the first response | document 03, Attendance sheet, Bff.Mobile sheet, document 09, document 20 |
 | TC-MOB-702 | document 09, line 591 | Queue on device A and change on the server, then sync / The rule in M.3 applies and the banner shows | document 03, document 20 |
 | TC-MOB-703 | document 09, line 592 | Queue on two devices for the same session / Per-student merge, no lost work | document 03, document 09, document 20 |
-| TC-MOB-704 | document 09, line 1012 | Given a nurse-mode session that opened 3 wellbeing records, followed by a student check-in answered offline and then synced, when the session ends an… | document 03, Bff.Mobile sheet, document 09, document 12, document 20, document 30 |
+| TC-MOB-704 | document 09, line 1020 | Given a nurse-mode session that opened 3 wellbeing records, followed by a student check-in answered offline and then synced, when the session ends an… | document 03, Bff.Mobile sheet, document 09, document 12, document 20 |
 | TC-MOB-705 | document 09, line 593 | Sync after the lock window / A request is created, nothing is overwritten | document 09 |
 | TC-MOB-706 | document 09, line 594 | Sync with a 45-day-old token / Full refresh, outbox still delivered | document 03, document 09, document 20 |
-| TC-MOB-707 | document 09, line 1014 | Given 1,200 queued actions of 1 KB each, when the engine syncs, then it sends three requests of 500, 500 and 200 actions; given 100 actions of 60 KB… | document 03, document 09, document 20 |
+| TC-MOB-707 | document 09, line 1022 | Given 1,200 queued actions of 1 KB each, when the engine syncs, then it sends three requests of 500, 500 and 200 actions; given 100 actions of 60 KB… | document 03, document 09, document 20 |
 | TC-MOB-708 | document 09, line 595 | Device clock set two hours fast / Ordering uses receivedAt; occurredAt is preserved for display only | document 03, document 09, document 20 |
 | TC-MOB-709 | document 09, line 596 | Attachment upload interrupted / The action stays pending; retry resumes rather than duplicating | document 03, document 09, document 20 |
 | TC-MOB-710 | document 09, line 597 | Airplane mode for a full school day, then reconnect / Everything queued arrives, in order, once; the demo proof is TC-MOB-001 | Attendance sheet, Bff.Mobile sheet, document 09 |
-| TC-MOB-711 | document 09, line 1015 | Given the App Links intent-filter with autoVerify and the tenant host's assetlinks.json, when the Android device pass runs adb shell pm verify-app-li… | document 09 |
-| TC-MOB-712 | document 09, line 1016 | Given the Associated Domains entitlement applinks:<tenant host> and the host's apple-app-site-association, when a tenant link is tapped on the iPhone… | document 09 |
+| TC-MOB-711 | document 09, line 1023 | Given the App Links intent-filter with autoVerify and the tenant host's assetlinks.json, when the Android device pass runs adb shell pm verify-app-li… | document 09 |
+| TC-MOB-712 | document 09, line 1024 | Given the Associated Domains entitlement applinks:<tenant host> and the host's apple-app-site-association, when a tenant link is tapped on the iPhone… | document 09 |
 | TC-MOB-713 | document 09, line 771 | Minimum version enforcement / Bff.Mobile GET /bff/mobile/v1/config/version returns minimumVersion, recommendedVersion and policy per tenant (Appendix… | document 03, Bff.Mobile sheet, document 09, document 20 |
 | TC-MOB-714 | document 09, line 773 | Sign-out and permission loss / Drops the Drift database, clears secure storage for that person, unregisters the push token (NOTIFICATION_DEVICE_TOKEN… | document 03, Bff.Mobile sheet, document 09, document 20 |
 | TC-MOB-715 | Bff.Mobile sheet, line 489 | Integration / A school day of teacher use under 2 MB | document 03, Bff.Mobile sheet, document 09, document 20, document 21 |
-| TC-MOB-716 | document 09, line 1017 | Given the key screens rendered in English and in Arabic, when widget tests read the semantics tree, then every control has a non-empty Semantics labe… | document 09 |
-| TC-MOB-717 | document 09, line 1018 | Given the key screens at textScaleFactor 1.0 and 2.0, when the goldens and overflow checks run, then no text clips and no screen scrolls horizontally… | document 03, document 09, document 20 |
-| TC-MOB-718 | document 09, line 1019 | Given every flavor file's generated palette in light and dark, when contrast is computed, then every text pair is at least 4.5:1 and every interface… | document 09 |
-| TC-MOB-719 | document 09, line 1020 | Given MediaQuery.disableAnimations true or the platform reduce-motion setting on, when each animated screen is pumped, then every animation duration… | document 09 |
-| TC-MOB-720 | document 09, line 1021 | Given the staging, production and every white-label flavor built in release mode, when the build output and its symbol table are inspected, then the… | document 09 |
-| TC-MOB-721 | document 09, line 1022 | Given the resolved pubspec.lock of every flavor, when the dependency check runs, then it contains 0 flutter_bloc entries and the providers come from… | document 09, document 29 |
-| TC-MOB-780 | document 09, line 1013 | Given a student on the Open Question 29 default who answers the daily check-in in airplane mode, when the outbox is inspected, then it holds exactly… | document 09, document 12, document 30 |
-| TC-MSG-750 | document 11, line 1055 | **Worker-kill chaos** / A batch of 800 items is published; after 300 are acknowledged one worker replica is killed with SIGKILL (the container, not a… | document 11 |
-| TC-MSG-751 | document 11, line 1056 | Dispatcher leader killed / The leader is killed between publish and confirm; the standby takes the lock within 10 s; every row is published, some twi… | document 11 |
-| TC-MSG-752 | document 11, line 1058 | **Deliver twice** / Every handler receives the same message twice with one messageId (inbox path) and twice with two messageId values (natural-key pa… | document 11 |
-| TC-MSG-753 | document 11, line 1059 | **Ordering** / 10,000 events over 200 keys through the 8 projection shards, with a replica killed and another added mid-run, arrive in commit order p… | document 11 |
-| TC-MSG-754 | document 11, line 1062 | Unordered queues / Messages delivered in a shuffled order leave the same final state / ReferenceCopyTests.ShuffledDelivery_SameFinalState per consumi… | document 11 |
-| TC-MSG-755 | document 11, line 1063 | Retry and parking / Transient failures follow the queue's profile and park; permanent failures park at once; three crashes land in .dlq / RetryPolicy… | document 11 |
-| TC-MSG-756 | document 11, line 1065 | Lanes / With 100,000 digest messages queued on the bulk lane, an absence alert is dispatched within 30 s of being enqueued. The 30 s is the lane's ow… | document 11 |
-| TC-MSG-757 | document 11, line 1066 | Tenant fairness / Tenant A publishes 3,000 report-card renders; tenant B publishes 40 one second later; B's batch completes within 2 minutes while A'… | document 11 |
-| TC-MSG-758 | document 11, line 1067 | Outbox / A rolled-back transaction leaves no outbox row; a bulk update without explicit enqueue fails the architecture test / OutboxTests, MessagingC… | document 11, document 30 |
-| TC-MSG-759 | document 11, line 1070 | **PactNet contracts** / Each consumer's contract suite records, per consumed key, the message it expects (routing key, envelope headers, payload fiel… | document 11 |
-| TC-MSG-901 | Platform sheet, line 2322 | A replayed failed message applies once, a second replay changes nothing (REQ-MSG-024) / Integration | Appendix Q, document 03, document 08, document 11, document 20 |
+| TC-MOB-716 | document 09, line 1025 | Given the key screens rendered in English and in Arabic, when widget tests read the semantics tree, then every control has a non-empty Semantics labe… | document 09 |
+| TC-MOB-717 | document 09, line 1026 | Given the key screens at textScaleFactor 1.0 and 2.0, when the goldens and overflow checks run, then no text clips and no screen scrolls horizontally… | document 03, document 09, document 20 |
+| TC-MOB-718 | document 09, line 1027 | Given every flavor file's generated palette in light and dark, when contrast is computed, then every text pair is at least 4.5:1 and every interface… | document 09 |
+| TC-MOB-719 | document 09, line 1028 | Given MediaQuery.disableAnimations true or the platform reduce-motion setting on, when each animated screen is pumped, then every animation duration… | document 09 |
+| TC-MOB-720 | document 09, line 1029 | Given the staging, production and every white-label flavor built in release mode, when the build output and its symbol table are inspected, then the… | document 09 |
+| TC-MOB-721 | document 09, line 1030 | Given the resolved pubspec.lock of every flavor, when the dependency check runs, then it contains 0 flutter_bloc entries and the providers come from… | document 09, document 29 |
+| TC-MOB-780 | document 09, line 1021 | Given a student on the Open Question 29 default who answers the daily check-in in airplane mode, when the outbox is inspected, then it holds exactly… | document 09, document 12 |
+| TC-MSG-750 | document 11, line 1059 | **Worker-kill chaos** / A batch of 800 items is published; after 300 are acknowledged one worker replica is killed with SIGKILL (the container, not a… | document 11 |
+| TC-MSG-751 | document 11, line 1060 | Dispatcher leader killed / The leader is killed between publish and confirm; the standby takes the lock within 10 s; every row is published, some twi… | document 11 |
+| TC-MSG-752 | document 11, line 1062 | **Deliver twice** / Every handler receives the same message twice with one messageId (inbox path) and twice with two messageId values (natural-key pa… | document 11 |
+| TC-MSG-753 | document 11, line 1063 | **Ordering** / 10,000 events over 200 keys through the 8 projection shards, with a replica killed and another added mid-run, arrive in commit order p… | document 11 |
+| TC-MSG-754 | document 11, line 1066 | Unordered queues / Messages delivered in a shuffled order leave the same final state / ReferenceCopyTests.ShuffledDelivery_SameFinalState per consumi… | document 11 |
+| TC-MSG-755 | document 11, line 1067 | Retry and parking / Transient failures follow the queue's profile and park; permanent failures park at once; three crashes land in .dlq / RetryPolicy… | document 11 |
+| TC-MSG-756 | document 11, line 1069 | Lanes / With 100,000 digest messages queued on the bulk lane, an absence alert is dispatched within 30 s of being enqueued. The 30 s is the lane's ow… | document 11 |
+| TC-MSG-757 | document 11, line 1070 | Tenant fairness / Tenant A publishes 3,000 report-card renders; tenant B publishes 40 one second later; B's batch completes within 2 minutes while A'… | document 11 |
+| TC-MSG-758 | document 11, line 1071 | Outbox / A rolled-back transaction leaves no outbox row; a bulk update without explicit enqueue fails the architecture test / OutboxTests, MessagingC… | document 11 |
+| TC-MSG-759 | document 11, line 1074 | **PactNet contracts** / Each consumer's contract suite records, per consumed key, the message it expects (routing key, envelope headers, payload fiel… | document 11 |
+| TC-MSG-901 | Platform sheet, line 2372 | A replayed failed message applies once, a second replay changes nothing (REQ-MSG-024) / Integration | Appendix Q, document 03, document 08, document 11, document 20 |
 | TC-NOT-001 | Appendix W, line 25 | 7 / Parent experience that respects attention / "One calm message, not twelve" / 1 / 1 surfaces / 1 / Notification | Appendix O, document 03, Notification sheet, document 20, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
 | TC-NOT-501 | Notification sheet, line 808 | A normal test inside quiet hours 21:00 to 06:30 arrives after 06:30 (Appendix Q, REQ-NOT-006) / End-to-end | Appendix Q, document 03, document 08, document 20 |
 | TC-NOT-502 | Notification sheet, line 809 | An emergency broadcast breaks through quiet hours and is acknowledged in one tap (Appendix Q, REQ-NOT-007) / End-to-end | Appendix Q, document 03, document 20 |
@@ -932,7 +950,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-NOT-607 | Notification sheet, line 819 | Recipient in quiet hours: urgent delivers, normal and digest queue until the window opens, evaluated in the recipient's time zone (row 3) / Integrati… | Notification sheet |
 | TC-NOT-608 | Notification sheet, line 820 | A hard-bounced address receives neither urgent nor normal email and a data-quality issue is raised; push still reaches the guardian (row 4, REQ-NOT-0… | Notification sheet, document 20 |
 | TC-NOT-609 | Notification sheet, line 821 | A complaint suppresses non-urgent email permanently while urgent email still delivers (row 5) / Integration | none |
-| TC-NOT-610 | Notification sheet, line 822 | A device without Google services receives push in-app while open; urgent falls back to SMS and email (row 6, REQ-NOT-019) / Integration | document 01, document 02, Academics sheet, Admissions sheet, Assessment sheet, Attendance sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Documents sheet, Finance sheet, Gateway sheet, Hr sheet, Identity sheet, Notification sheet, Operations sheet, Reporting sheet, Requests sheet, Scheduling sheet, Wellbeing sheet, document 10, document 11, document 20, document 21, document 30, document 33 |
+| TC-NOT-610 | Notification sheet, line 822 | A device without Google services receives push in-app while open; urgent falls back to SMS and email (row 6, REQ-NOT-019) / Integration | document 01, document 02, document 04, Academics sheet, Admissions sheet, Assessment sheet, Attendance sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Documents sheet, Finance sheet, Gateway sheet, Hr sheet, Identity sheet, Notification sheet, Operations sheet, Reporting sheet, Requests sheet, Scheduling sheet, Wellbeing sheet, document 10, document 11, document 16, document 20, document 21, document 30, document 33 |
 | TC-NOT-611 | Notification sheet, line 823 | A parent who disabled email for finance on child A only receives an email for child B's invoice and none for child A's (REQ-NOT-005) / Integration | document 20 |
 | TC-NOT-612 | Notification sheet, line 824 | Three identical assignment-published events within 2 minutes deliver once with a duplicate count of 3 (REQ-NOT-009) / Integration | Notification sheet, document 20 |
 | TC-NOT-613 | Notification sheet, line 825 | 20 consecutive push failures for one tenant publish notification.notification.failed.v1 and alert operators (REQ-NOT-012) / Integration | document 20 |
@@ -1003,7 +1021,9 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-OPS-621 | Operations sheet, line 1319 | A room booking approved in Scheduling creates exactly one FacilityBooking in Approved, also when the event is delivered twice / Integration | Operations sheet |
 | TC-OPS-622 | Operations sheet, line 1320 | Every terminal state of the five Operations workflows is reachable from every non-terminal state (document 13 section 5.2) / Unit, generated | none |
 | TC-OPS-623 | Operations sheet, line 1321 | A stock level equals the sum of its movements after receipts, issues, transfers, sales and stock-take adjustments in any order / Unit, property-based | Operations sheet |
-| TC-OPS-810 | Appendix W, line 51 | 33 / Campus digital twin / "I saw the empty rooms at a glance" / 1 / 1 surfaces / 2 / Operations | Appendix O, Appendix W, Bff.Web sheet, Operations sheet, document 32 |
+| TC-OPS-624 | Operations sheet, line 1322 | An issued purchase order and a verified safety record each send one GenerateDocument whose subjectId is the row's id; the matching documents.document… | Operations sheet, document 30 |
+| TC-OPS-625 | Operations sheet, line 1323 | DocumentGeneratedConsumer delivered twice for one purchase order: document_id is written once, the inbox holds one entry and no second audit record i… | Operations sheet, document 30 |
+| TC-OPS-810 | Appendix W, line 51 | 33 / Campus digital twin / "I saw the empty rooms at a glance" / 1 / 1 surfaces / 2 / Operations | Appendix O, Appendix W, Bff.Web sheet, Operations sheet, document 08, document 32 |
 | TC-PERF-001 | document 21, line 326 | Identity permissions / identity.permissions.changed.v1 / Next read misses; L1 on a second instance is evicted within 2 s by the broadcast | Identity sheet, document 21 |
 | TC-PERF-002 | document 21, line 327 | Identity permissions, deactivated user / identity.user.deactivated.v1 / The user's next request is refused within 2 s on every instance | Identity sheet |
 | TC-PERF-003 | document 21, line 328 | Platform settings, flags, plan, terminology, branding / platform.settings.changed.v1, platform.feature-flag.changed.v1, platform.plan.changed.v1, pla… | Platform sheet |
@@ -1033,7 +1053,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-PERF-027 | Reporting sheet, line 879 | Load / N-05 with replay paused 60 s: p95 under 250 ms on the primary, routing returns within 30 s | Reporting sheet, document 21 |
 | TC-PERF-750 | document 21, line 1346 | Given the caching building block's key builder run with the process culture set to ar-SA, then en-US, then the invariant culture, when it builds a wa… | document 21 |
 | TC-PERF-751 | document 21, line 1347 | Given tenants in Asia/Riyadh, Asia/Amman and Asia/Dubai with a first period at 07:30 local and a host clock in UTC, when the warm-up of Section 9 is… | document 21 |
-| TC-PERF-800 | document 28, line 540 | Given the unit prices of part 4.1 (the node-hour as 240 ÷ 730, unrounded), the formulas of part 4.2 and the tables of part 2, when every figure of pa… | document 28, document 30 |
+| TC-PERF-800 | document 28, line 542 | Given the unit prices of part 4.1 (the node-hour as 240 ÷ 730, unrounded), the formulas of part 4.2 and the tables of part 2, when every figure of pa… | document 28, document 30, project/CHANGELOG.md |
 | TC-PLAT-001 | document 33, line 223 | Two files differing only by case / A Windows commit breaks the Linux checkout, or the reverse / kit-lint R13 in ci-kit.yml, and the same check in the… | document 03, document 16, document 20 |
 | TC-PLAT-002 | document 33, line 224 | A path longer than 200 characters / A Windows checkout fails entirely / kit-lint R14 / ubuntu, windows / 33 | document 03, document 16, document 20 |
 | TC-PLAT-003 | document 33, line 225 | CRLF inside generated SQL or a PDF baseline / Migration checksums and snapshot comparisons drift / .gitattributes, plus the byte-for-byte comparison… | document 03, Assessment sheet, Documents sheet, document 16, document 18, document 20 |
@@ -1042,23 +1062,23 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-PLAT-006 | document 33, line 228 | An ICU update mid-year / Hijri conversions move by a day / ICU pinned per release (G6); the culture test asserts known Hijri and Gregorian pairs (G3)… | document 03, Academics sheet, Admissions sheet, Assessment sheet, Attendance sheet, Audit sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Documents sheet, Hr sheet, Scheduling sheet, School sheet, document 16, document 18, document 20, document 24 |
 | TC-PLAT-007 | document 33, line 229 | Culture-sensitive parsing of a decimal / 1,5 and 1.5 swap meaning between a Windows developer and a Linux server / The analyzer (G10) at build time;… | document 03, Documents sheet, Finance sheet, Hr sheet, Notification sheet, Operations sheet, Platform sheet, Reporting sheet, Requests sheet, Scheduling sheet, School sheet, Wellbeing sheet, document 11, document 16, document 20, document 24 |
 | TC-PLAT-008 | document 33, line 230 | Arabic digits in an Excel file produced on Windows / Import reads them as text and rejects the row / An import test in Documents with a file containi… | document 03, Documents sheet, Finance sheet, document 16, document 20, document 26 |
-| TC-PLAT-009 | document 33, line 231 | Font shaping differs between emulator and device / Arabic ligatures render correctly in tests and badly on a phone / Fonts bundled with the applicati… | document 03, Admissions sheet, Assessment sheet, Attendance sheet, Audit sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Platform sheet, Requests sheet, Scheduling sheet, School sheet, document 16, document 20, document 30 |
+| TC-PLAT-009 | document 33, line 231 | Font shaping differs between emulator and device / Arabic ligatures render correctly in tests and badly on a phone / Fonts bundled with the applicati… | document 03, Admissions sheet, Assessment sheet, Attendance sheet, Audit sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Platform sheet, Requests sheet, Scheduling sheet, School sheet, document 16, document 20 |
 | TC-PLAT-010 | document 33, line 232 | iOS suspends the app for days / Offline queue grows and the sync token expires / A sync test that replays a 30-day-old token and asserts success; syn… | document 03, Bff.Mobile sheet, Notification sheet, document 16, document 20 |
 | TC-PLAT-011 | document 33, line 233 | Android battery optimisation kills the sync worker / A parent stops receiving anything and does not know why / A widget test that the restriction is… | document 03, Notification sheet, document 16, document 20 |
 | TC-PLAT-012 | document 33, line 234 | A device clock is wrong by hours / Offline attendance arrives with a wrong timestamp / An Attendance integration test that submits an offline record… | Attendance sheet, Operations sheet, Requests sheet, document 16, document 18 |
-| TC-PLAT-013 | document 33, line 235 | Podman names its network differently from Docker / Testcontainers cannot reach the database / dev-smoke.yml runs one Podman configuration and one Doc… | document 03, document 15, document 16, document 20, document 30, document 33 |
+| TC-PLAT-013 | document 33, line 235 | Podman names its network differently from Docker / Testcontainers cannot reach the database / dev-smoke.yml runs one Podman configuration and one Doc… | document 02, document 03, document 15, document 16, document 20, document 30, document 33 |
 | TC-PLAT-014 | document 33, line 236 | A white-label flavour builds on Linux but its iOS twin does not / Android ships and iOS silently lags a version / The white-label release gate in par… | document 03, Platform sheet, document 16, document 20 |
 | TC-PLAT-015 | document 33, line 242 | A pooled connection under transaction pooling sees another tenant's rows / SET instead of SET LOCAL leaks the tenant across pooled connections / The… | document 10, document 16, document 18, document 29, document 33 |
 | TC-PLAT-016 | document 33, line 243 | A Flutter golden regenerated on macOS or Windows / Font rendering differs by operating system, and the golden now fails on the authoritative runner /… | document 03, Bff.Mobile sheet, document 16, document 20 |
 | TC-PLAT-017 | document 33, line 244 | A kit archive built with Compress-Archive / Backslash separators break extraction on Linux / The packaging step uses tar -a -c -f, and a test extract… | document 03, document 16, document 20, document 29, document 33 |
-| TC-PLAT-101 | document 07, line 921 | REQ-PLAT-004 / "A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware" (03), the shape ADR-0016 deci… | document 03, document 07, document 20, document 30 |
-| TC-PLAT-102 | document 33, line 293 | Given every tool entry point under tools/, each with a .ps1 and a .sh wrapper over one Node implementation, and every hook in .claude/settings.json,… | document 03, document 07, document 20, document 33 |
-| TC-PLAT-800 | document 33, line 292 | Given a clean checkout on the macos-latest runner of dev-smoke.yml with the toolchain the macOS column of part 3 installs, when tools/dev-setup/verif… | document 15, document 16, document 30, document 33 |
+| TC-PLAT-101 | document 07, line 928 | REQ-PLAT-004 / "A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware" (03), the shape ADR-0016 deci… | document 03, document 07, document 20 |
+| TC-PLAT-102 | document 33, line 294 | Given every tool entry point under tools/, each with a .ps1 and a .sh wrapper over one Node implementation, and every hook in .claude/settings.json,… | document 03, document 07, document 20, document 33 |
+| TC-PLAT-800 | document 33, line 293 | Given a clean checkout on the macos-latest runner of dev-smoke.yml with the toolchain the macOS column of part 3 installs, when tools/dev-setup/verif… | document 02, document 15, document 16, document 30, document 33 |
 | TC-PLT-001 | Appendix R, line 427 | Requested to Validated / Subdomain free and plan exists / Tenant record created in Requested state only | Appendix W, document 03, Platform sheet, document 20, document 26, document 27, document 31, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-PLT-002 | Appendix R, line 428 | Validated to Provisioning / Operator or signup token authorised / Saga started with a correlation identifier | document 03, Platform sheet, document 20, project/KIT_V9_1_CHANGES.md |
-| TC-PLT-003 | Appendix R, line 429 | Provisioning to Provisioned / Every service acknowledged its step / Owner invitation sent, tenant marked provisioned | Appendix O, document 12, document 13, document 26, document 30, document 32, project/KIT_V9_1_CHANGES.md |
-| TC-PLT-004 | Appendix R, line 430 | Provisioning to Failed / One service times out after retries / Saga halts, no further steps attempted | document 13, document 26, document 30, project/KIT_V9_1_CHANGES.md |
-| TC-PLT-005 | Appendix R, line 431 | Failed to Compensated / Reverse steps succeed / No schema, queue, or user left behind | Appendix W, Platform sheet, document 13, document 26, document 30, project/KIT_V9_1_CHANGES.md |
+| TC-PLT-003 | Appendix R, line 429 | Provisioning to Provisioned / Every service acknowledged its step / Owner invitation sent, tenant marked provisioned | Appendix O, document 12, document 13, document 26, document 32, project/KIT_V9_1_CHANGES.md |
+| TC-PLT-004 | Appendix R, line 430 | Provisioning to Failed / One service times out after retries / Saga halts, no further steps attempted | document 13, document 26, project/KIT_V9_1_CHANGES.md |
+| TC-PLT-005 | Appendix R, line 431 | Failed to Compensated / Reverse steps succeed / No schema, queue, or user left behind | Appendix W, Platform sheet, document 13, document 26, project/KIT_V9_1_CHANGES.md |
 | TC-PLT-006 | Appendix R, line 432 | Onboarding to Live / Academic year, campus, and owner account present / Tenant opened to all users, seeded password forced to change | Platform sheet, document 12, document 26, document 31 |
 | TC-PLT-011 | Appendix R, line 464 | Trialing to Expired / Trial end reached with no plan chosen / Tenant read-only, data retained and exportable | Platform sheet, document 31 |
 | TC-PLT-012 | Appendix R, line 465 | Requested to LimitChecked / Owner holds platform.subscriptions.change-plan / Usage snapshot taken against the target plan | Platform sheet, project/KIT_V9_1_CHANGES.md |
@@ -1072,46 +1092,57 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-PLT-024 | Appendix R, line 504 | ExportReady to DeletionScheduled / Signed confirmation from the tenant owner / Deletion scheduled, countdown visible to the owner | Platform sheet, document 27 |
 | TC-PLT-025 | Appendix R, line 505 | DeletionScheduled to ReadOnly / Cancellation inside the cooling-off period / Nothing deleted, tenant stays read-only | Platform sheet, document 12, document 13, document 27 |
 | TC-PLT-026 | Appendix R, line 506 | DeletionExecuted to Certified / All service schemas and files removed / Certificate issued with scope, timestamp, and operator | Ai sheet, Platform sheet, document 12, document 13, document 25, document 27, document 31 |
-| TC-PLT-101 | Platform sheet, line 2332 | Region change refused with PLATFORM_RESIDENCY_VIOLATION; every storage location of a tenant in its region (BR-PLT-004) / Integration | document 26, document 27 |
-| TC-PLT-102 | Platform sheet, line 2333 | Upgrade prorates by day and applies at once; downgrade waits for renewal and deletes nothing (REQ-PLT-010) / Integration | document 20 |
-| TC-PLT-103 | Platform sheet, line 2334 | Active-student billing count with a day-16 joiner counts 0.5; a leaver counts for the month (REQ-PLT-009, the Open Question 30 default; open point 9)… | document 03, Finance sheet, Platform sheet, document 18, document 20 |
-| TC-PLT-104 | Platform sheet, line 2335 | Dunning reminders at 7, 14, 30 days and read-only at 30 with export still answering (REQ-PLT-013) / Integration with the fake clock | Platform sheet, document 20 |
-| TC-PLT-105 | Platform sheet, line 2336 | A flag at 20% rollout across 100 tenants gives 15 to 25 enabled and a stable answer per tenant (REQ-PLT-014) / Unit | document 20 |
-| TC-PLT-106 | Platform sheet, line 2337 | Custom domain verified and resolving within 15 minutes with a valid certificate; unverified host never resolves (REQ-PLT-015) / Integration | document 20 |
-| TC-PLT-107 | Platform sheet, line 2338 | "Powered by" hidden only when the plan allows and removal is purchased (REQ-PLT-016) / Integration | document 20 |
-| TC-PLT-108 | Platform sheet, line 2339 | Release note excludes modules the tenant has off (REQ-PLT-018) / Integration | document 20 |
-| TC-PLT-109 | Platform sheet, line 2340 | Ticket SLA and escalation chain per tier (REQ-PLT-019, REQ-PLT-020) / Integration with the fake clock | document 20 |
-| TC-PLT-110 | Platform sheet, line 2341 | Health score drop opens a ticket naming the metric (REQ-PLT-021) / Integration | document 20 |
-| TC-PLT-111 | Platform sheet, line 2342 | Setting change at campus scope records both values, scope and actor; Security group requires a reason (REQ-PLT-024) / Integration | document 20 |
-| TC-PLT-112 | Platform sheet, line 2343 | Terminology override appears in a report card and a push notification with zero old terms (REQ-PLT-026) / End to end | document 20 |
-| TC-PLT-113 | Platform sheet, line 2344 | Legal document version 3 requires one acceptance and records it (REQ-PLT-033) / Integration | document 20, document 27 |
-| TC-PLT-114 | Platform sheet, line 2345 | Module off hides navigation and the module's endpoints refuse (REQ-PLT-035) / End to end | document 20 |
-| TC-PLT-115 | Platform sheet, line 2346 | Quota breach returns 402 PLATFORM_PLAN_LIMIT_REACHED with usage and upgrade action, never 429 (REQ-PLT-032) / Integration | document 20 |
-| TC-PLT-116 | Platform sheet, line 2347 | Usage event delivered twice counts once; a back-dated correction supersedes and is audited (BR-PLT-005) / Integration | none |
-| TC-PLT-117 | Platform sheet, line 2348 | Every consumer of section 7.2 delivered twice changes nothing the second time / Integration, TC-TST-203 generator | none |
-| TC-PLT-118 | Platform sheet, line 2349 | Operator cross-tenant list writes one tenant-filter-bypassed audit entry and a tenant user cannot set the operator flag / Integration | none |
-| TC-PLT-119 | Platform sheet, line 2350 | Tenants.GetConnectionOverride returns a secret reference only and refuses a caller without the tenancy scope / Contract | none |
-| TC-PLT-120 | Platform sheet, line 2351 | Query budgets of 21-performance-engineering.md §3.2 and the five additional paths of section 12 / QueryBudget.Tests | none |
-| TC-PLT-121 | Platform sheet, line 2352 | Maintenance window activation returns 503 for the tenant while health routes answer and other tenants are unaffected / Integration with the Gateway | none |
-| TC-PLT-122 | Platform sheet, line 2353 | Auto-replay re-sends a transient parked message once its dependency is healthy and never a permanent one, stops after three automatic replays, never… | Platform sheet, document 11, document 20 |
-| TC-PLT-123 | Platform sheet, line 2354 | Sandbox: live key refused, fake providers wired, reset once per hour, deletion after 90 idle days / Integration | none |
-| TC-PLT-124 | Platform sheet, line 2355 | Payment callback received twice records one payment / Integration | none |
-| TC-PLT-125 | Platform sheet, line 2356 | Every endpoint in section 5 has an OpenAPI operation with x-nibras-permission from Appendix B, Self or Pipeline / Contract, TC-TST-201 generator | Platform sheet |
+| TC-PLT-101 | Platform sheet, line 2383 | Region change refused with PLATFORM_RESIDENCY_VIOLATION; every storage location of a tenant in its region (BR-PLT-004) / Integration | document 26, document 27 |
+| TC-PLT-102 | Platform sheet, line 2384 | Upgrade prorates by day and applies at once; downgrade waits for renewal and deletes nothing (REQ-PLT-010) / Integration | document 20 |
+| TC-PLT-103 | Platform sheet, line 2385 | Billing run end to end: School's October 2026 enrolment and withdrawal events reach ref_student_enrolment_periods through StudentEnrolmentPeriodConsu… | document 03, Finance sheet, Platform sheet, document 20 |
+| TC-PLT-104 | Platform sheet, line 2386 | Dunning reminders at 7, 14, 30 days and read-only at 30 with export still answering (REQ-PLT-013) / Integration with the fake clock | Platform sheet, document 20 |
+| TC-PLT-105 | Platform sheet, line 2387 | A flag at 20% rollout across 100 tenants gives 15 to 25 enabled and a stable answer per tenant (REQ-PLT-014) / Unit | document 20 |
+| TC-PLT-106 | Platform sheet, line 2388 | Custom domain verified and resolving within 15 minutes with a valid certificate; unverified host never resolves (REQ-PLT-015) / Integration | document 20 |
+| TC-PLT-107 | Platform sheet, line 2389 | "Powered by" hidden only when the plan allows and removal is purchased (REQ-PLT-016) / Integration | document 20 |
+| TC-PLT-108 | Platform sheet, line 2390 | Release note excludes modules the tenant has off (REQ-PLT-018) / Integration | document 20 |
+| TC-PLT-109 | Platform sheet, line 2391 | Ticket SLA and escalation chain per tier (REQ-PLT-019, REQ-PLT-020) / Integration with the fake clock | document 20 |
+| TC-PLT-110 | Platform sheet, line 2392 | Health score drop opens a ticket naming the metric (REQ-PLT-021) / Integration | document 20 |
+| TC-PLT-111 | Platform sheet, line 2393 | Setting change at campus scope records both values, scope and actor; Security group requires a reason (REQ-PLT-024) / Integration | document 20 |
+| TC-PLT-112 | Platform sheet, line 2394 | Terminology override appears in a report card and a push notification with zero old terms (REQ-PLT-026) / End to end | document 20 |
+| TC-PLT-113 | Platform sheet, line 2395 | Legal document version 3 requires one acceptance and records it (REQ-PLT-033) / Integration | document 20, document 27 |
+| TC-PLT-114 | Platform sheet, line 2396 | Module off hides navigation and the module's endpoints refuse (REQ-PLT-035) / End to end | document 20 |
+| TC-PLT-115 | Platform sheet, line 2397 | Quota breach returns 402 PLATFORM_PLAN_LIMIT_REACHED with usage and upgrade action, never 429 (REQ-PLT-032) / Integration | document 20 |
+| TC-PLT-116 | Platform sheet, line 2398 | Usage event delivered twice counts once; a back-dated correction supersedes and is audited (BR-PLT-005) / Integration | none |
+| TC-PLT-117 | Platform sheet, line 2399 | Every consumer of section 7.2 delivered twice changes nothing the second time / Integration, TC-TST-203 generator | none |
+| TC-PLT-118 | Platform sheet, line 2400 | Operator cross-tenant list writes one tenant-filter-bypassed audit entry and a tenant user cannot set the operator flag / Integration | none |
+| TC-PLT-119 | Platform sheet, line 2401 | Tenants.GetConnectionOverride returns a secret reference only and refuses a caller without the tenancy scope / Contract | none |
+| TC-PLT-120 | Platform sheet, line 2402 | Query budgets of 21-performance-engineering.md §3.2 and the five additional paths of section 12 / QueryBudget.Tests | none |
+| TC-PLT-121 | Platform sheet, line 2403 | Maintenance window activation returns 503 for the tenant while health routes answer and other tenants are unaffected / Integration with the Gateway | none |
+| TC-PLT-122 | Platform sheet, line 2404 | Auto-replay re-sends a transient parked message once its dependency is healthy and never a permanent one, stops after three automatic replays, never… | Platform sheet, document 11, document 20 |
+| TC-PLT-123 | Platform sheet, line 2405 | Sandbox: live key refused, fake providers wired, reset once per hour, deletion after 90 idle days / Integration | none |
+| TC-PLT-124 | Platform sheet, line 2406 | Payment callback received twice records one payment / Integration | none |
+| TC-PLT-125 | Platform sheet, line 2407 | Every endpoint in section 5 has an OpenAPI operation with x-nibras-permission from Appendix B, Self or Pipeline / Contract, TC-TST-201 generator | Platform sheet |
+| TC-PLT-126 | Platform sheet, line 2408 | Given October 2026 (31 days), 1,240 students enrolled all month and 12 enrolled on 2026-10-28, when the count is computed, then it is 1,240 + 48 ÷ 31… | Platform sheet, document 20 |
+| TC-PLT-127 | Platform sheet, line 2409 | Given the same month with 6 of the 1,240 withdrawing on 2026-10-03, when the count is computed, then it stays 1,241.55: a leaver counts in full for t… | none |
+| TC-PLT-128 | Platform sheet, line 2410 | Given September 2026 (30 days) and one student enrolled on 2026-09-16, when the count is computed, then it is 15 ÷ 30 = 0.50 (BR-FIN-017 example 3, R… | document 20 |
+| TC-PLT-129 | Platform sheet, line 2411 | Given February 2027 (28 days), one student enrolled on 2027-02-15 and one on 2027-02-28, when the count is computed, then it is 15 ÷ 28 = 0.5357…, ro… | none |
+| TC-PLT-130 | Platform sheet, line 2412 | Given October 2026 and one student enrolled on 2026-10-10 who withdraws on 2026-10-20, when the count is computed, then it is 22 ÷ 31 = 0.7096…, roun… | Platform sheet |
+| TC-PLT-131 | Platform sheet, line 2413 | Given a 31-day October cycle and a downgrade requested on 2026-10-17 from SAR 6,200.00 to SAR 3,100.00, when the change is processed, then October st… | Platform sheet, document 20 |
 | TC-PLT-550 | document 13, line 184 | Deadline passed while retrying / Alert raised, retries continue, state visible as TimedOut | none |
 | TC-PLT-551 | document 13, line 242 | Export fails for one service / No manifest, no signature possible, service named | none |
 | TC-PLT-552 | document 13, line 248 | Export requested while suspended / Completes (BR-PLT-006, second example) | none |
-| TC-PLT-780 | document 13, line 181 | Step 3 fails / Fan-out deprovisioned, no invitation exists, no welcome sent | Platform sheet, document 13, document 30 |
+| TC-PLT-780 | document 13, line 181 | Step 3 fails / Fan-out deprovisioned, no invitation exists, no welcome sent | Platform sheet, document 13 |
 | TC-PLT-781 | document 13, line 182 | Step 4 fails / Invitation revoked, schemas dropped, tenant row in Compensated | none |
-| TC-PLT-782 | document 13, line 183 | Step 5 or 6 fails / Steps 2 to 4 reversed in order, journal complete | Platform sheet, document 13, document 30 |
-| TC-PLT-801 | Appendix W, line 33 | 15 / Sales-ready demo mode with one-click reset / "Show it to the next school in ten minutes" / 1 / 1 surfaces / 1 / Platform | Appendix O, Appendix W, Platform sheet, document 32, project/DECISIONS/0019-brief-v9-1-corrections.md, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md, project/KIT_V9_1_CHANGES.md |
-| TC-PLT-802 | Appendix W, line 47 | 29 / Smart defaults engine at onboarding / "It already knew how our year works" / 1 / 3 drafts / 1 / Platform | Appendix O, Appendix P, Appendix W, document 02, Platform sheet, document 30, document 32, project/KIT_V9_1_CHANGES.md |
+| TC-PLT-782 | document 13, line 183 | Step 5 or 6 fails / Steps 2 to 4 reversed in order, journal complete | Platform sheet, document 13 |
+| TC-PLT-783 | document 13, line 185 | TenantProvisioned reply delivered twice / Second reply ignored, step count unchanged | document 13, document 30 |
+| TC-PLT-784 | document 13, line 186 | Compensation runs twice / Second run is a no-op on every service | document 13, document 30 |
+| TC-PLT-785 | document 13, line 246 | DeleteTenantData delivered twice / Second delivery replies the stored counts, deletes nothing further | document 13 |
+| TC-PLT-786 | document 13, line 187 | Platform Api killed after 9 of 19 replies / On restart the saga resumes from persisted Steps; no service provisions twice (test method WorkerKilledMi… | document 13 |
+| TC-PLT-787 | document 13, line 247 | Platform Api killed during step 6 / Resume continues with the unconfirmed services only (test method WorkerKilledMidDeletion_Resumes_NoDoubleCount) | document 13 |
+| TC-PLT-801 | Appendix W, line 33 | 15 / Sales-ready demo mode with one-click reset / "Show it to the next school in ten minutes" / 1 / 1 surfaces / 1 / Platform | Appendix O, Appendix W, Platform sheet, document 08, document 32, project/DECISIONS/0019-brief-v9-1-corrections.md, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md, project/KIT_V9_1_CHANGES.md |
+| TC-PLT-802 | Appendix W, line 47 | 29 / Smart defaults engine at onboarding / "It already knew how our year works" / 1 / 3 drafts / 1 / Platform | Appendix O, Appendix P, Appendix W, document 02, Platform sheet, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-PLT-803 | Appendix W, line 55 | 37 / Template exchange between schools / "We started from someone else's good work" / 1 / 1 surfaces / 2 / Platform | Appendix O, Appendix W, document 03, Platform sheet, document 08, document 20, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-PLT-804 | Appendix W, line 59 | 41 / Configuration as code / "We reviewed the change before it went live" / 1 / 1 surfaces / 1 / Platform | Appendix O, Appendix W, document 03, Platform sheet, document 08, document 20, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-PLT-805 | Appendix W, line 28 | 10 / Configurable without code / "We changed it ourselves" / 1 / 1 surfaces / 1 / Platform | Appendix O, Appendix W, Platform sheet, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md, project/KIT_V9_1_CHANGES.md |
-| TC-PLT-901 | document 08, line 579 | Platform console / Operator Today / /today / bento-grid, card, stat-tile, list, sparkline, as-of-badge / 7 / platform.tenants.view / no / U.11 | Appendix Q, document 03, Platform sheet, document 20 |
-| TC-PLT-902 | document 08, line 581 | Platform console / Provisioning wizard / /tenants/new / stepper, form-field, select, key-value (inferred settings), progress-ring / 7 / platform.tena… | Appendix Q, document 03, document 20 |
-| TC-PLT-903 | document 08, line 582 | Platform console / Provisioning progress / /tenants/:tenantId/provisioning / progress-ring, timeline, error-state / 7 / platform.tenants.view / no /… | Appendix Q, document 03, document 20, document 27 |
-| TC-PLT-904 | document 08, line 583 | Platform console / Tenant detail / /tenants/:tenantId / tabs, key-value, stat-tile, switch (flags), dialog (suspend), undo-sheet / 7 / platform.tenan… | Appendix Q, document 03, Platform sheet, document 20 |
+| TC-PLT-901 | document 08, line 583 | Platform console / Operator Today / /today / bento-grid, card, stat-tile, list, sparkline, as-of-badge / 7 / platform.tenants.view / no / U.11 | Appendix Q, document 03, Platform sheet, document 20 |
+| TC-PLT-902 | document 08, line 585 | Platform console / Provisioning wizard / /tenants/new / stepper, form-field, select, key-value (inferred settings), progress-ring / 7 / platform.tena… | Appendix Q, document 03, document 20 |
+| TC-PLT-903 | document 08, line 586 | Platform console / Provisioning progress / /tenants/:tenantId/provisioning / progress-ring, timeline, error-state / 7 / platform.tenants.view / no /… | Appendix Q, document 03, document 20, document 27 |
+| TC-PLT-904 | document 08, line 587 | Platform console / Tenant detail / /tenants/:tenantId / tabs, key-value, stat-tile, switch (flags), dialog (suspend), undo-sheet / 7 / platform.tenan… | Appendix Q, document 03, Platform sheet, document 20 |
 | TC-PRV-001 | Appendix R, line 1864 | Received to IdentityVerified / Requester is the subject, or a guardian with parental access / Request accepted and the fan-out started | Platform sheet, document 12, document 27, document 31 |
 | TC-PRV-002 | Appendix R, line 1865 | Received to Refused / Identity cannot be proven / Refused with the reason, attempt audited | Platform sheet |
 | TC-PRV-003 | Appendix R, line 1866 | Collecting to PartiallyCollected / One service does not answer in time / Missing service named, no partial package built | Platform sheet |
@@ -1124,60 +1155,60 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-PRV-014 | Appendix R, line 1907 | Approved to Generating / Approver differs from the requester / Job queued with the approval recorded on the manifest | Documents sheet, document 12 |
 | TC-PRV-015 | Appendix R, line 1908 | Ready to Downloaded / Inside the window and by the requester only / File served once, watermarked with the requester identity | Documents sheet, document 12 |
 | TC-PRV-016 | Appendix R, line 1909 | Ready to LinkExpired / Window passed / Link dead and the temporary file deleted | Documents sheet, document 18, document 31 |
-| TC-PRV-020 | document 12, line 908 | Given a school policy with quiet hours from 20:00 to 06:00 and the clock pinned to 21:00 in the tenant time zone, when a teacher sends a non-urgent m… | document 12 |
-| TC-PRV-021 | document 12, line 621 | Student-to-student messaging off by default / Communication / Tenant setting defaults to off; Student template must not hold communication.messages.c… | document 27 |
-| TC-PRV-022 | document 12, line 622 | No public profiles, no student search by outsiders / School, Gateway / No anonymous route returns a student; directory search requires school.student… | document 27 |
-| TC-PRV-023 | document 12, line 909 | Given a guardian who reports a message, when the report is saved, then the thread locks with COMMUNICATION_MESSAGE_REPORTED_LOCK and the concern reac… | document 12, document 27 |
-| TC-PRV-024 | document 12, line 625 | Optional, transparent keyword flagging / Communication, alert through Notification / Tenant setting, disclosed in the privacy notice; a flag reaches… | document 27 |
-| TC-PRV-025 | document 12, line 910 | Given a safeguarding officer who reads 3 threads under oversight, when the principal opens the access log, then 3 access entries name the officer, th… | document 12, document 27 |
-| TC-PRV-026 | document 12, line 911 | Given a student whose media consent is withdrawn, when school.student.profile-updated.v1 naming the consent field is consumed, then within 1 minute t… | document 12, document 27 |
-| TC-PRV-027 | document 12, line 629 | AI never profiles a child in ways a guardian or the school cannot see and challenge / Ai, Reporting / Every early-warning flag carries its factors an… | document 25, document 27 |
-| TC-PRV-028 | document 12, line 687 | Who may consent / A guardian with parental access and no custody restriction; a student above the tenant's configured age for their own account setti… | document 12 |
-| TC-PRV-029 | document 12, line 632 | Flagged content never deleted by a routine retention job while a case is open / Communication, Wellbeing, Platform retention / Retention job skips ro… | document 12, document 27 |
-| TC-PRV-040 | document 12, line 912 | Given an entity property classified Sensitive or S, when a cache registration for it is built, then the architecture test fails naming the property;… | School sheet, document 12, document 18 |
+| TC-PRV-020 | document 12, line 918 | Given a school policy with quiet hours from 20:00 to 06:00 and the clock pinned to 21:00 in the tenant time zone, when a teacher sends a non-urgent m… | document 12 |
+| TC-PRV-021 | document 12, line 622 | Student-to-student messaging off by default / Communication / Tenant setting defaults to off; Student template must not hold communication.messages.c… | document 27 |
+| TC-PRV-022 | document 12, line 623 | No public profiles, no student search by outsiders / School, Gateway / No anonymous route returns a student; directory search requires school.student… | document 27 |
+| TC-PRV-023 | document 12, line 919 | Given a guardian who reports a message, when the report is saved, then the thread locks with COMMUNICATION_MESSAGE_REPORTED_LOCK and the concern reac… | document 12, document 27 |
+| TC-PRV-024 | document 12, line 626 | Optional, transparent keyword flagging / Communication, alert through Notification / Tenant setting, disclosed in the privacy notice; a flag reaches… | document 27 |
+| TC-PRV-025 | document 12, line 920 | Given a safeguarding officer who reads 3 threads under oversight, when the principal opens the access log, then 3 access entries name the officer, th… | document 12, document 27 |
+| TC-PRV-026 | document 12, line 921 | Given a student whose media consent is withdrawn, when school.student.profile-updated.v1 naming the consent field is consumed, then within 1 minute t… | document 12, document 27 |
+| TC-PRV-027 | document 12, line 630 | AI never profiles a child in ways a guardian or the school cannot see and challenge / Ai, Reporting / Every early-warning flag carries its factors an… | document 25, document 27 |
+| TC-PRV-028 | document 12, line 688 | Who may consent / A guardian with parental access and no custody restriction; a student above the tenant's configured age for their own account setti… | document 12 |
+| TC-PRV-029 | document 12, line 633 | Flagged content never deleted by a routine retention job while a case is open / Communication, Wellbeing, Platform retention / Retention job skips ro… | document 12, document 27 |
+| TC-PRV-040 | document 12, line 922 | Given an entity property classified Sensitive or S, when a cache registration for it is built, then the architecture test fails naming the property;… | School sheet, document 12, document 18 |
 | TC-PRV-041 | Ai sheet, line 886 | The log scrubber corpus finds no prompt, output or chunk text in Ai logs / Integration | Ai sheet, School sheet, document 12 |
-| TC-PRV-042 | document 12, line 913 | Given an export whose column set includes a Sensitive field, when it is requested, then it routes through WF-PRV-02 with a reason, a watermark and th… | document 12 |
-| TC-PRV-043 | document 12, line 914 | Given a mobile device holding Confidential rows for 2 sections, when the user loses the permission for 1 section, then that section's rows are purged… | document 12 |
+| TC-PRV-042 | document 12, line 923 | Given an export whose column set includes a Sensitive field, when it is requested, then it routes through WF-PRV-02 with a reason, a watermark and th… | document 12 |
+| TC-PRV-043 | document 12, line 924 | Given a mobile device holding Confidential rows for 2 sections, when the user loses the permission for 1 section, then that section's rows are purged… | document 12 |
 | TC-PRV-044 | Ai sheet, line 885 | The index refuses Sensitive and S / Integration | Ai sheet, document 12, project/KIT_V9_1_CHANGES.md |
-| TC-PRV-045 | document 12, line 915 | Given the projection contract per class, when Reporting consumes Wellbeing and Finance events, then S data arrives as counts only and Sensitive data… | document 12 |
+| TC-PRV-045 | document 12, line 925 | Given the projection contract per class, when Reporting consumes Wellbeing and Finance events, then S data arrives as counts only and Sensitive data… | document 12 |
 | TC-PRV-046 | document 12, line 282 | T-OPS-05 / Visitor photo / Information disclosure / Visitor photos retained beyond 2 years / low / med / Retention job on visitor records; identity r… | Operations sheet, document 12 |
-| TC-PRV-047 | document 12, line 916 | Given every notification template rendered with seeded Sensitive and S data, when the body and the push preview are read, then they contain 0 sensiti… | document 12 |
-| TC-PRV-048 | document 12, line 917 | Given every event contract in Appendix E, when its payload schema is checked against the Appendix J classes, then 0 Sensitive or S fields are present… | School sheet, document 12 |
-| TC-PRV-049 | document 12, line 918 | Given the route table of every service and of both backends-for-frontends, when paths and query strings are checked, then they carry identifiers only… | document 12 |
-| TC-PRV-050 | document 12, line 919 | Given a report grouping of 9 students, when it is rendered, then the aggregate is suppressed; with 10 students it is shown / §6.2 handling rules | document 12, document 18 |
-| TC-PRV-051 | document 12, line 920 | Given an entity property without a classification attribute, when its migration is built, then the architecture test fails naming the entity and the… | School sheet, document 12, document 18 |
-| TC-PRV-052 | document 12, line 921 | Given backups of 2 tenants, when one tenant's backup is opened with the other tenant's data key, then it does not decrypt, and it restores with its o… | document 12, document 18 |
+| TC-PRV-047 | document 12, line 926 | Given every notification template rendered with seeded Sensitive and S data, when the body and the push preview are read, then they contain 0 sensiti… | document 12 |
+| TC-PRV-048 | document 12, line 927 | Given every event contract in Appendix E, when its payload schema is checked against the Appendix J classes, then 0 Sensitive or S fields are present… | School sheet, document 12 |
+| TC-PRV-049 | document 12, line 928 | Given the route table of every service and of both backends-for-frontends, when paths and query strings are checked, then they carry identifiers only… | document 12 |
+| TC-PRV-050 | document 12, line 929 | Given a report grouping of 9 students, when it is rendered, then the aggregate is suppressed; with 10 students it is shown / §6.2 handling rules | document 12, document 18 |
+| TC-PRV-051 | document 12, line 930 | Given an entity property without a classification attribute, when its migration is built, then the architecture test fails naming the entity and the… | School sheet, document 12, document 18 |
+| TC-PRV-052 | document 12, line 931 | Given backups of 2 tenants, when one tenant's backup is opened with the other tenant's data key, then it does not decrypt, and it restores with its o… | document 12, document 18 |
 | TC-PRV-060 | document 12, line 55 | PRIVACY / In-app account deletion request; no third-party tracking SDKs; privacy labels accurate / Master brief Section 18 store compliance | document 03, document 09, document 12, document 20, document 27 |
-| TC-PRV-061 | document 12, line 685 | Consent texts are versioned / A consent record stores the text version, decision, actor and timestamp (Appendix J consent row); a new version re-asks… | document 27 |
-| TC-PRV-062 | document 12, line 686 | Consent categories / Photo and media; data sharing with a named sub-processor; external AI provider (rung 4); optional keyword flagging disclosure; m… | document 27 |
-| TC-PRV-063 | document 12, line 689 | Privacy notices inside the product / Arabic and English, per tenant, per country plug-in; shown at first sign-in and on change / Platform | document 12, document 27 |
-| TC-PRV-064 | document 12, line 922 | Given a student session on web and on mobile, when outbound requests are captured, then 0 reach an analytics endpoint; a staff session reaches only t… | document 12, document 27 |
-| TC-PRV-065 | document 12, line 697 | Correction / The owning service's edit with audit before-and-after; a guardian raises it as a request type in WF-RQS-01 / Handled as a service reques… | document 27 |
-| TC-PRV-066 | document 12, line 701 | Objection to a sub-processor / Disable the feature that uses it (master brief Section 33) / Immediate | document 12, document 27 |
-| TC-PRV-067 | document 12, line 703 | Guardian link removal / school.guardians.unlink (elevated) with WF-IDN-02 reversal / Immediate, propagated by identity.permissions.changed.v1 | none |
-| TC-PRV-068 | document 12, line 711 | Attendance, notifications, messages, audit / PartitionMaintenanceJob monthly / Each owning service's worker or job host / Detach the month partition;… | Audit sheet, document 27 |
-| TC-PRV-069 | document 12, line 712 | Student academic record / LeaverRetentionJob monthly / School, Assessment / Archive read-only at leaving; anonymize at 10 years / Data Quality Center | document 27 |
-| TC-PRV-070 | document 12, line 923 | Given 2 closed wellbeing records of students who left 7 years and 1 day ago and 7 years less 1 day ago, when WellbeingRetentionJob runs, then the fir… | document 12, document 27 |
-| TC-PRV-071 | document 12, line 714 | Behavior incidents / LeaverRetentionJob monthly / Behavior / Anonymize at leaving plus 3 years / Data Quality Center | document 27 |
-| TC-PRV-072 | document 12, line 715 | Financial documents / FinanceArchiveJob yearly / Finance / Archive read-only at 10 years, never delete a posted document / Data Quality Center | document 27 |
-| TC-PRV-073 | document 12, line 716 | Notification delivery log, logs, traces, metrics / Platform retention settings drive the observability stack / Platform / 90 days, 30 days, 7 days, 1… | document 27 |
-| TC-PRV-074 | document 12, line 717 | Backups / Backup expiry / Platform operations / 35 days point-in-time plus 12 monthly; a hold pins the set / Restore drill WF-INF-03 | document 27 |
-| TC-PRV-075 | document 12, line 719 | Identity numbers / LeaverRetentionJob, first step, before archiving / School / Destroy the identifier before archiving / Data Quality Center | document 27 |
-| TC-PRV-076 | document 12, line 924 | Given a legal hold placed on a student, when it is saved, then the hold record names who set it, when, and the subject, and 1 audit entry records the… | document 12, document 27 |
-| TC-PRV-077 | document 12, line 727 | A hold suspends every retention job for the subject across services / Retention jobs consult the hold list before each partition detach or row action… | document 27 |
-| TC-PRV-078 | document 12, line 730 | Requests from law enforcement are answered by a named person against a written process, never by an engineer with database access, and are recorded /… | document 27 |
-| TC-PRV-079 | document 12, line 925 | Given a deployment with the SMS and payment adapters enabled and the external AI adapter disabled, when the sub-processor list is published, then it… | document 12, document 27 |
-| TC-PRV-080 | document 12, line 926 | Given a tenant with 12 modules and 3 sub-processors enabled on the day of export, when the impact assessment is exported, then its pre-filled section… | document 12, document 27 |
-| TC-PRV-081 | document 12, line 786 | Staging anonymization / Names, contacts, identifiers and free text replaced; media never copied; fails closed if a table has no rule / Staging pipeli… | none |
+| TC-PRV-061 | document 12, line 686 | Consent texts are versioned / A consent record stores the text version, decision, actor and timestamp (Appendix J consent row); a new version re-asks… | document 27 |
+| TC-PRV-062 | document 12, line 687 | Consent categories / Photo and media; data sharing with a named sub-processor; external AI provider (rung 4); optional keyword flagging disclosure; m… | document 27 |
+| TC-PRV-063 | document 12, line 690 | Privacy notices inside the product / Arabic and English, per tenant, per country plug-in; shown at first sign-in and on change / Platform | document 12, document 27 |
+| TC-PRV-064 | document 12, line 932 | Given a student session on web and on mobile, when outbound requests are captured, then 0 reach an analytics endpoint; a staff session reaches only t… | document 12, document 27 |
+| TC-PRV-065 | document 12, line 698 | Correction / The owning service's edit with audit before-and-after; a guardian raises it as a request type in WF-RQS-01 / Handled as a service reques… | document 27 |
+| TC-PRV-066 | document 12, line 702 | Objection to a sub-processor / Disable the feature that uses it (master brief Section 33) / Immediate | document 12, document 27 |
+| TC-PRV-067 | document 12, line 704 | Guardian link removal / school.guardians.unlink (elevated) with WF-IDN-02 reversal / Immediate, propagated by identity.permissions.changed.v1 | none |
+| TC-PRV-068 | document 12, line 712 | Attendance, notifications, messages, audit / PartitionMaintenanceJob monthly / Each owning service's worker or job host / Detach the month partition;… | Audit sheet, document 27 |
+| TC-PRV-069 | document 12, line 713 | Student academic record / LeaverRetentionJob monthly / School, Assessment / Archive read-only at leaving; anonymize at 10 years / Data Quality Center | document 27 |
+| TC-PRV-070 | document 12, line 933 | Given 2 closed wellbeing records of students who left 7 years and 1 day ago and 7 years less 1 day ago, when WellbeingRetentionJob runs, then the fir… | document 12, document 27 |
+| TC-PRV-071 | document 12, line 715 | Behavior incidents / LeaverRetentionJob monthly / Behavior / Anonymize at leaving plus 3 years / Data Quality Center | document 27 |
+| TC-PRV-072 | document 12, line 716 | Financial documents / FinanceArchiveJob yearly / Finance / Archive read-only at 10 years, never delete a posted document / Data Quality Center | document 27 |
+| TC-PRV-073 | document 12, line 717 | Notification delivery log, logs, traces, metrics / Platform retention settings drive the observability stack / Platform / 90 days, 30 days, 7 days, 1… | document 27 |
+| TC-PRV-074 | document 12, line 718 | Backups / Backup expiry / Platform operations / 35 days point-in-time plus 12 monthly; a hold pins the set / Restore drill WF-INF-03 | document 27 |
+| TC-PRV-075 | document 12, line 720 | Identity numbers / LeaverRetentionJob, first step, before archiving / School / Destroy the identifier before archiving / Data Quality Center | document 27 |
+| TC-PRV-076 | document 12, line 934 | Given a legal hold placed on a student, when it is saved, then the hold record names who set it, when, and the subject, and 1 audit entry records the… | document 12, document 27 |
+| TC-PRV-077 | document 12, line 728 | A hold suspends every retention job for the subject across services / Retention jobs consult the hold list before each partition detach or row action… | document 27 |
+| TC-PRV-078 | document 12, line 731 | Requests from law enforcement are answered by a named person against a written process, never by an engineer with database access, and are recorded /… | document 27 |
+| TC-PRV-079 | document 12, line 935 | Given a deployment with the SMS and payment adapters enabled and the external AI adapter disabled, when the sub-processor list is published, then it… | document 12, document 27 |
+| TC-PRV-080 | document 12, line 936 | Given a tenant with 12 modules and 3 sub-processors enabled on the day of export, when the impact assessment is exported, then its pre-filled section… | document 12, document 27 |
+| TC-PRV-081 | document 12, line 787 | Staging anonymization / Names, contacts, identifiers and free text replaced; media never copied; fails closed if a table has no rule / Staging pipeli… | none |
 | TC-PRV-301 | Documents sheet, line 1237 | UAT / Export with national identity numbers needs approval and a reason, is watermarked, notifies the principal | Appendix Q, document 03, School sheet, document 08, document 10, document 12, document 20 |
-| TC-PRV-501 | document 08, line 685 | Parent / Guardian transparency / /parent/children/:studentId/transparency / timeline (reads by role and time), data-table (consents), progress-bar (r… | Appendix Q, document 02, Bff.Web sheet, document 12, document 27 |
+| TC-PRV-501 | document 08, line 691 | Parent / Guardian transparency / /parent/children/:studentId/transparency / timeline (reads by role and time), data-table (consents), progress-bar (r… | Appendix Q, document 02, Bff.Web sheet, document 12, document 27 |
 | TC-PRV-502 | School sheet, line 1216 | Media consent consulted at publishing time (REQ-SCH-034) / Integration | Appendix Q, document 03, document 08, document 12, document 20, document 27 |
-| TC-PRV-701 | document 08, line 785 | Counselor and nurse / Caseload export (refusal) / /care/cases / dialog (needs approval and reason; principal notified) / no-permission / documents.ex… | Appendix Q, document 12 |
-| TC-PRV-702 | document 12, line 927 | Given a counselor who read a child's wellbeing record twice, when the guardian opens the transparency panel, then 2 entries show the counselor's role… | Appendix Q, document 02, Bff.Web sheet, document 12, document 27 |
+| TC-PRV-701 | document 08, line 794 | Counselor and nurse / Caseload export (refusal) / /care/cases / dialog (needs approval and reason; principal notified) / no-permission / documents.ex… | Appendix Q, document 12 |
+| TC-PRV-702 | document 12, line 937 | Given a counselor who read a child's wellbeing record twice, when the guardian opens the transparency panel, then 2 entries show the counselor's role… | Appendix Q, document 02, Bff.Web sheet, document 12, document 27 |
 | TC-PRV-800 | document 27, line 199 | Nothing is used before acceptance / A user without acceptance of the current privacy policy reaches only the acceptance screen and sign-out | document 27 |
 | TC-PRV-801 | document 27, line 200 | Evidence export / GET /api/v1/platform/legal-acceptances with the keyset envelope, exportable by the owner | document 27 |
-| TC-PRV-901 | document 08, line 584 | Platform console / Tenant export and deletion / /tenants/:tenantId/lifecycle / stepper, dialog, badge (cooling-off), key-value / 7 / platform.tenants… | Appendix Q, document 03, Platform sheet, document 10, document 12, document 20, document 27 |
-| TC-PRV-902 | document 12, line 728 | A Wellbeing hold alerts the safeguarding officer; a tenant hold notifies both parties / Notification on hold placement | Appendix Q, document 03, Platform sheet, document 08, document 10, document 12, document 20, document 27 |
+| TC-PRV-901 | document 08, line 588 | Platform console / Tenant export and deletion / /tenants/:tenantId/lifecycle / stepper, dialog, badge (cooling-off), key-value / 7 / platform.tenants… | Appendix Q, document 03, Platform sheet, document 10, document 12, document 20, document 27 |
+| TC-PRV-902 | document 12, line 729 | A Wellbeing hold alerts the safeguarding officer; a tenant hold notifies both parties / Notification on hold placement | Appendix Q, document 03, Platform sheet, document 08, document 10, document 12, document 20, document 27 |
 | TC-RPT-001 | Appendix W, line 19 | 1 / Today dashboards where every card leads to an action / "I can see what needs me and do it here" / 1 / 1 surfaces / 1 / Reporting | Appendix O, Appendix Q, document 03, Reporting sheet, document 08, document 20, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
 | TC-RPT-002 | Appendix W, line 20 | 2 / Student 360 timeline filtered by the viewer's permissions / "The whole child, on one screen" / 1 / 1 surfaces / 1 / Bff.Web | Appendix O, document 03, Bff.Web sheet, Reporting sheet, document 20, document 32 |
 | TC-RPT-003 | Appendix W, line 22 | 4 / Early warning with explanation and an intervention / "I know who is slipping and what to do" / 2, degrades to rule thresholds / 2 suggests / 1 /… | Appendix O, document 03, Reporting sheet, document 20, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
@@ -1185,7 +1216,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-RPT-005 | Appendix W, line 39 | 21 / Inspection and accreditation readiness / "The evidence folder filled itself" / 1 / 1 surfaces / 2 / Reporting | Appendix O, document 03, Reporting sheet, document 08, document 20, document 32 |
 | TC-RPT-006 | Appendix W, line 43 | 25 / Morning brief per role / "I knew my day before I arrived" / 1, phrasing at 3 / 1 surfaces / 1 / Reporting | Appendix O, document 03, Reporting sheet, document 20, document 32 |
 | TC-RPT-007 | Appendix W, line 45 | 27 / Explain this number / "I could show the parent exactly why" / 1 / 1 surfaces / 1 / Reporting | Appendix O, Appendix P, document 02, document 03, Reporting sheet, document 08, document 20, document 32 |
-| TC-RPT-008 | Appendix W, line 46 | 28 / Because panel on every automated action / "It told me why, and I could disagree" / 1 / 1 surfaces / 1 / Reporting | Appendix O, Appendix P, document 02, document 03, Reporting sheet, document 08, document 14, document 17, document 20, document 30, document 32, project/KIT_V9_1_CHANGES.md |
+| TC-RPT-008 | Appendix W, line 46 | 28 / Because panel on every automated action / "It told me why, and I could disagree" / 1 / 1 surfaces / 1 / Reporting | Appendix O, Appendix P, document 02, document 03, Reporting sheet, document 08, document 14, document 17, document 20, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-RPT-102 | Reporting sheet, line 871 | UAT / Explain the attendance rate: records and scheme version | Appendix Q, Reporting sheet, document 08 |
 | TC-RPT-201 | Reporting sheet, line 872 | UAT / Homeroom card: absent today, excuses, flags, birthdays | Appendix Q, document 03, Bff.Web sheet, document 08, document 20 |
 | TC-RPT-202 | Reporting sheet, line 873 | UAT / Early-warning flag lists reasons and no bare score | Appendix Q, Reporting sheet, document 08 |
@@ -1206,7 +1237,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-RPT-324 | Reporting sheet, line 896 | Integration / A report over data with a blocking finding returns REPORTING_DATA_QUALITY_BLOCK with the findings | none |
 | TC-RPT-325 | Reporting sheet, line 897 | Integration / A schedule inside the rebuild window returns REPORTING_SCHEDULE_CONFLICT with the next window | none |
 | TC-RPT-326 | Reporting sheet, line 898 | Unit / Flag reasons equal the rules that fired, or the top linear contributions of the prediction, never another computation | Reporting sheet |
-| TC-RPT-327 | Reporting sheet, line 899 | Integration / Model stopped: flags still computed by rules and the panel names rung 1 (REQ-RPT-008) | document 20, document 30 |
+| TC-RPT-327 | Reporting sheet, line 899 | Integration / Model stopped: flags still computed by rules and the panel names rung 1 (REQ-RPT-008) | document 02, document 20, document 30 |
 | TC-RPT-328 | Reporting sheet, line 900 | Integration / No endpoint response contains a score field (REQ-RPT-007) | Reporting sheet, document 20 |
 | TC-RPT-329 | Reporting sheet, line 901 | Integration / No early-warning factor is a Wellbeing factor (T-RPT-04, with TC-SEC-263) | Reporting sheet |
 | TC-RPT-330 | Reporting sheet, line 902 | Integration / Override requires a reason, is shown to the next viewer, and suppresses re-raising for 14 days | none |
@@ -1232,7 +1263,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-RPT-350 | Reporting sheet, line 922 | Integration / Morning brief assembled by 05:30 campus time on a working day and not on a weekend of the campus work week | Reporting sheet |
 | TC-RPT-501 | Reporting sheet, line 874 | UAT / Parent's child card from Reporting read models | Appendix Q, Reporting sheet, document 08 |
 | TC-RQS-001 | Appendix R, line 1242 | Draft to Submitted / Requester role allowed by the request type and fee paid if required / Request numbered and routed by the assignment rule | Requests sheet, document 31 |
-| TC-RQS-002 | Appendix R, line 1243 | UnderReview to Approved / Every step of the chain satisfied in the configured order / Effect saga started with a correlation identifier | Appendix O, Requests sheet, document 13, document 17, document 30, project/KIT_V9_1_CHANGES.md |
+| TC-RQS-002 | Appendix R, line 1243 | UnderReview to Approved / Every step of the chain satisfied in the configured order / Effect saga started with a correlation identifier | Appendix O, Requests sheet, document 13, document 17, project/KIT_V9_1_CHANGES.md |
 | TC-RQS-003 | Appendix R, line 1244 | UnderReview to UnderReview / Approver leaves the school mid-chain / Item reassigned by delegation or escalation, never orphaned | Requests sheet |
 | TC-RQS-004 | Appendix R, line 1245 | InProgress to EffectFailed / Target service refuses the effect / Earlier steps compensated, failing step named to the requester | Requests sheet, document 13 |
 | TC-RQS-005 | Appendix R, line 1246 | Submitted to Expired / SLA and both escalations exhausted / Request expired, requester told why, analytics updated | Requests sheet |
@@ -1266,42 +1297,46 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-RQS-625 | Requests sheet, line 986 | A delegate sees the delegator's approvals and the decision records acting_for_user_id / Integration | none |
 | TC-RQS-626 | Requests sheet, line 987 | A sensitive answer read writes an audit entry in the same transaction and is encrypted at rest / Integration, Persistence/ | Requests sheet |
 | TC-RQS-627 | Requests sheet, line 988 | Every terminal state is reachable from every non-terminal state (document 13 section 5.2) / Unit, generated | none |
+| TC-RQS-780 | document 13, line 493 | Effect message delivered twice / No second fee (BR-RQS-006, third example, which RequestEffectSagaRulesTests also runs as a rule example) | document 13 |
+| TC-RQS-781 | document 13, line 497 | Requests Api killed after the effect outcome arrived / Resume sends the document step once (test method WorkerKilledAfterEffect_Resumes_NoDuplicateDo… | document 13 |
 | TC-SCD-001 | Appendix W, line 23 | 5 / Smart timetable with live conflict detection / "A term's work in an afternoon" / 1 / 1 surfaces / 1 / Scheduling | Appendix O, document 03, Scheduling sheet, document 08, document 20, document 32 |
-| TC-SCD-101 | Scheduling sheet, line 955 | TimetableConstraintRulesTests (BR-SCD-001): every Appendix S example as a theory row / Unit | Scheduling sheet |
-| TC-SCD-102 | Scheduling sheet, line 956 | ConsecutivePeriodRulesTests (BR-SCD-002), including the marked-break example / Unit | none |
-| TC-SCD-103 | Scheduling sheet, line 957 | PartTimeAvailabilityRulesTests (BR-SCD-003) / Unit | none |
-| TC-SCD-104 | Scheduling sheet, line 958 | CampusTravelTimeRulesTests (BR-SCD-004), including the directional and missing-pair edge cases / Unit | none |
-| TC-SCD-105 | Scheduling sheet, line 959 | CoverFairnessRulesTests (BR-SCD-005), property-based: ranking is a total order and the tie-break is deterministic / Unit | none |
-| TC-SCD-106 | Scheduling sheet, line 960 | TimetablePublishEffectiveDateRulesTests (BR-SCD-006): earliest allowed date named in the refusal / Unit and integration | Scheduling sheet |
-| TC-SCD-107 | Scheduling sheet, line 961 | RoomBookingRulesTests (BR-SCD-007): buffer overlap refused, later publish auto-cancels and names the version / Unit and integration | none |
-| TC-SCD-108 | Scheduling sheet, line 962 | HijriDisplayRulesTests (BR-L10N-003) / Unit | Scheduling sheet |
-| TC-SCD-109 | Scheduling sheet, line 963 | Two-week cycle: week B differs only where defined (REQ-SCD-001) / Integration | document 20 |
-| TC-SCD-110 | Scheduling sheet, line 964 | A solve of 40 sections and 60 teachers with 3 locked slots leaves them unchanged and stores a score (REQ-SCD-007) / Integration, Solver/ | document 20 |
-| TC-SCD-111 | Scheduling sheet, line 965 | A generated timetable has 0 hard violations and lists soft ones (REQ-SCD-002) / Integration | document 20 |
-| TC-SCD-112 | Scheduling sheet, line 966 | Cancelling a running solve ends cancelled within 2 s, keeps the best solution as a what-if copy, leaves the version Draft / Integration | Scheduling sheet |
-| TC-SCD-113 | Scheduling sheet, line 967 | Contradictory hard constraints fail with SCHEDULING_SOLVER_INFEASIBLE and a core naming them / Integration | Scheduling sheet |
-| TC-SCD-114 | Scheduling sheet, line 968 | A 1-second budget on a large problem fails with SCHEDULING_SOLVER_TIMEOUT or succeeds with optimal = false and the partial / Integration | none |
-| TC-SCD-115 | Scheduling sheet, line 969 | Progress reaches the hub at most once per second through every phase, and polling the job returns the same state / Integration | Scheduling sheet |
-| TC-SCD-116 | Scheduling sheet, line 970 | A second solve for the same tenant while one runs is 409 with runningJobId; another tenant's solve proceeds (T-SCD-02) / Integration | none |
-| TC-SCD-117 | Scheduling sheet, line 971 | Killing the worker mid-solve redelivers the command, restarts from the persisted hint, and writes entries once (WorkerKilledMidSolve_Resumes_NoDuplic… | Scheduling sheet |
-| TC-SCD-118 | Scheduling sheet, line 972 | Publishing with a room conflict is refused; with the override permission and a reason it publishes and the audit entry carries the reason (REQ-SCD-01… | Scheduling sheet, document 20 |
-| TC-SCD-119 | Scheduling sheet, line 973 | A new version published mid-term keeps 30 recorded sessions untouched (REQ-SCD-011) / Integration with Attendance's consumer contract | Scheduling sheet, document 20 |
-| TC-SCD-120 | Scheduling sheet, line 974 | A Ramadan schedule for 30 days changes period times and not the sequence (REQ-SCD-023) / Integration | Scheduling sheet, document 20 |
-| TC-SCD-121 | Scheduling sheet, line 975 | The iCal feed shows the next 5 school days; a rotated token returns 404 (REQ-SCD-012, T-SCD-01) / Integration | Scheduling sheet, document 20, document 30 |
-| TC-SCD-122 | Scheduling sheet, line 976 | A timetable change affecting 2 sections is published with only their entry ids (REQ-SCD-022) / Integration | document 20 |
-| TC-SCD-123 | Scheduling sheet, line 977 | Seating 120 candidates into 3 rooms of 40 with 1 invigilator each (REQ-SCD-018) / Integration | document 20 |
-| TC-SCD-124 | Scheduling sheet, line 978 | An exam clash is refused with SCHEDULING_EXAM_CLASH / Integration | none |
-| TC-SCD-125 | Scheduling sheet, line 979 | Calendar audience: a grade 7 parent does not see a grade 5 event; an RSVP increments by 1 (REQ-SCD-020) / Integration | document 20 |
-| TC-SCD-126 | Scheduling sheet, line 980 | Lesson notes visible to the substitute before the period (REQ-SCD-016) / Integration | document 20 |
-| TC-SCD-127 | Scheduling sheet, line 981 | Permission matrix for every endpoint in section 5 / Generated, PermissionMatrix.Tests | Scheduling sheet |
-| TC-SCD-128 | Scheduling sheet, line 982 | Tenant isolation for every endpoint, gRPC method, consumer and the solver command / Generated, TenantIsolation.Tests | none |
-| TC-SCD-129 | Scheduling sheet, line 983 | Deliver-twice for every consumer and command in section 7.2 / Integration | none |
-| TC-SCD-130 | Scheduling sheet, line 984 | CopyTimetableSkeleton delivered twice creates one skeleton; DeleteTimetableVersion twice is a no-op / Integration | none |
-| TC-SCD-131 | Scheduling sheet, line 985 | Every published V1 record matches Appendix E and its partition key / Contract | Scheduling sheet |
-| TC-SCD-132 | Scheduling sheet, line 986 | Query budgets for hot queries 1 to 10 / QueryBudget.Tests | Scheduling sheet |
-| TC-SCD-133 | Scheduling sheet, line 987 | Reconciliation repairs a corrupted ref_staff row and raises one data-quality issue / Integration | none |
-| TC-SCD-134 | Scheduling sheet, line 988 | hr.leave.cancelled.v1 after one covered period restores the rest and keeps the taught period attributed / Integration | Scheduling sheet |
-| TC-SCD-801 | Scheduling sheet, line 952 | Accepting the top suggestion assigns cover, notifies urgently, updates the timetable (Appendix Q) / End-to-end | Appendix Q, document 03, Scheduling sheet, document 08, document 20 |
+| TC-SCD-101 | Scheduling sheet, line 957 | TimetableConstraintRulesTests (BR-SCD-001): every Appendix S example as a theory row / Unit | Scheduling sheet |
+| TC-SCD-102 | Scheduling sheet, line 958 | ConsecutivePeriodRulesTests (BR-SCD-002), including the marked-break example / Unit | none |
+| TC-SCD-103 | Scheduling sheet, line 959 | PartTimeAvailabilityRulesTests (BR-SCD-003) / Unit | none |
+| TC-SCD-104 | Scheduling sheet, line 960 | CampusTravelTimeRulesTests (BR-SCD-004), including the directional and missing-pair edge cases / Unit | none |
+| TC-SCD-105 | Scheduling sheet, line 961 | CoverFairnessRulesTests (BR-SCD-005), property-based: ranking is a total order and the tie-break is deterministic / Unit | none |
+| TC-SCD-106 | Scheduling sheet, line 962 | TimetablePublishEffectiveDateRulesTests (BR-SCD-006): earliest allowed date named in the refusal / Unit and integration | Scheduling sheet |
+| TC-SCD-107 | Scheduling sheet, line 963 | RoomBookingRulesTests (BR-SCD-007): buffer overlap refused, later publish auto-cancels and names the version / Unit and integration | none |
+| TC-SCD-108 | Scheduling sheet, line 964 | HijriDisplayRulesTests (BR-L10N-003) / Unit | Scheduling sheet |
+| TC-SCD-109 | Scheduling sheet, line 965 | Two-week cycle: week B differs only where defined (REQ-SCD-001) / Integration | document 20 |
+| TC-SCD-110 | Scheduling sheet, line 966 | A solve of 40 sections and 60 teachers with 3 locked slots leaves them unchanged and stores a score (REQ-SCD-007) / Integration, Solver/ | document 20 |
+| TC-SCD-111 | Scheduling sheet, line 967 | A generated timetable has 0 hard violations and lists soft ones (REQ-SCD-002) / Integration | document 20 |
+| TC-SCD-112 | Scheduling sheet, line 968 | Cancelling a running solve ends cancelled within 2 s, keeps the best solution as a what-if copy, leaves the version Draft / Integration | Scheduling sheet |
+| TC-SCD-113 | Scheduling sheet, line 969 | Contradictory hard constraints fail with SCHEDULING_SOLVER_INFEASIBLE and a core naming them / Integration | Scheduling sheet |
+| TC-SCD-114 | Scheduling sheet, line 970 | A 1-second budget on a large problem fails with SCHEDULING_SOLVER_TIMEOUT or succeeds with optimal = false and the partial / Integration | none |
+| TC-SCD-115 | Scheduling sheet, line 971 | Progress reaches the hub at most once per second through every phase, and polling the job returns the same state / Integration | Scheduling sheet |
+| TC-SCD-116 | Scheduling sheet, line 972 | A second solve for the same tenant while one runs is 409 with runningJobId; another tenant's solve proceeds (T-SCD-02) / Integration | none |
+| TC-SCD-117 | Scheduling sheet, line 973 | Killing the worker mid-solve redelivers the command, restarts from the persisted hint, and writes entries once (WorkerKilledMidSolve_Resumes_NoDuplic… | Scheduling sheet |
+| TC-SCD-118 | Scheduling sheet, line 974 | Publishing with a room conflict is refused; with the override permission and a reason it publishes and the audit entry carries the reason (REQ-SCD-01… | Scheduling sheet, document 20 |
+| TC-SCD-119 | Scheduling sheet, line 975 | A new version published mid-term keeps 30 recorded sessions untouched (REQ-SCD-011) / Integration with Attendance's consumer contract | Scheduling sheet, document 20 |
+| TC-SCD-120 | Scheduling sheet, line 976 | A Ramadan schedule for 30 days changes period times and not the sequence (REQ-SCD-023) / Integration | Scheduling sheet, document 20 |
+| TC-SCD-121 | Scheduling sheet, line 977 | The iCal feed shows the next 5 school days; a rotated token returns 404 (REQ-SCD-012, T-SCD-01) / Integration | Scheduling sheet, document 20 |
+| TC-SCD-122 | Scheduling sheet, line 978 | A timetable change affecting 2 sections is published with only their entry ids (REQ-SCD-022) / Integration | document 20 |
+| TC-SCD-123 | Scheduling sheet, line 979 | Seating 120 candidates into 3 rooms of 40 with 1 invigilator each (REQ-SCD-018) / Integration | document 20 |
+| TC-SCD-124 | Scheduling sheet, line 980 | An exam clash is refused with SCHEDULING_EXAM_CLASH / Integration | none |
+| TC-SCD-125 | Scheduling sheet, line 981 | Calendar audience: a grade 7 parent does not see a grade 5 event; an RSVP increments by 1 (REQ-SCD-020) / Integration | document 20 |
+| TC-SCD-126 | Scheduling sheet, line 982 | Lesson notes visible to the substitute before the period (REQ-SCD-016) / Integration | document 20 |
+| TC-SCD-127 | Scheduling sheet, line 983 | Permission matrix for every endpoint in section 5 / Generated, PermissionMatrix.Tests | Scheduling sheet |
+| TC-SCD-128 | Scheduling sheet, line 984 | Tenant isolation for every endpoint, gRPC method, consumer and the solver command / Generated, TenantIsolation.Tests | none |
+| TC-SCD-129 | Scheduling sheet, line 985 | Deliver-twice for every consumer and command in section 7.2 / Integration | none |
+| TC-SCD-130 | Scheduling sheet, line 986 | CopyTimetableSkeleton delivered twice creates one skeleton; DeleteTimetableVersion twice is a no-op / Integration | none |
+| TC-SCD-131 | Scheduling sheet, line 987 | Every published V1 record matches Appendix E and its partition key / Contract | Scheduling sheet |
+| TC-SCD-132 | Scheduling sheet, line 988 | Query budgets for hot queries 1 to 10 / QueryBudget.Tests | Scheduling sheet |
+| TC-SCD-133 | Scheduling sheet, line 989 | Reconciliation repairs a corrupted ref_staff row and raises one data-quality issue / Integration | none |
+| TC-SCD-134 | Scheduling sheet, line 990 | hr.leave.cancelled.v1 after one covered period restores the rest and keeps the taught period attributed / Integration | Scheduling sheet |
+| TC-SCD-135 | Scheduling sheet, line 991 | POST /timetable-versions/{id}/document for one section's week answers 202 and writes one GenerateDocument to the outbox with the resolved week grid,… | Scheduling sheet, document 20, document 30 |
+| TC-SCD-136 | Scheduling sheet, line 992 | Publishing a version that collides with 2 approved bookings auto-cancels both and writes 2 RequestNotification commands in the publish transaction, e… | Scheduling sheet, document 30 |
+| TC-SCD-801 | Scheduling sheet, line 954 | Accepting the top suggestion assigns cover, notifies urgently, updates the timetable (Appendix Q) / End-to-end | Appendix Q, document 03, Scheduling sheet, document 08, document 20 |
 | TC-SCH-001 | Appendix R, line 541 | Requested to ClearancePending / Requester is a linked guardian or a registrar / Clearance items raised for finance, library, and assets | School sheet, document 13, document 31, project/DECISIONS/0020-one-definition-per-test-case.md |
 | TC-SCH-002 | Appendix R, line 542 | ClearancePending to ClearanceBlocked / Outstanding balance or unreturned item exists / Block shown with the exact amount or item | document 03, document 13, document 20 |
 | TC-SCH-003 | Appendix R, line 543 | ClearancePending to Cleared / All departments signed off / Leaving documents queued for generation | document 13 |
@@ -1359,6 +1394,8 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SCH-429 | School sheet, line 1248 | Duplicate-person check raises one proposal for a guardian created by admissions who self-registers (REQ-SCH-037) / Integration | document 20 |
 | TC-SCH-550 | document 13, line 367 | One section unlocked / Saga aborted, late entry refused, sections listed | none |
 | TC-SCH-551 | document 13, line 374 | Decisions undrafted for 14 days / Principal escalated daily | School sheet |
+| TC-SCH-780 | document 13, line 434 | Clearance reply delivered twice / Item status unchanged on the second | document 13 |
+| TC-SCH-781 | document 13, line 435 | School Api killed between steps 3 and 4 / Resume sends step 4 once (test method WorkerKilledAfterTranscript_Resumes_NoDuplicateCertificate) | document 13 |
 | TC-SCH-810 | Appendix W, line 38 | 20 / Balanced class formation / "Fair classes in one pass, then adjusted by hand" / 1 / 1 surfaces / 2 / School | Appendix O, Appendix W, document 08, document 32 |
 | TC-SEC-001 | Appendix R, line 316 | Scheduled to Opened / Every in-scope user has a named reviewer / Packets delivered with none orphaned | Identity sheet, document 31, project/DECISIONS/0020-one-definition-per-test-case.md, project/KIT_V9_1_CHANGES.md |
 | TC-SEC-002 | Appendix R, line 317 | Opened to InProgress / Reviewer holds identity.access-reviews.certify for that scope / Decision recorded with reviewer identity | project/KIT_V9_1_CHANGES.md |
@@ -1378,16 +1415,16 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-024 | Appendix R, line 391 | Active to Active / Agent attempts a write without consented write scope / Refused and the attempt audited | Identity sheet |
 | TC-SEC-025 | Appendix R, line 392 | Active to Terminated / User revokes consent / Session ends within five seconds | Identity sheet |
 | TC-SEC-026 | Appendix R, line 393 | Ended to Logged / Session closed / Transcript sealed and the user notified | Identity sheet, document 12, document 31 |
-| TC-SEC-031 | document 12, line 869 | Given a tenant lockout threshold of 10 failed attempts in 5 minutes, when an 11th attempt arrives with the correct password, then it is refused until… | Identity sheet, document 12, document 18 |
-| TC-SEC-032 | document 12, line 870 | Given a user with TOTP enrolled, when a code already accepted in the current 30-second window is presented a second time, then the sign-in is refused… | document 12 |
-| TC-SEC-033 | document 12, line 871 | Given a user with 1 registered passkey, when they sign in with a valid assertion and no password, then a session is created; when the same assertion… | document 12 |
-| TC-SEC-034 | document 12, line 872 | Given a person with accounts in 2 tenants, when a sign-in fails the credential check, then the response lists 0 tenants and is identical to the respo… | Identity sheet, document 12 |
-| TC-SEC-035 | document 12, line 873 | Given a user signing in from a device fingerprint not seen before, when the session is created, then identity.login.new-device.v1 is published once;… | document 12, document 18 |
-| TC-SEC-036 | document 12, line 874 | Given a refresh token family whose current handle is H1, when H1 is redeemed, then a new handle H2 is issued, H1 is marked used, and the family holds… | document 12 |
+| TC-SEC-031 | document 12, line 879 | Given a tenant lockout threshold of 10 failed attempts in 5 minutes, when an 11th attempt arrives with the correct password, then it is refused until… | Identity sheet, document 12, document 18 |
+| TC-SEC-032 | document 12, line 880 | Given a user with TOTP enrolled, when a code already accepted in the current 30-second window is presented a second time, then the sign-in is refused… | document 12 |
+| TC-SEC-033 | document 12, line 881 | Given a user with 1 registered passkey, when they sign in with a valid assertion and no password, then a session is created; when the same assertion… | document 12 |
+| TC-SEC-034 | document 12, line 882 | Given a person with accounts in 2 tenants, when a sign-in fails the credential check, then the response lists 0 tenants and is identical to the respo… | Identity sheet, document 12 |
+| TC-SEC-035 | document 12, line 883 | Given a user signing in from a device fingerprint not seen before, when the session is created, then identity.login.new-device.v1 is published once;… | document 12, document 18 |
+| TC-SEC-036 | document 12, line 884 | Given a refresh token family whose current handle is H1, when H1 is redeemed, then a new handle H2 is issued, H1 is marked used, and the family holds… | document 12 |
 | TC-SEC-037 | document 12, line 86 | T-IDN-03 / Refresh endpoint / Spoofing / Stolen refresh token used from a second device / med / high / Rotation on every use; reuse of a rotated toke… | document 12 |
-| TC-SEC-038 | document 12, line 875 | Given a teacher whose permission version moves from n to n+1 when one permission is revoked, when a request needing that permission arrives with a to… | Identity sheet, document 12 |
+| TC-SEC-038 | document 12, line 885 | Given a teacher whose permission version moves from n to n+1 when one permission is revoked, when a request needing that permission arrives with a to… | Identity sheet, document 12 |
 | TC-SEC-039 | document 12, line 34 | V9 Self-contained tokens / Signed JWT, algorithm pinning, small claims / OpenIddict signing key with overlap rotation; claims are user, tenant, roles… | Gateway sheet, document 12 |
-| TC-SEC-040 | document 12, line 673 | Service client credentials / per service / OpenBao / 90 days / rotate-service-client-secret.md | Identity sheet, document 12 |
+| TC-SEC-040 | document 12, line 674 | Service client credentials / per service / OpenBao / 90 days / rotate-service-client-secret.md | Identity sheet, document 12 |
 | TC-SEC-041 | document 12, line 48 | STORAGE / Tokens in platform secure storage; Drift database encrypted with a key from the keystore; no level-S data on the device, with the one excep… | document 09 |
 | TC-SEC-042 | document 12, line 49 | CRYPTO / Platform keystore only; no home-grown cryptography / Flutter secure storage plugin pinned in 19-dependency-and-license-inventory.md | none |
 | TC-SEC-043 | document 12, line 50 | AUTH / Biometric unlock gates the local session, never replaces the server token; session timeout from the tenant security policy / Identity token ru… | document 03, document 09, document 20 |
@@ -1395,8 +1432,8 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-045 | document 12, line 52 | PLATFORM / Screenshot protection on sensitive screens; no sensitive data in lock-screen previews; deep links validated against the permission set / N… | document 03, document 09, document 20 |
 | TC-SEC-046 | document 12, line 53 | CODE / Obfuscation on release builds; no debug logging of personal data / Mobile pipeline ci-mobile.yml | document 03, document 09, document 20 |
 | TC-SEC-047 | document 09, line 772 | Permission version / Every request carries the permission version; IDENTITY_PERMISSION_VERSION_STALE refreshes the set and re-locks the router within… | Bff.Mobile sheet, Identity sheet, document 08, document 09, document 12, document 23 |
-| TC-SEC-050 | document 12, line 876 | Given the injection corpus (SQL, script, header and JSON type-discriminator payloads), when it is sent to every string parameter of every endpoint in… | document 12 |
-| TC-SEC-051 | document 12, line 877 | Given a command that passes its schema but breaks an Appendix S rule, when it is sent straight to the service without the web client, then the servic… | document 12 |
+| TC-SEC-050 | document 12, line 886 | Given the injection corpus (SQL, script, header and JSON type-discriminator payloads), when it is sent to every string parameter of every endpoint in… | document 12 |
+| TC-SEC-051 | document 12, line 887 | Given a command that passes its schema but breaks an Appendix S rule, when it is sent straight to the service without the web client, then the servic… | document 12 |
 | TC-SEC-052 | document 12, line 28 | V3 Web frontend security / Cookies, CSP, clickjacking, CORS / Gateway security headers; SameSite=Strict session cookie for web; CSP with nonces; CORS… | document 12 |
 | TC-SEC-053 | document 12, line 29 | V4 API and web service / Content types, HTTP verbs, GraphQL not used, WebSocket auth / Gateway request size limits; SignalR token on connect and reva… | Communication sheet |
 | TC-SEC-054 | document 12, line 69 | Improper inventory management / Aggregated OpenAPI at Gateway is the inventory; an undocumented route fails the build | none |
@@ -1404,8 +1441,8 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-056 | Gateway sheet, line 344 | Header swap and token swap of the tenant-isolation suite are refused at the Gateway / Generated suite | Ai sheet, Audit sheet, Communication sheet, Finance sheet, Hr sheet, Identity sheet, Notification sheet, Operations sheet, Platform sheet, Requests sheet, document 12, document 16, document 18 |
 | TC-SEC-057 | document 16, line 277 | Response shape per role / The OpenAPI response schemas, the field-level rules in Appendix B, the templates / One snapshot per operation and template… | Ai sheet, Hr sheet, Operations sheet, document 12 |
 | TC-SEC-058 | document 12, line 64 | Unrestricted resource consumption / Gateway rate limits per tenant and user; per-key quota on the public API; job concurrency per tenant | Gateway sheet |
-| TC-SEC-059 | document 12, line 878 | Given a pooled connection that has just served a tenant A transaction, when PgBouncer hands it to a tenant B transaction, then a read of the same tab… | Identity sheet, document 12, document 13 |
-| TC-SEC-101 | document 08, line 629 | School admin / Access log / /admin/access-log / data-table, filters, badge (break-glass) / 7 / audit.access-log.view / no / U.2 | Appendix Q, document 03, Wellbeing sheet, document 12, document 20, document 32 |
+| TC-SEC-059 | document 12, line 888 | Given a pooled connection that has just served a tenant A transaction, when PgBouncer hands it to a tenant B transaction, then a read of the same tab… | Identity sheet, document 12, document 13 |
+| TC-SEC-101 | document 08, line 633 | School admin / Access log / /admin/access-log / data-table, filters, badge (break-glass) / 7 / audit.access-log.view / no / U.2 | Appendix Q, document 03, Wellbeing sheet, document 12, document 20, document 32 |
 | TC-SEC-110 | document 12, line 84 | T-IDN-01 / POST /connect/token / Spoofing / Credential stuffing against parent accounts / high / high / Lockout after the policy threshold, per-addre… | Identity sheet, document 12, document 18 |
 | TC-SEC-111 | document 12, line 85 | T-IDN-02 / POST /connect/token / Spoofing / Second factor bypass by replaying a TOTP code / med / high / Codes are single-use per window; passkeys pr… | Identity sheet, document 12 |
 | TC-SEC-112 | document 12, line 91 | T-IDN-08 / Break-glass CLI / Repudiation / Recovery command used without a trace / low / high / Command requires server access and an incident refere… | Identity sheet, document 12 |
@@ -1417,7 +1454,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-125 | document 12, line 70 | Unsafe consumption of APIs / Provider adapters validate every response schema; webhook receivers verify signature and timestamp | Platform sheet |
 | TC-SEC-130 | document 12, line 111 | T-SCH-02 / Custody and medical summary / Information disclosure / Staff without the permission read custody text or medical detail / med / critical /… | School sheet |
 | TC-SEC-131 | document 12, line 114 | T-SCH-05 / gRPC directory / Information disclosure / A sibling service asks for a field it may not hold / low / high / The directory contract returns… | School sheet |
-| TC-SEC-132 | document 12, line 115 | T-SCH-06 / Student merge / Tampering / Merge used to move a child into a different family's view / low / critical / school.students.merge is elevated… | School sheet |
+| TC-SEC-132 | document 12, line 115 | T-SCH-06 / Student merge / Tampering / Merge used to move a child into a different family's view / low / critical / school.students.merge is elevated… | School sheet, document 12, document 18, document 30 |
 | TC-SEC-140 | document 12, line 121 | T-ADM-01 / Public inquiry form / Denial of service / Bot floods inquiries and exhausts notification quota / high / med / Gateway rate limit for anony… | Admissions sheet |
 | TC-SEC-141 | document 12, line 123 | T-ADM-03 / Offer acceptance / Spoofing / Offer link reused to create a second student and guardian account / low / med / Offer token single use; admi… | Admissions sheet |
 | TC-SEC-142 | document 12, line 124 | T-ADM-04 / Waiting list / Tampering / Reordering to favour an applicant without trace / med / med / admissions.waiting-list.reorder is elevated with… | Admissions sheet |
@@ -1427,7 +1464,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-152 | document 12, line 133 | T-ACA-03 / QTI import / Tampering / Crafted QTI package with external entities or scripts / low / med / XML parsing with external entities disabled;… | none |
 | TC-SEC-153 | document 12, line 134 | T-ACA-04 / Lesson plan review / Repudiation / Approver denies having approved a plan / low / low / academics.lesson-plans.approve writes the approver… | none |
 | TC-SEC-154 | document 12, line 135 | T-ACA-05 / Resources / Information disclosure / A resource shared to a section leaks to the whole tenant / med / low / Resource audience is a scope p… | Academics sheet |
-| TC-SEC-160 | document 12, line 879 | Given a mark of 72 in a locked assessment, when a teacher without assessment.marks.change-after-lock submits 85 outside a grade-change request, then… | Assessment sheet, document 12 |
+| TC-SEC-160 | document 12, line 889 | Given a mark of 72 in a locked assessment, when a teacher without assessment.marks.change-after-lock submits 85 outside a grade-change request, then… | Assessment sheet, document 12 |
 | TC-SEC-161 | document 12, line 143 | T-ASM-03 / Report card PDF / Information disclosure / Signed URL for one child's report card shared and reused / med / high / Signed URL 5 minutes, b… | none |
 | TC-SEC-162 | document 12, line 144 | T-ASM-04 / Result calculation worker / Tampering / A replayed assessment.marks.entered event double-applies a mark / low / med / Inbox idempotency pe… | document 12 |
 | TC-SEC-163 | document 12, line 145 | T-ASM-05 / Transcript verification page / Information disclosure / Verification code enumerated to read transcripts / low / med / Code is 128 bits, r… | none |
@@ -1441,13 +1478,13 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-182 | document 12, line 164 | T-ATT-04 / Emergency broadcast / Denial of service / False emergency broadcast by a compromised account / low / high / attendance.safety.emergency.br… | none |
 | TC-SEC-183 | document 12, line 165 | T-ATT-05 / Visitor watchlist / Information disclosure / Watchlist read by front-desk staff without the permission / med / high / manage-watchlist is… | none |
 | TC-SEC-184 | document 12, line 166 | T-ATT-06 / Offline mobile queue / Tampering / Device clock changed to backdate an offline mark / med / med / Server timestamps the arrival; Appendix… | Attendance sheet |
-| TC-SEC-190 | document 12, line 880 | Given a posted payment receipt of 1,000, when a cashier tries to edit or delete it, then both are refused, the only reversal is a credit note of 1,00… | Finance sheet, document 12 |
+| TC-SEC-190 | document 12, line 890 | Given a posted payment receipt of 1,000, when a cashier tries to edit or delete it, then both are refused, the only reversal is a credit note of 1,00… | Finance sheet, document 12 |
 | TC-SEC-191 | document 12, line 174 | T-FIN-03 / Payment gateway callback / Spoofing / Forged callback marks an invoice paid / med / high / Callback signature verified with the provider a… | document 12 |
 | TC-SEC-192 | document 12, line 175 | T-FIN-04 / Invoice batch run / Denial of service / A runaway batch creates duplicate invoices / low / med / Batch is idempotent on plan, student and… | none |
 | TC-SEC-193 | document 12, line 176 | T-FIN-05 / Payer bank details / Information disclosure / IBAN or gateway reference read outside the refund flow / med / high / Sensitive class, colum… | Finance sheet |
 | TC-SEC-194 | document 12, line 177 | T-FIN-06 / Parent invoice view / Information disclosure / Parent reads another payer's invoice by identifier / high / high / own-children scope on fi… | none |
 | TC-SEC-195 | document 12, line 178 | T-FIN-07 / Write-off / Elevation of privilege / Write-off used to clear a relative's balance / low / high / finance.write-offs.approve is high risk w… | Finance sheet |
-| TC-SEC-201 | document 12, line 868 | Given a teacher whose own-sections scope holds sections 4A and 4B, when they open 4C's register, enter a mark for 4C or post coursework to 4C, then e… | Appendix Q, document 03, Academics sheet, Assessment sheet, Attendance sheet, document 08, document 12, document 20 |
+| TC-SEC-201 | document 12, line 878 | Given a teacher whose own-sections scope holds sections 4A and 4B, when they open 4C's register, enter a mark for 4C or post coursework to 4C, then e… | Appendix Q, document 03, Academics sheet, Assessment sheet, Attendance sheet, document 08, document 12, document 20 |
 | TC-SEC-210 | document 12, line 185 | T-COM-01 / Message send / Spoofing / Adult contacts a student outside the messaging policy / med / critical / Policy check with Identity over gRPC be… | Communication sheet, document 12, document 18, document 27 |
 | TC-SEC-211 | document 12, line 186 | T-COM-02 / Oversight read / Repudiation / Safeguarding officer reads threads without a reason / low / high / communication.messages.oversee-messages… | document 12 |
 | TC-SEC-212 | document 12, line 188 | T-COM-04 / Report and block / Denial of service / A reported thread is edited before review / low / high / Reported thread locks with COMMUNICATION_M… | document 12 |
@@ -1465,7 +1502,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-243 | document 12, line 218 | T-DOC-06 / Template placeholders / Information disclosure / A template merges a field the generating user may not see / med / high / Merge resolves f… | Documents sheet |
 | TC-SEC-244 | document 12, line 219 | T-DOC-07 / PDF renderer / Denial of service / Crafted HTML template causes runaway rendering / low / med / Renderer sandboxed, time and memory budget… | document 12 |
 | TC-SEC-245 | document 12, line 220 | T-DOC-08 / Certificate verification page / Tampering / Revoked certificate still verifies / low / med / Verification reads live state; DOCUMENTS_CERT… | Documents sheet |
-| TC-SEC-247 | document 12, line 881 | Given an HTML file stored through the upload pipeline, when it is downloaded through its signed URL, then the response carries Content-Disposition: a… | document 12 |
+| TC-SEC-247 | document 12, line 891 | Given an HTML file stored through the upload pipeline, when it is downloaded through its signed URL, then the response carries Content-Disposition: a… | document 12 |
 | TC-SEC-250 | document 12, line 226 | T-BEH-01 / Incident narrative / Information disclosure / Narrative and witnesses read by staff without the restricted permission / med / high / behav… | Behavior sheet |
 | TC-SEC-251 | document 12, line 227 | T-BEH-02 / Parent view / Information disclosure / Parent sees an incident naming another child / med / critical / Guardian projection strips other st… | Behavior sheet, document 18 |
 | TC-SEC-252 | document 12, line 229 | T-BEH-04 / Open Badges export / Information disclosure / Badge assertion leaks the student's identity outside the tenant / low / med / export-open-ba… | Behavior sheet |
@@ -1478,21 +1515,21 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-271 | document 12, line 246 | T-AUD-02 / Audit consumer / Repudiation / A write completes while its audit event is lost / med / high / Outbox on the producer; AUDIT_WRITE_FAILED f… | Audit sheet, document 18 |
 | TC-SEC-272 | document 12, line 248 | T-AUD-04 / Access log / Information disclosure / Access log read to learn who is under safeguarding review / low / critical / audit.access-log.view i… | Audit sheet |
 | TC-SEC-273 | document 12, line 249 | T-AUD-05 / Cold partitions / Tampering / Detached partition altered in cold storage / low / med / Partition hash recorded on detach; audit.retention.… | Audit sheet |
-| TC-SEC-275 | document 12, line 882 | Given an unhandled exception inside a service, when the client receives the response, then it is Problem Details with an Appendix K code and a correl… | document 12 |
+| TC-SEC-275 | document 12, line 892 | Given an unhandled exception inside a service, when the client receives the response, then it is Problem Details with an Appendix K code and a correl… | document 12 |
 | TC-SEC-280 | document 12, line 255 | T-WEL-01 / Any read / Information disclosure / A principal or teacher reads a counseling note through Student 360 or search / med / critical / Isolat… | Wellbeing sheet, document 12, document 27 |
-| TC-SEC-281 | document 12, line 883 | Given a nurse holding wellbeing.break-glass.use, when she opens a restricted record with an empty reason, then WELLBEING_BREAK_GLASS_REASON_REQUIRED… | Wellbeing sheet, document 12 |
+| TC-SEC-281 | document 12, line 893 | Given a nurse holding wellbeing.break-glass.use, when she opens a restricted record with an empty reason, then WELLBEING_BREAK_GLASS_REASON_REQUIRED… | Wellbeing sheet, document 12 |
 | TC-SEC-282 | document 12, line 257 | T-WEL-03 / Event bus / Information disclosure / Clinical detail leaves in an event payload / low / critical / BR-WEL-003 payload contract test; event… | Wellbeing sheet |
 | TC-SEC-283 | document 12, line 258 | T-WEL-04 / Database / Information disclosure / A compromised sibling service credential reads wellbeing tables / low / critical / Separate database n… | Wellbeing sheet, document 12 |
 | TC-SEC-284 | document 12, line 259 | T-WEL-05 / Impersonation / Elevation of privilege / Platform operator reaches wellbeing through an impersonated session / low / critical / Impersonat… | Wellbeing sheet, document 12 |
 | TC-SEC-285 | document 12, line 261 | T-WEL-07 / Allergy alert / Denial of service / Cached or stale allergy shown when Wellbeing is down / low / critical / Read live on every view, never… | Wellbeing sheet |
 | TC-SEC-286 | document 12, line 262 | T-WEL-08 / Medication / Tampering / Dose administered outside the guardian authorization / med / critical / BR-WEL-004; WELLBEING_MEDICATION_NOT_AUTH… | Wellbeing sheet, document 18 |
-| TC-SEC-290 | document 12, line 884 | Given a principal and an HR officer without hr.payroll.view-salary, when either opens a staff file, then the salary section is absent from the respon… | Hr sheet, document 12 |
+| TC-SEC-290 | document 12, line 894 | Given a principal and an HR officer without hr.payroll.view-salary, when either opens a staff file, then the salary section is absent from the respon… | Hr sheet, document 12 |
 | TC-SEC-291 | document 12, line 270 | T-HR-02 / Staff file export / Information disclosure / Bulk export of bank accounts / low / high / Sensitive columns are excluded from hr.staff-files… | Hr sheet |
 | TC-SEC-292 | document 12, line 271 | T-HR-03 / Contract approval / Elevation of privilege / Self-approval of a contract change / low / high / hr.contracts.approve is high risk; approver… | Hr sheet |
 | TC-SEC-293 | document 12, line 272 | T-HR-04 / Leave balance / Tampering / Balance adjusted to hide unauthorized absence / low / low / hr.leave.adjust-balance is elevated with reason / l… | Hr sheet |
-| TC-SEC-301 | document 08, line 713 | Registrar / Post a payment (refusal) / /registrar/students/:studentId / finance action absent, empty-state on direct route / no-permission / finance.… | Appendix Q |
+| TC-SEC-301 | document 08, line 721 | Registrar / Post a payment (refusal) / /registrar/students/:studentId / finance action absent, empty-state on direct route / no-permission / finance.… | Appendix Q |
 | TC-SEC-310 | document 12, line 278 | T-OPS-01 / Vehicle telemetry / Information disclosure / Vehicle location used to infer a child's location / med / critical / Location is tracked for… | Operations sheet, document 18, document 27 |
-| TC-SEC-311 | document 12, line 885 | Given a boarding attendant device holding 3 queued boarding records, when the attendant is offboarded through WF-IDN-06 and the device reconnects, th… | Operations sheet, document 12 |
+| TC-SEC-311 | document 12, line 895 | Given a boarding attendant device holding 3 queued boarding records, when the attendant is offboarded through WF-IDN-06 and the device reconnects, th… | Operations sheet, document 12 |
 | TC-SEC-312 | document 12, line 280 | T-OPS-03 / Activity medical flag / Information disclosure / Medical flag copied into the trip roster export / low / critical / Flag is read live and… | Operations sheet |
 | TC-SEC-313 | document 12, line 281 | T-OPS-04 / Library fines waiver / Tampering / Fines waived for relatives / low / low / operations.library.waive-fine is elevated with reason / low /… | Operations sheet |
 | TC-SEC-320 | document 12, line 288 | T-AI-01 / Assistant prompt / Tampering / Prompt injection through a retrieved document or message body / high / high / Retrieved content is data neve… | Ai sheet, document 25 |
@@ -1503,75 +1540,75 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-325 | document 12, line 293 | T-AI-06 / Withdrawn student / Information disclosure / Embeddings survive after withdrawal / med / high / school.student.status-changed.v1 to withdra… | Ai sheet, document 25 |
 | TC-SEC-330 | document 12, line 301 | T-GW-01 / Tenant resolution / Spoofing / Header-based tenant override from a browser client / med / critical / Tenant header accepted only from the m… | Gateway sheet, document 12 |
 | TC-SEC-331 | document 12, line 304 | T-GW-04 / Bff.Web aggregation / Information disclosure / The backend composes a screen with fields the user may not see / med / high / The backend fo… | Bff.Web sheet |
-| TC-SEC-340 | document 12, line 886 | Given a system role template, when an administrator edits it in place, then the edit is refused; a clone records its parent template and release; and… | document 12 |
-| TC-SEC-341 | document 12, line 782 | RabbitMQ user per service / Permissions limited to the service's exchange and its queues / Bootstrap script | document 12 |
-| TC-SEC-360 | document 12, line 644 | 1 / One super administrator seeded on first start from Seed:AdminUsername and Seed:AdminPassword / Identity seeder runs once inside the provisioning… | Identity sheet, document 12, document 18, document 26 |
-| TC-SEC-361 | document 12, line 887 | Given the seeded administrator at first login, when the new password equals the documented default or one of the last 5 passwords, then it is refused… | document 12 |
-| TC-SEC-362 | document 12, line 646 | 3 / In Production, all admin functions blocked until the password is changed and 2FA enrolled; console warning while any account still uses a seeded… | Gateway sheet |
-| TC-SEC-363 | document 12, line 647 | 4 / Seeder is idempotent: never recreates, never resets an existing password / Second start with the same configuration is a no-op | none |
-| TC-SEC-364 | document 12, line 888 | Given the Staging environment and a configured seed password equal to the documented default, when the host starts, then startup validation fails the… | document 12 |
-| TC-SEC-365 | document 12, line 649 | 6 / Only a salted hash stored; the password never in logs, client code, test output or API responses / Argon2id; log scrubber; the test asserts on ca… | Identity sheet |
-| TC-SEC-366 | document 12, line 650 | 7 / Lockout and rate limiting apply like any other account / No exemption in the lockout policy | none |
-| TC-SEC-367 | document 12, line 889 | Given exactly 1 active super administrator, when an operator deletes the account, deactivates it or removes its role, then each of the 3 operations i… | Identity sheet, document 12, document 18 |
-| TC-SEC-370 | document 12, line 890 | Given a service under steady load, when its database password is rotated by the runbook with a rolling restart, then 0 requests fail and the old pass… | document 12 |
-| TC-SEC-371 | document 12, line 664 | RabbitMQ user / per service, limited to its exchange and queues / as above / 90 days / rotate-rabbitmq-user.md | none |
-| TC-SEC-372 | document 12, line 665 | Redis ACL user / per service, restricted to its key prefix / as above / 90 days / rotate-redis-acl.md | none |
-| TC-SEC-373 | document 12, line 667 | OpenIddict encryption key / platform / as above / 180 days, same overlap / rotate-token-encryption-key.md | none |
-| TC-SEC-374 | document 12, line 668 | Column encryption data keys / per tenant for Wellbeing, per deployment elsewhere; wrapped by a key-encryption key in OpenBao / envelope encryption /… | document 12 |
+| TC-SEC-340 | document 12, line 896 | Given a system role template, when an administrator edits it in place, then the edit is refused; a clone records its parent template and release; and… | document 12 |
+| TC-SEC-341 | document 12, line 783 | RabbitMQ user per service / Permissions limited to the service's exchange and its queues / Bootstrap script | document 12 |
+| TC-SEC-360 | document 12, line 645 | 1 / One super administrator seeded on first start from Seed:AdminUsername and Seed:AdminPassword / Identity seeder runs once inside the provisioning… | Identity sheet, document 12, document 18, document 26 |
+| TC-SEC-361 | document 12, line 897 | Given the seeded administrator at first login, when the new password equals the documented default or one of the last 5 passwords, then it is refused… | document 12 |
+| TC-SEC-362 | document 12, line 647 | 3 / In Production, all admin functions blocked until the password is changed and 2FA enrolled; console warning while any account still uses a seeded… | Gateway sheet |
+| TC-SEC-363 | document 12, line 648 | 4 / Seeder is idempotent: never recreates, never resets an existing password / Second start with the same configuration is a no-op | none |
+| TC-SEC-364 | document 12, line 898 | Given the Staging environment and a configured seed password equal to the documented default, when the host starts, then startup validation fails the… | document 12 |
+| TC-SEC-365 | document 12, line 650 | 6 / Only a salted hash stored; the password never in logs, client code, test output or API responses / Argon2id; log scrubber; the test asserts on ca… | Identity sheet |
+| TC-SEC-366 | document 12, line 651 | 7 / Lockout and rate limiting apply like any other account / No exemption in the lockout policy | none |
+| TC-SEC-367 | document 12, line 899 | Given exactly 1 active super administrator, when an operator deletes the account, deactivates it or removes its role, then each of the 3 operations i… | Identity sheet, document 12, document 18 |
+| TC-SEC-370 | document 12, line 900 | Given a service under steady load, when its database password is rotated by the runbook with a rolling restart, then 0 requests fail and the old pass… | document 12 |
+| TC-SEC-371 | document 12, line 665 | RabbitMQ user / per service, limited to its exchange and queues / as above / 90 days / rotate-rabbitmq-user.md | none |
+| TC-SEC-372 | document 12, line 666 | Redis ACL user / per service, restricted to its key prefix / as above / 90 days / rotate-redis-acl.md | none |
+| TC-SEC-373 | document 12, line 668 | OpenIddict encryption key / platform / as above / 180 days, same overlap / rotate-token-encryption-key.md | none |
+| TC-SEC-374 | document 12, line 669 | Column encryption data keys / per tenant for Wellbeing, per deployment elsewhere; wrapped by a key-encryption key in OpenBao / envelope encryption /… | document 12 |
 | TC-SEC-375 | document 12, line 37 | V12 Secure communication / TLS everywhere including internal / TLS to PostgreSQL, RabbitMQ and Redis; mutual TLS between services on the scale mode | none |
-| TC-SEC-376 | document 12, line 778 | Secret scanning / Gitleaks on every push; the seeded default allowed under docs/ only / security-scan.yml | document 12 |
-| TC-SEC-377 | document 12, line 891 | Given a release-candidate image with a planted key-shaped string, when the image scan runs, then the build fails naming the layer and the file; the s… | document 12 |
-| TC-SEC-378 | document 12, line 892 | Given the production Angular and Flutter bundles, when they are scanned for the key shapes Gitleaks recognises, including the Nibras key prefixes, th… | document 12, document 23 |
-| TC-SEC-380 | document 12, line 893 | Given a NuGet, npm or pub restore whose lock file is removed or out of date, when the build restores in locked mode, then the restore fails / REQ-SEC… | document 12, document 19 |
-| TC-SEC-381 | document 12, line 894 | Given a release image, when its CycloneDX SBOM is compared with the lock files of the build that produced it, then the SBOM is present and 0 packages… | document 12 |
-| TC-SEC-382 | document 12, line 774 | Image signing / cosign signature per image; SLSA build level 2 at launch / release.yml | none |
-| TC-SEC-383 | document 12, line 895 | Given the Test environment cluster, when an unsigned image and a signed image with a critical vulnerability are deployed, then admission refuses both… | document 12 |
-| TC-SEC-384 | document 12, line 896 | Given a dependency with a known critical vulnerability added to a service, when the build runs Trivy, then the build fails naming the package / REQ-S… | document 12 |
-| TC-SEC-385 | document 12, line 777 | Automated update pull requests / Grouped weekly, security updates immediately / Dependency bot | none |
-| TC-SEC-386 | document 12, line 897 | Given a pod specification that runs as root or with a writable root file system, when it is applied, then the pod security policy denies it; the temp… | document 12 |
-| TC-SEC-387 | document 12, line 898 | Given the default-deny network policies, when the Finance pod opens a socket to the School database, then the connection is refused, and its connecti… | document 12 |
-| TC-SEC-388 | document 12, line 899 | Given the per-service database users, when svc_finance reads nibras_school, then it is refused; and when svc_audit updates or deletes an audit entry,… | document 12 |
-| TC-SEC-389 | document 12, line 900 | Given an image promoted from Test to Staging to Production, when the digests are compared, then they are identical in all 3 environments and no promo… | document 12 |
-| TC-SEC-390 | document 12, line 789 | security.txt / Published at the platform domain and every tenant domain / Gateway static route | document 12, document 34 |
-| TC-SEC-391 | document 12, line 901 | Given the penetration-test findings, when the retest report is read at the general-availability gate, then every critical and high finding is closed,… | document 12, document 18, document 34 |
-| TC-SEC-392 | document 12, line 902 | Given a report submitted through the developer-portal form without an account, when it is received, then a tracked security ticket with its fix clock… | document 12, document 34 |
-| TC-SEC-393 | document 12, line 903 | Given a BSL-licensed package added to a manifest and an allow.json entry without adr, when the licence scan runs, then both fail the build / REQ-SEC-… | document 19, document 30 |
-| TC-SEC-394 | document 12, line 904 | Given a Helm values or compose file pinning a redis image tag below 8.0, when the deployment files are parsed, then the check fails naming the file;… | document 19 |
-| TC-SEC-395 | document 12, line 905 | Given a package from the banned list of 19-dependency-and-license-inventory.md §9.2 referenced in Directory.Packages.props, package.json or pubspec.y… | document 19 |
-| TC-SEC-401 | document 08, line 727 | Accountant / Change grade level (refusal) / /registrar/students/:studentId / empty-state / no-permission / school.students.change-status / no / U.7 | Appendix Q |
+| TC-SEC-376 | document 12, line 779 | Secret scanning / Gitleaks on every push; the seeded default allowed under docs/ only / security-scan.yml | document 12 |
+| TC-SEC-377 | document 12, line 901 | Given a release-candidate image with a planted key-shaped string, when the image scan runs, then the build fails naming the layer and the file; the s… | document 12 |
+| TC-SEC-378 | document 12, line 902 | Given the production Angular and Flutter bundles, when they are scanned for the key shapes Gitleaks recognises, including the Nibras key prefixes, th… | document 12, document 23 |
+| TC-SEC-380 | document 12, line 903 | Given a NuGet, npm or pub restore whose lock file is removed or out of date, when the build restores in locked mode, then the restore fails / REQ-SEC… | document 12, document 19 |
+| TC-SEC-381 | document 12, line 904 | Given a release image, when its CycloneDX SBOM is compared with the lock files of the build that produced it, then the SBOM is present and 0 packages… | document 12 |
+| TC-SEC-382 | document 12, line 775 | Image signing / cosign signature per image; SLSA build level 2 at launch / release.yml | none |
+| TC-SEC-383 | document 12, line 905 | Given the Test environment cluster, when an unsigned image and a signed image with a critical vulnerability are deployed, then admission refuses both… | document 12 |
+| TC-SEC-384 | document 12, line 906 | Given a dependency with a known critical vulnerability added to a service, when the build runs Trivy, then the build fails naming the package / REQ-S… | document 12 |
+| TC-SEC-385 | document 12, line 778 | Automated update pull requests / Grouped weekly, security updates immediately / Dependency bot | none |
+| TC-SEC-386 | document 12, line 907 | Given a pod specification that runs as root or with a writable root file system, when it is applied, then the pod security policy denies it; the temp… | document 12 |
+| TC-SEC-387 | document 12, line 908 | Given the default-deny network policies, when the Finance pod opens a socket to the School database, then the connection is refused, and its connecti… | document 12 |
+| TC-SEC-388 | document 12, line 909 | Given the per-service database users, when svc_finance reads nibras_school, then it is refused; and when svc_audit updates or deletes an audit entry,… | document 12 |
+| TC-SEC-389 | document 12, line 910 | Given an image promoted from Test to Staging to Production, when the digests are compared, then they are identical in all 3 environments and no promo… | document 12 |
+| TC-SEC-390 | document 12, line 790 | security.txt / Published at the platform domain and every tenant domain / Gateway static route | document 12, document 34 |
+| TC-SEC-391 | document 12, line 911 | Given the penetration-test findings, when the retest report is read at the general-availability gate, then every critical and high finding is closed,… | document 12, document 18, document 34 |
+| TC-SEC-392 | document 12, line 912 | Given a report submitted through the developer-portal form without an account, when it is received, then a tracked security ticket with its fix clock… | document 12, document 34 |
+| TC-SEC-393 | document 12, line 913 | Given a BSL-licensed package added to a manifest and an allow.json entry without adr, when the licence scan runs, then both fail the build / REQ-SEC-… | document 02, document 19, document 30 |
+| TC-SEC-394 | document 12, line 914 | Given a Helm values or compose file pinning a redis image tag below 8.0, when the deployment files are parsed, then the check fails naming the file;… | document 19 |
+| TC-SEC-395 | document 12, line 915 | Given a package from the banned list of 19-dependency-and-license-inventory.md §9.2 referenced in Directory.Packages.props, package.json or pubspec.y… | document 19 |
+| TC-SEC-401 | document 08, line 735 | Accountant / Change grade level (refusal) / /registrar/students/:studentId / empty-state / no-permission / school.students.change-status / no / U.7 | Appendix Q |
 | TC-SEC-501 | document 12, line 110 | T-SCH-01 / GET /students/{id} / Information disclosure / A parent reaches another family's child by editing the identifier / high / critical / Data s… | Appendix Q, document 02, document 03, School sheet, document 08, document 20, document 32 |
-| TC-SEC-530 | document 08, line 628 | School admin / Audit viewer / /admin/audit / data-table, filters, panel (before and after), dialog (export reason) / 7 / audit.entries.view / no / U.2 | Appendix O, document 17, document 30, document 32, project/DECISIONS/0020-one-definition-per-test-case.md |
-| TC-SEC-601 | document 08, line 679 | Student / Classmate's grades (refusal) / /student/grades with another id / empty-state (no hint of the record) / no-permission / assessment.marks.vie… | Appendix Q, document 03, document 20 |
-| TC-SEC-801 | document 08, line 764 | HR / Salary section (absent without permission) / /hr/staff/:staffId / section not rendered; no placeholder / no-permission / hr.payroll.view-salary… | Appendix Q, document 03, Hr sheet, document 12, document 20 |
-| TC-SEC-802 | document 08, line 774 | HR / Student record (refusal) / /registrar/students/:studentId / empty-state / no-permission / school.students.view / no / Appendix D HR officer row | Appendix Q, Hr sheet |
-| TC-SEC-901 | document 12, line 906 | Given a platform operator signed in with platform scope and no consented impersonation, when they open a student record in a tenant, then the request… | Appendix Q, document 03, Identity sheet, document 20 |
-| TC-SEC-902 | document 08, line 591 | Platform console / Impersonation request / /support/:ticketId/impersonate / dialog, key-value (consent state), badge, button / 7 / platform.support.i… | Appendix Q, document 03, Identity sheet, document 12, document 20 |
-| TC-SEC-903 | document 12, line 907 | Given a consented impersonation capped at 30 minutes, when the agent works in the session, then the banner naming the agent and the user is on every… | Appendix Q, document 03, Identity sheet, document 12, document 20 |
+| TC-SEC-530 | document 08, line 632 | School admin / Audit viewer / /admin/audit / data-table, filters, panel (before and after), dialog (export reason) / 7 / audit.entries.view / no / U.2 | Appendix O, document 17, document 32, project/DECISIONS/0020-one-definition-per-test-case.md |
+| TC-SEC-601 | document 08, line 685 | Student / Classmate's grades (refusal) / /student/grades with another id / empty-state (no hint of the record) / no-permission / assessment.marks.vie… | Appendix Q, document 03, document 20 |
+| TC-SEC-801 | document 08, line 773 | HR / Salary section (absent without permission) / /hr/staff/:staffId / section not rendered; no placeholder / no-permission / hr.payroll.view-salary… | Appendix Q, document 03, Hr sheet, document 12, document 20 |
+| TC-SEC-802 | document 08, line 783 | HR / Student record (refusal) / /registrar/students/:studentId / empty-state / no-permission / school.students.view / no / Appendix D HR officer row | Appendix Q, Hr sheet |
+| TC-SEC-901 | document 12, line 916 | Given a platform operator signed in with platform scope and no consented impersonation, when they open a student record in a tenant, then the request… | Appendix Q, document 03, Identity sheet, document 20 |
+| TC-SEC-902 | document 08, line 595 | Platform console / Impersonation request / /support/:ticketId/impersonate / dialog, key-value (consent state), badge, button / 7 / platform.support.i… | Appendix Q, document 03, Identity sheet, document 12, document 20 |
+| TC-SEC-903 | document 12, line 917 | Given a consented impersonation capped at 30 minutes, when the agent works in the session, then the banner naming the agent and the user is on every… | Appendix Q, document 03, Identity sheet, document 12, document 20 |
 | TC-SEC-904 | document 12, line 247 | T-AUD-03 / Export / Information disclosure / Audit export used to harvest before-and-after values / low / high / audit.entries.export is high risk wi… | Appendix Q, document 03, Audit sheet, document 20 |
-| TC-TST-101 | document 07, line 825 | Domain_DependsOnlyOn_DomainBlockAndOwnContracts / Every Nibras.<S>.Domain assembly references nothing under Nibras. except Nibras.BuildingBlocks.Doma… | document 07, document 16 |
-| TC-TST-102 | document 07, line 826 | Domain_HasNoFrameworkReference / No Nibras.<S>.Domain assembly references EF Core, ASP.NET Core, Wolverine or Npgsql. | none |
-| TC-TST-103 | document 07, line 827 | Application_DoesNotDependOn_Infrastructure / No type in Nibras.<S>.Application depends on a type in Nibras.<S>.Infrastructure. | none |
-| TC-TST-104 | document 07, line 828 | Application_DoesNotDependOn_Hosts / No type in Nibras.<S>.Application depends on Nibras.<S>.Api or Nibras.<S>.Worker. | none |
-| TC-TST-105 | document 07, line 829 | Application_DoesNotReference_NpgsqlOrPersistenceBlock / Nibras.<S>.Application references neither the Npgsql provider nor Nibras.BuildingBlocks.Persi… | none |
-| TC-TST-106 | document 07, line 830 | Infrastructure_DoesNotDependOn_Hosts / No type in Nibras.<S>.Infrastructure depends on Nibras.<S>.Api or Nibras.<S>.Worker. | none |
-| TC-TST-107 | document 07, line 831 | Hosts_ContainNoHandlersOrRules / No type in an .Api or .Worker assembly implements a Wolverine handler, a consumer or a validator; hosts compose and… | Scheduling sheet |
-| TC-TST-108 | document 07, line 832 | BuildingBlocks_NeverReference_AnyDomain / No Nibras.BuildingBlocks.* assembly references any assembly whose name ends in .Domain, which is the bounda… | document 07 |
-| TC-TST-109 | document 07, line 833 | BuildingBlocks_NeverReference_ServicesOrServiceContracts / No Nibras.BuildingBlocks.* assembly references a Nibras.<S>.* assembly or a Nibras.Contrac… | document 30 |
-| TC-TST-110 | document 07, line 834 | BuildingBlocks_HaveNoCycles / The reference graph among the thirteen blocks is acyclic with Domain as the sink and Testing as the only block nothing… | none |
-| TC-TST-111 | document 07, line 835 | Contracts_ReferenceOnly_ContractsShared / Every Nibras.Contracts.<S> assembly references no Nibras. assembly other than Nibras.Contracts.Shared. | none |
-| TC-TST-112 | document 07, line 836 | Contracts_ContainOnlyData / Every public type in a contract assembly is a record, an enum, a static class of string constants, or a generated proto t… | none |
-| TC-TST-113 | document 07, line 837 | Services_NeverReference_AnotherService / No Nibras.<S>.* assembly references a Nibras.<Other>.* assembly for any other service in Appendix L. | document 07 |
+| TC-TST-101 | document 07, line 827 | Domain_DependsOnlyOn_DomainBlockAndOwnContracts / Every Nibras.<S>.Domain assembly references nothing under Nibras. except Nibras.BuildingBlocks.Doma… | document 07, document 16, document 30 |
+| TC-TST-102 | document 07, line 828 | Domain_HasNoFrameworkReference / No Nibras.<S>.Domain assembly references EF Core, ASP.NET Core, Wolverine or Npgsql. | none |
+| TC-TST-103 | document 07, line 829 | Application_DoesNotDependOn_Infrastructure / No type in Nibras.<S>.Application depends on a type in Nibras.<S>.Infrastructure. | none |
+| TC-TST-104 | document 07, line 830 | Application_DoesNotDependOn_Hosts / No type in Nibras.<S>.Application depends on Nibras.<S>.Api or Nibras.<S>.Worker. | none |
+| TC-TST-105 | document 07, line 831 | Application_DoesNotReference_NpgsqlOrPersistenceBlock / Nibras.<S>.Application references neither the Npgsql provider nor Nibras.BuildingBlocks.Persi… | none |
+| TC-TST-106 | document 07, line 832 | Infrastructure_DoesNotDependOn_Hosts / No type in Nibras.<S>.Infrastructure depends on Nibras.<S>.Api or Nibras.<S>.Worker. | none |
+| TC-TST-107 | document 07, line 833 | Hosts_ContainNoHandlersOrRules / No type in an .Api or .Worker assembly implements a Wolverine handler, a consumer or a validator; hosts compose and… | Scheduling sheet |
+| TC-TST-108 | document 07, line 834 | BuildingBlocks_NeverReference_AnyDomain / No Nibras.BuildingBlocks.* assembly references any assembly whose name ends in .Domain, which is the bounda… | document 07 |
+| TC-TST-109 | document 07, line 835 | BuildingBlocks_NeverReference_ServicesOrServiceContracts / No Nibras.BuildingBlocks.* assembly references a Nibras.<S>.* assembly or a Nibras.Contrac… | none |
+| TC-TST-110 | document 07, line 836 | BuildingBlocks_HaveNoCycles / The reference graph among the thirteen blocks is acyclic with Domain as the sink and Testing as the only block nothing… | none |
+| TC-TST-111 | document 07, line 837 | Contracts_ReferenceOnly_ContractsShared / Every Nibras.Contracts.<S> assembly references no Nibras. assembly other than Nibras.Contracts.Shared. | none |
+| TC-TST-112 | document 07, line 838 | Contracts_ContainOnlyData / Every public type in a contract assembly is a record, an enum, a static class of string constants, or a generated proto t… | none |
+| TC-TST-113 | document 07, line 839 | Services_NeverReference_AnotherService / No Nibras.<S>.* assembly references a Nibras.<Other>.* assembly for any other service in Appendix L. | document 07 |
 | TC-TST-114 | Bff.Web sheet, line 495 | Architecture / Nibras.Bff.Web references no Nibras.<S>.* assembly | Bff.Mobile sheet, Bff.Web sheet, document 07 |
-| TC-TST-115 | document 07, line 839 | TestingBlock_ReferencedOnlyBy_TestProjects / Every assembly that references Nibras.BuildingBlocks.Testing has a name ending in Tests. | none |
-| TC-TST-116 | document 07, line 840 | Handlers_ResideIn_FeatureFolders / Every handler, validator and endpoint type lives in a namespace Nibras.<S>.Application.Features.<Feature>, and eve… | none |
-| TC-TST-117 | document 07, line 841 | Endpoints_DeclareAPermissionConstant / Every endpoint type calls RequirePermission with a constant from Nibras.<S>.Application.Permissions, or carrie… | none |
-| TC-TST-118 | document 07, line 842 | Consumers_DeriveFrom_IdempotentConsumer / Every type in a Consumers namespace derives from IdempotentConsumer<TMessage> from the Messaging block. | none |
-| TC-TST-119 | document 07, line 843 | Entities_ImplementTenantEntity / Every non-abstract type deriving from Entity<TId> implements ITenantEntity, except types carrying [PlatformScoped]. | none |
-| TC-TST-120 | document 07, line 844 | NoBareIgnoreQueryFilters / A source scan over src/Services/** finds no IgnoreQueryFilters() call without a filter name, outside Nibras.Platform.*. | document 07 |
-| TC-TST-121 | document 07, line 845 | DomainEvents_AreNot_IntegrationEvents / No type implementing IDomainEvent lives in a contract assembly, and no contract record implements IDomainEven… | none |
-| TC-TST-122 | document 07, line 846 | Wellbeing_NeverReferences_Caching / Nibras.Wellbeing.Application and Nibras.Wellbeing.Infrastructure do not reference Nibras.BuildingBlocks.Caching. | document 07 |
-| TC-TST-123 | document 07, line 847 | Workers_DefineNoEndpoints / No type in a .Worker or .Projections assembly maps an HTTP endpoint other than the probes from ServiceDefaults. | Scheduling sheet |
-| TC-TST-124 | document 07, line 848 | EveryServiceHas_TheAnatomy / For every service in Appendix L, the solution contains .Domain, .Application, .Infrastructure, .Api, the three test proj… | Academics sheet, Admissions sheet, Ai sheet, Behavior sheet, Communication sheet, Documents sheet, Finance sheet, Hr sheet, Notification sheet, Operations sheet, Reporting sheet, Requests sheet, Scheduling sheet, School sheet, document 07, document 16 |
+| TC-TST-115 | document 07, line 841 | TestingBlock_ReferencedOnlyBy_TestProjects / Every assembly that references Nibras.BuildingBlocks.Testing has a name ending in Tests. | none |
+| TC-TST-116 | document 07, line 842 | Handlers_ResideIn_FeatureFolders / Every handler, validator and endpoint type lives in a namespace Nibras.<S>.Application.Features.<Feature>, and eve… | none |
+| TC-TST-117 | document 07, line 843 | Endpoints_DeclareAPermissionConstant / Every endpoint type calls RequirePermission with a constant from Nibras.<S>.Application.Permissions, or carrie… | none |
+| TC-TST-118 | document 07, line 844 | Consumers_DeriveFrom_IdempotentConsumer / Every type in a Consumers namespace derives from IdempotentConsumer<TMessage> from the Messaging block. | none |
+| TC-TST-119 | document 07, line 845 | Entities_ImplementTenantEntity / Every non-abstract type deriving from Entity<TId> implements ITenantEntity, except types carrying [PlatformScoped]. | none |
+| TC-TST-120 | document 07, line 846 | NoBareIgnoreQueryFilters / A source scan over src/Services/** finds no IgnoreQueryFilters() call without a filter name, outside Nibras.Platform.*. | document 07 |
+| TC-TST-121 | document 07, line 847 | DomainEvents_AreNot_IntegrationEvents / No type implementing IDomainEvent lives in a contract assembly, and no contract record implements IDomainEven… | none |
+| TC-TST-122 | document 07, line 848 | Wellbeing_NeverReferences_Caching / Nibras.Wellbeing.Application and Nibras.Wellbeing.Infrastructure do not reference Nibras.BuildingBlocks.Caching. | document 07 |
+| TC-TST-123 | document 07, line 849 | Workers_DefineNoEndpoints / No type in a .Worker or .Projections assembly maps an HTTP endpoint other than the probes from ServiceDefaults. | Scheduling sheet |
+| TC-TST-124 | document 07, line 850 | EveryServiceHas_TheAnatomy / For every service in Appendix L, the solution contains .Domain, .Application, .Infrastructure, .Api, the three test proj… | Academics sheet, Admissions sheet, Ai sheet, Behavior sheet, Communication sheet, Documents sheet, Finance sheet, Hr sheet, Notification sheet, Operations sheet, Reporting sheet, Requests sheet, Scheduling sheet, School sheet, document 07, document 16, document 30 |
 | TC-TST-201 | document 16, line 279 | Endpoint contract, plan addition / The aggregated OpenAPI and Appendix K / One test per operation asserting the Problem Details shape for every docum… | document 03, Ai sheet, Communication sheet, Finance sheet, Hr sheet, Identity sheet, Notification sheet, Operations sheet, Platform sheet, Requests sheet, document 20 |
 | TC-TST-202 | document 16, line 280 | Cache entry, plan addition / The caching table of each service sheet, the event catalog / Three tests per entry: invalidation by the real event, tena… | document 03, Ai sheet, Communication sheet, Finance sheet, Hr sheet, Notification sheet, Operations sheet, Requests sheet, document 18, document 20 |
 | TC-TST-203 | document 16, line 281 | Consumer idempotency and ordering, plan addition / Inbox registrations and the partition keys in Appendix E / Deliver-twice for every consumer regist… | document 03, Ai sheet, Audit sheet, Communication sheet, Finance sheet, Hr sheet, Identity sheet, Notification sheet, Operations sheet, Platform sheet, Requests sheet, document 16, document 18, document 20 |
@@ -1589,18 +1626,18 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-TST-215 | document 16, line 532 | Platform point-in-time / Every service database to a chosen minute, object storage to the matching manifest / Recovery point achieved, elapsed time p… | document 18 |
 | TC-TST-216 | document 16, line 533 | Single-tenant restore / One tenant's rows from every service into a running cluster on staging without touching other tenants, per reference architec… | document 15, document 16, document 18 |
 | TC-TST-217 | document 16, line 535 | Wellbeing key restore / The isolation level S database and its encryption key from the key store backup / A restored record decrypts; a record restor… | document 18 |
-| TC-TST-218 | document 16, line 536 | Appliance restore / The on-premises appliance from its backup archive onto a fresh Hyper-V host, per document 33 part 8 / Elapsed time; the smoke scr… | document 18, document 30 |
+| TC-TST-218 | document 16, line 536 | Appliance restore / The on-premises appliance from its backup archive onto a fresh Hyper-V host, per document 33 part 8 / Elapsed time; the smoke scr… | document 02, document 18, document 30 |
 | TC-TST-219 | document 16, line 743 | Performance baseline comparison, the 10 percent gate / 10.5 | document 03, document 16, document 20, document 21 |
 | TC-TST-220 | document 16, line 744 | Staging anonymization assertions / 11.3 | document 16, document 18 |
 | TC-TST-221 | document 16, line 745 | Quarantine expiry fails the build / 13 | document 03, document 16, document 20 |
-| TC-TST-740 | document 07, line 849 | GrpcHopRules.GrpcServices_MakeNoNestedCall / No type in an .Api assembly that derives from a generated gRPC service base class references a generated… | document 04, document 05, document 07, document 30 |
-| TC-TST-741 | document 07, line 850 | Services_CacheOnlyThrough_CachingBlock / No type in a Nibras.<S>.* assembly depends on HybridCache, IDistributedCache or Microsoft.Extensions.Caching… | document 07, document 30 |
-| TC-TST-742 | document 07, line 851 | GrpcHopRules.GrpcClients_MatchSection80 / For each service, the generated gRPC client types its .Infrastructure assembly references are exactly the c… | document 04, document 05, document 07, document 30 |
+| TC-TST-740 | document 07, line 851 | GrpcHopRules.GrpcServices_MakeNoNestedCall / No type in an .Api assembly that derives from a generated gRPC service base class references a generated… | document 04, document 05, document 07, document 30 |
+| TC-TST-741 | document 07, line 852 | Services_CacheOnlyThrough_CachingBlock / No type in a Nibras.<S>.* assembly depends on HybridCache, IDistributedCache or Microsoft.Extensions.Caching… | document 07 |
+| TC-TST-742 | document 07, line 853 | GrpcHopRules.GrpcClients_MatchSection80 / For each service, the generated gRPC client types its .Infrastructure assembly references are exactly the c… | document 04, document 05, document 07 |
 | TC-TST-790 | document 16, line 746 | Given the load-tier pipeline schedules, when they are parsed for one week, then the weekly N-07 window of 26 hours contains no rebuild and no nightly… | document 16, document 34 |
 | TC-UX-001 | Appendix W, line 41 | 23 / Live, animated, modern interface / "It does not feel like school software" / 1 / 1 surfaces / 1 / Web | Appendix O, document 03, document 14, document 16, document 20, document 32, project/CHANGELOG.md, project/KIT_V9_1_CHANGES.md |
-| TC-UX-010 | document 14, line 917 | Given the Accessibility story of each of the 64 components in §7 and every screen row of 08-web-structure.md Section 7, rendered with dir="ltr" and w… | document 14 |
-| TC-UX-011 | document 14, line 918 | Given the Nibras default, the three demo palettes and every stored tenant palette, each in light and dark, when the contrast job computes the §3 matr… | document 14 |
-| TC-UX-012 | document 14, line 919 | Given every nibras_ui widget's States, Directions and Themes use cases built from the same token JSON as @nibras/ui, when ci-mobile.yml renders them… | document 14 |
+| TC-UX-010 | document 14, line 925 | Given the Accessibility story of each of the 64 components in §7 and every screen row of 08-web-structure.md Section 7, rendered with dir="ltr" and w… | document 14 |
+| TC-UX-011 | document 14, line 926 | Given the Nibras default, the three demo palettes and every stored tenant palette, each in light and dark, when the contrast job computes the §3 matr… | document 14 |
+| TC-UX-012 | document 14, line 927 | Given every nibras_ui widget's States, Directions and Themes use cases built from the same token JSON as @nibras/ui, when ci-mobile.yml renders them… | document 14 |
 | TC-WEB-001 | Appendix W, line 29 | 11 / Command palette and natural-language search / "I typed what I wanted" / 1, natural language at 3 / 1 surfaces / 1 / Bff.Web | Appendix O, document 03, Bff.Web sheet, document 20, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-WEL-001 | Appendix R, line 1318 | PlanDrafted to ConsentPending / Guardian holds parental access and is not restricted / Consent request sent with the accommodation list | Wellbeing sheet, document 31, project/DECISIONS/0020-one-definition-per-test-case.md |
 | TC-WEL-002 | Appendix R, line 1319 | ConsentPending to PlanAgreed / Consent recorded with a timestamp / Plan published to exams and teaching staff only | Wellbeing sheet |
@@ -1623,7 +1660,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-WEL-031 | Appendix R, line 1433 | Reported to Triaged / Only designated leads can open the concern / Ordinary staff and administrators see nothing | Wellbeing sheet, document 31 |
 | TC-WEL-032 | Appendix R, line 1434 | ReportedAnonymously to Triaged / No reporter identity stored anywhere / Concern triaged with the same priority as a named one | Wellbeing sheet, document 12 |
 | TC-WEL-033 | Appendix R, line 1435 | Triaged to Referred / External threshold met per the configured framework / Referral pack generated, agency contact recorded | Wellbeing sheet |
-| TC-WEL-034 | Appendix R, line 1436 | Reported to Reported / Untriaged past the high-risk deadline / Automatic escalation to principal and deputy lead | Wellbeing sheet, document 30 |
+| TC-WEL-034 | Appendix R, line 1436 | Reported to Reported / Untriaged past the high-risk deadline / Automatic escalation to principal and deputy lead | Wellbeing sheet |
 | TC-WEL-035 | Appendix R, line 1437 | Closed to Closed / Anyone attempts to delete the concern / Refused, no deletion path exists in any role | Wellbeing sheet, document 12 |
 | TC-WEL-036 | Appendix R, line 1438 | Investigated to Investigated / A staff member named in the concern opens it / Refused and the attempt alerted to the lead | Wellbeing sheet, document 12, document 31 |
 | TC-WEL-041 | Appendix R, line 1472 | Prompted to Answered / Student is enrolled and the check-in is enabled for the stage / Answer stored, visible only to pastoral staff | Wellbeing sheet, document 31 |
@@ -1672,12 +1709,12 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-WEL-343 | Wellbeing sheet, line 1000 | Integration / A missed dose alerts the nurse at once and the guardian within 15 minutes; two missed doses reach the principal | none |
 | TC-WEL-344 | Wellbeing sheet, line 1001 | Integration / Medication authorization approved by the same person twice is refused; nurse plus principal authorizes | none |
 | TC-WEL-680 | School sheet, line 1217 | Medical summary encrypted and every read logged (REQ-SCH-016) / Integration | document 03, document 20 |
-| TC-WEL-701 | document 08, line 775 | Counselor and nurse / Care Today / /care / bento-grid, card, list (visits, medication schedule, follow-ups), as-of-badge / 7 / wellbeing.intervention… | Appendix Q, Wellbeing sheet |
-| TC-WEL-702 | document 08, line 776 | Counselor and nurse / Referrals / /care/referrals / list, panel (referral reason, referrer), button (accept) / 7 / wellbeing.counseling-cases.view /… | Appendix Q, document 03, Wellbeing sheet, document 20 |
+| TC-WEL-701 | document 08, line 784 | Counselor and nurse / Care Today / /care / bento-grid, card, list (visits, medication schedule, follow-ups), as-of-badge / 7 / wellbeing.intervention… | Appendix Q, Wellbeing sheet |
+| TC-WEL-702 | document 08, line 785 | Counselor and nurse / Referrals / /care/referrals / list, panel (referral reason, referrer), button (accept) / 7 / wellbeing.counseling-cases.view /… | Appendix Q, document 03, Wellbeing sheet, document 20 |
 | TC-WEL-703 | Audit sheet, line 618 | Every Wellbeing read writes an access-log entry / Integration with Wellbeing | Appendix Q, document 03, Wellbeing sheet, document 08, document 20 |
 | TC-WEL-704 | Wellbeing sheet, line 964 | UAT / Given a counselling case open for a student, when a teacher signs in on another device and searches for that student, then the case appears in… | Appendix Q, document 03, Wellbeing sheet, document 20 |
-| TC-WEL-705 | document 08, line 779 | Counselor and nurse / Interventions and playbooks / /care/interventions / list, stepper, select (owner), date-picker, timeline / 7 / wellbeing.interv… | Appendix Q, document 03, Wellbeing sheet, document 20 |
-| TC-WEL-706 | document 08, line 780 | Counselor and nurse / Clinic visits / /care/clinic / list, form-field, checkbox (notify guardian, send home), toast / 7 / wellbeing.clinic-visits.vie… | Appendix Q |
+| TC-WEL-705 | document 08, line 788 | Counselor and nurse / Interventions and playbooks / /care/interventions / list, stepper, select (owner), date-picker, timeline / 7 / wellbeing.interv… | Appendix Q, document 03, Wellbeing sheet, document 20 |
+| TC-WEL-706 | document 08, line 789 | Counselor and nurse / Clinic visits / /care/clinic / list, form-field, checkbox (notify guardian, send home), toast / 7 / wellbeing.clinic-visits.vie… | Appendix Q |
 | TC-WEL-707 | Wellbeing sheet, line 965 | UAT / Given an open counselling case with a linked flag, when the counsellor closes it with an outcome code, then the case reads Closed, the flag cle… | Appendix Q, document 03, Wellbeing sheet, document 20 |
 | TC-WEL-810 | Appendix W, line 48 | 30 / Intervention playbooks / "A flag became a plan with an owner" / 1 / 3 drafts / 1 / Wellbeing | Appendix O, Appendix W, document 16, document 32, project/DECISIONS/0023-every-signature-feature-runs-its-demo-test.md |
 
@@ -1694,7 +1731,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-ACA-969 | REQ-ACA-019: Teachers can attach audio feedback to a graded submission | document 20 |
 | TC-ACA-975 | REQ-ACA-025: Item analysis is produced per quiz | document 20 |
 | TC-ACA-977 | REQ-ACA-027: Online classes run through Jitsi or LiveKit with attendance captured from participation | document 20 |
-| TC-ACA-980 | REQ-ACA-030: LTI 1.3 launches external learning tools from an assignment or resource | document 20, document 30 |
+| TC-ACA-980 | REQ-ACA-030: LTI 1.3 launches external learning tools from an assignment or resource | document 20, document 34 |
 | TC-ADM-954 | REQ-ADM-004: Age eligibility per grade is evaluated against the configured cut-off date | document 20 |
 | TC-ADM-956 | REQ-ADM-006: An application fee is charged through Finance before the application is accepted | document 20 |
 | TC-ADM-965 | REQ-ADM-015: Duplicate applicants are detected across name variants in both scripts, birth date, and guardian contact | document 20 |
@@ -1729,7 +1766,6 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-ATT-958 | REQ-ATT-008: Before the lock window closes the device value wins per student, and both values are kept in the change histo… | document 20 |
 | TC-ATT-959 | REQ-ATT-009: Attendance locks after a configurable window, and edits after lock need permission and a reason | document 20 |
 | TC-ATT-960 | REQ-ATT-010: An offline mark arriving after the lock window becomes a pending edit-after-lock request carrying the origina… | document 20 |
-| TC-ATT-964 | REQ-ATT-014: Parents submit an excuse with an attachment inside the excuse window, and approval changes the code automatic… | document 20 |
 | TC-ATT-969 | REQ-ATT-019: A late arrival converts to absent after the cut-off time, and accumulated lates add a derived absence | document 20 |
 | TC-ATT-971 | REQ-ATT-021: The attendance percentage denominator follows the excuse rules | document 20 |
 | TC-ATT-972 | REQ-ATT-022: A mid-term section move splits the attendance record at the move date | document 20 |
@@ -1741,10 +1777,10 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-DATA-952 | REQ-DATA-002: Each service runs under an application role without BYPASSRLS that owns no tables, and a separate migration r… | document 20 |
 | TC-DATA-953 | REQ-DATA-003: Every service enforces tenancy itself with tenant_id on every row, EF Core filters, and PostgreSQL row-level… | document 20 |
 | TC-DATA-958 | REQ-DATA-008: Every multi-tenant index starts with tenant_id, and soft-deleted tables use partial indexes on live rows | document 20 |
-| TC-DATA-959 | REQ-DATA-009: Foreign keys exist only inside a service, and a reference to another service's entity is a plain uuid column | document 20 |
+| TC-DATA-959 | REQ-DATA-009: Foreign keys exist only inside a service, and a reference to another service's entity is a plain uuid column | document 07, document 20, document 30 |
 | TC-DATA-960 | REQ-DATA-010: Migrations follow expand, migrate, contract so that they are safe under rolling deployment, and are never run… | document 20 |
 | TC-DATA-961 | REQ-DATA-011: Services with large models use a compiled EF Core model | document 20 |
-| TC-DATA-962 | REQ-DATA-012: A read with more than one collection Include uses AsSplitQuery() or separate queries | document 20 |
+| TC-DATA-962 | REQ-DATA-012: A read with more than one collection Include uses AsSplitQuery() or separate queries | document 07, document 20 |
 | TC-DATA-964 | REQ-DATA-014: Large text and jsonb live in side tables, not on hot tables | document 20 |
 | TC-DATA-965 | REQ-DATA-015: GIN indexes serve full-text, trigram and jsonb search, with pg_trgm and unaccent where Arabic search normaliz… | document 20 |
 | TC-DATA-966 | REQ-DATA-016: pg_stat_statements is enabled in every database and autovacuum is tuned for the high-churn tables | document 20 |
@@ -1848,13 +1884,13 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-MOB-985 | REQ-MOB-035: The shared Android APK stays under 25 MB per ABI | document 20 |
 | TC-MOB-986 | REQ-MOB-036: Screens render from the local cache first and refresh in the background, with heavy parsing in isolates and d… | document 20 |
 | TC-MOB-987 | REQ-MOB-037: The app provides home-screen widgets for today's timetable and the next due item, quick actions, haptics, a d… | document 20 |
-| TC-MOB-988 | REQ-MOB-038: Supported devices are Android 8 and later including devices without Google services, iOS 15 and later, and ta… | document 01, document 02, Academics sheet, Admissions sheet, Assessment sheet, Attendance sheet, Audit sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Documents sheet, Hr sheet, Notification sheet, Operations sheet, Platform sheet, Reporting sheet, Requests sheet, Scheduling sheet, School sheet, Wellbeing sheet, document 30, document 33, project/CHANGELOG.md |
+| TC-MOB-988 | REQ-MOB-038: Supported devices are Android 8 and later including devices without Google services, iOS 15 and later, and ta… | document 01, document 02, document 04, Academics sheet, Admissions sheet, Assessment sheet, Attendance sheet, Audit sheet, Behavior sheet, Bff.Mobile sheet, Communication sheet, Documents sheet, Hr sheet, Notification sheet, Operations sheet, Platform sheet, Reporting sheet, Requests sheet, Scheduling sheet, School sheet, Wellbeing sheet, document 16, document 20, document 30, document 33, project/CHANGELOG.md |
 | TC-MOB-989 | REQ-MOB-039: A Huawei push adapter plugs in behind IPushSender | document 20 |
 | TC-MOB-990 | REQ-MOB-040: The app is distributed through Google Play, the App Store, AppGallery where it matters, and a signed APK chan… | document 20 |
 | TC-MOB-991 | REQ-MOB-041: A white-label app is published under the school's own developer accounts, and the school owns the listing, ce… | document 20 |
 | TC-MOB-992 | REQ-MOB-042: Anything that must reach phones by a date is submitted to the stores a week early | document 20 |
 | TC-MSG-951 | REQ-MSG-001: RabbitMQ carries integration events, notification fan-out, heavy and bulk work, outgoing webhooks, audit and… | document 20 |
-| TC-MSG-952 | REQ-MSG-002: Queries and commands where the user waits for an immediate result never go through RabbitMQ | document 20 |
+| TC-MSG-952 | REQ-MSG-002: Queries and commands where the user waits for an immediate result never go through RabbitMQ | document 07, document 20, document 30 |
 | TC-MSG-953 | REQ-MSG-003: Every publish goes through a transactional outbox | document 20 |
 | TC-MSG-955 | REQ-MSG-005: Each service publishes to one topic exchange named nibras.<service>, with routing keys <module>.<entity>.<eve… | document 20 |
 | TC-MSG-956 | REQ-MSG-006: Each consumer has one queue per purpose, and every consumer queue is a quorum queue | document 20 |
@@ -1875,7 +1911,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-OPS-964 | REQ-OPS-014: The cafeteria runs a prepaid wallet with an allergy check at sale and parent spending limits | document 20 |
 | TC-OPS-965 | REQ-OPS-015: Boarding and hostel management is provided as a separate schema | document 20 |
 | TC-PERF-951 | REQ-PERF-001: An API read served from cache is p95 under 80 ms at the service | document 04, document 20 |
-| TC-PERF-952 | REQ-PERF-002: An API read from the database is p95 under 250 ms | document 04, document 20, document 30 |
+| TC-PERF-952 | REQ-PERF-002: An API read from the database is p95 under 250 ms | document 04, document 20 |
 | TC-PERF-954 | REQ-PERF-004: A typical request issues 5 or fewer database commands, any handler above 10 needs an ADR, and a command-count… | document 04, document 20 |
 | TC-PERF-955 | REQ-PERF-005: A single SQL command is p95 under 50 ms on demo-scale data, none above 200 ms without an ADR, and a slow-quer… | document 04, document 20 |
 | TC-PERF-956 | REQ-PERF-006: The cache hit ratio for reference data, settings and permissions is 95 percent or higher during school hours | document 04, document 20 |
@@ -1884,14 +1920,14 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-PERF-959 | REQ-PERF-009: Mobile cold start is under 3 seconds and rendering holds 60 frames per second on a mid-range Android device | document 04, document 20 |
 | TC-PERF-960 | REQ-PERF-010: The platform scales to 500 schools, 500,000 students and 20,000 concurrent users, including the 08:00 attenda… | document 04, document 20 |
 | TC-PERF-961 | REQ-PERF-011: DbContexts are pooled, and the tenant is resolved per lease through a scoped accessor and reset when the cont… | document 20 |
-| TC-PERF-962 | REQ-PERF-012: Every entity has a named Tenant filter and a named SoftDelete filter | document 20 |
-| TC-PERF-963 | REQ-PERF-013: No entity uses lazy loading and no entity is ever returned from an API | document 20 |
+| TC-PERF-962 | REQ-PERF-012: Every entity has a named Tenant filter and a named SoftDelete filter | document 07, document 20, document 30 |
+| TC-PERF-963 | REQ-PERF-013: No entity uses lazy loading and no entity is ever returned from an API | document 07, document 20, document 30 |
 | TC-PERF-964 | REQ-PERF-014: Read handlers use AsNoTracking() and project to DTOs with Select, and lists that can grow large use keyset pa… | document 20 |
 | TC-PERF-965 | REQ-PERF-015: Compiled queries serve the attendance register, the timetable of the day, permission lookup, and dashboard ca… | document 20 |
 | TC-PERF-966 | REQ-PERF-016: Large exports stream through IAsyncEnumerable and are never materialized in memory | document 20 |
 | TC-PERF-967 | REQ-PERF-017: Set-based changes use ExecuteUpdateAsync and ExecuteDeleteAsync, and inserts above a few hundred rows use Npg… | document 20 |
 | TC-PERF-968 | REQ-PERF-018: Optimistic concurrency uses the PostgreSQL xmin column on every aggregate | document 20 |
-| TC-PERF-969 | REQ-PERF-019: All caching goes through Nibras.BuildingBlocks.Caching over HybridCache, which adds the tenant to every key a… | document 07, document 20, document 30 |
+| TC-PERF-969 | REQ-PERF-019: All caching goes through Nibras.BuildingBlocks.Caching over HybridCache, which adds the tenant to every key a… | document 07, document 20 |
 | TC-PERF-970 | REQ-PERF-020: Cache keys follow nibras:{tenant}:{service}:{entity}:{id}:v{n} with the full tenant UUID, tags name tenant, s… | document 20 |
 | TC-PERF-971 | REQ-PERF-021: Caching is cache-aside only with event-driven invalidation by tag, jittered TTL as the safety net, and short… | document 20 |
 | TC-PERF-972 | REQ-PERF-022: Cache lifetimes follow the table in master brief Section 19, from 15 seconds L1 for dashboard payloads to 12… | document 20 |
@@ -1903,10 +1939,10 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-PERF-981 | REQ-PERF-031: APIs use Minimal APIs, System.Text.Json source generation, Brotli compression, HTTP/2 and HTTP/3 at the edge,… | document 20 |
 | TC-PLAT-951 | REQ-PLAT-001: Development is supported on Windows 11 with PowerShell 7 or Git Bash, Ubuntu 22.04 and later, and macOS 14 an… | document 04, document 07, document 20 |
 | TC-PLAT-953 | REQ-PLAT-003: Servers run Linux on Debian, Ubuntu or the Red Hat family, on x86-64 and arm64, and Windows Server is not sup… | document 20 |
-| TC-PLAT-955 | REQ-PLAT-005: The web supports the last two major versions of Chrome, Edge, Firefox and Safari, and current Samsung Internet | document 20, document 30 |
+| TC-PLAT-955 | REQ-PLAT-005: The web supports the last two major versions of Chrome, Edge, Firefox and Safari, and current Samsung Internet | document 20 |
 | TC-PLAT-956 | REQ-PLAT-006: Screen reader support is claimed for NVDA and Narrator on Windows, VoiceOver on macOS and iOS, and TalkBack o… | document 20 |
 | TC-PLAT-957 | REQ-PLAT-007: Desktop kiosk builds for Windows and Linux run the gate, front desk and clinic modes, start full-screen, and… | document 20 |
-| TC-PLAT-971 | REQ-PLAT-021: Paths are composed with Path.Combine, never with a literal separator | document 07, document 20, document 30 |
+| TC-PLAT-971 | REQ-PLAT-021: Paths are composed with Path.Combine, never with a literal separator | document 07, document 20 |
 | TC-PLT-951 | REQ-PLT-001: Self-service signup provisions a trial tenant with demo data in minutes and opens a guided onboarding checkli… | document 20 |
 | TC-PLT-954 | REQ-PLT-004: A provisioning saga that fails halfway compensates completed steps and shows the administrator exactly which… | document 20 |
 | TC-PLT-956 | REQ-PLT-006: A tenant can export all its data at every lifecycle state, including read-only and pending deletion | document 20 |
@@ -1966,7 +2002,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-SEC-959 | REQ-SEC-009: Sensitive columns are encrypted at rest and backups are encrypted | document 20 |
 | TC-SEC-960 | REQ-SEC-010: Least privilege applies in infrastructure: a database user per service, a RabbitMQ user and permissions per s… | document 20 |
 | TC-SEC-961 | REQ-SEC-011: The supply chain is protected by pinned dependencies, a CycloneDX SBOM, cosign-signed images, vulnerability a… | document 20 |
-| TC-SEC-962 | REQ-SEC-012: The licence scan fails the build on any licence outside MIT, Apache-2.0, BSD, ISC, MPL-2.0 and PostgreSQL, ma… | document 20, document 30 |
+| TC-SEC-962 | REQ-SEC-012: The licence scan fails the build on any licence outside MIT, Apache-2.0, BSD, ISC, MPL-2.0 and PostgreSQL, ma… | document 20 |
 | TC-SEC-963 | REQ-SEC-013: Bypassing the Tenant query filter requires a platform permission and writes an audit entry, and an architectu… | document 20 |
 | TC-SEC-966 | REQ-SEC-016: Each service rate-limits per user and per endpoint through Nibras.BuildingBlocks.Web, as the second of the th… | document 20 |
 | TC-SEC-967 | REQ-SEC-017: Input is validated and output encoded on every endpoint, with FluentValidation and Problem Details for valida… | document 20 |
@@ -2043,7 +2079,8 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 
 | Date | Reviewer | Result |
 |---|---|---|
-| 2026-09-26 | Generated | 1644 test cases and 329 derived acceptance tests |
+| 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a derived acceptance test counts when a current plan document cites it, not one quoted only by the scorecard or the project history, which is the set document 20 assigns |
+| 2026-09-26 | Generated | 1681 test cases and 328 derived acceptance tests |
 
 ## How this document is verified
 
