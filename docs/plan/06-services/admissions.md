@@ -902,7 +902,7 @@ Existing identifiers are reused; new ones are minted from `TC-ADM-401` upward.
 | Culture and calendars | A Hijri date of birth is converted to Gregorian before the age cut-off (BR-ADM-001); offer expiry is evaluated in the campus time zone; digits typed in Arabic are normalized before validation and matching | TC-ADM-401 (Hijri input), TC-ADM-404 (expiry at 23:59:59 Asia/Riyadh), TC-ADM-760; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image, including the Um Al Qura calendar | Linux; the image test runs on Linux only |
 | Arabic search and matching | Duplicate applicants are found through Arabic normalization of names (BR-ADM-006, REQ-L10N-009), the same fold `24-localization-and-calendars.md` §3 defines | TC-ADM-406; `TC-L10N-310` (document 24), Arabic trigrams inside the database image | Linux |
 | Right-to-left output | The offer letter and the enrolment letter are rendered by Documents in both languages; the public form and the registrar screens are right-to-left in the web client | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries; the web end-to-end specs TC-ADM-301 to TC-ADM-305 run in all four theme and direction combinations (document 33 part 2) | Linux |
-| Devices without Google services | The offer reaches the family by email as well as push, and the OTP of the public form goes to the phone or the email the applicant chose (email only until Open Question 22 names an SMS provider), so no step of the funnel needs Google services; a push to such a device arrives in-app while the app is open | `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services | Device pass, per release |
+| Devices without Google services | The offer reaches the family by email as well as push, and the OTP of the public form goes to the phone or the email the applicant chose (email only until Open Question 22 names an SMS provider), so no step of the funnel needs Google services; a push to such a device arrives in-app while the app is open | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | Device pass, per release |
 
 ---
 
@@ -972,6 +972,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 

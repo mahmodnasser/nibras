@@ -919,7 +919,7 @@ Query budgets are the `TC-PERF-1NN` rows generated from document 21 section 3.10
 | Arabic search and collation | Message search runs on a body normalized by the fold of `24-localization-and-calendars.md` §3 with a trigram index, and needs `pg_trgm` in the database image | TC-COM-760; `TC-L10N-310` (document 24), Arabic trigrams inside the database image | Linux |
 | Right-to-left output | Messages, announcements and policies hold mixed Arabic and English text, shown right-to-left with each message's own direction in the web client and the mobile app; policy documents and consent forms are rendered by Documents in both languages | The web end-to-end specs, TC-COM-201, TC-COM-601 and TC-COM-602 among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2); `TC-TST-208` (document 16) for rendered documents | Linux |
 | Translation | Message translation (REQ-COM-011) has no provider in the approved stack; it stays off and returns `COMMUNICATION_TRANSLATION_UNAVAILABLE` (open point 6, RISK-46) | TC-L10N-501 cannot pass until a provider is chosen | not run until then |
-| Devices without Google services | The hubs are the in-app channel that serves such a device while the app is open; when it is closed, urgent items take Notification's fallback (email, and SMS once Open Question 22 names a provider) | TC-COM-761; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services, which checks the in-app channel | Linux; device pass, per release |
+| Devices without Google services | The hubs are the in-app channel that serves such a device while the app is open; when it is closed, urgent items take Notification's fallback (email, and SMS once Open Question 22 names a provider) | TC-COM-761; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7, which checks the in-app channel | Linux; device pass, per release |
 
 
 ---
@@ -990,6 +990,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-22 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 

@@ -781,6 +781,9 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 | 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | None of the group's blocking gaps was in this document |
 | 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | This document was labelled Group D and its dependency checks pointed at a Group D review (Consistency) |
 | 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | Relabelled Group F with every dependency check at the Group F review; §10.4 places `GrpcHopRules` with the architecture rules of `07-solution-structure.md` §10.3 instead of the Testing block |
+| 2026-09-26 | Group F review, round 3 | Blocked: the group scored below 4 on Completeness, because document 31 listed no transition-test ids per workflow | None of the group's blocking gaps was in this document; this record stopped at "awaiting the round 3 score" (Completeness, not blocking) |
+| 2026-09-26 | Group F review, round 4 | Blocked: the group scored below 4 on Consistency, because SL-ACA-207 in document 34 built `LaunchLtiTool` in phase 2 against the default of document 17 | None in this document; this record still recorded no round-3 verdict (Completeness, not blocking) |
+| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Amended; awaiting the round 5 score | The round 3 and round 4 verdicts recorded above; nothing else in this document changed |
 
 ## How this document is verified
 

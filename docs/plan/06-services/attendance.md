@@ -1217,7 +1217,7 @@ Existing identifiers are reused; new ones are minted upward from `TC-ATT-301` in
 | Culture, calendars and time | Session dates, the lock window, the grace period and the first-period band are evaluated in the campus time zone and stored in UTC; an offline mark keeps the device's `occurredAt` but is ordered by the server's `receivedAt`; percentages are `decimal`, formatted with the tenant's numerals only for display | TC-ATT-302 (Riyadh and Dubai), TC-ATT-308, TC-ATT-760; `TC-PLAT-012` (document 33), a device clock wrong by hours; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
 | Right-to-left output | Attendance renders no document of its own; the register, gate pass and emergency screens are right-to-left in the web client, the mobile app and the kiosk build | The web end-to-end specs, TC-ATT-201 to TC-ATT-207 among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2), with the kiosk goldens on Windows and Linux; `TC-PLAT-009` (document 33), three Arabic screens on each device of the device pass | Linux; kiosk goldens on Windows and Linux; device pass |
 | Arabic search and collation | None here: Attendance runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language (`ar-x-icu` or `en-x-icu`) | `TC-PLAT-004` (document 33), the culture test inside the built image, which checks the collations exist | Linux |
-| Devices without Google services | Offline marking, gate verification and roll call use no Google service; the absence alert and the emergency broadcast reach such a device in-app while the app is open and through Notification's urgent fallback when it is closed (Open Question 22 decides whether that fallback includes SMS) | TC-ATT-761; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services, which includes offline attendance sync | Linux; device pass, per release |
+| Devices without Google services | Offline marking, gate verification and roll call use no Google service; the absence alert and the emergency broadcast reach such a device in-app while the app is open and through Notification's urgent fallback when it is closed (Open Question 22 decides whether that fallback includes SMS) | TC-ATT-761; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7, which includes offline attendance sync | Linux; device pass, per release |
 
 ---
 
@@ -1292,6 +1292,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`; the right-to-left row keeps `TC-PLAT-009`, which is the font-shaping check. Awaiting Group C re-review |
 
 ## How this document is verified
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## v9.5 brief, 2026-09-26
+
+Scorecard rounds 4 and 5. Round 4 approved Group E; Groups C and F stayed blocked on named gaps, which remediation round 5 closed.
+
+**Brief.** Master brief Section 28 re-derived from document 34 by `schedule-34.mjs` (ADR-0025, proposed): phase 3 11 to 18 weeks, phase 4 7 to 12, launch 61 to 95 weeks; the MVP is unchanged at 42 capabilities and 33 to 50 weeks. All three brief files bumped to v9.5.
+
+**Plan.** Document 00, the executive summary, written. The LTI 1.3 launch moved out of SL-ACA-207 (phase 2) into SL-ACA-405 under CAP-INT-02 (phase 4); conditional e-invoicing slices SL-FIN-448 to SL-FIN-452 added; document 34 now 79 capabilities, 724 slices, 1,721 slice-days. Document 11 binds `notification.commands` for every sender and `documents.document.generated.v1` on `operations.events`; the Scheduling, Operations, Behavior, Wellbeing, Hr and Documents sheets agree with it; ten sheets cite `TC-MOB-988` for the device without Google services. Document 21 moves the kindergarten daily sheet to Academics with a hot query. Document 31 names its true phase source, footnotes workflows that precede their owner and marks BR-FIN-017 as in conflict pending Open Question 30. Open Question 31 (the daily-sheet permission amendment) added.
+
 ## v9.4 brief, 2026-09-26
 
 Every signature feature runs its own demo test in the release gate (ADR-0023, proposed). Kit-lint R34 requires each of the 43 signature features to be shown by an Appendix O minute or reserve step whose Test cell runs the feature's Appendix W demo test; Appendix O's minutes 1, 2, 4, 5, 10, 11, 13 and 15 gained ten demo tests. Documents 15, 16 and 32 state the demo gate the same way: every step whose phase has shipped runs at each phase exit and release, through SL-TST-006. Document 32 recounted: 24 features shown in a minute, 18 only in a reserve step, feature 23 guarded by TC-UX-001, feature 39 moved to engineering.

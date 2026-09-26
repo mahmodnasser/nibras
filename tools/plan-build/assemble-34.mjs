@@ -211,6 +211,8 @@ p('| **Total** | **' + tc + '** | **' + ts + '** | **' + td + '** | |');
 p();
 p('**Reading the slice-days against the ranges.** Slice-days are single-person working days of build effort. The roadmap range in the last column is computed from them by `tools/plan-build/schedule-34.mjs`: slice-days × 1.3 for review, integration and demonstration, divided by five to eight builders (master brief Section 29) working five days a week, and never below the phase\'s longest chain of slice dependencies or, for phase 6, the calendar time of the penetration test and the restore drill. Document 17 Section 1 explains each input. The two documents cannot drift: a change to the slices changes the ranges when the script is rerun.');
 p();
+p('**Phases 1 and 2 are longer than the phase size of `PLAN_SPEC.md`.** PLAN_SPEC sizes a phase at 6 to 20 weeks; the ranges of phases 1 and 2 above reach beyond 20 weeks at the five-builder end. They are left so because they are derived from the slices, not chosen: phase 1 carries the building blocks, the pipeline and six services every later phase stands on, and phase 2 the six services of the school year loop that ends at the MVP cut line, and trimming either to fit would hide effort rather than remove it. The alternative is to split each into two phases of about equal slice-days at a capability boundary (phase 1 after the building blocks and Identity, phase 2 after School and Scheduling), which changes no slice and no total and adds one demonstration each. The product owner chooses between the two; until then the phases stand as document 17 lists them, and the overrun is carried under RISK-03 in `18-risk-register.md`.');
+p();
 const phaseNames = { 1: 'Foundation', 2: 'The school year loop', 3: 'Money and paperwork', 4: 'Growth', 5: 'Extended', 6: 'Hardening and launch' };
 let sec = 3;
 for (const ph of ['1', '2', '3', '4', '5', '6']) {
@@ -271,13 +273,18 @@ p('| The ranges assume five to eight builders from the first week of phase 1 | R
 p('| Team size changes the calendar, not the slices | Open Question 24 | Product owner | 3 | 3 | 9 | RISK-06 |');
 p('| SL-ATT-203 sends the absence alert at the mark; Open Question 27 may move it to 30 minutes after the register closes | Within 30 seconds of the mark, as REQ-ATT-017 states | Product owner | 3 | 3 | 9 | RISK-41 |');
 p('| SL-WEL-619 lets a level S check-in answer wait in the encrypted device outbox, which contradicts the no-device rule until Open Question 29 is answered | The outbox as built; online-only is the recommended answer and changes SL-WEL-619 | Privacy officer, then product owner | 4 | 5 | 20 | RISK-47 |');
-p('| SL-PLT-010 bills by BR-FIN-017 while the brief and REQ-PLT-009 bill by the billing-date count; Open Question 30 decides | The billing-date count, prorated by day | Product owner | 4 | 4 | 16 | RISK-52 |');
-p('| SL-FIN-444 needs a country e-invoicing plug-in in phase 3, while Open Question 9 puts the plug-ins in phase 5 | The first plug-in is pulled into phase 3 for the country of the first customer | Product owner | 4 | 3 | 12 | RISK-53 |');
+p('| SL-PLT-010 bills by the count of master brief Section 36 and REQ-PLT-009, while BR-FIN-017 (any student enrolled one day of the month, not prorated) is in conflict with it; Open Question 30 decides | Students enrolled on the billing date, prorated by day, as SL-PLT-010 builds; BR-FIN-017 stays in conflict until the product owner decides | Product owner | 4 | 4 | 16 | RISK-52 |');
+p('| SL-FIN-444 needs a country e-invoicing plug-in in phase 3, while Open Question 9 puts the plug-ins in phase 5 | Country implementations in phase 5; the Finance owner\'s team builds the first plug-in in phase 3 only for the country of a VAT-registered first customer, as the conditional slices SL-FIN-448 to SL-FIN-450 (ZATCA) and SL-FIN-451 and SL-FIN-452 (JoFotara), counted in phase 3 | Product owner, at the Phase 2 exit review | 4 | 3 | 12 | RISK-53 |');
 p();
 p('## Review record');
 p();
 p('| Date | Reviewer | Result |');
 p('|---|---|---|');
+// The scorecard rounds that reviewed this document (Group F), recorded here because the document is generated.
+p('| 2026-09-22 | Round-1 scorecard, Group F | Blocked on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness |');
+p('| 2026-09-26 | Round-2 scorecard, Group F, then remediation round 3 | Blocked on Completeness, Consistency, Risk honesty and Testability |');
+p('| 2026-09-26 | Round-3 scorecard, Group F, then remediation round 4 | Blocked on Completeness (document 31 listed no transition-test ids per workflow) |');
+p('| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Blocked (Consistency: SL-ACA-207 built `LaunchLtiTool` in phase 2 against document 17). Amended: SL-ACA-207 builds the resource library only, and the launch is SL-ACA-405 under CAP-INT-02 beside SL-INT-411 in phase 4; the SL-PLT-010 open point restated so it bills by REQ-PLT-009 with BR-FIN-017 in conflict until Open Question 30 is decided; the country e-invoicing plug-ins estimated as the conditional slices SL-FIN-448 to SL-FIN-452; the phase 1 and 2 overrun of the PLAN_SPEC phase size stated in Section 2 |');
 p('| ' + new Date().toISOString().slice(0, 10) + ' | Plan build, assembled and validated by script | ' + ts + ' slices' + (partial ? '; phases ' + [...present].flatMap((w) => PHASES[w]).join(', ') + ' complete, the rest pending' : ', every requirement covered') + ' |');
 p();
 p('## How this document is verified');

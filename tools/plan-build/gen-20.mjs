@@ -75,7 +75,16 @@ const svcPhase = { Gateway: '1', 'Bff.Web': '1', 'Bff.Mobile': '2', Identity: '1
 // their definitions; otherwise the area's default, from document 33's runner matrix.
 const own = testCaseOwnership(buildContext(K));
 const RUNNERS = [['ubuntu-latest', /ubuntu-latest/i], ['windows-latest', /windows-latest/i], ['macos-latest', /macos-latest/i], ['Android', /\bAndroid\b/], ['iOS', /\biOS\b/], ['Chromium', /Chromium/], ['Firefox', /Firefox/], ['WebKit', /WebKit/], ['device farm', /device (farm|pass)/i]];
-const platformOf = (area, tests) => {
+// Requirements whose tests run on something other than a CI runner: the platform is
+// named from document 33, because their test definitions name none the pattern finds.
+const PLATFORM_OVERRIDE = {
+  'REQ-PLAT-004': 'Hyper-V and VMware: the appliance images built in the nested-virtualisation job of `release.yml`, and the quarterly drill on real Hyper-V (document 33 part 8)',
+  'REQ-PLAT-005': 'Chromium, Firefox and WebKit under Playwright on ubuntu-latest; real Chrome, Edge, Firefox, Safari and Samsung Internet on the device pass (document 33 parts 1 and 4)',
+  'REQ-PLAT-006': 'NVDA and Narrator on Windows, VoiceOver on macOS and iOS, TalkBack on Android, in the manual screen-reader pass of each release (document 33 part 1)',
+  'REQ-PLAT-007': 'Windows 11 kiosk (MSIX, built on windows-latest) and Ubuntu 22.04 or later kiosk (Linux bundle, built on ubuntu-latest) (document 33 part 7)',
+};
+const platformOf = (area, tests, req) => {
+  if (PLATFORM_OVERRIDE[req]) return PLATFORM_OVERRIDE[req];
   const text = tests.map((t) => (own.defs.get(t) || []).map((d) => d.text).join(' ')).join(' ');
   const named = RUNNERS.filter(([, re]) => re.test(text)).map(([n]) => n);
   if (named.length) return named.join(', ');
@@ -94,7 +103,7 @@ for (const r of reqs) {
   const wf = (r.wfbr.match(/WF-[A-Z]+-\d{2}/g) || []).join(', ') || 'none';
   const br = (r.wfbr.match(/BR-[A-Z0-9]+-\d{3}/g) || []).join(', ') || 'none';
   const summary = r.text.replace(/\|/g, '/').replace(/\s+/g, ' ');
-  rows.push('| ' + r.id + ' | ' + (summary.length > 110 ? summary.slice(0, 107) + '...' : summary) + ' | ' + r.tier + ' | ' + r.service + ' | ' + wf + ' | ' + br + ' | ' + doc + ' | ' + phase + ' | ' + (slices.join(', ') || 'gate, see document 34') + ' | ' + [...reqTests.get(r.id)].join(', ') + ' | ' + platformOf(area, [...reqTests.get(r.id)]) + ' | Planned |');
+  rows.push('| ' + r.id + ' | ' + (summary.length > 110 ? summary.slice(0, 107) + '...' : summary) + ' | ' + r.tier + ' | ' + r.service + ' | ' + wf + ' | ' + br + ' | ' + doc + ' | ' + phase + ' | ' + (slices.join(', ') || 'gate, see document 34') + ' | ' + [...reqTests.get(r.id)].join(', ') + ' | ' + platformOf(area, [...reqTests.get(r.id)], r.id) + ' | Planned |');
 }
 
 const L = [];
@@ -140,7 +149,7 @@ p('| Plan document | The owning service\'s sheet, or for a cross-cutting require
 p('| Phase | The phases of the capabilities whose slices build it, from documents 34 and 17 |');
 p('| Slices | Document 34\'s Covers column |');
 p('| Test case | Document 03\'s acceptance column, the service sheets\' test plans, or the derived acceptance test of Section 2 |');
-p('| Platform | The runners or devices named in the definitions of the tests of the requirement (ubuntu-latest, windows-latest, macos-latest, Android, iOS, the browser engines, the device pass); otherwise the default of its area from document 33 part 4, or `any` |');
+p('| Platform | The runners or devices named in the definitions of the tests of the requirement (ubuntu-latest, windows-latest, macos-latest, Android, iOS, the browser engines, the device pass); for REQ-PLAT-004 to REQ-PLAT-007, whose tests run on hypervisors, browsers, screen readers and kiosks rather than a CI runner, the platforms document 33 names for them; otherwise the default of its area from document 33 part 4, or `any` |');
 p('| Status | `Planned` until the build begins; `docs/project/TRACEABILITY.md` carries it forward |');
 p();
 p('### 4. The matrix');

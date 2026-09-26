@@ -1259,7 +1259,7 @@ What this service does on each operating system, runtime and device class, and t
 | Arabic search and collation | Student, guardian and staff search folds hamza, alef and taa marbuta with BR-L10N-001, the same fold in C# and in the database, and sorts per language by the database collation | `TC-L10N-310` (document 24) inside the database image; `TC-L10N-311` (document 32); TC-SCH-401 for bilingual names | `ubuntu-latest` |
 | Time zones and calendars | Term start, document expiry and the rollover run in each campus's IANA time zone; calendar days are stored Gregorian | TC-SCH-425 across three time zones; `TC-PLAT-005` and `TC-PLAT-006` (document 33) inside the built image | `ubuntu-latest` |
 | Right to left | The class list prints right to left with the photo column on the right; the transfer certificate is rendered by Documents in both directions | `TC-L10N-202` (document 08); `TC-L10N-301` (Documents sheet) | `ubuntu-latest` |
-| Mobile without Google services | School has no mobile path of its own: its data reaches phones through Bff.Mobile, and nothing School sends depends on push | The Bff.Mobile sheet; `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | the device pass |
+| Mobile without Google services | School has no mobile path of its own: its data reaches phones through Bff.Mobile, and nothing School sends depends on push | The Bff.Mobile sheet; `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | the device pass |
 
 ---
 
@@ -1333,6 +1333,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Saga 4 and Saga 5 diagrams added to section 8; platform notes (section 15.1); signature features; risk table on document 18's scale; open points 2, 4, 8 and 11 closed and point 1 narrowed. Awaiting Group C re-review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`, the same defect the scorecard found in eight other sheets. Awaiting Group C re-review |
 
 ## How this document is verified
 

@@ -1001,7 +1001,7 @@ What this service does on each operating system, runtime and device class, and t
 | Time zones, work week and holidays | SLA clocks run in the campus's IANA time zone over its work week and holidays (BR-RQS-003) | TC-RQS-606; `SlaCalendarRulesTests`; `TC-PLAT-005` (document 33) inside the built image | `ubuntu-latest` |
 | Right to left | Forms render right to left in Arabic, conditional fields included; the printable summary prints in the tenant language | TC-RQS-617, TC-RQS-614 | `ubuntu-latest` |
 | Offline devices and clocks | A task completed on two devices offline is completed once, ordered by the server's `receivedAt` | TC-RQS-603; `TC-PLAT-012` (document 33) for the wrong-clock case | `ubuntu-latest` |
-| Mobile without Google services | A guardian submits and follows a request on the phone; decisions and information requests reach a device without Google services in-app while the app is open, and by email | TC-RQS-501; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | `ubuntu-latest`; the device pass |
+| Mobile without Google services | A guardian submits and follows a request on the phone; decisions and information requests reach a device without Google services in-app while the app is open, and by email | TC-RQS-501; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | `ubuntu-latest`; the device pass |
 
 ---
 
@@ -1075,6 +1075,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Saga 6 diagram added to section 8 beside WF-RQS-01; platform notes (section 15.1); signature features; risk table on document 18's scale; open points 3 and 7 closed and points 1 and 5 narrowed. Awaiting Group C re-review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 

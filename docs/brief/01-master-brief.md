@@ -1,4 +1,4 @@
-# Nibras (نبراس): Master Brief v9.4
+# Nibras (نبراس): Master Brief v9.5
 
 **The premium open-source school management platform**
 
@@ -1199,12 +1199,12 @@ Durations are ranges for a small, experienced team working continuously. They ar
 | **0 Plan** | The documents in `docs/plan/`, approved group by group | none | 3 to 5 weeks | Every group scores 4 or better on the rubric; `kit-lint` clean; Section 27 decisions signed off |
 | **1 Foundation** | Building blocks, service template, pipeline, Gateway, Identity, Platform, Notification, Audit, design system, demo tenant | 6 | 14 to 22 weeks | A person can sign in, a tenant can be provisioned by the saga, a notification arrives, an audit entry is written, all proven by tests that ran |
 | **2 The school year loop** | School, Scheduling, Attendance, Academics, Assessment, and the web and mobile screens for them | 5 | 14 to 21 weeks | A class is taught, attended, graded and reported end to end, in both languages, on web and phone. **This is the MVP cut line** |
-| **3 Money and paperwork** | Finance, Requests, Communication, Documents | 4 | 11 to 17 weeks | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate is issued and verifies by QR |
-| **4 Growth** | Admissions, Behavior, Reporting, mobile parity, nursery and kindergarten | 4 | 7 to 11 weeks | An applicant becomes an enrolled student without retyping; dashboards answer the questions in Appendix D |
+| **3 Money and paperwork** | Finance, Requests, Communication, Documents | 4 | 11 to 18 weeks | A fee is invoiced, chased and paid; a request is approved and takes effect; a certificate is issued and verifies by QR |
+| **4 Growth** | Admissions, Behavior, Reporting, mobile parity, nursery and kindergarten | 4 | 7 to 12 weeks | An applicant becomes an enrolled student without retyping; dashboards answer the questions in Appendix D |
 | **5 Extended** | Wellbeing, Hr, Operations, and the Tier 2 features the first customers asked for | 3 | 9 to 14 weeks | Each module meets the definition of done in Section 26 |
 | **6 Hardening and launch** | Load, soak, chaos, restore and disaster-recovery drills, penetration test, accessibility pass, documentation, on-premises bundle | all | 6 to 8 weeks | Every quality gate in Section 24 green with evidence; penetration-test findings closed or accepted with an owner |
 
-**Total from the start of phase 1 to launch: 61 to 93 weeks** for the team in Section 29, derived the same way. The low end assumes eight builders from the first week, the high end five.
+**Total from the start of phase 1 to launch: 61 to 95 weeks** for the team in Section 29, derived the same way. The low end assumes eight builders from the first week, the high end five.
 
 **The MVP cut line.** The first paying school needs phases 0 to 2 plus the parts of phase 3 it uses in term one. Concretely: sign-in and roles, school setup, students and guardians, timetable, attendance, coursework, marks and report cards, announcements and messaging, notifications, the Request Center with the attendance and document request types, and the audit log. That is **42 capabilities and 33 to 50 weeks from the start of phase 1**, derived from document 34 by the same script (`docs/plan/17-roadmap.md` Section 5 lists the capabilities). Admissions, Behavior, Wellbeing, Hr, Operations and Ai are explicitly not in it. A school that needs one of them is a phase 4 or 5 customer, and saying so early is cheaper than saying it late.
 

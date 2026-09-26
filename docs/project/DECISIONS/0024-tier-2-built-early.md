@@ -10,7 +10,7 @@ Master brief Section 13 says "Tier 1 must be complete and polished before Tier 2
 
 The round-2 scorecard (Group E, risk honesty) found that the plan does not keep that rule and does not say so. Document 34 covers Tier 2 requirements in phases 1 and 2 (REQ-IDN-010, REQ-ACA-007, REQ-ASM-010 among them) with no record, although RISK-02's own mitigation in `docs/plan/18-risk-register.md` says "a slice whose requirement is Tier 2 cannot enter a Tier 1 phase without an ADR", and the top-ten action that was to enforce it was never built.
 
-Counted from `docs/plan/03-requirements-catalog.md` (the tier column) and the phase 1 to 4 sections of `docs/plan/34-work-breakdown.md` (the Covers column), 35 Tier 2 or Tier 3 requirements are built in phases 1 to 4. The slices that build nothing but Tier 2 or Tier 3 work come to 57 slice-days (5 in phase 1, 24 in phase 2, 12 in phase 3, 16 in phase 4), 37 of them inside the MVP.
+Counted from `docs/plan/03-requirements-catalog.md` (the tier column) and the phase 1 to 4 sections of `docs/plan/34-work-breakdown.md` (the Covers column), 35 Tier 2 or Tier 3 requirements are built in phases 1 to 4. The slices that build nothing but Tier 2 or Tier 3 work come to 59 slice-days (5 in phase 1, 24 in phase 2, 12 in phase 3, 18 in phase 4), 37 of them inside the MVP.
 
 Part of the pull is the brief itself. Appendix O, normative since brief v9.4, gives every demo step a Phase cell, and eleven signature features that Appendix W marks Tier 2 (16, 18, 19, 20, 21, 22, 24, 36, 37, 38 and 42) are shown by steps whose Phase cell is 1 to 4; minute 14's Tier 1 feature 27 also rests on the Tier 3 group view of REQ-RPT-013. The two brief rules disagree for those features, and nothing in the plan said which one wins.
 
@@ -44,7 +44,7 @@ A reason is one of four kinds, the same four document 17 uses:
 | REQ-ACA-026 | 2 | SL-ACA-216 | 2 | Locality | QTI 3 import and export are built once here; SL-INT-600 adds the per-item report and round trip in phase 5 |
 | REQ-ACA-027 | 2 | SL-ACA-218 | 2 | Locality | Participation feeds Attendance while both are built; document 34 already moves the slice to phase 5 if its Appendix B permission has not landed |
 | REQ-ACA-028 | 2 | SL-ACA-209, SL-ACA-400 to SL-ACA-404 | 2, 4 | Demo | Reserve step R-08 (phase 4) shows the daily sheet, feature 19 |
-| REQ-ACA-030 | 2 | SL-ACA-207 | 2 | Move | An LTI 1.3 launch needs the registration, login and keys SL-INT-411 builds in phase 4; the launch half moves beside it |
+| REQ-ACA-030 | 2 | SL-ACA-405 | 4 | Shared, after a move | An LTI 1.3 launch needs the registration, login and keys SL-INT-411 builds in phase 4 for Tier 1 REQ-INT-016, so the launch could not run in phase 2 and document 34 has already moved it: SL-ACA-405 builds it under CAP-INT-02 beside SL-INT-411, and SL-ACA-207 keeps the Tier 1 resource library only |
 | REQ-ASM-010 | 2 | SL-ASM-227, SL-ASM-228, SL-ASM-229 | 2 | Shared | The exam session of Tier 1 REQ-ASM-009 carries its papers |
 | REQ-ASM-011 | 2 | SL-ASM-227 | 2 | Shared | The refusal, audit and alert guard the paper workflow |
 | REQ-ASM-012 | 2 | SL-ASM-228 | 2 | Shared | Sealing and the print count close the paper workflow against REQ-ASM-009's candidates |
@@ -69,13 +69,13 @@ A reason is one of four kinds, the same four document 17 uses:
 
 ## Alternatives considered
 
-- **Move every Tier 2 and Tier 3 requirement out of phases 1 to 4.** Rejected. It takes 57 slice-days out, but it also takes out the Tier 2 signature features that Appendix O shows from phases 1 to 4, so the phase demos and the demo gate of ADR-0023 would fail, and the Shared rows would reopen finished Tier 1 slices in phase 5.
+- **Move every Tier 2 and Tier 3 requirement out of phases 1 to 4.** Rejected. It takes 59 slice-days out, but it also takes out the Tier 2 signature features that Appendix O shows from phases 1 to 4, so the phase demos and the demo gate of ADR-0023 would fail, and the Shared rows would reopen finished Tier 1 slices in phase 5.
 - **Keep everything where it is and record nothing.** Rejected. It is what the scorecard found: RISK-02's mitigation was stated and not kept, and a reader of the roadmap could not tell scope creep from a decision.
 - **Re-tier the Demo requirements to Tier 1 in document 03.** Rejected for now. The tiers come from Appendix A and master brief Section 13; changing them is a brief change with a version bump, which the product owner may still prefer to this record.
 
 ## Consequences
 
 - Document 17 carries the list, and R35 fails the lint the day a slice starts building a Tier 2 or Tier 3 requirement in phases 1 to 4 without a row.
-- If this record is accepted, document 34 moves the Move rows (REQ-MOB-039, REQ-NOT-002, REQ-ACA-030, and the named parts of REQ-PLT-039 and REQ-SCH-036), and document 17's table and ranges are recomputed; until then they stay as built.
+- If this record is accepted, document 34 moves the Move rows (REQ-MOB-039, REQ-NOT-002, and the named parts of REQ-PLT-039 and REQ-SCH-036), and document 17's table and ranges are recomputed; until then they stay as built. REQ-ACA-030 has already moved to phase 4 (SL-ACA-405) whatever the decision, because its launch cannot run before SL-INT-411.
 - The Locality rows are the first to move if the MVP must come sooner; the product owner can move any of them without breaking a Tier 1 promise or a demo step.
 - Revisit when Appendix O changes a Phase cell, when document 03 changes a tier, or when a first customer asks for a Tier 2 module in term one (RISK-32).

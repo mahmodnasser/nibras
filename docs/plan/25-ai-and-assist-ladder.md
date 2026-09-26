@@ -361,7 +361,7 @@ Every row is asserted by `TC-AI-638` (Ai sheet), which runs each §6.1 golden se
 | Every release candidate runs the full harness | Pipeline stage `ai-eval`; results stored as a release artefact |
 | A drop of more than 3 points on any feature blocks, even above the threshold | Comparison with the previous release's stored results |
 | A model or template change is a release | A new model tag or template version reruns the harness before a tenant setting may select it |
-| Human raters | Two raters per language score a 20-item drafting sample per release; disagreement above 20 percent triggers a template review |
+| Human raters | Two raters per language score a 20-item drafting sample per release; disagreement above 20 percent triggers a template review. The scoring is a named review step (ADR-0021, proof kind 2): the two raters per language, named by the product owner, compare each draft with the §6.1 rubric at every release candidate. What the pipeline does with their scores is `TC-AI-802` |
 | Evaluation data never leaves | Golden sets use the demo tenant of Appendix H only, never production data |
 
 ### 7. The Because panel contract
@@ -525,6 +525,9 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 | 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | `ai.usage.recorded.v1` published by other services, a gRPC path to Ai and two names for the embedding table (Consistency); the §6.2 thresholds with no test-case identifier (Testability) |
 | 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | The round 1 consistency items were closed (§3 "no service but Ai publishes an `ai.*` key", REST only, `ai_index.embedding_chunk`). Still open: the quality row cited "§6.2 thresholds" with no identifier (Testability), and this record read "review pending" although round 1 had blocked the group (Risk honesty) |
 | 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | §6.2 and the quality row cite `TC-AI-638` (Ai sheet); §6.3 gains `TC-AI-800` and `TC-AI-801` in a new test table; the three rows that named a requirement's acceptance test now cite `TC-AI-601`, `TC-AI-607` and `TC-AI-608` (Ai sheet) |
+| 2026-09-26 | Group F review, round 3 | Blocked: the group scored below 4 on Completeness, because document 31 listed no transition-test ids per workflow | None of the group's blocking gaps was in this document; the §6.3 human-rater step had no test id (Testability, not blocking), and this record stopped at "awaiting the round 3 score" |
+| 2026-09-26 | Group F review, round 4 | Blocked: the group scored below 4 on Consistency, because SL-ACA-207 in document 34 built `LaunchLtiTool` in phase 2 against the default of document 17 | None in this document; the human-rater step still had no id (Testability, not blocking) |
+| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Amended; awaiting the round 5 score | `TC-AI-802` defined in the test table for what the `ai-eval` stage does with the rater scores, and cited from §6.3 and the quality row; the scoring itself stated as a named review step under ADR-0021, with who, what and when; the round 3 and round 4 verdicts recorded above |
 
 ## How this document is verified
 
@@ -538,14 +541,15 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 | Rung 4 only with consent | `TC-SEC-323` | Every pull request touching Ai |
 | Withdrawal purges the index | `TC-SEC-325` | Every pull request touching Ai |
 | Fallback is downward and never an error | `TC-AI-608` (Ai sheet) with the model endpoint stopped, and with the provider stopped | Nightly |
-| Quality in both languages | `TC-AI-638` (Ai sheet) asserts every §6.2 threshold over the §6.1 golden sets in the `ai-eval` stage SL-AI-611 builds; `TC-AI-800` and `TC-AI-801` below assert the §6.3 regression rules | Nightly and every release candidate |
+| Quality in both languages | `TC-AI-638` (Ai sheet) asserts every §6.2 threshold over the §6.1 golden sets in the `ai-eval` stage SL-AI-611 builds; `TC-AI-800`, `TC-AI-801` and `TC-AI-802` below assert the §6.3 regression rules; the human raters' scoring itself is the named review step of §6.3 | Nightly and every release candidate; the rating at every release candidate |
 | This document agrees with the catalogs | kit-lint R01, R02 and R17 for section and appendix references and Mermaid types, R30 for a comment on every column of a `CREATE TABLE`, and R31 for database and image names against Appendix L (R11 checks Appendix W's own register, not this document); `plan-consistency-checker` with `privacy-auditor` compares this document with `12-security-privacy-safety.md` and Appendix W | kit-lint on every change under `docs/`; the comparison at the Group F review and on every change to any of them |
 
 ### Test cases
 
-This document defines the two regression tests of §6.3; the thresholds of §6.2 are `TC-AI-638` in the Ai sheet and are not restated. Both run in the `ai-eval` stage that SL-AI-611 builds, against the pinned local model of the `ai` compose profile and the demo tenant of Appendix H.
+This document defines the three regression tests of §6.3; the thresholds of §6.2 are `TC-AI-638` in the Ai sheet and are not restated. All three run in the `ai-eval` stage that SL-AI-611 builds, against the pinned local model of the `ai` compose profile and the demo tenant of Appendix H.
 
 | Test case | What it proves | Covers |
 |---|---|---|
 | TC-AI-800 | Given the stored harness results of the previous release, in which `report-comment-draft` passed its rubric at 96 percent in Arabic, when a release candidate scores 92 percent in Arabic, above the 90 percent threshold of §6.2 but 4 points lower, then the `ai-eval` stage fails the candidate naming the feature code, the language and both scores, and a candidate at 94 percent, 2 points lower, passes | none |
 | TC-AI-801 | Given a tenant whose drafting features use the released model tag, when a new model tag or a new template version is registered and the harness has not yet passed for it, then the tenant setting refuses to select it, and after one harness run that passes every §6.2 row in both languages the setting accepts it | none |
+| TC-AI-802 | Given a release candidate whose 20-item Arabic drafting sample for `report-comment-draft` was scored by two raters who disagree on 5 items (25 percent), when the scores are recorded against the candidate, then the `ai-eval` stage opens a template review for that feature code and language and stores both raters' scores with the candidate's harness results; a sample with disagreement on 4 items (20 percent) opens none | none |

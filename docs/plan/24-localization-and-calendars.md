@@ -809,6 +809,9 @@ Two points that stood here in v9 are settled by the v9.1 brief and now sit in De
 | 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | None of the group's blocking gaps was in this document |
 | 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | This document was labelled Group D and its dependency checks pointed at Group B, D and E reviews for documents that belong to Groups D and F (Consistency) |
 | 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | Relabelled Group F; the checks on Appendix G and on documents 08, 09, 14, 22, 23 and 33 now happen at the Group F review |
+| 2026-09-26 | Group F review, round 3 | Blocked: the group scored below 4 on Completeness, because document 31 listed no transition-test ids per workflow | None of the group's blocking gaps was in this document; this record stopped at "awaiting the round 3 score" (Completeness, not blocking) |
+| 2026-09-26 | Group F review, round 4 | Blocked: the group scored below 4 on Consistency, because SL-ACA-207 in document 34 built `LaunchLtiTool` in phase 2 against the default of document 17 | None in this document; this record still recorded no round-3 verdict (Completeness, not blocking) |
+| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Amended; awaiting the round 5 score | The round 3 and round 4 verdicts recorded above; nothing else in this document changed |
 
 ## How this document is verified
 

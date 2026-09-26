@@ -107,7 +107,7 @@ Lifetimes below are the master brief Section 19 table applied per entry. Where S
 | Homework load per section per day | `nibras:{tenant}:academics:load:{sectionId}:{date}:v1` | `tenant`, `section` | 30 s | 5 min ± 10% | `academics.assignment.published.v1` | Nothing |
 | Student, section, staff and timetable reference copies | `nibras:{tenant}:academics:ref-student:{studentId}:v1` and the same pattern for `ref-section`, `ref-staff`, `ref-timetable` | `tenant`, `student`, `section`, `staff`, `timetable` | 30 s | 15 min ± 10% | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.section.changed.v1`, `school.staff.left.v1`, `scheduling.timetable.published.v1`, `scheduling.timetable.changed.v1` | Nothing |
 
-**Never cached in Academics:** submission files and feedback text (Confidential and large), quiz answer keys before the quiz closes, attempt contents in progress.
+**Never cached in Academics:** submission files and feedback text (Confidential and large), quiz answer keys before the quiz closes, attempt contents in progress, and kindergarten daily sheets with their entries, notes and photo references (Confidential per child, Appendix J; `06-services/academics.md` §4.11 and §13). The class view is served from the database by hot query 10 in section 3.5, and the photo links are 5-minute signed links from Documents, never stored in a cache.
 
 #### 1.6 Assessment
 
@@ -278,7 +278,7 @@ Wellbeing caches nothing. Every field it owns is at isolation level S in Appendi
 | Activity catalogue and capacity per term | `nibras:{tenant}:operations:activities:{termId}:v1` | `tenant` | 60 s | 30 min ± 10% | `operations.activity.enrollment-confirmed.v1`, activity publish handler evicts by key | Medical flags carried for a trip, read live from Wellbeing |
 | Student, staff, section, timetable reference copies | `nibras:{tenant}:operations:ref-student:{studentId}:v1` and the same pattern for `ref-staff`, `ref-section`, `ref-timetable` | `tenant`, `student`, `staff`, `section`, `timetable` | 30 s | 15 min ± 10% | `school.student.enrolled.v1`, `school.student.section-changed.v1`, `school.student.status-changed.v1`, `school.section.changed.v1`, `identity.user.activated.v1`, `identity.user.deactivated.v1`, `scheduling.timetable.published.v1`, `scheduling.room-booking.approved.v1` | Nothing |
 
-**Never cached in Operations:** visitor and driver identity references, kindergarten daily sheets, boarding events per child beyond the roster, inventory cost prices (Confidential, per-user only).
+**Never cached in Operations:** visitor and driver identity references, boarding events per child beyond the roster, inventory cost prices (Confidential, per-user only).
 
 #### 1.20 Ai
 
@@ -607,6 +607,7 @@ Growth: applications per campaign grow with intake, not with enrolment; a 20,000
 | 5 | Homework minutes assigned to a section on a date (load ceiling rule) | `CheckHomeworkLoadHandler` | `assignments` by `(tenant_id, section_id, due_at)` sum of `estimated_minutes` for one day | 1 / 1 | none | 2 | 10 ms | yes |
 | 6 | Lesson plans for a week by department (head of department review) | `ListLessonPlansQuery` | `lesson_plans` by `(tenant_id, department_id, week_of, status)`; `ix_lesson_plans_dept_week` | 20 / 60 | keyset on `(staff_id, id)` | 2 | 20 ms | no |
 | 7 | Quiz attempt in progress for a student (autosave) | `SaveAttemptAnswerHandler` | `attempts` by `(tenant_id, quiz_id, student_id)` where open; `ExecuteUpdateAsync` on the answer `jsonb`; `ux_attempts_open` | 1 / 1 | none | 3 | 15 ms | no |
+| 10 | Kindergarten daily sheets for one section and date, the class view a teacher fills (`GET /daily-sheets?sectionId=&date=`, `06-services/academics.md` §5.10; Tier 2, REQ-ACA-028). Numbers 8 and 9 are the job queries of `06-services/academics.md` §12 | `DailySheetsHandler` | the roster from `ref_student_section_history` for the date, left-joined to `daily_sheets` by `(tenant_id, section_id, sheet_date)`, then `daily_sheet_entries` by `(tenant_id, daily_sheet_id)` for the sheets found; `ix_daily_sheets_section_date`, `ix_daily_sheet_entries_sheet`; never from a cache (section 1.5) | 20 / 25 sheets, about 120 / 150 entries | none, bounded by the roster | 3 | 20 ms | no |
 
 ```sql
 -- Academics: submissions are list-partitioned by academic_year_id (10-data-architecture.md Section 5); every index below is created on the partitioned parent and inherited.
@@ -616,7 +617,11 @@ CREATE INDEX ix_submissions_tenant_assignment ON academics.submissions (tenant_i
 CREATE INDEX ix_submissions_tenant_student ON academics.submissions (tenant_id, student_id, assignment_id) INCLUDE (status) WHERE deleted_at IS NULL;                          -- query 4: the student's side of the join
 CREATE INDEX ix_lesson_plans_dept_week ON academics.lesson_plans (tenant_id, department_id, week_of, status, staff_id, id) WHERE deleted_at IS NULL;                        -- query 6: review queue
 CREATE UNIQUE INDEX ux_attempts_open ON academics.attempts (tenant_id, quiz_id, student_id) WHERE submitted_at IS NULL;                                                       -- query 7: one open attempt per student per quiz, and the autosave target
+CREATE INDEX ix_daily_sheets_section_date ON academics.daily_sheets (tenant_id, section_id, sheet_date) INCLUDE (student_id, status, sent_at, corrected_at) WHERE deleted_at IS NULL;  -- query 10: the class view in one index range; the unique (tenant_id, student_id, sheet_date) index stays the upsert target
+CREATE INDEX ix_daily_sheet_entries_sheet ON academics.daily_sheet_entries (tenant_id, daily_sheet_id, recorded_at) WHERE deleted_at IS NULL;                                     -- query 10: entries of the sheets found, in time order
 ```
+
+Query 10 is a database read under master brief Section 19: p95 under 250 ms for the request and under 50 ms for each SQL command, at most five commands. Its 20 ms line holds for a section of 25 children with six entries each; the table grows by one row per child per school day, and the index keeps the read to one section and one date.
 
 Growth: submissions grow with assignments × roster; a 20,000-student tenant adds about 1.5 million submissions a year into one list partition, and queries 3 and 4 still touch one assignment or one student. The evening submission peak (reference architecture Section 8) is a write peak served by `ux_attempts_open` and EF Core batching.
 
@@ -1308,6 +1313,7 @@ A service whose evidence is missing for any row is not done, whatever its functi
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-20 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | Kindergarten daily sheets moved from "Never cached in Operations" to "Never cached in Academics" (section 1.5), since the Academics sheet owns them (`06-services/academics.md` §4.11); section 3.5 gains hot query 10 for `GET /daily-sheets?sectionId=&date=` with `ix_daily_sheets_section_date` and `ix_daily_sheet_entries_sheet` under the master brief Section 19 budgets |
 
 ## How this document is verified
 

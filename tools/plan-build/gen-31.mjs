@@ -1,4 +1,5 @@
-// Generate docs/plan/31-business-rules-and-workflows.md from Appendices R and S
+// Generate docs/plan/31-business-rules-and-workflows.md from Appendices R and S,
+// the slices of document 34 (whose phases are the capability phases of document 17)
 // and the build phase column of document 05. Every row is derived, none retyped.
 import { fileURLToPath as __toPath } from 'node:url';
 import { dirname as __dirOf, resolve as __resolve } from 'node:path';
@@ -29,6 +30,10 @@ for (const line of C05.split('\n')) {
 // Covers column names it; the owning service's phase in document 05 is the
 // fallback for an identifier no slice names.
 const built = new Map();
+// The first slice that names each identifier, and the first slice of the owning service
+// that names it, so a workflow started ahead of its owner can say so (Section 3 note).
+const firstSlice = new Map();
+const firstOwnerSlice = new Map();
 const D34 = K + 'docs/plan/34-work-breakdown.md';
 if (existsSync(D34)) {
   let ph = null;
@@ -36,11 +41,23 @@ if (existsSync(D34)) {
     const h = /^### \d+\. Phase (\d)/.exec(line);
     if (h) ph = h[1];
     if (!ph || !/^\| SL-/.test(line)) continue;
-    const covers = line.split('|')[5] || '';
-    for (const m of covers.matchAll(/(BR-[A-Z0-9]+-\d{3}|WF-[A-Z]+-\d{2})/g)) if (!built.has(m[1]) || +ph < +built.get(m[1])) built.set(m[1], ph);
+    const cells = line.split('|');
+    const covers = cells[5] || '';
+    const slice = { id: cells[1].trim(), service: cells[3].trim(), ph };
+    for (const m of covers.matchAll(/(BR-[A-Z0-9]+-\d{3}|WF-[A-Z]+-\d{2})/g)) {
+      if (!built.has(m[1]) || +ph < +built.get(m[1])) { built.set(m[1], ph); firstSlice.set(m[1], slice); }
+      const own = firstOwnerSlice.get(m[1]) || new Map();
+      if (!own.has(slice.service) || +ph < +own.get(slice.service).ph) own.set(slice.service, slice);
+      firstOwnerSlice.set(m[1], own);
+    }
   }
 }
 const phaseOf = (id, owner) => built.get(id) || phase.get(owner) || '?';
+// Rules whose default is contested by an open product-owner decision. Their rows and the
+// mutation targets carry the mark, so no reader takes them as settled.
+const CONTESTED = {
+  'BR-FIN-017': 'in conflict with master brief Section 36 and REQ-PLT-009, which bill a tenant by the students enrolled on the billing date, prorated by day, pending Open Question 30 (RISK-52)',
+};
 
 const pascal = (s) => s.replace(/[^A-Za-z0-9 ]+/g, ' ').split(/\s+/).filter(Boolean)
   .map((w) => w[0].toUpperCase() + w.slice(1)).join('');
@@ -96,7 +113,7 @@ p('# 31. Business Rules and Workflows, Assigned to Code');
 p();
 p('## Purpose');
 p();
-p('Appendix S states what the product computes and Appendix R states how its processes move. This document says **where each one lives in the code, what test proves it, and in which phase it is built.** It is generated from the two appendices and from the build-phase column of `05-service-catalog.md`, so a rule or workflow cannot be added to an appendix and silently miss an owner here.');
+p('Appendix S states what the product computes and Appendix R states how its processes move. This document says **where each one lives in the code, what test proves it, and in which phase it is built.** It is generated from the two appendices, from the slices of `34-work-breakdown.md`, whose phases are the capability phases of `17-roadmap.md` and give the Phase column of every rule and workflow, and from the build-phase column of `05-service-catalog.md`, which gives the service table of Section 1 and the phase of an identifier no slice names. So a rule or workflow cannot be added to an appendix and silently miss an owner here.');
 p();
 p('Saga designs for the multi-service workflows are in `13-workflows-and-sagas.md`. This document does not repeat them.');
 p();
@@ -128,7 +145,9 @@ p('**How to read the implementation column.** Each rule is one class in the owni
 p();
 p('| Rule | Name | Owner | Test class | Implementation | Parameters (Appendix G) | Property-based | Phase |');
 p('|---|---|---|---|---|---|---|---|');
-for (const r of rules) p('| `' + r.id + '` | ' + r.name + ' | ' + r.owner + ' | `' + r.test + '` | `' + r.impl + '` | ' + r.params.replace(/\|/g, '/') + ' | ' + (r.arithmetic ? 'yes' : 'no') + ' | ' + r.phase + ' |');
+for (const r of rules) p('| `' + r.id + '` | ' + r.name + (CONTESTED[r.id] ? ' (**contested**: ' + CONTESTED[r.id] + ')' : '') + ' | ' + r.owner + ' | `' + r.test + '` | `' + r.impl + '` | ' + r.params.replace(/\|/g, '/') + ' | ' + (r.arithmetic ? 'yes' : 'no') + ' | ' + r.phase + ' |');
+p();
+for (const [id, why] of Object.entries(CONTESTED)) if (rules.some((r) => r.id === id)) p('**`' + id + '` is contested, not settled.** It is ' + why + '. `34-work-breakdown.md` SL-PLT-010 builds the billing-date count as the default in force, and the rule stays in conflict with it until the product owner decides; its test class and mutation target (Section 6) stand for whichever count the decision keeps.');
 p();
 p('**Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification is derived from the rule text and is confirmed or corrected by the business-rules-reviewer agent during Group F review.');
 p();
@@ -150,8 +169,22 @@ const ranges = (ids) => {
 };
 p('| Workflow | Name | Owner | Tier | Mobile | Offline | State type | Feature folder | Phase | Transition tests (Appendix R) |');
 p('|---|---|---|---|---|---|---|---|---|---|');
-for (const f of flows) p('| `' + f.id + '` | ' + f.name + ' | ' + f.owner + ' | ' + f.tier + ' | ' + f.mobile + ' | ' + f.offline + ' | `' + f.state + '` | `' + f.folder + '` | ' + f.phase + ' | ' + (f.tests.length ? ranges(f.tests) : 'none') + ' |');
+// A workflow first named by a slice of another service before its owner is built.
+const early = flows.filter((f) => phase.has(f.owner) && /^\d$/.test(f.phase) && +f.phase < +phase.get(f.owner));
+for (const f of flows) p('| `' + f.id + '` | ' + f.name + ' | ' + f.owner + ' | ' + f.tier + ' | ' + f.mobile + ' | ' + f.offline + ' | `' + f.state + '` | `' + f.folder + '` | ' + f.phase + (early.includes(f) ? ' (owner ' + phase.get(f.owner) + ', note below)' : '') + ' | ' + (f.tests.length ? ranges(f.tests) : 'none') + ' |');
 p();
+if (early.length) {
+  p('**Workflows whose Phase precedes their owning service.** The Phase column is the earliest `34-work-breakdown.md` slice that names the workflow, and for the rows below that slice belongs to another service, which builds its own side of the workflow ahead of the owner. The owner\'s state machine, its state type and its transition tests are built in the owner\'s phase, from the slice in the last column:');
+  p();
+  p('| Workflow | Owner, and its build phase in document 05 | First slice naming it, phase and service | Owner\'s first slice naming it |');
+  p('|---|---|---|---|');
+  for (const f of early) {
+    const s = firstSlice.get(f.id);
+    const o = (firstOwnerSlice.get(f.id) || new Map()).get(f.owner);
+    p('| `' + f.id + '` | ' + f.owner + ', phase ' + phase.get(f.owner) + ' | ' + (s ? s.id + ', phase ' + s.ph + ', ' + s.service : 'none') + ' | ' + (o ? o.id + ', phase ' + o.ph : 'none in document 34') + ' |');
+  }
+  p();
+}
 p('### 4. The implementation contract');
 p();
 p('Quoted from `.claude/rules/rules-and-workflows.md`, which Claude Code applies automatically to any file under a service\'s Domain or Application project:');
@@ -188,7 +221,7 @@ const mutOwners = ['Assessment', 'Finance', 'Identity', 'Attendance', 'School'];
 p('| Service | Rules under mutation testing |');
 p('|---|---|');
 for (const o of mutOwners) {
-  const ids = rules.filter((r) => r.owner === o).map((r) => '`' + r.id + '`');
+  const ids = rules.filter((r) => r.owner === o).map((r) => '`' + r.id + '`' + (CONTESTED[r.id] ? ' (contested, Open Question 30, RISK-52; see Section 2)' : ''));
   p('| ' + o + ' | ' + (ids.join(', ') || 'none in Appendix S; promotion and status rules are workflow transitions, tested per transition') + ' |');
 }
 p();
@@ -219,7 +252,9 @@ p('| Document | What this one takes from it |');
 p('|---|---|');
 p('| Appendix S | Every rule, its owner, parameters and test class |');
 p('| Appendix R | Every workflow, its owner, tier, mobile and offline availability |');
-p('| `05-service-catalog.md` | The build phase per service |');
+p('| `34-work-breakdown.md` | The Phase column of Sections 2 and 3: the earliest slice whose Covers column names each identifier |');
+p('| `17-roadmap.md` | Through document 34, the capability phase each of those slices is built in |');
+p('| `05-service-catalog.md` | The build phase per service in Section 1, the owner phase in the Section 3 note, and the phase of an identifier no slice names |');
 p('| `13-workflows-and-sagas.md` | The saga designs this document does not repeat |');
 p('| `16-test-strategy.md` | The test infrastructure these tests run on |');
 p();
@@ -227,7 +262,7 @@ p('## Open points');
 p();
 p('| Point | Default | Owner | L | I | Score | In the register |');
 p('|---|---|---|---|---|---|---|');
-p('| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent in Group F review | Architect | 2 | 2 | 4 | none |');
+p('| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent at a Group F review. Not yet done: none of Group F rounds 1 to 4 recorded that review, so the classification stands as derived until the review record below says otherwise | Architect | 2 | 2 | 4 | none |');
 p('| Promotion eligibility and status changes in School are workflows, not Appendix S rules | Tested per transition; add a rule to Appendix S under a version bump if an arithmetic threshold appears | Architect | 2 | 2 | 4 | none |');
 p();
 p('## Review record');
@@ -235,13 +270,17 @@ p();
 p('| Date | Reviewer | Result |');
 p('|---|---|---|');
 p('| 2026-09-21 | Generated from Appendices R and S | Coverage check above |');
+p('| 2026-09-22 | Round-1 scorecard, Group F | Blocked on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness; for this document, Section 3 listed no transition-test ids per workflow |');
+p('| 2026-09-26 | Round-2 scorecard, Group F, then remediation round 3 | Blocked on Completeness, Consistency, Risk honesty and Testability; the transition-test ids still missing |');
+p('| 2026-09-26 | Round-3 scorecard, Group F, then remediation round 4 | Blocked on Completeness, because Section 3 still listed no transition-test ids; the transition-test column was generated from Appendix R\'s test tables in remediation round 4 |');
+p('| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Blocked on Consistency, by document 34\'s SL-ACA-207, not by this document; the transition-test column was found complete. Amended: the Purpose, Dependencies and verification rows name document 34, and through it document 17, as the source of the Phase column; the seven workflows whose Phase precedes their owning service (WF-RQS-01, WF-WEL-01, WF-WEL-02, WF-WEL-04, WF-HR-01, WF-OPS-01 and WF-DATA-01) are marked with the owner\'s phase and explained in a note under Section 3; `BR-FIN-017` is marked contested pending Open Question 30 (RISK-52) in Sections 2 and 6; the property-based open point records that its review has not yet been done |');
 p();
 p('## How this document is verified');
 p();
 p('| Claim | Proof |');
 p('|---|---|');
 p('| Every rule and workflow has a row | The document is generated from the appendices; the coverage check in Section 7 is recomputed on every regeneration |');
-p('| The document is current | Kit-lint rule R23 reruns `gen-31.mjs --check` and fails when Appendices R or S or document 05 changed since it was generated |');
+p('| The document is current | Kit-lint rule R23 reruns `gen-31.mjs --check` and fails when Appendices R or S, document 34 (and through it document 17) or document 05 changed since it was generated |');
 p('| Every rule has a test class that exists in code | Once code exists, an architecture test enumerates `BR-` comments and asserts the named test class exists |');
 p('| Every worked example is a test row | `/simulate-year` and the business-rules-reviewer agent compare Appendix S examples with the test data sources |');
 p('| Mutation targets are met | Stryker.NET in the pipeline, gated at 80% on the classes in Section 6 |');

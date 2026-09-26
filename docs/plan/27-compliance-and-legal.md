@@ -416,6 +416,9 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 | 2026-09-22 | Group F review, round 1 (independent adversarial scorecard) | Blocked: the group scored below 4 on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness | `TC-PLT-001` meant residency here and other things in documents 26 and 32 (Consistency, Testability) |
 | 2026-09-26 | Group F review, round 2 | Blocked: the group scored below 4 on Completeness, Consistency, Risk honesty and Testability | The collision was closed ("Residency holds" cites `TC-PLT-101`). Still open: "Legal acceptance is recorded and enforced" named a requirement's acceptance test, not a test (Testability) |
 | 2026-09-26 | Round 3 remediation | Amended; awaiting the round 3 score | §5.3 and the legal-acceptance row cite `TC-PLT-113` (Platform sheet) and the new `TC-PRV-800` and `TC-PRV-801`; the 30-day notice and the counsel review of the legal text are named review steps |
+| 2026-09-26 | Group F review, round 3 | Blocked: the group scored below 4 on Completeness, because document 31 listed no transition-test ids per workflow | None of the group's blocking gaps was in this document; `TC-PRV-800` was found present; this record stopped at "awaiting the round 3 score" (Completeness, not blocking) |
+| 2026-09-26 | Group F review, round 4 | Blocked: the group scored below 4 on Consistency, because SL-ACA-207 in document 34 built `LaunchLtiTool` in phase 2 against the default of document 17 | None in this document; this record still recorded no round-3 verdict (Completeness, not blocking) |
+| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Amended; awaiting the round 5 score | The round 3 and round 4 verdicts recorded above; nothing else in this document changed |
 
 ## How this document is verified
 

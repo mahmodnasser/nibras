@@ -2367,7 +2367,7 @@ What this service does on each operating system, runtime and device class, and t
 | Time zones | Billing, dunning, the pre-peak warm-up (REQ-PERF-025) and the maintenance window run in each tenant's IANA time zone, never the host's | `TC-PLAT-005` (document 33), inside the built image; TC-PLT-104 with the fake clock | `ubuntu-latest` |
 | Arabic search and collation | Settings and catalog search fold Arabic through BR-L10N-001, with the same fold in C# and in the database | `ArabicNormalizationRulesTests`; `TC-L10N-310` (document 24) inside the database image | `ubuntu-latest` |
 | Right to left | The operator console mirrors fully in Arabic; terminology overrides reach every surface in both languages; the deletion certificate and tenant invoice are rendered by Documents in both directions | `TC-L10N-901` (document 24), Playwright on Chromium, Firefox and WebKit; `TC-L10N-110` (document 24); `TC-L10N-301` (Documents sheet) for Documents' renderer | `ubuntu-latest` |
-| Mobile without Google services | A white-label flavour record (REQ-MOB-041) carries the push strategy; the no-Google build variant links no Firebase artefact and falls back as `09-mobile-structure.md` §4.3 states | `TC-PLAT-014` (document 33) for the paired artefacts of each flavour; `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | `ubuntu-latest`; the macOS runner of `ci-mobile-ios.yml` for the iOS twin; the device pass |
+| Mobile without Google services | A white-label flavour record (REQ-MOB-041) carries the push strategy; the no-Google build variant links no Firebase artefact and falls back as `09-mobile-structure.md` §4.3 states | `TC-PLAT-014` (document 33) for the paired artefacts of each flavour; `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | `ubuntu-latest`; the macOS runner of `ci-mobile-ios.yml` for the iOS twin; the device pass |
 
 ---
 
@@ -2451,6 +2451,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Sections numbered from 1; Saga 1, 2 and 10 diagrams added to section 8; platform notes (section 15.1); signature features; risk table on document 18's scale; open point 2 closed; Open Questions 28 and 30 stated as open with their defaults; OneRoster moved to phase 3 as document 34 builds it. Awaiting Group C re-review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 

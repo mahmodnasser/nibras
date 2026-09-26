@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Appendix S states what the product computes and Appendix R states how its processes move. This document says **where each one lives in the code, what test proves it, and in which phase it is built.** It is generated from the two appendices and from the build-phase column of `05-service-catalog.md`, so a rule or workflow cannot be added to an appendix and silently miss an owner here.
+Appendix S states what the product computes and Appendix R states how its processes move. This document says **where each one lives in the code, what test proves it, and in which phase it is built.** It is generated from the two appendices, from the slices of `34-work-breakdown.md`, whose phases are the capability phases of `17-roadmap.md` and give the Phase column of every rule and workflow, and from the build-phase column of `05-service-catalog.md`, which gives the service table of Section 1 and the phase of an identifier no slice names. So a rule or workflow cannot be added to an appendix and silently miss an owner here.
 
 Saga designs for the multi-service workflows are in `13-workflows-and-sagas.md`. This document does not repeat them.
 
@@ -87,7 +87,7 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `BR-FIN-014` | Posted documents are immutable | Finance | `PostedDocumentImmutabilityRulesTests` | `Nibras.Finance.Domain.Rules.PostedDocumentImmutabilityRule` | none | yes | 3 |
 | `BR-FIN-015` | Cheque bounce reversal and fee | Finance | `ChequeBounceRulesTests` | `Nibras.Finance.Domain.Rules.ChequeBounceRule` | Finance → payment methods, late fee rules | yes | 3 |
 | `BR-FIN-016` | Service restriction rules | Finance | `ServiceRestrictionRulesTests` | `Nibras.Finance.Domain.Rules.ServiceRestrictionRule` | Finance → restriction rules | yes | 3 |
-| `BR-FIN-017` | Active student definition for SaaS billing | Finance | `ActiveStudentCountRulesTests` | `Nibras.Finance.Domain.Rules.ActiveStudentCountRule` | none | no | 1 |
+| `BR-FIN-017` | Active student definition for SaaS billing (**contested**: in conflict with master brief Section 36 and REQ-PLT-009, which bill a tenant by the students enrolled on the billing date, prorated by day, pending Open Question 30 (RISK-52)) | Finance | `ActiveStudentCountRulesTests` | `Nibras.Finance.Domain.Rules.ActiveStudentCountRule` | none | no | 1 |
 | `BR-FIN-018` | Proration on a plan change | Finance | `PlanChangeProrationRulesTests` | `Nibras.Finance.Domain.Rules.PlanChangeProrationRule` | none | yes | 1 |
 | `BR-FIN-019` | Split payers by percentage | Finance | `SplitPayerRulesTests` | `Nibras.Finance.Domain.Rules.SplitPayerRule` | General → currency | yes | 3 |
 | `BR-SCD-001` | Hard versus soft constraints | Scheduling | `TimetableConstraintRulesTests` | `Nibras.Scheduling.Domain.Rules.TimetableConstraintRule` | none | yes | 2 |
@@ -142,6 +142,8 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `BR-L10N-006` | Pinned culture on every host | Platform | `CultureInvarianceRulesTests` | `Nibras.Platform.Domain.Rules.CultureInvarianceRule` | none | no | 1 |
 | `BR-L10N-007` | Bilingual names and fallback | School | `BilingualNameRulesTests` | `Nibras.School.Domain.Rules.BilingualNameRule` | General → languages | no | 1 |
 
+**`BR-FIN-017` is contested, not settled.** It is in conflict with master brief Section 36 and REQ-PLT-009, which bill a tenant by the students enrolled on the billing date, prorated by day, pending Open Question 30 (RISK-52). `34-work-breakdown.md` SL-PLT-010 builds the billing-date count as the default in force, and the rule stays in conflict with it until the product owner decides; its test class and mutation target (Section 6) stand for whichever count the decision keeps.
+
 **Property-based column.** "yes" marks a rule whose statement involves arithmetic: sums, averages, weights, rounding, proration, allocation, caps, percentages, ranks or balances. Those rules get a property-based test in addition to the table-driven one, asserting invariants that no finite example list can cover (for example: allocation never exceeds the payment, rounding is idempotent, a weighted average lies between its minimum and maximum input). The classification is derived from the rule text and is confirmed or corrected by the business-rules-reviewer agent during Group F review.
 
 ### 3. Workflows
@@ -180,28 +182,40 @@ The service table quotes each service's build phase from `05-service-catalog.md`
 | `WF-FIN-04` | Scholarship award | Finance | 1 | yes | no | `ScholarshipAwardStatus` | `Application/Features/ScholarshipAward/` | 3 | TC-FIN-031 to TC-FIN-036 |
 | `WF-FIN-05` | Payer change to sponsor | Finance | 1 | yes | no | `PayerChangeToSponsorStatus` | `Application/Features/PayerChangeToSponsor/` | 3 | TC-FIN-041 to TC-FIN-046 |
 | `WF-FIN-06` | Cashier day close | Finance | 1 | no | no | `CashierDayCloseStatus` | `Application/Features/CashierDayClose/` | 3 | TC-FIN-051 to TC-FIN-056 |
-| `WF-RQS-01` | Service request lifecycle | Requests | 1 | yes | no | `ServiceRequestLifecycleStatus` | `Application/Features/ServiceRequestLifecycle/` | 2 | TC-RQS-001 to TC-RQS-006 |
+| `WF-RQS-01` | Service request lifecycle | Requests | 1 | yes | no | `ServiceRequestLifecycleStatus` | `Application/Features/ServiceRequestLifecycle/` | 2 (owner 3, note below) | TC-RQS-001 to TC-RQS-006 |
 | `WF-BEH-01` | Incident to intervention | Behavior | 1 | yes | no | `IncidentToInterventionStatus` | `Application/Features/IncidentToIntervention/` | 4 | TC-BEH-001 to TC-BEH-006 |
-| `WF-WEL-01` | Accommodation plan to exam sitting | Wellbeing | 2 | no | no | `AccommodationPlanToExamSittingStatus` | `Application/Features/AccommodationPlanToExamSitting/` | 2 | TC-WEL-001 to TC-WEL-006 |
-| `WF-WEL-02` | Clinic visit to sent home | Wellbeing | 2 | yes | no | `ClinicVisitToSentHomeStatus` | `Application/Features/ClinicVisitToSentHome/` | 2 | TC-WEL-011 to TC-WEL-016 |
+| `WF-WEL-01` | Accommodation plan to exam sitting | Wellbeing | 2 | no | no | `AccommodationPlanToExamSittingStatus` | `Application/Features/AccommodationPlanToExamSitting/` | 2 (owner 5, note below) | TC-WEL-001 to TC-WEL-006 |
+| `WF-WEL-02` | Clinic visit to sent home | Wellbeing | 2 | yes | no | `ClinicVisitToSentHomeStatus` | `Application/Features/ClinicVisitToSentHome/` | 2 (owner 5, note below) | TC-WEL-011 to TC-WEL-016 |
 | `WF-WEL-03` | Medication authorization and administration | Wellbeing | 2 | yes | no | `MedicationAuthorizationAndAdministrationStatus` | `Application/Features/MedicationAuthorizationAndAdministration/` | 5 | TC-WEL-021 to TC-WEL-026 |
-| `WF-WEL-04` | Safeguarding concern escalation | Wellbeing | 2 | yes | no | `SafeguardingConcernEscalationStatus` | `Application/Features/SafeguardingConcernEscalation/` | 3 | TC-WEL-031 to TC-WEL-036 |
+| `WF-WEL-04` | Safeguarding concern escalation | Wellbeing | 2 | yes | no | `SafeguardingConcernEscalationStatus` | `Application/Features/SafeguardingConcernEscalation/` | 3 (owner 5, note below) | TC-WEL-031 to TC-WEL-036 |
 | `WF-WEL-05` | Daily wellbeing check-in escalation | Wellbeing | 2 | yes | yes | `DailyWellbeingCheckInEscalationStatus` | `Application/Features/DailyWellbeingCheckInEscalation/` | 5 | TC-WEL-041 to TC-WEL-046 |
-| `WF-HR-01` | Staff leave to substitution | Hr | 2 | yes | no | `StaffLeaveToSubstitutionStatus` | `Application/Features/StaffLeaveToSubstitution/` | 2 | TC-HR-001 to TC-HR-006 |
+| `WF-HR-01` | Staff leave to substitution | Hr | 2 | yes | no | `StaffLeaveToSubstitutionStatus` | `Application/Features/StaffLeaveToSubstitution/` | 2 (owner 5, note below) | TC-HR-001 to TC-HR-006 |
 | `WF-HR-02` | Staff hiring to onboarding | Hr | 2 | no | no | `StaffHiringToOnboardingStatus` | `Application/Features/StaffHiringToOnboarding/` | 5 | TC-HR-011 to TC-HR-016 |
 | `WF-HR-03` | Teaching licence expiry compliance | Hr | 2 | no | no | `TeachingLicenceExpiryComplianceStatus` | `Application/Features/TeachingLicenceExpiryCompliance/` | 5 | TC-HR-021 to TC-HR-026 |
 | `WF-HR-04` | Payroll input cycle | Hr | 2 | no | no | `PayrollInputCycleStatus` | `Application/Features/PayrollInputCycle/` | 5 | TC-HR-031 to TC-HR-036 |
-| `WF-OPS-01` | Purchase requisition to asset | Operations | 2 | yes | no | `PurchaseRequisitionToAssetStatus` | `Application/Features/PurchaseRequisitionToAsset/` | 3 | TC-OPS-001 to TC-OPS-006 |
+| `WF-OPS-01` | Purchase requisition to asset | Operations | 2 | yes | no | `PurchaseRequisitionToAssetStatus` | `Application/Features/PurchaseRequisitionToAsset/` | 3 (owner 5, note below) | TC-OPS-001 to TC-OPS-006 |
 | `WF-OPS-02` | Library lending and fines | Operations | 2 | yes | yes | `LibraryLendingAndFinesStatus` | `Application/Features/LibraryLendingAndFines/` | 5 | TC-OPS-011 to TC-OPS-016 |
 | `WF-OPS-03` | Transport subscription change | Operations | 2 | yes | no | `TransportSubscriptionChangeStatus` | `Application/Features/TransportSubscriptionChange/` | 5 | TC-OPS-021 to TC-OPS-026 |
 | `WF-OPS-04` | Facility booking approval | Operations | 2 | yes | no | `FacilityBookingApprovalStatus` | `Application/Features/FacilityBookingApproval/` | 5 | TC-OPS-031 to TC-OPS-036 |
 | `WF-OPS-05` | Safety incident and drill logging | Operations | 2 | yes | yes | `SafetyIncidentAndDrillLoggingStatus` | `Application/Features/SafetyIncidentAndDrillLogging/` | 5 | TC-OPS-041 to TC-OPS-046 |
 | `WF-PRV-01` | Data subject access request | Platform | 1 | no | no | `DataSubjectAccessRequestStatus` | `Application/Features/DataSubjectAccessRequest/` | 1 | TC-PRV-001 to TC-PRV-006 |
 | `WF-PRV-02` | Sensitive export approval | Documents | 1 | no | no | `SensitiveExportApprovalStatus` | `Application/Features/SensitiveExportApproval/` | 3 | TC-PRV-011 to TC-PRV-016 |
-| `WF-DATA-01` | Legacy import with dry run and rollback | Documents | 1 | no | no | `LegacyImportWithDryRunAndRollbackStatus` | `Application/Features/LegacyImportWithDryRunAndRollback/` | 1 | TC-DATA-001 to TC-DATA-006 |
+| `WF-DATA-01` | Legacy import with dry run and rollback | Documents | 1 | no | no | `LegacyImportWithDryRunAndRollbackStatus` | `Application/Features/LegacyImportWithDryRunAndRollback/` | 1 (owner 3, note below) | TC-DATA-001 to TC-DATA-006 |
 | `WF-INF-01` | On-premises upgrade with rollback | Platform | 1 | no | no | `OnPremisesUpgradeWithRollbackStatus` | `Application/Features/OnPremisesUpgradeWithRollback/` | 6 | TC-INF-001 to TC-INF-006 |
 | `WF-INF-02` | Release rollout with canary and rollback | Platform | 1 | no | no | `ReleaseRolloutWithCanaryAndRollbackStatus` | `Application/Features/ReleaseRolloutWithCanaryAndRollback/` | 1 | TC-INF-011 to TC-INF-016 |
 | `WF-INF-03` | Restore and failover drill | Platform | 1 | no | no | `RestoreAndFailoverDrillStatus` | `Application/Features/RestoreAndFailoverDrill/` | 6 | TC-INF-021 to TC-INF-026 |
+
+**Workflows whose Phase precedes their owning service.** The Phase column is the earliest `34-work-breakdown.md` slice that names the workflow, and for the rows below that slice belongs to another service, which builds its own side of the workflow ahead of the owner. The owner's state machine, its state type and its transition tests are built in the owner's phase, from the slice in the last column:
+
+| Workflow | Owner, and its build phase in document 05 | First slice naming it, phase and service | Owner's first slice naming it |
+|---|---|---|---|
+| `WF-RQS-01` | Requests, phase 3 | SL-SCH-220, phase 2, School | SL-RQS-402, phase 3 |
+| `WF-WEL-01` | Wellbeing, phase 5 | SL-ASM-225, phase 2, Assessment | SL-WEL-620, phase 5 |
+| `WF-WEL-02` | Wellbeing, phase 5 | SL-SCH-213, phase 2, School | SL-WEL-602, phase 5 |
+| `WF-WEL-04` | Wellbeing, phase 5 | SL-COM-415, phase 3, Communication | SL-WEL-610, phase 5 |
+| `WF-HR-01` | Hr, phase 5 | SL-SCD-212, phase 2, Scheduling | SL-HR-611, phase 5 |
+| `WF-OPS-01` | Operations, phase 5 | SL-FIN-445, phase 3, Finance | SL-OPS-603, phase 5 |
+| `WF-DATA-01` | Documents, phase 3 | SL-IDN-025, phase 1, Identity | SL-DOC-414, phase 3 |
 
 ### 4. The implementation contract
 
@@ -238,7 +252,7 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 | Service | Rules under mutation testing |
 |---|---|
 | Assessment | `BR-ASM-001`, `BR-ASM-002`, `BR-ASM-003`, `BR-ASM-004`, `BR-ASM-005`, `BR-ASM-006`, `BR-ASM-007`, `BR-ASM-008`, `BR-ASM-009`, `BR-ASM-010`, `BR-ASM-011`, `BR-ASM-012`, `BR-ASM-013`, `BR-ASM-014` |
-| Finance | `BR-FIN-001`, `BR-FIN-002`, `BR-FIN-003`, `BR-FIN-004`, `BR-FIN-005`, `BR-FIN-006`, `BR-FIN-007`, `BR-FIN-008`, `BR-FIN-009`, `BR-FIN-010`, `BR-FIN-011`, `BR-FIN-012`, `BR-FIN-013`, `BR-FIN-014`, `BR-FIN-015`, `BR-FIN-016`, `BR-FIN-017`, `BR-FIN-018`, `BR-FIN-019`, `BR-L10N-004` |
+| Finance | `BR-FIN-001`, `BR-FIN-002`, `BR-FIN-003`, `BR-FIN-004`, `BR-FIN-005`, `BR-FIN-006`, `BR-FIN-007`, `BR-FIN-008`, `BR-FIN-009`, `BR-FIN-010`, `BR-FIN-011`, `BR-FIN-012`, `BR-FIN-013`, `BR-FIN-014`, `BR-FIN-015`, `BR-FIN-016`, `BR-FIN-017` (contested, Open Question 30, RISK-52; see Section 2), `BR-FIN-018`, `BR-FIN-019`, `BR-L10N-004` |
 | Identity | `BR-IDN-001`, `BR-IDN-002`, `BR-IDN-003`, `BR-IDN-004`, `BR-IDN-005`, `BR-IDN-006`, `BR-IDN-007`, `BR-IDN-008`, `BR-IDN-009` |
 | Attendance | `BR-ATT-001`, `BR-ATT-002`, `BR-ATT-003`, `BR-ATT-004`, `BR-ATT-005`, `BR-ATT-006`, `BR-ATT-007`, `BR-ATT-008`, `BR-ATT-009`, `BR-ATT-010`, `BR-ATT-011` |
 | School | `BR-L10N-007` |
@@ -270,7 +284,9 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 |---|---|
 | Appendix S | Every rule, its owner, parameters and test class |
 | Appendix R | Every workflow, its owner, tier, mobile and offline availability |
-| `05-service-catalog.md` | The build phase per service |
+| `34-work-breakdown.md` | The Phase column of Sections 2 and 3: the earliest slice whose Covers column names each identifier |
+| `17-roadmap.md` | Through document 34, the capability phase each of those slices is built in |
+| `05-service-catalog.md` | The build phase per service in Section 1, the owner phase in the Section 3 note, and the phase of an identifier no slice names |
 | `13-workflows-and-sagas.md` | The saga designs this document does not repeat |
 | `16-test-strategy.md` | The test infrastructure these tests run on |
 
@@ -278,7 +294,7 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 
 | Point | Default | Owner | L | I | Score | In the register |
 |---|---|---|---|---|---|---|
-| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent in Group F review | Architect | 2 | 2 | 4 | none |
+| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent at a Group F review. Not yet done: none of Group F rounds 1 to 4 recorded that review, so the classification stands as derived until the review record below says otherwise | Architect | 2 | 2 | 4 | none |
 | Promotion eligibility and status changes in School are workflows, not Appendix S rules | Tested per transition; add a rule to Appendix S under a version bump if an arithmetic threshold appears | Architect | 2 | 2 | 4 | none |
 
 ## Review record
@@ -286,13 +302,17 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 | Date | Reviewer | Result |
 |---|---|---|
 | 2026-09-21 | Generated from Appendices R and S | Coverage check above |
+| 2026-09-22 | Round-1 scorecard, Group F | Blocked on Completeness, Consistency, Feasibility, Risk honesty, Testability and Distinctiveness; for this document, Section 3 listed no transition-test ids per workflow |
+| 2026-09-26 | Round-2 scorecard, Group F, then remediation round 3 | Blocked on Completeness, Consistency, Risk honesty and Testability; the transition-test ids still missing |
+| 2026-09-26 | Round-3 scorecard, Group F, then remediation round 4 | Blocked on Completeness, because Section 3 still listed no transition-test ids; the transition-test column was generated from Appendix R's test tables in remediation round 4 |
+| 2026-09-26 | Round-4 scorecard, Group F, then remediation round 5 | Blocked on Consistency, by document 34's SL-ACA-207, not by this document; the transition-test column was found complete. Amended: the Purpose, Dependencies and verification rows name document 34, and through it document 17, as the source of the Phase column; the seven workflows whose Phase precedes their owning service (WF-RQS-01, WF-WEL-01, WF-WEL-02, WF-WEL-04, WF-HR-01, WF-OPS-01 and WF-DATA-01) are marked with the owner's phase and explained in a note under Section 3; `BR-FIN-017` is marked contested pending Open Question 30 (RISK-52) in Sections 2 and 6; the property-based open point records that its review has not yet been done |
 
 ## How this document is verified
 
 | Claim | Proof |
 |---|---|
 | Every rule and workflow has a row | The document is generated from the appendices; the coverage check in Section 7 is recomputed on every regeneration |
-| The document is current | Kit-lint rule R23 reruns `gen-31.mjs --check` and fails when Appendices R or S or document 05 changed since it was generated |
+| The document is current | Kit-lint rule R23 reruns `gen-31.mjs --check` and fails when Appendices R or S, document 34 (and through it document 17) or document 05 changed since it was generated |
 | Every rule has a test class that exists in code | Once code exists, an architecture test enumerates `BR-` comments and asserts the named test class exists |
 | Every worked example is a test row | `/simulate-year` and the business-rules-reviewer agent compare Appendix S examples with the test data sources |
 | Mutation targets are met | Stryker.NET in the pipeline, gated at 80% on the classes in Section 6 |

@@ -413,7 +413,7 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 
 Three of these keys drive Attendance (Appendix E, Wellbeing paragraph): the two intervention keys move a student's attendance case to `InterventionOpened` and `InterventionClosed`, and `wellbeing.clinic-visit.collection-arranged.v1` prepares the gate pass. None of them carries a category, a symptom or a reason. `wellbeing.intervention.opened.v1` carries the optional `sourceRuleId`, which is the Attendance threshold rule that led to the intervention or null, and Attendance discards an intervention event whose `sourceRuleId` is null. `wellbeing.intervention.closed.v1` carries `studentId` so its payload matches its partition key.
 
-Wellbeing sends `RequestNotification` (`notification.commands.request-notification.v1`) for the messages Appendix C does not trigger from its events: the missed-dose alert, the consent request, the medical-alert update to teachers and cafeteria staff, the check-in flag to the homeroom teacher, the break-glass alert, and the escalations (Open point 4). Each carries a template code and identifiers, never clinical text; the templates say what happened without saying what is wrong (BR-WEL-003 edge case).
+Wellbeing sends `RequestNotification` (`notification.commands.request-notification.v1`) on `nibras.wellbeing` for the messages Appendix C does not trigger from its events: the missed-dose alert, the consent request, the medical-alert update to teachers and cafeteria staff, the check-in flag to the homeroom teacher, the break-glass alert, and the escalations of section 9 (safeguarding triage, guardian contact, missed dose) (Open point 4). `11-messaging-architecture.md` §2.4 lists `nibras.wellbeing` as a `RequestNotification` sender and §2.5 binds it into `notification.commands`, so these alerts have a queue. Each command carries the template id, the recipient and identifiers only, never wellbeing content or clinical text; the templates say what happened without saying what is wrong (BR-WEL-003 edge case). `documents.commands`, by contrast, stays unbound for `nibras.wellbeing` (Open point 11).
 
 ### 6.2 Consumed
 
@@ -1094,6 +1094,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Open Question 29 stated alike in the header, sections 1, 2, 3.8, 4.7, 7, 12, 13, 14 and open point 8, with the device outbox as the default in force, the contradiction and online-only as the recommended answer; platform notes (section 14.1); signature features; risk table on document 18's scale with the RISK-47 row; open points 1, 5, 9 and 12 closed. Awaiting Group C re-review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | Section 6.1 states that the missed-dose alert, the safeguarding and guardian-contact escalations and the other `RequestNotification` messages go on `nibras.wellbeing` into `notification.commands`, which document 11 §2.4 and §2.5 now bind, carrying the template id, recipient and identifiers only, never wellbeing content; no open point claims a missing notification binding (open point 4 is the Appendix C rows only). Awaiting Group C re-review |
 
 ## How this document is verified
 

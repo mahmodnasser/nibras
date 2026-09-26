@@ -646,7 +646,7 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 | Culture and time | The hash chain is the one place where a culture leak would be a false integrity failure, so the canonical form is invariant; entries are stored in UTC and shown in the tenant's time zone with its numerals by the clients (REQ-L10N-008) | TC-AUD-760, TC-AUD-761; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
 | Right-to-left output | Audit renders no document; the export is CSV or JSON. The viewer and the guardian transparency panel are right-to-left in the web client and the mobile app | The web end-to-end specs, `TC-AUD-001` and `TC-AUD-002` (Appendix W) among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2) | Linux |
 | Arabic search and collation | None: searches are by identifier, action, service and date range, never by name; actor names are resolved at display time through Bff.Web | not applicable | not applicable |
-| Devices without Google services | Nothing Audit does depends on a device: the transparency panel is read live through Bff.Mobile, and the integrity alert goes to operators by email as well as push | `TC-PLAT-009` (document 33), the device pass on one device without Google services, which opens the transparency panel | Device pass, per release |
+| Devices without Google services | Nothing Audit does depends on a device: the transparency panel is read live through Bff.Mobile, and the integrity alert goes to operators by email as well as push | `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7, which opens the transparency panel | Device pass, per release |
 
 ---
 
@@ -708,6 +708,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 

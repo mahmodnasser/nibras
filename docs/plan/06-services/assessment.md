@@ -1133,7 +1133,7 @@ Existing identifiers are reused; new ones are minted upward from `TC-ASM-301` in
 | Culture | Every calculation runs in `decimal` with the invariant culture; the tenant's numerals are applied only when a figure is displayed or rendered | TC-ASM-760, TC-ASM-761; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
 | Right-to-left output | Report cards and transcripts are rendered by Documents from Assessment's merge values, in both languages with Arabic shaping; the mark grid is right-to-left in the web client | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries, compared byte for byte between the Linux and Windows runs of Documents (`TC-PLAT-003` (document 33)); TC-ASM-101 and the other web end-to-end specs run in all four theme and direction combinations (document 33 part 2) | Linux; the PDF comparison on Linux and Windows |
 | Arabic search and collation | Assessment runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language (`ar-x-icu` or `en-x-icu`) | The culture test inside the built image, which checks the collations exist, `TC-PLAT-004` (document 33) | Linux |
-| Devices without Google services | A published report card is announced through Notification, which reaches such a device in-app while the app is open and by email; the card itself opens from the Bff.Mobile document link without any Google service | `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services | Device pass, per release |
+| Devices without Google services | A published report card is announced through Notification, which reaches such a device in-app while the app is open and by email; the card itself opens from the Bff.Mobile document link without any Google service | `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | Device pass, per release |
 
 ---
 
@@ -1201,6 +1201,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | The no-Google row of the platform notes cites `TC-MOB-988` (document 20), the no-Google device-pass test, instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 

@@ -329,11 +329,11 @@ Payload fields are owned by Appendix E and are not restated. Partition keys are 
 | `behavior.audit.recorded.v1` | `tenantId` | Every write, every transition, every narrative read, every restricted-flag change | Audit |
 | `behavior.usage.recorded.v1` | `tenantId` | `BehaviorUsageMeterJob`: incidents, point entries, badges | Platform |
 
-Behavior sends `GenerateDocument` to Documents for award certificates and portfolio books (Open point 8) and `RequestNotification` to Notification for the reviewer's task, the plan review reminder and the correction notice after a dismissal, which Appendix C does not list (Open point 9).
+Behavior sends `GenerateDocument` to Documents for award certificates and portfolio books on `nibras.behavior`, which document 11 §2.5 binds into `documents.commands` (Open point 8, closed); the reply `documents.document.generated.v1` comes back on `behavior.events` (section 6.2). It sends `RequestNotification` on `nibras.behavior`, which document 11 §2.5 binds into `notification.commands`, for the reviewer's task, the plan review reminder and the correction notice after a dismissal, which Appendix C does not list (Open point 9).
 
 ### 6.2 Consumed
 
-Queues are those of `11-messaging-architecture.md` §2.5 and §2.3 for Behavior: `behavior.reference-copies`, `behavior.tenant-lifecycle`, `behavior.commands`. Every handler is idempotent through the inbox keyed on `messageId` and on the subject key below.
+Queues are those of `11-messaging-architecture.md` §2.5 and §2.3 for Behavior: `behavior.reference-copies`, `behavior.tenant-lifecycle`, `behavior.events`, `behavior.commands`. Every handler is idempotent through the inbox keyed on `messageId` and on the subject key below.
 
 | Routing key or command | Queue | Handler | What it changes | Idempotent on |
 |---|---|---|---|---|
@@ -349,6 +349,7 @@ Queues are those of `11-messaging-architecture.md` §2.5 and §2.3 for Behavior:
 | `platform.plan.changed.v1`, `platform.feature-flag.changed.v1`, `platform.terminology.changed.v1`, `platform.custom-field.changed.v1` | `behavior.tenant-lifecycle` | `PlatformContextConsumer` | Tenant context, the Open Badges and portfolio flags | `tenantId` plus `occurredAt` |
 | `identity.role.changed.v1`, `identity.permissions.changed.v1` | `behavior.tenant-lifecycle` | building-block permission cache | Evicts the permission cache | `permissionVersion` |
 | `reporting.data-quality.issue-detected.v1` | `behavior.tenant-lifecycle` | `DataQualityIssueConsumer` | Acts only on Behavior entity types (for example a category with no points) | `ruleCode` plus `occurredAt` |
+| `documents.document.generated.v1` | `behavior.events` (document 11 §2.5) | `DocumentGeneratedConsumer` | Writes `documentId` on the award or portfolio book the request was made for: for an award, `awards.generated_document_id`, with `certificate_status` set to `Generated` (REQ-BEH-007, TC-BEH-316); for a portfolio book, the id the export link opens. A `subjectId` Behavior does not own is ignored | `documentId` |
 | `DeprovisionTenant`, `DeleteTenantData` and the Saga 10 commands | `behavior.commands` | `Features/TenantLifecycle/` | Tenant lifecycle | `(sagaId, stepKey)` |
 
 ---
@@ -678,7 +679,8 @@ src/Services/Behavior/                                                Behavior a
 │   │   ├── TenantDeletionConsumer.cs                                 deletion requested and deleted
 │   │   ├── SettingsChangedConsumer.cs                                platform.settings.changed.v1 for scope behavior
 │   │   ├── PlatformContextConsumer.cs                                plan, flags, terminology, custom fields
-│   │   └── DataQualityIssueConsumer.cs                               reporting.data-quality.issue-detected.v1 for Behavior types
+│   │   ├── DataQualityIssueConsumer.cs                               reporting.data-quality.issue-detected.v1 for Behavior types
+│   │   └── DocumentGeneratedConsumer.cs                              documents.document.generated.v1 from behavior.events; stores the certificate id
 │   ├── Sagas/                                                        where a process manager goes; Behavior owns none, so the template does not create this folder here
 │   ├── ReadModels/                                                   response shapes
 │   │   ├── IncidentRow.cs                                            list row without narrative
@@ -857,7 +859,7 @@ Existing identifiers are reused; new ones are minted from `TC-BEH-310` upward (3
 | Culture and time | Review deadlines count working days in the campus work week and time zone; points are integers and totals are sums, so no value depends on a machine culture | TC-BEH-331 (a weekend of the campus work week), TC-BEH-760; `TC-PLAT-004` to `TC-PLAT-006` (document 33), the culture, calendar and time-zone test inside the built image | Linux; the image test runs on Linux only |
 | Right-to-left output | Award certificates and the portfolio book are rendered by Documents in both languages; the incident, points and portfolio screens are right-to-left in the web client and the mobile app | `TC-TST-208` (document 16), the bilingual PDF baselines with the shaping canaries; TC-BEH-761; the web end-to-end specs, `TC-BEH-601` among them, run in all four theme and direction combinations (document 33 part 2); Flutter golden tests of every key screen in `ltr` and `rtl` (document 16 part 8.2) | Linux |
 | Arabic search and collation | None here: Behavior runs no free-text name search; a list sorted by name follows the API convention of `22-api-conventions-and-error-catalog.md` §3.3, the database collation of the caller's language | `TC-PLAT-004` (document 33), the culture test inside the built image, which checks the collations exist | Linux |
-| Devices without Google services | A teacher records points and incidents offline with no Google service involved; a guardian's incident notice reaches such a device in-app while the app is open and by email | TC-BEH-314; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33), the device pass on one device without Google services | Linux; device pass, per release |
+| Devices without Google services | A teacher records points and incidents offline with no Google service involved; a guardian's incident notice reaches such a device in-app while the app is open and by email | TC-BEH-314; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | Linux; device pass, per release |
 
 ---
 
@@ -920,7 +922,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | 5. Still open. ADR-0019 considered `behavior.badges.export` and did not apply it: the change list records it among the gaps named only in sheet open points and not in the defect log, left for a later ADR. Appendix B is unchanged for Behavior | Portfolio export under `behavior.badges.view` in `self` and `own-children`; students reorder their own items under the same. No open question owns it | Appendix B owner, later ADR | An export cannot be withheld from a reader who may view the portfolio | 2 | 2 | 4 | none |
 | 6. WF-BEH-01's guard "recorder taught or supervised the student that day" needs the timetable and duty rota, which Behavior does not copy | The recorder's data scope is the guard (`BEHAVIOR_STUDENT_NOT_IN_SCOPE`) | Architect | A timetable copy from Scheduling would tighten it | 3 | 2 | 6 | none |
 | 7. Open Badges issuance needs the student's sharing consent, which School owns | School's consent flag is read through `StudentDirectory` at issuance | School lead | Without it no credential leaves the tenant | 2 | 2 | 4 | none |
-| 8. Behavior sends `GenerateDocument`, but `documents.commands` does not bind `nibras.behavior` and `documents.document.generated.v1` does not name Behavior | Add both under document 11 (`06-services/documents.md` Open point 7) | Document 11 owner | Award certificates cannot be requested | 2 | 2 | 4 | none |
+| 8. Closed 2026-09-26. Behavior sends `GenerateDocument`, and `documents.commands` did not bind `nibras.behavior` nor `documents.document.generated.v1` name Behavior | Document 11 §2.4 and §2.5 now bind `nibras.behavior` on `documents.commands` and `documents.document.generated.v1` on `behavior.events`; section 6.2 gives the consumer (`06-services/documents.md` Open point 7, closed) | Closed | None left: award certificates are requested and their ids stored | 1 | 1 | 1 | none |
 | 9. Appendix C has no row for the reviewer task, the plan review reminder, the escalations or the dismissal correction | `RequestNotification` with Behavior template codes | Appendix C owner | Catalogued rows would move them to event triggers | 2 | 1 | 2 | none |
 | 10. Appendix R has no `GuardianNotified → Closed` transition, yet a decided single action with a notified guardian must end | Add it; Appendix R gains the row | Appendix R owner | Incidents would wait in `GuardianNotified` forever | 2 | 2 | 4 | none |
 | 11. Appendix M.1 queues behaviour incidents offline while Appendix R marks WF-BEH-01 "Offline: no" | Capture offline, transitions online | Appendix M and R owners | Offline capture refused | 2 | 2 | 4 | none |
@@ -931,6 +933,7 @@ Risks are scored on the scales of `18-risk-register.md` part 1, translated as th
 | Date | Reviewer | Outcome |
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | `documents.document.generated.v1` consumer on `behavior.events` added to section 6.2 and the tree; open point 8 closed against document 11; section 6.1 names the `documents.commands` and `notification.commands` bindings; the no-Google row of section 14.1 cites `TC-MOB-988` instead of the font-shaping test `TC-PLAT-009`. Earlier remediation rounds added no row here. Awaiting Group C re-review |
 
 ## How this document is verified
 

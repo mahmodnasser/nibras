@@ -311,6 +311,7 @@ Constraints are their own Appendix B resource, `scheduling.constraints` with vie
 | POST | `/timetable-versions/{id}/publish` | `scheduling.timetable.publish`; with `overrideReason` also `scheduling.timetable.override-conflict` | `PublishTimetableRequest` (effectiveFrom, overrideReason) | 200; publishes `scheduling.timetable.published.v1`; auto-cancels colliding bookings | `SCHEDULING_TIMETABLE_CONFLICT`, `SCHEDULING_VALIDATION_FAILED` (effective date before the earliest allowed, BR-SCD-006, message names the date) | `Idempotency-Key`; state check |
 | POST | `/timetable-versions/{id}/change-sets` | `scheduling.timetable.publish` | `PublishChangeSetRequest` (entry moves, effectiveFrom, reason) | 201 new version published as a change; publishes `scheduling.timetable.changed.v1` | `SCHEDULING_TIMETABLE_CONFLICT`, `SCHEDULING_VALIDATION_FAILED` | `Idempotency-Key` |
 | GET | `/timetable-versions/{id}/export` | `scheduling.timetable.export` | `format=csv` | streamed CSV | `SCHEDULING_NOT_FOUND` | safe |
+| POST | `/timetable-versions/{id}/document` | `scheduling.timetable.export` | `RenderTimetableDocumentRequest` (view `section`, `staff` or `room`, subjectId, weekOf, language) | 202; `GenerateDocument` on `nibras.scheduling` with the resolved week grid as merge values (REQ-SCD-012); no document id is kept here: the requester finds the PDF in Documents' generated-documents list (`06-services/documents.md` §4.5) and is told it is ready through Notification (`11-messaging-architecture.md` §2.3) | `SCHEDULING_NOT_FOUND`, `SCHEDULING_PERMISSION_DENIED` (subject outside the caller's data scope) | `Idempotency-Key` required |
 
 ### 5.4 Timetable views and iCal
 
@@ -434,7 +435,7 @@ Payload fields are owned by Appendix E, Scheduling section; they are cited, not 
 | `scheduling.usage.recorded.v1` | `tenantId` | Hourly: solver CPU seconds, active iCal subscriptions | Platform |
 | `scheduling.audit.recorded.v1` | `tenantId` | Every write and every override, including the broken constraint and reason (BR-SCD-001) | Audit |
 
-Replies sent on `nibras.scheduling`: `school.replies.timetable-skeleton-created.v1` and `school.replies.timetable-version-deleted.v1` with their `Failed` pairs (Saga 4 step 7), and `requests.replies.effect-applied.v1` or `requests.replies.effect-failed.v1` for `ReleaseSubstitution` and `CancelRoomBooking`, which have no catalogued outcome event. Worker job command: `scheduling.commands.solve-timetable.v1`, published by the Api on its own exchange, carrying `jobId`, `timetableVersionId`, `problemKind`, `timeBudgetSeconds`.
+Replies sent on `nibras.scheduling`: `school.replies.timetable-skeleton-created.v1` and `school.replies.timetable-version-deleted.v1` with their `Failed` pairs (Saga 4 step 7), and `requests.replies.effect-applied.v1` or `requests.replies.effect-failed.v1` for `ReleaseSubstitution` and `CancelRoomBooking`, which have no catalogued outcome event. Commands sent on `nibras.scheduling` (document 11 §2.4): `GenerateDocument` to Documents for timetable PDFs (`POST /timetable-versions/{id}/document`, REQ-SCD-012), which document 11 §2.5 binds into `documents.commands`; and `RequestNotification` to Notification from `UncoveredPeriodEscalationJob`, which document 11 §2.5 binds into `notification.commands`. Scheduling keeps no document id, so it consumes no `documents.document.generated.v1`. Worker job command: `scheduling.commands.solve-timetable.v1`, published by the Api on its own exchange, carrying `jobId`, `timetableVersionId`, `problemKind`, `timeBudgetSeconds`.
 
 ### 7.2 Consumed
 
@@ -558,7 +559,7 @@ Quartz.NET jobs are hosted in `Scheduling.Worker`, so the Api image carries no s
 | Job | Schedule or trigger | What it does | Publishes | Progress |
 |---|---|---|---|---|
 | `DailyCoverPlanningJob` | 05:30 on school days, per campus time zone | Materialises today's absences from `ref_staff_leave`, computes ranked suggestions (BR-SCD-005), lists uncovered periods | none | Short |
-| `UncoveredPeriodEscalationJob` | Every 5 minutes from 06:00 to the last period on school days | A period starting within 30 minutes with no cover alerts the principal by name (REQ-SCD-017, TC-HR-004) | `RequestNotification` (Appendix C row "Period still uncovered 30 minutes before it starts"), once document 11 lists `nibras.scheduling` as a sender (open point 9) | Short |
+| `UncoveredPeriodEscalationJob` | Every 5 minutes from 06:00 to the last period on school days | A period starting within 30 minutes with no cover alerts the principal by name (REQ-SCD-017, TC-HR-004) | `RequestNotification` (Appendix C row "Period still uncovered 30 minutes before it starts") on `nibras.scheduling`, bound into `notification.commands` by document 11 §2.5 | Short |
 | `SkeletonCopyJob` | `CopyTimetableSkeleton` command | Copies entries onto next-year sections, unpublished, then replies `TimetableSkeletonCreated` | reply only | Long: progress per section |
 | `SeatingPlanJob` and `ExamTimetableJob` | Their REST starts | Run on the worker as `problemKind` seating or exam-timetable | none until publish | As the solver |
 | `ReferenceCopyReconciliationJob` | Nightly, staggered 01:00 to 04:00 tenant time | Checksums and repairs every copy of section 9 | `reporting.data-quality.issue-detected.v1` on mismatch | Long: per copy |
@@ -762,6 +763,11 @@ src/Services/Scheduling/                                                 Schedul
 │   │   │   ├── ExportTimetableHandler.cs                                IAsyncEnumerable CSV
 │   │   │   ├── ExportTimetableValidator.cs                              format whitelist
 │   │   │   └── ExportTimetableEndpoint.cs                               GET /timetable-versions/{id}/export
+│   │   ├── RenderTimetableDocument/                                     timetable PDF through Documents (REQ-SCD-012)
+│   │   │   ├── RenderTimetableDocumentCommand.cs                        version, view, subject, week, language
+│   │   │   ├── RenderTimetableDocumentHandler.cs                        resolves the week grid, sends GenerateDocument through the outbox
+│   │   │   ├── RenderTimetableDocumentValidator.cs                      view whitelist, subject in the caller's scope
+│   │   │   └── RenderTimetableDocumentEndpoint.cs                       POST /timetable-versions/{id}/document
 │   │   ├── GetTimetableViews/                                           section, staff, room and campus-day views
 │   │   │   ├── GetTimetableViewsQuery.cs                                subject and date
 │   │   │   ├── GetTimetableViewsHandler.cs                              compiled queries, cache-aside, substitutions applied
@@ -840,6 +846,7 @@ src/Services/Scheduling/                                                 Schedul
 │   │   ├── ISchedulingRepository.cs                                     aggregate persistence
 │   │   ├── ISchedulingReadContext.cs                                    AsNoTracking sources
 │   │   ├── ISchoolDirectory.cs                                          School gRPC lookups
+│   │   ├── IDocumentRequests.cs                                         GenerateDocument for timetable PDFs
 │   │   └── IReconciliationSources.cs                                    School, Academics and Hr checksum clients
 │   ├── Permissions/                                                     constants matching Appendix B
 │   │   └── SchedulingPermissions.cs                                     every scheduling.* permission
@@ -877,6 +884,7 @@ src/Services/Scheduling/                                                 Schedul
 │   │   └── InfeasibilityCoreExtractor.cs                                assumption literals to the smallest conflicting set
 │   ├── Messaging/                                                       topology
 │   │   ├── SchedulingTopology.cs                                        exchange nibras.scheduling, Api and worker queues
+│   │   ├── DocumentRequestPublisher.cs                                  GenerateDocument on nibras.scheduling into documents.commands
 │   │   └── IntegrationEventMapper.cs                                    domain events to V1 records
 │   ├── Grpc/                                                            clients for the one hop
 │   │   ├── SchoolDirectoryClient.cs                                     staff, structure, student directory with fallback
@@ -991,7 +999,7 @@ What this service does on each operating system, runtime and device class, and t
 | Time zones, Hijri and Ramadan | Bell schedules and cut-offs run in each campus's IANA time zone; Hijri is display only with Gregorian stored; a Ramadan schedule switches at the right local time per campus | TC-SCD-108, TC-SCD-120; `TC-L10N-620` (document 24); `TC-PLAT-005` and `TC-PLAT-006` (document 33) inside the built image | `ubuntu-latest` |
 | iCal feeds | Feeds are written as RFC 5545 text with CRLF line endings and zoned times, never with the host's newline, so every calendar client on every system reads them | TC-SCD-121 | `ubuntu-latest` |
 | Right to left | The timetable grid mirrors in Arabic; days and periods keep their order | `TC-L10N-601` (document 08) | `ubuntu-latest` |
-| Mobile without Google services | A substitute is told of cover urgently; on a device without Google services the message arrives in-app while the app is open and falls back to SMS and email; an iCal subscription needs no vendor service at all | TC-SCD-801; `TC-NOT-610` (Notification sheet); `TC-PLAT-009` (document 33) device pass, which includes one device without Google services | `ubuntu-latest`; the device pass |
+| Mobile without Google services | A substitute is told of cover urgently; on a device without Google services the message arrives in-app while the app is open and falls back to SMS and email; an iCal subscription needs no vendor service at all | TC-SCD-801; `TC-NOT-610` (Notification sheet); `TC-MOB-988` (document 20), the no-Google device-pass test of document 33 part 7 | `ubuntu-latest`; the device pass |
 
 ---
 
@@ -1047,11 +1055,11 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|---|---|---|---|---|---|
 | 1 | Travel times, lesson requirements and staff absences have no Appendix B resource of their own (constraints gained `scheduling.constraints` under ADR-0019, see above) | Travel times and lesson requirements stay under `scheduling.timetable.*`, absences under `scheduling.substitutions.*`. No open question owns the remainder; it was not in the defect log and needs its own ADR | Product owner, Appendix B amendment | Travel-time editing cannot be delegated apart from timetable editing | 2 | 1 | 2 | RISK-43 |
 | 2 | Weekly periods per subject belong to Academics (REQ-ACA-001) but no event carries them; `academics.teaching-assignment.changed.v1` has staff, section, subject and date only | `LessonRequirement.periods_per_week` is entered in Scheduling; propose an optional `periodsPerWeek` field on the Academics event (additive, not breaking) | Architect | Two places to maintain weekly periods | 4 | 2 | 8 | none |
-| 5 | Print and PDF of timetables (REQ-SCD-012): `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a sender of `GenerateDocument` | Browser print stylesheet for print; PDF through Documents once the binding is added | Architect | No server-side PDF until then | 2 | 2 | 4 | none |
+| 5 | Closed 2026-09-26. Print and PDF of timetables (REQ-SCD-012): `11-messaging-architecture.md` section 2.4 did not list `nibras.scheduling` as a sender of `GenerateDocument` | Document 11 §2.4 now lists `nibras.scheduling` as a `GenerateDocument` sender and §2.5 binds it into `documents.commands`; `POST /timetable-versions/{id}/document` (section 5.3) sends it. Print stays the browser print stylesheet (`06-services/documents.md` open point 7, closed) | Closed | None left: timetable PDFs can be requested | 1 | 1 | 1 | none |
 | 6 | Invigilator assignment exists both as `assessment.exams.assign-invigilators` and here | Scheduling places invigilators on sessions under `scheduling.exam-timetable.edit`; Assessment's permission governs paper duties | Product owner | Two screens for one roster | 3 | 1 | 3 | none |
 | 7 | Appendix R WF-SCH-02 lists `scheduling.timetable.published.v1` for the skeleton, while Saga 4 says the skeleton is unpublished | Unpublished; the reply `TimetableSkeletonCreated` is the outcome | Architect, Appendix R correction | Consumers would build registers from a draft | 1 | 3 | 3 | RISK-43 |
 | 8 | Timetable publication, substitution and room booking are state machines with no WF identifier in Appendix R | Internal state enums with transition tests; propose WF-SCD entries | Architect | Transition tests cannot carry Appendix R TC identifiers | 2 | 1 | 2 | RISK-43 |
-| 9 | `11-messaging-architecture.md` section 2.4 does not list `nibras.scheduling` as a `RequestNotification` sender, and the booking cancellation notice of BR-SCD-007 has no Appendix C row (the uncovered-period row and its job are settled, see above) | Until document 11 gains the sender, the alert is on the principal's Today dashboard and the cancellation notice is in-app. No open question owns either; the change list records the sender as plan-level work outside the brief | Architect, document 11 owner | The 30-minute principal alert of TC-HR-004 is not delivered by push | 3 | 3 | 9 | none |
+| 9 | The booking cancellation notice of BR-SCD-007 has no Appendix C row. The sender half is closed 2026-09-26: `11-messaging-architecture.md` §2.4 lists `nibras.scheduling` as a `RequestNotification` sender and §2.5 binds it into `notification.commands`, so the uncovered-period alert of TC-HR-004 is delivered by push (the Appendix C row and its job are settled, see above) | The cancellation notice is in-app until Appendix C gains a row. No open question owns it | Architect, Appendix C owner | A requester whose booking a published timetable cancelled learns of it only on opening the app | 2 | 2 | 4 | none |
 | 10 | `SCHEDULING_BOOKING_OUTSIDE_WINDOW` describes a parent meeting booking, which Communication owns | Not raised here; Appendix K amendment moves or renames it | Architect | None | 1 | 1 | 1 | none |
 
 > Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
@@ -1062,6 +1070,7 @@ Scored on the scales of `18-risk-register.md` Section 1 (L likelihood, I impact,
 |---|---|---|
 | 2026-09-21 | drafted | awaiting Group C review |
 | 2026-09-26 | round-3 remediation of the round-2 Group C scorecard | Platform notes (section 15.1) with the native solver on the three developer runners; signature features; risk table on document 18's scale; open points 3 and 4 closed and points 1 and 9 narrowed. Scheduling owns no Appendix R workflow; its two internal machines, `TimetableVersionStatus` and `SubstitutionStatus`, are drawn in section 8 from the sheet's own states (open point 8). Awaiting Group C re-review |
+| 2026-09-26 | Round-4 scorecard, Group C, then remediation round 5 | `POST /timetable-versions/{id}/document` sends `GenerateDocument` for timetable PDFs (section 5.3, the `RenderTimetableDocument` feature and `DocumentRequestPublisher` in the tree); section 7.1 lists the commands sent; the `UncoveredPeriodEscalationJob` row and open points 5 (closed) and 9 (narrowed to the Appendix C row) agree with document 11 §2.4 and §2.5; the no-Google row of section 15.1 cites `TC-MOB-988` instead of the font-shaping test `TC-PLAT-009`. Awaiting Group C re-review |
 
 ## How this document is verified
 
