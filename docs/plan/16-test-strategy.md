@@ -631,7 +631,7 @@ The phases are those of master brief Section 28. A gate applies from the phase i
 |---|---|---|---|---|---|---|
 | All tests green | Every suite for the 6 services | Plus 6 services, web and mobile suites | Plus 4 | Plus 3 | Plus 4 | All |
 | Coverage 90 / 80 | Building blocks and the 6 services | Every service so far | Same | Same | Same | Same |
-| Mutation 80 percent | Permissions | Plus grading, attendance rules, offline rules | Plus fees | Plus promotion | Same | Same |
+| Mutation 80 percent | Permissions, and Platform's billing rules BR-FIN-017 and BR-FIN-018 (ADR-0027) | Plus grading, attendance rules, offline rules | Plus fees | Plus promotion | Same | Same |
 | Vulnerabilities | Zero high or critical | Same | Same | Same | Same | Plus penetration-test findings closed or accepted with an owner |
 | Licence scan | Clean | Clean | Clean | Clean | Clean | Clean, with document 19 re-verified |
 | Accessibility | axe on the design system and the console | axe plus the manual pass on the teacher, parent and principal workspaces | Plus accountant and registrar | Plus dashboards | Plus Tier 2 workspaces | Full manual pass and the conformance statement |

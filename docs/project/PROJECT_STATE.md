@@ -1,6 +1,6 @@
 # Nibras: Project State
 
-**Phase:** Planning complete. **The plan is approved by the product owner on 2026-09-26; phase 1 (Foundation) is next.** All 36 plan documents (00 to 34, with the 16 annex) are written. Scorecard round 5 (document 30): all six groups approved at 4 on every axis. The same day the product owner decided Open Question 30 with the recommended answer (ADR-0027, Accepted: a tenant is billed on students enrolled on the billing date, prorated by day, computed by Platform), which closed RISK-52. Document 00 lists the decisions still open; each has a default in force.
+**Phase:** Planning complete. **The plan is approved by the product owner on 2026-09-26; phase 1 (Foundation) is next.** All 36 plan documents (00 to 34, with the 16 annex) are written. Scorecard round 7 (document 30): all six groups approved at 4 or better on every axis. The same day the product owner decided Open Question 30 with the recommended answer (ADR-0027, Accepted: a tenant is billed on students enrolled on the billing date, prorated by day, computed by Platform), which closed RISK-52. Document 00 lists the decisions still open; each has a default in force.
 **Kit version:** v9, brief v9.7 (ADR-0019, ADR-0020, ADR-0021, ADR-0023, ADR-0025, ADR-0026, ADR-0027; ADR-0022 and ADR-0024 change only the plan). Accepted records: ADR-0019 and ADR-0027. On `github.com/mahmodnasser/nibras`, branch `main`.
 **Last updated:** 2026-09-26, Open Question 30 decided (ADR-0027) and the plan approved by the product owner
 
@@ -47,7 +47,7 @@ Then: remediation round 6 closed the round-5 non-blocking gaps across all six gr
 
 ## Next: exactly where to resume
 
-1. **Finish the design review.** Align the service sheets with ADR-0027 (the Finance sheet's count job and open point 3, the Platform sheet's billing sections and open points), regenerate the generated documents (31, 34, 20 and the 16 annex) and re-run `node tools/kit-lint/kit-lint.mjs .` until it exits clean.
-2. **Start phase 1 with `/build-foundation`.**
+1. **Design review against the reference dashboards** the product owner named (Edudash by wowtheme7, EduMin by dexignlab, Akademi). The hosts are blocked by the environment's network policy; once they are allowed (or screenshots are supplied), review them, extend the design preview (https://claude.ai/artifact/J82rJXAFiDfiWLFcUhbGaQ) to every role dashboard in both directions and all widths, and bring any new features into the plan as a change (ADR where the brief changes).
+2. **Start phase 1 with `/build-foundation`** once the product owner confirms after the design review.
 3. Alongside phase 1, hold the decisions workshop of document 00 Section 6 for the questions still open: 29 first, then 27, 28, 3 with 9, 14, 24, 26 and 31, then ADR-0024 to ADR-0026 and the Proposed records phase 1 builds on. Record each answer in `OPEN_QUESTIONS.md` and, where it changes the brief, in an ADR with its version bump.
-4. Any gaps round 6 still lists are in document 30 Section 5.
+4. The non-blocking gaps round 7 still lists are in document 30 Section 5; none changes a phase range or the MVP.

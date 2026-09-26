@@ -9,7 +9,7 @@ const OUT = path.join(__dirname, '..', '..', 'docs', 'plan', '30-plan-scorecard.
 const AXES = ['Completeness', 'Consistency', 'Feasibility', 'Risk honesty', 'Testability', 'Distinctiveness', 'Portability'];
 const G = ['A', 'B', 'C', 'D', 'E', 'F'];
 // The date each round was scored. The current round is the last one.
-const ROUND_DATES = ['2026-09-22', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26'];
+const ROUND_DATES = ['2026-09-22', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26', '2026-09-26'];
 
 const readRound = (dir) => {
   const scores = {};
@@ -107,6 +107,8 @@ p('| After round 1 | 8. Signature features on the stage | Every signature featur
 p('| After round 2 | Round-2 gaps | The "Signature feature trace" in document 32; Platform notes and saga diagrams in the sheets; macOS in dev-smoke; Tier 2 requirements built early listed with reasons and checked by R35; open decisions no longer stated as settled; risk rows of 12 or more registered wherever they appear (R24) | ADR-0024 |');
 p('| After round 3 | Round-3 gaps | Document 11 routes `GenerateDocument` from Behavior, Hr, Operations and Scheduling and binds the generated event back; the Bff.Web digital-twin composer; the feature 43 owner; the phase 2 and 3 demo cells rebuilt from Appendix O; the macOS dev-smoke leg stated one way; document 31 lists transition-test ids per workflow | Documents 11, 17, 31 and the sheets |');
 p('| After round 4 | Round-4 gaps | `notification.commands` binds every `RequestNotification` sender, and `operations.events` the generated-document event; stale sheet points closed; the LTI 1.3 launch moved from SL-ACA-207 (phase 2) to SL-ACA-405 (phase 4); conditional e-invoicing slices SL-FIN-448 to SL-FIN-452; launch 61 to 95 weeks; Open Question 31 | ADR-0025; brief v9.5 |');
+p('| After round 5 | Round-5 gaps, all groups | LTI Assignment and Grade Services built (SL-INT-412, SL-ASM-400, `RecordToolScore`); `capacity-28.mjs` recomputes document 28; document 02 re-checked (capabilities unverified in all ten competitors 24 to 14); web routes for features 15, 33, 36 and 42; saga resume and deliver-twice test ids; RISK-54 carries eight residuals | ADR-0026; brief v9.6 |');
+p('| After round 6 | Round-6 gaps; Open Question 30 | The feature 42 class mastery heatmap and its data path in Assessment; derived-test counts aligned between documents 16 and 20; the product owner approved the plan and answered Open Question 30: the billable count is master brief Section 36, owned by Platform; RISK-52 closed | ADR-0027 (Accepted); brief v9.7 |');
 p();
 p('### 5. Scores by group, round ' + R);
 p();

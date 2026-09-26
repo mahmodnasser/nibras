@@ -93,7 +93,7 @@ These were questions in v8. Each now has a decision record, and every one of the
 
 ### 6.2 Settled in v9.1
 
-ADR-0019 is the one record the product owner has Accepted (2026-09-22). It settled four values on which the brief contradicted itself. These are settled, not defaults, and `OPEN_QUESTIONS.md` lists the same four.
+ADR-0019 and ADR-0027 are the records the product owner has Accepted. ADR-0019 (2026-09-22) settled four values on which the brief contradicted itself; these are settled, not defaults, and `OPEN_QUESTIONS.md` lists the same four. ADR-0027 (2026-09-26) answered Open Question 30 (section 6.3).
 
 | Was | Decision | Record | Plan documents that rely on it |
 |---|---|---|---|
