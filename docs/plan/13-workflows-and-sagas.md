@@ -810,10 +810,10 @@ Master brief Section 11 names five effects executed automatically on approval; A
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| Does the first release run the merged 14-service tree of Appendix L? | No: 20 services as catalogued | Product owner, master brief Section 27 | With the merge, the Assessment steps of Sagas 4 and 5 become in-process calls inside Academics; the saga shape does not change |
-| Property-based test library for the arithmetic rules | FsCheck, licence BSD-3-Clause, unverified until `16-test-strategy.md` pins the version | Tech lead | Another library with the same generators; no rule text changes |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Does the first release run the merged 14-service tree of Appendix L? | No: 20 services as catalogued | Product owner, master brief Section 27 | With the merge, the Assessment steps of Sagas 4 and 5 become in-process calls inside Academics; the saga shape does not change | 3 | 2 | 6 | RISK-06, RISK-33 |
+| Property-based test library for the arithmetic rules | FsCheck 3.4.0, licence BSD-3-Clause, verified and pinned by `19-dependency-and-license-inventory.md` §3; the ADR that a Section 6.2 addition needs is that document's open point 7 | Tech lead | Another library with the same generators; no rule text changes | 1 | 1 | 1 | none |
 
 ## Review record
 

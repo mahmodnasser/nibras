@@ -914,8 +914,8 @@ TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the ta
 | HybridCache through the Caching block only | ADR-0006 | as decided | The Caching block's surface and rule TC-TST-109 change |
 | Rollback means the previous image, migrations as bundles | ADR-0010 | as decided | `tools/scripts/migrate-bundle.mjs` and `migrate.yml` change |
 | Linux servers, appliance for Windows hosts | ADR-0016 | as decided | `deploy/onprem/` disappears and a Windows Server target appears, which Appendix X excludes |
-| Domain references its own contract project for error-code constants | this document; proposed ADR-0019 | in force as written | Error codes would be defined twice, in Domain and in Contracts, and drift |
-| Application references `Microsoft.EntityFrameworkCore` for read models, never the Npgsql provider | this document; proposed ADR-0020 | in force as written | Read models move to Infrastructure and every query feature gains a fifth file |
+| Domain references its own contract project for error-code constants | this document; an ADR to be numbered when written (ADR-0019 and ADR-0020, first proposed here, now record other decisions) | in force as written | Error codes would be defined twice, in Domain and in Contracts, and drift |
+| Application references `Microsoft.EntityFrameworkCore` for read models, never the Npgsql provider | this document; an ADR to be numbered when written | in force as written | Read models move to Infrastructure and every query feature gains a fifth file |
 | Attendance jobs run in the Api host because Appendix L lists no attendance-worker image | Appendix L, applied | in force as written | A worker image is added to Appendix L and the jobs move to `Nibras.Attendance.Worker` |
 | `deploy/observability/` holds dashboards and alerts | this document, refining reference architecture Section 6 | in force as written | Dashboards move into each Helm chart and document 15 changes its tree |
 
@@ -935,12 +935,12 @@ TC-PLAT-101 is the appliance build job in `release.yml` and is defined in the ta
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| May Domain reference its own contract project for error-code constants, as 10.1 states? | Yes; write ADR-0019 recording it as a refinement of "Domain depends on nothing" | Architect | Error codes are declared twice and TC-TST-101 is rewritten to forbid the reference |
-| May Application reference `Microsoft.EntityFrameworkCore` for read models? | Yes, provider-free; write ADR-0020 | Architect | Read models and their tests move to Infrastructure |
-| Which licence text goes in `LICENSE` at the root? | Proprietary, all rights reserved, until the product owner chooses | Product owner | The file's content changes; nothing in the tree changes |
-| Does the forge stay GitHub, keeping `.github/workflows/`? | Yes | Product owner | The folder is renamed `.woodpecker/` with the same eleven stages, as reference architecture Section 11 allows |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| May Domain reference its own contract project for error-code constants, as 10.1 states? | Yes; record it by ADR as a refinement of "Domain depends on nothing" | Architect | Error codes are declared twice and TC-TST-101 is rewritten to forbid the reference | 2 | 1 | 2 | none |
+| May Application reference `Microsoft.EntityFrameworkCore` for read models? | Yes, provider-free; record it by ADR | Architect | Read models and their tests move to Infrastructure | 2 | 2 | 4 | none |
+| Which licence text goes in `LICENSE` at the root? | Proprietary, all rights reserved, until the product owner chooses | Product owner | The file's content changes; nothing in the tree changes | 2 | 1 | 2 | none |
+| Does the forge stay GitHub, keeping `.github/workflows/`? | Yes | Product owner | The folder is renamed `.woodpecker/` with the same eleven stages, as reference architecture Section 11 allows | 2 | 2 | 4 | none |
 
 ## How this document is verified
 

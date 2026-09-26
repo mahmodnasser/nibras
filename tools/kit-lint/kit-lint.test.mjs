@@ -521,3 +521,18 @@ test('R18 requires a comment on every plan tree entry', () => {
   assert.equal(f.length, 1, JSON.stringify(f));
   assert.equal(f[0].severity, 'error');
 });
+
+test('R33 requires scored open points, a register link at 12 or more, and owned threat rows', () => {
+  const f = only('R33-open-points', {
+    'docs/plan/10-data-architecture.md': '# 10\n\n## Open points\n\n| Question | Default | Owner | L | I | Score | In the register |\n|---|---|---|---|---|---|---|\n| Hot partition | Split later | Architect | 4 | 3 | 12 | none |\n| Minor | Keep | Architect | 1 | 2 | 2 | none |\n',
+    'docs/plan/11-messaging-architecture.md': '# 11\n\n## Open points\n\n| Question | Default | Owner |\n|---|---|---|\n| Queue | Keep | Architect |\n',
+    'docs/plan/21-performance-engineering.md': '# 21\n\n## Content\n',
+    'docs/plan/12-security-privacy-safety.md': '# 12\n\n## Open points\n\nNone.\n\n## Threats\n\n| ID | Threat | Impact | Test |\n|---|---|---|---|\n| T-ATT-01 | Forged | high | TC-SEC-001 |\n',
+  });
+  const m = messages(f);
+  assert.match(m, /scores 12 but names no RISK/);
+  assert.match(m, /no L, I, Score, In the register column/);
+  assert.match(m, /No "Open points" section/);
+  assert.match(m, /Threat table has no Owner role column/);
+  assert.doesNotMatch(m, /Minor/);
+});

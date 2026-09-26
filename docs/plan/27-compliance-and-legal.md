@@ -397,12 +397,17 @@ A new country is data, plug-ins and legal review, not new architecture (master b
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. `10-data-architecture.md` §8 and `12-security-privacy-safety.md` §10.3 name the retention jobs differently (`LeaverRetentionJob` against `retention-anonymize-leavers`, and so on) | Class names from `10-data-architecture.md` §8 are canonical; §10.3 of document 12 is aligned at its next revision, keeping its test identifiers | Architect | Two names for one job confuse the evidence pack and the runbooks |
-| 2. Is 48 hours the right processor breach notice for all three first countries? | 48 hours, shortened per country by the country plug-in if a law requires it | Data protection lead with counsel | A statutory deadline shorter than the contract leaves the school exposed |
-| 3. Which language version of the terms prevails in a dispute? | Neither, unless a country's law names one, in which case the country plug-in records it | Legal | A court applies the other text |
-| 4. Publish a yearly transparency report on law-enforcement requests? | Yes, counts only | Product owner | Without it, schools cannot verify clause 12 |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. `10-data-architecture.md` §8 and `12-security-privacy-safety.md` §10.3 name the retention jobs differently (`LeaverRetentionJob` against `retention-anonymize-leavers`, and so on) | Class names from `10-data-architecture.md` §8 are canonical; §10.3 of document 12 is aligned at its next revision, keeping its test identifiers | Architect | Two names for one job confuse the evidence pack and the runbooks | 2 | 1 | 2 | none |
+| 2. Is 48 hours the right processor breach notice for all three first countries? | 48 hours, shortened per country by the country plug-in if a law requires it | Data protection lead with counsel | A statutory deadline shorter than the contract leaves the school exposed | 2 | 4 | 8 | RISK-23 |
+| 3. Which language version of the terms prevails in a dispute? | Neither, unless a country's law names one, in which case the country plug-in records it | Legal | A court applies the other text | 2 | 3 | 6 | none |
+| 4. Publish a yearly transparency report on law-enforcement requests? | Yes, counts only | Product owner | Without it, schools cannot verify clause 12 | 2 | 1 | 2 | none |
+| 5. Open question 19: retention periods per country. §2 applies master brief Section 32's periods and marks the rows that vary by country law | The recorded default: the Section 32 periods, held as configuration so a country plug-in can override them | Product owner, with the data protection lead | A country that mandates a longer or shorter period for a data class puts every school there out of compliance until the override ships, and a longer period grows the storage line of `28-capacity-and-cost-model.md` part 2.8 | 3 | 3 | 9 | RISK-23 |
+| 6. Open question 26: does any first customer require a formal certification such as SOC 2 Type II or ISO 27001? §1.1 places both on the post-launch roadmap and §11 keeps their evidence base | The recorded default: no; compatibility yes, certification only when a customer pays for it, with the penetration-test summary and §1 offered in its place (§5.2 clause 11) | Product owner | A school group or procurement office that makes certification a contract condition is lost, because a Type II report needs an observation period that cannot be shortened | 2 | 4 | 8 | none |
+| 7. Open question 3: target countries for the first customers. §1 and §9 cover Saudi Arabia, the United Arab Emirates and Jordan, and §12 is the checklist for any other | The recorded default: those three | Product owner | A fourth country before launch runs the whole §12 checklist, counsel review of every legal document included, inside a delivery phase | 2 | 3 | 6 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
 
 ## Review record
 

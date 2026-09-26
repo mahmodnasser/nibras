@@ -1,5 +1,13 @@
 # Changelog
 
+## Plan risk honesty, 2026-09-25
+
+Every open point is scored, and the serious ones are register risks (ADR-0022, proposed; no brief change).
+
+**Kit-lint.** R33: every plan document and service sheet has an Open points section whose table carries likelihood, impact, score and register columns; a point that scores 12 or more names a RISK in document 18; document 12's threat tables name an owner and a register link. R24 checks the scales, the arithmetic and that every cited RISK exists. 47 self-tests.
+
+**Plan.** About 300 open points scored across 57 documents; 12 documents gained an Open points section; document 12's 131 threat rows gained residual risk, owner role and register link. The register gained RISK-44 to RISK-53 and closed RISK-40; its heat map, top ten and owner tables were recomputed. The top risk (RISK-47, 20) is the Wellbeing check-in answer that waits on the device against the no-device rule, now Open Question 29; the billing-count conflict (RISK-52, 16) is Open Question 30.
+
 ## v9.3 brief, 2026-09-25
 
 Every verification claim names a check that runs (ADR-0021, proposed). Of 167 verification rows that named a kit check, 67 were true; the rest named the wrong rule, a check nobody had built, or no one at all.

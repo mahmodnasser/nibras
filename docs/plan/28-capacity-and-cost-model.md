@@ -491,17 +491,21 @@ Every Kubernetes object in the umbrella chart and every cloud resource created b
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. Hosting provider, regions and real unit prices (open question 15) | The illustrative prices of part 4.1 | Product owner | Every absolute figure moves; the per-1,000 ratios between modes largely hold |
-| 2. Average remaining enrolment used by the retention multiplier | 6 years | Product owner, with the domain expert | At 4 years the academic multiplier falls from 16 to 14; at 8 it rises to 18 |
-| 3. Retention of coursework submissions, which Appendix J does not name | Until leaving plus 3 years; proposed for Appendix J by ADR | Product owner, with the privacy auditor | Coursework is half of steady-state object storage; at 10 years after leaving its line nearly doubles |
-| 4. No Appendix N scenario runs on a single server | Run the N-01 and N-02 scripts against one appliance per band in phase 6 as recorded evidence, not a release gate | Architect | A band floor that is too small fails a school's first morning with nobody having measured it |
-| 5. The timetable solver has no load scenario | Solve time for a 3,000-student timetable recorded per release as a benchmark | Scheduling service owner | The `scheduling-worker` maximum of 4 is unproven |
-| 6. Erasure coding on SeaweedFS for warm volumes instead of three replicas | Three replicas (master brief Section 34) | Architect | At the scale tier storage is 34% of cost; erasure coding would cut the storage line by about half, at a rebuild-time cost |
-| 7. Price list for owned appliance hosts | The price list quotes the rented band; an owned host is a variant (part 4.3) | Product owner | A school comparing a purchase against the rented figure sees a higher price than it pays |
-| 8. A dedicated FinOps tool | Prometheus recording rules and a price ConfigMap; no new dependency | Architect, after the licence auditor if a tool is proposed | Allocation stays approximate for shared nodes |
-| 9. Egress of 75 MB per student-month | As stated, measured in the first term | Platform engineer | Egress is 5% of example B; an error of two times moves the total by 5% |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. Hosting provider, regions and real unit prices (open question 15) | The illustrative prices of part 4.1 | Product owner | Every absolute figure moves; the per-1,000 ratios between modes largely hold | 5 | 2 | 10 | RISK-28 |
+| 2. Average remaining enrolment used by the retention multiplier | 6 years | Product owner, with the domain expert | At 4 years the academic multiplier falls from 16 to 14; at 8 it rises to 18 | 3 | 1 | 3 | none |
+| 3. Retention of coursework submissions, which Appendix J does not name | Until leaving plus 3 years; proposed for Appendix J by ADR | Product owner, with the privacy auditor | Coursework is half of steady-state object storage; at 10 years after leaving its line nearly doubles | 3 | 2 | 6 | none |
+| 4. No Appendix N scenario runs on a single server | Run the N-01 and N-02 scripts against one appliance per band in phase 6 as recorded evidence, not a release gate | Architect | A band floor that is too small fails a school's first morning with nobody having measured it | 3 | 3 | 9 | none |
+| 5. The timetable solver has no load scenario | Solve time for a 3,000-student timetable recorded per release as a benchmark | Scheduling service owner | The `scheduling-worker` maximum of 4 is unproven | 3 | 2 | 6 | RISK-10 |
+| 6. Erasure coding on SeaweedFS for warm volumes instead of three replicas | Three replicas (master brief Section 34) | Architect | At the scale tier storage is 34% of cost; erasure coding would cut the storage line by about half, at a rebuild-time cost | 2 | 2 | 4 | none |
+| 7. Price list for owned appliance hosts | The price list quotes the rented band; an owned host is a variant (part 4.3) | Product owner | A school comparing a purchase against the rented figure sees a higher price than it pays | 2 | 1 | 2 | none |
+| 8. A dedicated FinOps tool | Prometheus recording rules and a price ConfigMap; no new dependency | Architect, after the licence auditor if a tool is proposed | Allocation stays approximate for shared nodes | 2 | 1 | 2 | none |
+| 9. Egress of 75 MB per student-month | As stated, measured in the first term | Platform engineer | Egress is 5% of example B; an error of two times moves the total by 5% | 3 | 1 | 3 | none |
+| 10. Open question 14: a Mac build host, or hosted macOS runner minutes? Part 5 prices the Apple build line | The recorded default: hosted runner minutes, budgeted in master brief Section 30, at 80 USD a month per flavour in part 5 | Product owner | With no budget line or host, iOS is not built when phase 2 needs it; Android and mobile web are unaffected | 3 | 4 | 12 | RISK-04 |
+| 11. Open question 22: which SMS provider first? Part 5 prices SMS at USD 48 per 1,000 students a month, sold as credits | The recorded default: none; email and push cover everything except the urgent fallback | Product owner | Without a provider the urgent fallback does not exist at launch; with one, SMS is the largest per-student line of part 5 and moves with each country's rate | 3 | 3 | 9 | RISK-30 |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022). Point 1 scores likelihood 5 because the prices are illustrative by construction; its impact stays 2 because replacing part 4.1 re-prices every table from the same formulas.
 
 ## Review record
 

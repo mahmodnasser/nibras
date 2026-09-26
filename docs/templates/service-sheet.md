@@ -105,3 +105,10 @@ src/Services/<Service>/
 
 | Risk | Likelihood | Impact | Mitigation | Owner |
 |---|---|---|---|---|
+
+## 15. Open points
+
+| # | Question | Default in force | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|---|
+
+> Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).

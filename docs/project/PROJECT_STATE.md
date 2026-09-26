@@ -1,7 +1,7 @@
 # Nibras: Project State
 
 **Phase:** Planning. 34 of 35 plan documents are written and lint-clean; only 00 (executive summary) is left. **The scorecard (document 30) blocks every group**: coverage is complete, but consistency, feasibility and testability are at 2. About 14 to 15 days of remediation in eight themes stand between the plan and approval.
-**Kit version:** v9, brief v9.3 (ADR-0019, ADR-0020, ADR-0021), on `github.com/mahmodnasser/nibras`, branch `main`. Fix 6 is not yet committed.
+**Kit version:** v9, brief v9.3 (ADR-0019, ADR-0020, ADR-0021; ADR-0022 changes only the plan), on `github.com/mahmodnasser/nibras`, branch `main`. Fix 7 is not yet committed.
 **Last updated:** 2026-09-25, scorecard remediation themes 1 to 5
 
 ## Done: complete and lint-clean
@@ -38,7 +38,7 @@
 | 4 | **Done**: contradictions removed across 01-33 and all 23 sheets (113 open points closed or narrowed against ADR-0019); Gateway revoked-mark read added to 21; CAP-INT-02 and CAP-INT-03 added to 17 with their slices moved in 34; 79 capabilities; k6 in allow.json | done |
 | 5 | **Done**: ADR-0020 (proposed) and brief v9.2; kit-lint R20 (one definition per test, no undefined citation, derived tests need their requirement) with 5 self-tests; 206 double definitions and 163 undefined citations resolved; registry annex generated (1,566 tests, 334 derived) | done |
 | 6 | **Done**: ADR-0021 (proposed) and brief v9.3; 12 new kit-lint rules (R21 to R32) with self-tests, R18 strict for plan trees; generators gained `--check`; about 100 verification rows now name a real rule, a named review step or the building slice | done |
-| 7 | Risk honesty: likelihood and RISK ids on every open point; document 18 re-scored | 1.5 days |
+| 7 | **Done**: ADR-0022 (proposed); kit-lint R33; every open point scored on document 18's scales, 12 or more linked to a RISK; 12 Open points sections added; document 12 threats owned and linked; RISK-44 to RISK-53 added, RISK-40 closed; Open Questions 29 and 30 | done |
 | 8 | Every signature feature with a release-gated demo step | 1.5 days |
 
 Then re-score with `/score-plan` (`node tools/plan-build/build-30.cjs` rebuilds document 30 from `parts/score-*.md`), write **00**, final lint, commit, push.
@@ -56,6 +56,8 @@ Then re-score with `/score-plan` (`node tools/plan-build/build-30.cjs` rebuilds 
 | Absence alert timing: the workflow catalog delays a parent's absence alert 30 minutes after the register closes; the requirements and service levels demand it within 30 seconds | A grace window avoids alarming parents over a teacher's correction; immediacy is what parents expect. The plan follows the requirement until decided |
 | Move a read-only public API, OneRoster export and iCal from Tier 2 into Tier 1 | Document 02 found a public API is table stakes in 6 of 10 competitors (Open Question 28) |
 | Target countries, Apple build capacity, and any required certification | Open Questions 3, 14 and 26; each changes cost or schedule |
+| Wellbeing check-in: may a level S answer wait on the device until sync? | Open Question 29, RISK-47, the top risk (20): the plan builds the outbox, which contradicts the no-device rule. Recommended: online only |
+| Which count bills a tenant? | Open Question 30, RISK-52 (16): the brief and REQ-PLT-009 disagree with BR-FIN-017 |
 
 ## Plan progress
 

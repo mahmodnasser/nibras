@@ -864,6 +864,18 @@ Legend. **States**: `7` means all seven states of `14-design-system-and-ux.md` S
 
 ---
 
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Does the Angular major pinned at Phase 0 ship stable zoneless change detection, `animate.enter`, `animate.leave` and the View Transitions integration? (`29-adr-index.md` Section 3) | Latest stable at project start; `OnPush` on every component while zoneless is provisional (the decision table above); if the motion primitives are absent, Section 10 drives the same motion with CSS classes toggled by signals, as master brief Section 3 allows | Architect | `OnPush` becomes permanent rather than a fallback, and the motion patterns of Section 10 and document 14 are re-implemented as class toggles in `@nibras/ui/motion`; no route, store or screen changes | 2 | 2 | 4 | none |
+| Are the Phase 0 bundle budgets in Section 9 the right size for the screens Section 7 lists? | The warning and error values in Section 9, enforced in `angular.json`; raising one requires an ADR | Architect | Too tight: feature slices stall on budget ADRs. Too loose: the Lighthouse Performance 90 budget of Section 8 and the LCP target fail late, on mid-range phones, when splitting a chunk is expensive | 3 | 2 | 6 | none |
+| Do school staff outside the five mobile-web workspaces work from phones? | Section 8 and the Appendix X mobile web row: the school admin console, registrar, accountant, HR, care, front desk and platform console render at 768 without horizontal scroll and get no 360 layouts | Product owner | 360 layouts, snapshots and Lighthouse routes are added for the affected rows of Section 7, and the capability that builds those screens slips inside its phase | 2 | 2 | 4 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+---
+
 ## How this document is verified
 
 | Claim | Proof |

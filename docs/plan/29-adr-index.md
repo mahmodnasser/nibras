@@ -2,7 +2,7 @@
 
 > Group F. Every decision record in `docs/project/DECISIONS/`, what each one settles, the open question it closes or the brief section it changes, and the decisions the remaining groups are expected to raise. The records themselves are the source; this index is the map.
 
-`0000-adr-template.md` is the template and is not a decision. Every record from 0001 to 0021 except 0019 is **Proposed, awaiting product owner confirmation**; 0019 is **Accepted**, because the product owner approved it directly, because the weekly decision review in master brief Section 29 has not yet met. A record moves to Accepted when that review approves it and the note is written in `docs/project/PROJECT_STATE.md`. Requirement areas use the codes in Appendix L; where a record cites a `REQ-PLAT-` identifier it is the cross-cutting platform-support area, not the Platform service (`PLT`).
+`0000-adr-template.md` is the template and is not a decision. Every record from 0001 to 0022 except 0019 is **Proposed, awaiting product owner confirmation**; 0019 is **Accepted**, because the product owner approved it directly, because the weekly decision review in master brief Section 29 has not yet met. A record moves to Accepted when that review approves it and the note is written in `docs/project/PROJECT_STATE.md`. Requirement areas use the codes in Appendix L; where a record cites a `REQ-PLAT-` identifier it is the cross-cutting platform-support area, not the Platform service (`PLT`).
 
 ---
 
@@ -31,8 +31,9 @@
 | 0019 | The brief is corrected to v9.1 from the defects the plan found | Accepted | Every logged brief defect applied with the service sheets' names; all three briefs bumped to v9.1; cooling-off 30 days, invitations 14 days with a day-7 reminder, deduplication 5 minutes, feature 39 moved to engineering capabilities; full list in `docs/project/KIT_V9_1_CHANGES.md` | Settles four conflicting values (cooling-off, invitation expiry, deduplication window, feature 39); closes the brief defects logged in `tools/plan-build/parts/brief-findings.md`; records Open Questions 27 and 28 | All areas; `PLT` (REQ-PLT-007), `ATT` (REQ-ATT-017), `INT` (REQ-INT-016) |
 | 0020 | Every test case is defined in exactly one document | Proposed | One definition per `TC-` identifier, cited everywhere else with its owner named; owner by precedence (Appendix R, W, the area's sheet, the area's document); kit-lint R20 enforces it and `16-annex-test-case-registry.md` is generated from the same code; Appendix W's twelve colliding demo tests move to the 810 range; brief v9.2 | No open question; refines ADR-0014; closes scorecard theme 5 | `TST` (REQ-TST-001, REQ-TST-009, REQ-TST-025) |
 | 0021 | Every verification claim names a check that runs | Proposed | A "How this document is verified" row names a kit-lint rule that checks the claim as its code is written, a review step naming who compares what and when, or a product artefact built by a named slice at a path in document 07; kit-lint gains R21 to R32 and R18 becomes an error for plan trees; brief v9.3 | No open question; closes scorecard theme 6; labels the one unlabelled Appendix R transition (WF-FIN-04) | `TST` (REQ-TST-025) |
+| 0022 | Every open point is scored, and the serious ones are register risks | Proposed | Every plan document and service sheet has an Open points table whose rows carry a likelihood and an impact on the scales of document 18, their product, and the register risks that cover them; a point scoring 12 or more names a RISK in document 18; kit-lint R33 and R24 enforce it | No open question; closes scorecard theme 7; adds the four columns to the plan-document and service-sheet templates and gives document 12's threat tables an owner and a register link | `TST` (REQ-TST-025) |
 
-**Counts, quoted.** Twenty-one records: twenty Proposed, one Accepted (0019). Five carry the default for an open question (0001, 0002, 0004, 0008, 0016). Six settle a v8 question and appear in the settled table of `docs/project/OPEN_QUESTIONS.md` (0002, 0003, 0009, 0010, 0011, 0012); 0002 does both. Eight change or refine a brief section with no open question behind them (0005, 0006, 0007, 0013, 0014, 0015, 0017, 0018). Three correct the brief from what plan review found and bump it to v9.1, v9.2 and v9.3 (0019, 0020, 0021).
+**Counts, quoted.** Twenty-two records: twenty-one Proposed, one Accepted (0019). Five carry the default for an open question (0001, 0002, 0004, 0008, 0016). Six settle a v8 question and appear in the settled table of `docs/project/OPEN_QUESTIONS.md` (0002, 0003, 0009, 0010, 0011, 0012); 0002 does both. Eight change or refine a brief section with no open question behind them (0005, 0006, 0007, 0013, 0014, 0015, 0017, 0018). Three correct the brief from what plan review found and bump it to v9.1, v9.2 and v9.3 (0019, 0020, 0021). One sets a plan rule with no open question and no brief change (0022).
 
 ### Which open questions have a record, and which do not
 
@@ -156,6 +157,18 @@ Groups C to F are expected to raise these. Each has a default so nothing blocks;
 | Jitsi Meet or LiveKit for online classes | Group C (Academics sheet) | An embedded dependency with a licence row and an operations cost | Jitsi Meet embed, the lighter option to operate | Master brief Section 6 |
 
 **What is deliberately not on this list.** Anything the brief already fixes: YARP as the gateway, PostgreSQL, RabbitMQ, Drift for offline storage, `go_router`, Gotenberg. Those have a record already or are stated in master brief Section 6 with their licence and their rejected alternative, and a plan document that reopens one of them is the defect.
+
+---
+
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Does the weekly decision review confirm the twenty-one Proposed records (0001 to 0018, 0020 to 0022) as written? It has not met, so only 0019 is Accepted | The plan and the first slices build on every Proposed record as written; each record names its alternatives and a revisit trigger | Product owner | A record rejected or amended after Phase 1 slices depend on it reworks what it shaped: the runtime (0001), the service count (0002), the messaging block (0004) or the identity server (0008), each moving a phase by more than a month; until the review meets, every record also waits on one approver | 3 | 4 | 12 | RISK-01, RISK-44 |
+| Is open question 23 (Riverpod or flutter_bloc) recorded before Phase 2 builds the first mobile feature? Section 1 shows it with no record yet | Riverpod, the decision in force in `09-mobile-structure.md`, recorded under the next free number when Group D's decision is written | Architect | The question stays open in two documents while `TC-MOB-721` already asserts the answer; a reversal is confined to the mobile state folders | 2 | 1 | 2 | none |
+| Do the defaults in Section 3 hold until each decision is recorded? | Each row's "Default until decided" stands, and the owning document scores the row as its own open point where it is still open (for example open question 14 in `33-platform-support-and-dev-environments.md`) | Architect | A default overturned late moves the work its row names; the cost is carried by the owning document's open point, not here | 3 | 2 | 6 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
 
 ---
 

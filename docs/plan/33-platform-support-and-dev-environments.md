@@ -245,6 +245,19 @@ Three further cases the plan adds, because they surfaced while writing the setup
 
 ---
 
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Open question 14: is there a Mac build host, or are hosted macOS runner minutes bought? Pending with the product owner | Hosted runner minutes, budgeted in master brief Section 30; `ci-mobile-ios.yml` is path-filtered to `src/Mobile/**` (part 4) | Product owner | No iOS artefact, iOS goldens or iPhone SE device pass; the white-label gate of part 7 refuses every flavour, so each school's application ships on Android and waits on iOS. Android, the kiosks and mobile web are unaffected | 3 | 4 | 12 | RISK-04 |
+| Open questions 16 and 2: are there Windows hosts among the first on-premises customers, and is the appliance Phase 2 or Phase 6 work? | Phase 6, with the appliance path of part 8 as designed (ADR-0016) | Product owner | The nested-virtualisation build in `release.yml`, the quarterly Hyper-V drill and the appliance runbook move into Phase 2, which grows by that work | 3 | 3 | 9 | RISK-17 |
+| Is a macOS developer setup kept working without a macOS runner in `dev-smoke.yml`? | The mobile engineer's machine verifies the macOS guide at each phase demo, and the guide says so | Platform engineering | A macOS developer finds a broken setup step between demos and loses a day to it | 3 | 1 | 3 | none |
+| Are the three edge cases part 9 adds (`TC-PLAT-015` to `TC-PLAT-017`) accepted into Appendix X at the next brief version bump? | Allocated and tested here meanwhile; proposed for Appendix X.3 at the next bump | Architect | Appendix X and this document list different edge cases until the bump; the tests themselves do not change | 2 | 1 | 2 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+---
+
 ## How this document is verified
 
 | Claim | Proof |

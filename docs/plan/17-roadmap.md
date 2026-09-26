@@ -326,11 +326,11 @@ flowchart LR
 
 ## Open points
 
-| Point | Default | Owner |
-|---|---|---|
-| Whether a read-only public API, OneRoster export and iCal move to Tier 1, per document 02 | Stays in phase 3 as CAP-INT-01, where document 34 builds it, except iCal which is already in phase 2 through CAP-SCD-03. This is the current default, not a decision | Product owner, Open Question 28, then an ADR |
-| Whether Finance is needed by the first customer in term one | No; it is outside the MVP | Product owner, Open Question 25 |
-| Team size and shape | Master brief Section 29, five to eight builders. A different team changes the builders input of `schedule-34.mjs` and the ranges are recomputed | Product owner, Open Question 24 |
+| Point | Default | Owner | L | I | Score | In the register |
+|---|---|---|---|---|---|---|
+| Whether a read-only public API, OneRoster export and iCal move to Tier 1, per document 02 | Stays in phase 3 as CAP-INT-01, where document 34 builds it, except iCal which is already in phase 2 through CAP-SCD-03. This is the current default, not a decision | Product owner, Open Question 28, then an ADR | 3 | 3 | 9 | RISK-42 |
+| Whether Finance is needed by the first customer in term one | No; it is outside the MVP | Product owner, Open Question 25 | 3 | 3 | 9 | RISK-32 |
+| Team size and shape | Master brief Section 29, five to eight builders. Every phase range in Section 1 assumes it: phase 1 is 14 weeks with eight builders and 22 with five, so a team below five stretches every phase by more than a month. A different team changes the builders input of `schedule-34.mjs` and the ranges are recomputed | Product owner, Open Question 24 | 3 | 4 | 12 | RISK-03, RISK-06 |
 
 ## Review record
 

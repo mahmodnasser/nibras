@@ -767,12 +767,12 @@ Master brief Section 35 owns the policy; `23-integrations-and-public-api.md` §5
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. Add `_INTERNAL_ERROR` (500) as the ninth cross-cutting suffix in Appendix K.1? | Emit it from the middleware now; amend Appendix K.1 by ADR with the next brief version | Architect | Without the row, the never-removed rule cannot protect it and no generated test asserts it |
-| 2. Should `q` free-text search also cover the transliteration key in `24-localization-and-calendars.md` §3 by default, or only on the duplicate-detection endpoints? | Only on duplicate detection and the admissions search; the general `q` uses folding and trigram | Architect, with the School service owner | Default-on transliteration produces surprising matches in a class list of 30; default-off misses "Mohammed" for "محمد" in the directory |
-| 3. Per-plan Gateway limits (3,000, 12,000, 40,000 per minute) and per-key limits (60, 300, 1,000) are starting values | As stated, revised by the N-01 and N-06 runs | Architect, with the product owner for the plan tiers | A limit set too low makes the morning attendance peak a 429 storm; too high defeats the noisy-neighbour protection |
-| 4. Does the public API expose `/count` siblings, or only first-party clients? | First-party only until the read-only public API tiering in `02-competitive-gap-analysis.md` is decided by ADR | Product owner | Integrators paginate without knowing the total, which OneRoster consumers expect |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. Add `_INTERNAL_ERROR` (500) as the ninth cross-cutting suffix in Appendix K.1? | Emit it from the middleware now; amend Appendix K.1 by ADR with the next brief version | Architect | Without the row, the never-removed rule cannot protect it and no generated test asserts it | 2 | 1 | 2 | none |
+| 2. Should `q` free-text search also cover the transliteration key in `24-localization-and-calendars.md` §3 by default, or only on the duplicate-detection endpoints? | Only on duplicate detection and the admissions search; the general `q` uses folding and trigram | Architect, with the School service owner | Default-on transliteration produces surprising matches in a class list of 30; default-off misses "Mohammed" for "محمد" in the directory | 3 | 2 | 6 | none |
+| 3. Per-plan Gateway limits (3,000, 12,000, 40,000 per minute) and per-key limits (60, 300, 1,000) are starting values | As stated, revised by the N-01 and N-06 runs | Architect, with the product owner for the plan tiers | A limit set too low makes the morning attendance peak a 429 storm; too high defeats the noisy-neighbour protection | 3 | 3 | 9 | RISK-19 |
+| 4. Does the public API expose `/count` siblings, or only first-party clients? | First-party only until the read-only public API tiering in `02-competitive-gap-analysis.md` is decided by ADR | Product owner | Integrators paginate without knowing the total, which OneRoster consumers expect | 2 | 2 | 4 | RISK-42 |
 
 ## Review record
 

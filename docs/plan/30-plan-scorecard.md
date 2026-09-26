@@ -248,10 +248,9 @@ Each group is re-scored with `/score-plan` after the themes that touch it are cl
 
 ## Open points
 
-| Point | Default | Owner |
-|---|---|---|
-| The three product-owner decisions in Section 5 theme 1 | The plan follows the requirement as written until decided | Product owner |
-| Whether to build or restate the missing kit-lint checks (theme 6) | Build the two with the most leverage, restate the rest as review steps | Architect |
+| Point | Default | Owner | L | I | Score | In the register |
+|---|---|---|---|---|---|---|
+| The three product-owner decisions in Section 5 theme 1 | The plan follows the requirement as written until decided | Product owner | 3 | 3 | 9 | RISK-41, RISK-42 |
 
 ## Review record
 

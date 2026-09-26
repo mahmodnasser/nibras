@@ -561,12 +561,14 @@ When every blocking check passes, the tenant moves `Onboarding` to `Live` (WF-PL
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. Which adapters ship in the first release? | `excel-template`, `csv-mapped`, `oneroster-csv` and `noor-export`; the rest by demand from the first schools | Product owner | A school on an unsupported system falls back to `csv-mapped`, which costs a day of mapping |
-| 2. Is the Saudi identity check digit applied as an error or a warning? | Error, with a documented override for a registrar holding the physical card | Documents owner, with the first Saudi school | A wrong algorithm blocks valid students |
-| 3. Should historical results older than 3 years be imported at all? | Import what the school provides, locked and marked legacy | Product owner | Large histories slow the first import with no daily use |
-| 4. Move §2 into the Documents service sheet | When `06-services/documents.md` is written | Architect | Two documents own the staging design until then |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. Which adapters ship in the first release? | `excel-template`, `csv-mapped`, `oneroster-csv` and `noor-export`; the rest by demand from the first schools | Product owner | A school on an unsupported system falls back to `csv-mapped`, which costs a day of mapping | 3 | 2 | 6 | none |
+| 2. Is the Saudi identity check digit applied as an error or a warning? | Error, with a documented override for a registrar holding the physical card | Documents owner, with the first Saudi school | A wrong algorithm blocks valid students | 2 | 2 | 4 | none |
+| 3. Should historical results older than 3 years be imported at all? | Import what the school provides, locked and marked legacy | Product owner | Large histories slow the first import with no daily use | 2 | 2 | 4 | none |
+| 4. Move §2 into the Documents service sheet | When `06-services/documents.md` is written | Architect | Two documents own the staging design until then | 4 | 2 | 8 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022). Point 4 scores likelihood 4 because `06-services/documents.md` now exists and specifies the import machinery itself, so two documents already hold the staging design.
 
 ## Review record
 

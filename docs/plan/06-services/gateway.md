@@ -409,11 +409,13 @@ src/Gateway/                                 the single public entry point; one 
 
 **Closed by ADR-0019 (brief v9.1).** Appendix K.23 now carries `GATEWAY_BODY_TOO_LARGE` (413), so step 3 of section 5.2 raises that code instead of a `GATEWAY_VALIDATION_FAILED` with `params.reason`, and REQ-GW-004's 413 has a code of its own. Appendix K.2 now carries `IDENTITY_TOKEN_INVALID` (401) for a malformed, unverifiable or foreign token, so step 7 tells a client to sign in again rather than to refresh a token that was never valid. The two points those codes answered are gone from the table below and the points that remain are renumbered.
 
-| # | Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|---|
-| 1 | `21-performance-engineering.md` §2.3 gives `svc_gateway` read access only to tenant resolution and its rate-limit prefix; this sheet also reads the key set, maintenance entries, the security settings entry and the revoked-subject mark | Extend the ACL with read-only access to those four keys | Architect, update to document 21 | Without it the Gateway cannot enforce maintenance, the allowlist or the leaver rule |
-| 2 | The Gateway has no audit channel of its own for refused allowlist attempts (REQ-IDN-047 asks that the attempt is logged) | A structured security log line with the tenant and address prefix, exported to the log store and counted on the abuse dashboard; not an audit-chain entry | Security lead | An auditor looking only at the audit viewer does not see refused administrative attempts |
-| 3 | "Administrative route" needs a definition the OpenAPI can carry | Operations declaring any permission in Appendix I groups G01, G02, G03 or G24 are marked `x-nibras-admin` by the generator | Architect | A route missing the flag is not protected by the allowlist |
+| # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `21-performance-engineering.md` §2.3 gives `svc_gateway` read access only to tenant resolution and its rate-limit prefix; this sheet also reads the key set, maintenance entries, the security settings entry and the revoked-subject mark | Extend the ACL with read-only access to those four keys | Architect, update to document 21 | Without it the Gateway cannot enforce maintenance, the allowlist or the leaver rule | 2 | 3 | 6 | none |
+| 2 | The Gateway has no audit channel of its own for refused allowlist attempts (REQ-IDN-047 asks that the attempt is logged) | A structured security log line with the tenant and address prefix, exported to the log store and counted on the abuse dashboard; not an audit-chain entry | Security lead | An auditor looking only at the audit viewer does not see refused administrative attempts | 3 | 2 | 6 | none |
+| 3 | "Administrative route" needs a definition the OpenAPI can carry | Operations declaring any permission in Appendix I groups G01, G02, G03 or G24 are marked `x-nibras-admin` by the generator | Architect | A route missing the flag is not protected by the allowlist | 2 | 3 | 6 | none |
+
+> Scored on the scales of `18-risk-register.md` Section 1: L is the likelihood the default is wrong, I the impact if it is, Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 (ADR-0022).
 
 ## Review record
 

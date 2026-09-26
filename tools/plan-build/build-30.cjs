@@ -118,10 +118,9 @@ p('| `20-traceability-matrix.md` | The test coverage behind the testability scor
 p();
 p('## Open points');
 p();
-p('| Point | Default | Owner |');
-p('|---|---|---|');
-p('| The three product-owner decisions in Section 5 theme 1 | The plan follows the requirement as written until decided | Product owner |');
-p('| Whether to build or restate the missing kit-lint checks (theme 6) | Build the two with the most leverage, restate the rest as review steps | Architect |');
+p('| Point | Default | Owner | L | I | Score | In the register |');
+p('|---|---|---|---|---|---|---|');
+p('| The three product-owner decisions in Section 5 theme 1 | The plan follows the requirement as written until decided | Product owner | 3 | 3 | 9 | RISK-41, RISK-42 |');
 p();
 p('## Review record');
 p();

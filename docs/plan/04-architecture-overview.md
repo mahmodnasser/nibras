@@ -551,7 +551,7 @@ Every architecture-shaping decision has an ADR in `docs/project/DECISIONS/`. All
 | ADR-0016 | Servers are Linux only; a Windows host runs the Linux virtual machine appliance | Support Windows Server natively; refuse Windows-host customers | The dependency set makes native Windows unsupportable; the appliance costs little and opens a real segment |
 | ADR-0017 | Kit tooling is one Node implementation with PowerShell and bash wrappers | Write each script twice; require WSL on Windows | Two implementations drift; WSL is an unreasonable requirement for a kit whose job is to be read |
 
-Decisions this document relies on that have no ADR yet, and which Group B must either confirm as brief facts or turn into one: the two additional cycle classes in `05-service-catalog.md` Section 5 (the job reply channel and the orchestrator sagas outside Requests), and the phase placement of Ai, which follows master brief Section 27 decision 6.
+Decisions this document relies on that have no ADR yet: the two additional cycle classes in `05-service-catalog.md` Section 5 (the job reply channel and the orchestrator sagas outside Requests), and the phase placement of Ai, which follows master brief Section 27 decision 6. Each is an open point below with its default in force and the role that records it.
 
 ---
 
@@ -590,6 +590,20 @@ Numbers are quoted from master brief Sections 19 (performance budgets), 21 (non-
 | Accessibility | WCAG 2.2 AA on web and mobile | Section 21 | axe-core in CI; manual pass per release with TalkBack, VoiceOver, NVDA and Narrator |
 | Severity response | Sev1 acknowledged in 15 minutes and mitigated in 4 hours; Sev2 in 30 minutes and 1 business day | Section 31 | Incident drill in phase 6; a cross-tenant exposure is always Sev1 |
 | Maintainability | a new developer productive within two days | Section 21 | The `dev-smoke` job and the onboarding checklist in document 33 |
+
+---
+
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| The job reply channel (a render or generation request in, a generated outcome back) is a second cycle exemption beside the Requests saga channel, used by Documents with Assessment, Finance, Requests and Admissions. Brief fact or ADR? | In force as `05-service-catalog.md` Section 5.1 rows 9 to 12 classify it, under the same safety rule as the Requests exemption: command in, outcome out, callee decides nothing, effect idempotent. Reference architecture Section 9.3 draws it as the reference pattern | Architect, who records it as an ADR | If the review treats it as a boundary defect, the report-card, invoice and certificate renders need another shape, and Documents plus four callers change in Phases 1 to 3 | 2 | 3 | 6 | none |
+| Sagas orchestrated by a service other than Requests (Hr hires, Operations charges, Identity joins). Brief fact or ADR? | In force as `05-service-catalog.md` Section 5.1 rows 6 to 8 classify them: the Requests exemption applied with a different orchestrator, under its three conditions, and document 13 draws each with its compensation | Architect, who records it as an ADR | The Identity join saga is Phase 1 work; if the class is refused, joining moves behind Requests and the Phase 1 critical path through Identity lengthens | 2 | 3 | 6 | RISK-07 |
+| Phase placement of the Ai service | Phase 5 for the service; rungs 1 and 2 ship inside their owning services earlier and rung 3 is off by default, per Open Question 5 and ADR-0015 | Product owner, through Open Question 5; the architect records the answer in `17-roadmap.md` | Only the Ai service moves between Phase 5 and Phase 6, because every feature above rung 1 names its degraded form in Appendix W | 3 | 2 | 6 | RISK-39 |
+| The seventeen ADRs in Section 8 are Proposed, not Accepted | The plan is written as though each were accepted; `29-adr-index.md` tracks the status of each | Product owner, at the group reviews; the architect updates each record's status | A rejected ADR reopens its section here and every document that cites it; ADR-0001, ADR-0004 and ADR-0008 reach furthest | 2 | 3 | 6 | RISK-01 |
+| Three technology rows in Section 7 (product analytics, Meilisearch, the CI and scanning set) carry no licence in master brief Section 6.2 | Marked unverified here and verified from the source in document 19; none is linked into a service, and Meilisearch is used only if proven necessary | Architect, through document 19 | A row turns out to carry a licence outside the allow-list and its replacement is chosen late | 2 | 2 | 4 | RISK-26 |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier is written if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
 
 ---
 

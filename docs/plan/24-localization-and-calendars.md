@@ -791,12 +791,14 @@ BR-L10N-006: every culture-sensitive operation names its culture; the invariant 
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. `07-solution-structure.md` names the bilingual value object `BilingualText`; this document and `22-api-conventions-and-error-catalog.md` use `LocalizedText` | `LocalizedText` everywhere, matching the wire and the proto; document 07 is aligned in its next revision | Architect | Two names for one type in the building blocks and the contracts |
-| 2. Transliteration keys on the general `q` search | Only on duplicate detection and admissions and directory search, as `22-api-conventions-and-error-catalog.md` open point 2 | Architect, with the School service owner | Default-on gives surprising matches in a class list; default-off misses cross-script queries in the directory |
-| 3. Who is the Arabic language owner | A named native speaker assigned by the product owner before phase 1 ends, with a deputy | Product owner | Draft Arabic accumulates and blocks the first release branch |
-| 4. Numeral default for new tenants | `western`, the school changes it in onboarding | Product owner | A school that expects Arabic-Indic digits sees Western digits until it changes the setting |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. `07-solution-structure.md` names the bilingual value object `BilingualText`; this document and `22-api-conventions-and-error-catalog.md` use `LocalizedText` | `LocalizedText` everywhere, matching the wire and the proto; document 07 is aligned in its next revision | Architect | Two names for one type in the building blocks and the contracts | 2 | 1 | 2 | none |
+| 2. Transliteration keys on the general `q` search | Only on duplicate detection and admissions and directory search, as `22-api-conventions-and-error-catalog.md` open point 2 | Architect, with the School service owner | Default-on gives surprising matches in a class list; default-off misses cross-script queries in the directory | 3 | 2 | 6 | none |
+| 3. Who is the Arabic language owner | A named native speaker assigned by the product owner before phase 1 ends, with a deputy | Product owner | Draft Arabic accumulates and blocks the first release branch | 3 | 3 | 9 | RISK-05 |
+| 4. Numeral default for new tenants | `western`, the school changes it in onboarding | Product owner | A school that expects Arabic-Indic digits sees Western digits until it changes the setting | 2 | 1 | 2 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
 
 Two points that stood here in v9 are settled by the v9.1 brief and now sit in Decisions in force: the currency scale (Appendix G) and the long-vowel limit of the consonant key (BR-L10N-001).
 

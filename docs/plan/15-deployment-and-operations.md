@@ -862,13 +862,13 @@ stateDiagram-v2
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. Hosting provider and region (open question 15 in `docs/project/OPEN_QUESTIONS.md`): does the provider offer a managed PostgreSQL operator and object storage with versioning, or does `helm/charts/infrastructure/` run them in-cluster? | In-cluster operators, so that the umbrella chart is portable | Product owner | The database line in document 28 and the operator skills the team needs |
-| 2. Mac build host or hosted macOS minutes (open question 14)? | Hosted minutes | Product owner | `ci-mobile-ios.yml` cannot run; iOS lags Android |
-| 3. The runbook template header says `docs/ops/runbooks/`; documents 07 and 10 say `docs/runbooks/`. Correct the template? | `docs/runbooks/`; the template header is edited in the next kit release | Architect | Two folders of runbooks, and `TC-INF-107` looks in the wrong one |
-| 4. Which paging tool receives Alertmanager routes once on-call begins? | Alertmanager to the team channel until the first paying customer (master brief Section 29); a paging tool chosen with the first customer | Product owner | Sev1 acknowledgement targets cannot be met without paging |
-| 5. Should the status page heartbeat be per region once a second region exists? | One heartbeat per deployment, which is per region by master brief Section 34 | Architect | A region outage shows as "unknown" for every region |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. Hosting provider and region (open question 15 in `docs/project/OPEN_QUESTIONS.md`): does the provider offer a managed PostgreSQL operator and object storage with versioning, or does `helm/charts/infrastructure/` run them in-cluster? | In-cluster operators, so that the umbrella chart is portable | Product owner | The database line in document 28 and the operator skills the team needs | 3 | 3 | 9 | RISK-28, RISK-33 |
+| 2. Mac build host or hosted macOS minutes (open question 14)? | Hosted minutes | Product owner | `ci-mobile-ios.yml` cannot run; iOS lags Android | 3 | 4 | 12 | RISK-04 |
+| 3. The runbook template header says `docs/ops/runbooks/`; documents 07 and 10 say `docs/runbooks/`. Correct the template? | `docs/runbooks/`; the template header is edited in the next kit release | Architect | Two folders of runbooks, and `TC-INF-107` looks in the wrong one | 2 | 1 | 2 | none |
+| 4. Which paging tool receives Alertmanager routes once on-call begins? | Alertmanager to the team channel until the first paying customer (master brief Section 29); a paging tool chosen with the first customer | Product owner | Sev1 acknowledgement targets cannot be met without paging | 3 | 3 | 9 | RISK-36 |
+| 5. Should the status page heartbeat be per region once a second region exists? | One heartbeat per deployment, which is per region by master brief Section 34 | Architect | A region outage shows as "unknown" for every region | 2 | 2 | 4 | none |
 
 ## Review record
 

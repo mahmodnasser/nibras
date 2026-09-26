@@ -275,10 +275,10 @@ Stryker.NET runs on the classes below and must reach a **mutation score of 80% o
 
 ## Open points
 
-| Point | Default | Owner |
-|---|---|---|
-| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent in Group F review | Architect |
-| Promotion eligibility and status changes in School are workflows, not Appendix S rules | Tested per transition; add a rule to Appendix S under a version bump if an arithmetic threshold appears | Architect |
+| Point | Default | Owner | L | I | Score | In the register |
+|---|---|---|---|---|---|---|
+| The property-based classification is derived from rule text | Confirmed or corrected by the business-rules-reviewer agent in Group F review | Architect | 2 | 2 | 4 | none |
+| Promotion eligibility and status changes in School are workflows, not Appendix S rules | Tested per transition; add a rule to Appendix S under a version bump if an arithmetic threshold appears | Architect | 2 | 2 | 4 | none |
 
 ## Review record
 

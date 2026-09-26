@@ -833,6 +833,20 @@ The inventory is the two catalogues, not this document; a component that is not 
 
 ---
 
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Open question 12: is the name Nibras cleared for trademark, domain and the app stores in the target countries, and what are the final taglines? | Nibras, held in `Platform:ProductName` and `brand.name` (§1.4); the taglines and lockups in `brand.json` as §1 draws them | Product owner | A rename replaces the token values, the lamp artwork and both wordmarks in `libs/ui/icons/brand/`, the lockups of §1.2 and the store listing art; the one-value rule of §1.4 keeps templates, string files and notification templates untouched | 3 | 3 | 9 | RISK-27 |
+| Who authors and signs the Arabic copy that §10 requires to be written, not translated? | A fluent reviewer owns the Arabic string set and the terminology glossary; `rtl-localization-reviewer` approves every snapshot and PDF baseline change; no reviewer is named yet | Product owner | Machine-literal Arabic reaches schools and the Arabic steps of the Appendix O demo; the claim that Nibras is bilingual by design fails in front of the first customer | 3 | 4 | 12 | RISK-05 |
+| Open question 11: languages beyond English and Arabic? | No; every string is externalised and plurals are ICU categories (§10), so a third language is configuration | Product owner | A third language adds a string set, its plural rules, a font subset beside those of §2.2 and its own snapshot baselines; direction handling is already general | 2 | 2 | 4 | none |
+| Do the theming constants in §3 (chroma clamp 0.16, nudge up to 0.08, distance 0.25) suit real school brands? | The values in §3, set from the four worked brands; every stored palette records its algorithm version | Architect | Many schools see their colour replaced by a derived shade or used as accent only, and ask for exceptions the contrast thresholds cannot grant; a new algorithm version re-derives stored palettes | 3 | 2 | 6 | none |
+| Open question 8: which plans include removal of the "Powered by Nibras" line (§1.3)? | Platform holds a plan flag; removal is off unless the tenant's plan includes it | Product owner | The flag's default flips for some plans; the footer and sign-in rendering do not change | 3 | 1 | 3 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+---
+
 ## How this document is verified
 
 | Claim | Proof | Where it runs |

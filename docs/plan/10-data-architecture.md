@@ -632,12 +632,12 @@ The requirements catalog is written in parallel; this table cites the brief dire
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. Grade levels, grading periods, rooms, campuses, departments and fee-plan names have no change event in Appendix E, yet Admissions, Assessment, Scheduling and Hr copy them. Add `school.grade-level.changed`, `school.room.changed`, `school.department.changed`, `school.grading-period.changed` and `finance.fee-plan.changed` events to Appendix E, or keep the nightly snapshot? | Nightly snapshot plus a gRPC fetch on first use; no new events until Appendix E is amended | Architect | A rename shows in the consumer up to 24 hours late; adding the events is a catalog change and five small consumers |
-| 2. Should the five oversized tenants in the scale tier get hash sub-partitions on attendance? | No; decided by the N-01 scale run | Architect | A hot partition at 20,000 students may need the split before general availability |
-| 3. Archive database location: same cluster under a read-only role, or a separate cheaper instance? | Same cluster, separate tablespace, read-only role | Architect, with the cost model in `28-capacity-and-cost-model.md` | Storage cost per 1,000 students after year five |
-| 4. Retention overrides per country (open question 19 in `docs/project/OPEN_QUESTIONS.md`) | Master brief Section 32 defaults | Product owner | The guardian panel states a clock that a regulator disagrees with |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. Grade levels, grading periods, rooms, campuses, departments and fee-plan names have no change event in Appendix E, yet Admissions, Assessment, Scheduling and Hr copy them. Add `school.grade-level.changed`, `school.room.changed`, `school.department.changed`, `school.grading-period.changed` and `finance.fee-plan.changed` events to Appendix E, or keep the nightly snapshot? | Nightly snapshot plus a gRPC fetch on first use; no new events until Appendix E is amended | Architect | A rename shows in the consumer up to 24 hours late; adding the events is a catalog change and five small consumers | 3 | 2 | 6 | RISK-15 |
+| 2. Should the five oversized tenants in the scale tier get hash sub-partitions on attendance? | No; decided by the N-01 scale run | Architect | A hot partition at 20,000 students may need the split before general availability | 2 | 3 | 6 | none |
+| 3. Archive database location: same cluster under a read-only role, or a separate cheaper instance? | Same cluster, separate tablespace, read-only role | Architect, with the cost model in `28-capacity-and-cost-model.md` | Storage cost per 1,000 students after year five | 2 | 2 | 4 | none |
+| 4. Retention overrides per country (open question 19 in `docs/project/OPEN_QUESTIONS.md`) | Master brief Section 32 defaults | Product owner | The guardian panel states a clock that a regulator disagrees with | 3 | 3 | 9 | RISK-23 |
 
 ## Review record
 

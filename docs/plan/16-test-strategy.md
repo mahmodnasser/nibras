@@ -771,6 +771,18 @@ The first run of R20 found 206 identifiers defined in more than one document and
 | 21 | The hot queries and their budgets per service |
 | 33 | The `TC-PLAT-` cases and the runner matrix |
 
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Are the generated-suite sizes in part 4 close to what the generators will emit, and does the per-pull-request sample stay fast enough to be run rather than routed around? | The estimates in part 4 (about 15,000 permission tests and 3,100 attacks per full run); every operation once allowed and once denied per pull request, the full set nightly; the Appendix V.4 gate uses the measured count | Quality engineer | The per-pull-request stage grows past 15 minutes, engineers disable or skip the generator step, and a tenancy or permission defect reaches the nightly run or later | 3 | 3 | 9 | RISK-18 |
+| Who signs the Appendix Q scripts from the school side (part 14)? | One named person per role from a pilot school, on the demo tier before every release; a build-team sign-off is not acceptance | Product owner | With no school-side signer a release has no acceptance and the phase exit waits for one, or acceptance quietly becomes a build-team run | 3 | 3 | 9 | none |
+| Are the Phase 0 bundle and image budgets in part 10.6 the right size? | The Phase 0 values, as the decision table above states; raising one is an architect decision with an ADR | Architect | Budgets set too tight stall slices on ADRs; set too loose, they let startup and transfer size drift until the Core Web Vitals and cold-start targets fail late | 3 | 2 | 6 | none |
+| Is FsCheck recorded as the property-based library (part 6.2)? | FsCheck 3.4.0, pinned by document 19, with its record carried as document 19 open point 7 | Architect | The property-based tests of part 6.2 move to the alternative library; the rules they test and their identifiers do not change | 1 | 1 | 1 | none |
+| Is plain container fault injection enough for the chaos cases of part 10.3? | Container stop, start and network disconnect on the load tier, pod deletion and network policy on the scale tier; Chaos Mesh is a Phase 6 candidate | Platform engineering | A fault the plain tooling cannot inject (clock skew, disk latency) goes untested until Phase 6 | 2 | 1 | 2 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
 ---
 
 ## How this document is verified

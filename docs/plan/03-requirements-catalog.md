@@ -1104,6 +1104,18 @@ The counts below are computed from the rows in this document and are the numbers
 | REQ-PLAT-022 | Every tool entry point ships a `.ps1` and a `.sh` wrapper over one Node implementation, and every hook invokes `node` with a relative path | 1 | cross-cutting | Appendix X.4 | none | TC-PLAT-102 |
 | REQ-PLAT-023 | Kit archives are built with a tool that preserves the file set on every operating system | 1 | cross-cutting | Appendix X.2; Master brief Section 24 | none | TC-PLAT-017 |
 
+## Open points
+
+Three rows above read as settled while a product-owner decision or a logged conflict still holds them open. The rows keep the wording and tier of their source, because the catalog quotes the brief; this table states which default the plan builds to until the decision lands.
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Absence-alert timing: REQ-ATT-017 says the alert is enqueued within 30 seconds of the mark; Appendix R WF-ATT-01 says 30 minutes after the register closes. Which one holds? | Within 30 seconds of the mark, as REQ-ATT-017 and master brief Section 31 state. The question is Open Question 27 and is not settled by this row | Product owner, Open Question 27 | WF-ATT-01, `TC-ATT-003`, the Notification urgent lane and the SMS volume change; a parent is alarmed by a mark the teacher corrects a minute later, or an alert waits half an hour | 3 | 3 | 9 | RISK-41 |
+| Tier of the public interface: REQ-INT-001 puts the public REST API, outgoing webhooks, iCal feeds and open education standards at Tier 1, quoting master brief Section 12 item 24; Appendix W row 24 and the roadmap hold the public API and OneRoster at Tier 2 | The roadmap's default for Open Question 28 is in force: iCal ships in phase 2 through CAP-SCD-03, and the public API and OneRoster ship in phase 3 under CAP-INT-01. The Tier 1 mark on REQ-INT-001 records the source's tier, not the build phase | Product owner, Open Question 28, then an ADR | If a first customer needs the read-only interface at evaluation, CAP-INT-01 moves into the MVP and phases 1 and 2 grow; if the Tier 1 mark is read literally, the MVP is planned with work the roadmap does not schedule | 3 | 3 | 9 | RISK-42 |
+| Active-student billing count: REQ-PLT-009 counts a student on the billing date, prorated by day from a mid-month enrollment and counted for the month of leaving (master brief Section 36); BR-FIN-017, which the row cites, counts once any student enrolled for at least one day of the month, with no proration | REQ-PLT-009 is the definition in force, because master brief Section 36 outranks Appendix S in the precedence order and says the definition is in the contract; `TC-PLT-103` asserts it. BR-FIN-017 as written is the defect, corrected by an ADR with a brief version bump. Until then the Finance sheet's `ActiveStudentCountJob` computes BR-FIN-017, which is `06-services/finance.md` open point 3 | Product owner, with the architect | A school is invoiced on a count other than the one its contract states: a day-16 joiner is 1.0 instead of 0.5, and the Finance figure and the Platform meter disagree, which BR-PLT-005's reconciliation turns into an invoicing block | 3 | 4 | 12 | RISK-52 |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier is written if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
+
 ## How this document is verified
 
 | Claim | Proof |

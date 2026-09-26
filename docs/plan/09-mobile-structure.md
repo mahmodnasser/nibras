@@ -280,7 +280,7 @@ Offline values are quoted from Appendix M section M.1; where a feature is not an
 | Concern intake and escalation (safeguarding officer) | Safeguarding queue | No | View a wellbeing record |
 | Accommodation check at an exam sitting | Education plans (read) | No | View a wellbeing record |
 
-Appendix U.10 and the Appendix I nurse row describe a clinic visit that queues "with the record held encrypted on device" and an "offline queue". Appendix M section M.1 says a clinic visit is never recorded offline because wellbeing data is never stored on a device, and master brief Section 20 and `CLAUDE.md` say wellbeing data never reaches a device. The stricter rule governs: this document implements Appendix M, nurse mode is online only (§6), and the disagreement between Appendix U.10, Appendix I and Appendix M is reported in `How this document is verified` as a brief defect for the product owner to settle with a version bump.
+Appendix M section M.1 says a clinic visit is never recorded offline because wellbeing data is never stored on a device, and master brief Section 20 and `CLAUDE.md` say wellbeing data never reaches a device. This document implements Appendix M and nurse mode is online only (§6). Appendix U.10 and the Appendix I nurse row once described an offline clinic-visit queue; brief v9.1 corrected both to match Appendix M under ADR-0019, so the brief now agrees with itself here.
 
 ### 2.7 Receptionist and security, transport coordinator, librarian, store keeper, platform administrator, IT support
 
@@ -549,7 +549,7 @@ The rules are implemented in the owning service; the device implements the prese
 
 **The banner rule, quoted.** "Whenever a rule discards a value a person typed, the application shows it. It names the field, shows both values, says which was kept and why, and offers the one action that resolves it. Silently discarding a teacher's work is the failure this appendix exists to prevent." `conflict_banner` in `core/design` is the only widget allowed to render a conflict, so the rule cannot be half-implemented per feature.
 
-**Approvals.** Appendix U.2 describes principal approvals that queue offline; Appendix M section M.1 says "Approve anything: No. Approval needs the current permission version and the current state." Appendix M is the normative offline appendix and governs; the approvals inbox reads from cache and acts online only, and `TC-MOB-102` (queued approvals apply once on reconnect) is satisfied by the pending state of the *nudge* and *comment* actions on the same screen, not by queued decisions. This difference is reported with the clinic-visit one in `How this document is verified`.
+**Approvals.** Appendix M section M.1 says "Approve anything: No. Approval needs the current permission version and the current state." The approvals inbox reads from cache and acts online only, and `TC-MOB-102` (queued approvals apply once on reconnect) is satisfied by the pending state of the *nudge* and *comment* actions on the same screen, not by queued decisions. Appendix U.2 once described approvals that queue offline; brief v9.1 corrected it under ADR-0019, and its principal row now says an approval needs the current state and permissions.
 
 ### 3.7 Pending and conflict states on screen
 
@@ -953,6 +953,23 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 
 ---
 
+## Open points
+
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| Open question 14: is there a Mac build host, or are hosted macOS runner minutes bought? | Hosted runner minutes, budgeted in master brief Section 30; the iOS jobs are path-filtered to `src/Mobile/**` (§5.3) | Product owner | No iOS artefact for the shared application or any white-label flavor; the white-label gate in §5.3 holds every flavor at Android, and iPhone parents and teachers wait. Android, the desktop kiosk and mobile web are unaffected | 3 | 4 | 12 | RISK-04 |
+| Open question 17: what share of parents use devices without Google services? | Low, but not zero; the fallback in §4.3 (in-app channel while open, email, SMS for urgent messages only); the Huawei push adapter stays Tier 2 | Product owner | Those parents receive routine notifications only while the app is open; the Huawei adapter behind `IPushSender` moves into a release gate, and urgent SMS volume grows | 2 | 3 | 6 | RISK-30 |
+| Open question 12: are the Nibras name and a domain cleared for the stores, so that `<reversed confirmed domain>.nibras` can be fixed? | Nibras, with the name in one configuration value; the identifier is chosen once, before the first store submission of the shared application (§5.1) | Product owner | An application identifier cannot change after a store listing: a late rename publishes a new application and every installed user reinstalls | 3 | 3 | 9 | RISK-27 |
+| Open question 23: Riverpod or flutter_bloc, with the record Group D raises (`29-adr-index.md` Section 3) not yet written | Riverpod, as the decision table above states; `TC-MOB-721` asserts it | Architect | The `presentation/state/` folder of every feature changes shape; the domain and data layers, the outbox and the sync engine do not | 1 | 2 | 2 | none |
+| Open question 28: do a read-only public API, the OneRoster export and iCal move from Tier 2 into Tier 1? | They stay Tier 2; iCal in phase 2, the other two in phase 3 under CAP-INT-01 (§10.3) | Product owner | The phase column of the iCal row in §10.3 changes and nothing else in this document, because the app's capability is the same either way | 3 | 1 | 3 | RISK-42 |
+| How long do store reviews take? | Up to three days for iOS and one for Android, with anything date-bound submitted a week early (§5.4) | Mobile engineer | A rejection or a slow review makes a term-start or fee-deadline release miss its date on one store while it ships on the other | 2 | 2 | 4 | none |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18 (ADR-0022).
+
+**Closed.** The two places where this document once followed Appendix M against Appendix U and Appendix I, the clinic visit (§2.6) and offline principal approvals (§3.6), are no longer open: brief v9.1 aligned Appendix U and the Appendix I nurse row with Appendix M under ADR-0019, so a clinic visit and an approval decision are online only everywhere in the brief.
+
+---
+
 ## How this document is verified
 
 | Claim | Proof |
@@ -971,7 +988,7 @@ The iCal row's phase is the one `17-roadmap.md` builds it in. Open Question 28, 
 | Performance budgets | `integration_test/cold_start_test.dart` and `frame_timing_test.dart` on the emulator profile in `ci-mobile.yml`; the device pass records cold start on the low-end Android 8; `TC-MOB-715` measures data usage; the APK size budget fails the pipeline |
 | Accessibility and RTL | `TC-MOB-716` to `TC-MOB-719`; goldens in both directions; the manual TalkBack and VoiceOver pass per release (Appendix X.2) |
 | Parity matrix agrees with the web inventory | Review step: `plan-consistency-checker` checks that every capability in §10 names a screen present in `08-web-structure.md` §7 or is marked web `none`, and that every mobile-web value agrees with the mobile-web column there, at the Group D review and on every change to 08 §7 or 09 §10; `ux-reviewer` confirms the parity levels. `20-traceability-matrix.md` carries the platform column per requirement |
-| Brief disagreements reported | Two rows in this document follow Appendix M where Appendix U or Appendix I say otherwise: the clinic visit (§2.6) and principal approvals (§3.6). Both are raised for the product owner with the recommendation to amend Appendix U.2, U.10 and the Appendix I nurse row to match Appendix M, through an ADR and a version bump on all three briefs as `CLAUDE.md` requires |
+| Clinic visits and approval decisions stay online only | Review step: `plan-consistency-checker` compares §2.6 and §3.6 with Appendix M section M.1, Appendix U.2, Appendix U.10 and the Appendix I nurse row at the Group D review and on every change to any of them; brief v9.1 (ADR-0019) made the four agree, so any new difference is a defect |
 | Open question 23 | Riverpod is the decision in force; the ADR recorded by Group D per `29-adr-index.md` closes the question, and `TC-MOB-721` asserts no `flutter_bloc` dependency in `pubspec.lock` |
 
 ### Test cases

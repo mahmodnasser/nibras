@@ -926,9 +926,9 @@ Every requirement in document 03 has an acceptance criterion: either an existing
 
 ## Open points
 
-| Point | Default | Owner |
-|---|---|---|
-| Areas that grow beyond 49 requirements overflow the derived range | Extend the rule into the next free range and regenerate; the generator refuses to run until then | Architect |
+| Point | Default | Owner | L | I | Score | In the register |
+|---|---|---|---|---|---|---|
+| Areas that grow beyond 49 requirements overflow the derived range | Extend the rule into the next free range and regenerate; the generator refuses to run until then | Architect | 1 | 2 | 2 | none |
 
 ## Review record
 

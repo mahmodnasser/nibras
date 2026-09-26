@@ -683,9 +683,9 @@ Audit owns no BR rule and no workflow. Its tests prove the chain, the routing, t
 
 **Closed by ADR-0019 (brief v9.1).** Four of the five points this sheet raised are answered by the brief. Appendix C now carries the row "Audit export performed" to the principal (normal, email), so section 11.2 lists it. Appendix B now carries `audit.access-transparency` (view, normal, own-children or self scope, roles and times, never reader names) and Appendix I gives it to the Parent / Guardian template, so the transparency route in section 5 declares it instead of the high-risk `audit.access-log.view`; `08-web-structure.md` has to follow. Appendix E now states that there is no shared audit routing key and that an audit entry named in Appendix R is the publishing service's own `<service>.audit.recorded.v1`, and Appendix R was rewritten to that form, so the form this sheet binds is the brief's. Reference architecture Section 8.0 now states under "Calls every service makes" that every service may read Platform `Settings.GetSettings` and `Retention.ListActiveHolds`, which is exactly what the detach job uses, so section 6 no longer adds anything to the table. The one point left is renumbered.
 
-| # | Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|---|
-| 1 | Appendix J classifies the audit entry as Confidential while Appendix J.3 and `05-service-catalog.md` class Audit as Sensitive | Entries Confidential, sensitive before and after values Sensitive and encrypted; the service classed Sensitive | Data protection officer | None; the stricter handling already applies to the sensitive part |
+| # | Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Appendix J classifies the audit entry as Confidential while Appendix J.3 and `05-service-catalog.md` class Audit as Sensitive | Entries Confidential, sensitive before and after values Sensitive and encrypted; the service classed Sensitive | Data protection officer | None; the stricter handling already applies to the sensitive part | 2 | 1 | 2 | none |
 
 ## Review record
 

@@ -1426,10 +1426,10 @@ Every phase 5 requirement in this part's scope is built by at least one slice ab
 
 ## Open points
 
-| Point | Default | Owner |
-|---|---|---|
-| The ranges assume five to eight builders from the first week of phase 1 | Recomputed with `schedule-34.mjs` whenever the team differs, and at the end of every phase from the slices actually delivered | Architect and product owner |
-| Team size changes the calendar, not the slices | Open Question 24 | Product owner |
+| Point | Default | Owner | L | I | Score | In the register |
+|---|---|---|---|---|---|---|
+| The ranges assume five to eight builders from the first week of phase 1 | Recomputed with `schedule-34.mjs` whenever the team differs, and at the end of every phase from the slices actually delivered | Architect and product owner | 4 | 3 | 12 | RISK-03 |
+| Team size changes the calendar, not the slices | Open Question 24 | Product owner | 3 | 3 | 9 | RISK-06 |
 
 ## Review record
 

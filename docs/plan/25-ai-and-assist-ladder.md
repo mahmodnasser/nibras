@@ -506,12 +506,15 @@ Rungs 1 and 2 run on ordinary service hardware. Rung 3 is off by default and nee
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| 1. Move the autonomy column into Appendix W so the register carries both scales? | Keep it here until the next brief version, then amend Appendix W by ADR | Architect | The lint cannot check autonomy while it lives only in a plan document |
-| 2. Which open-weight model is pinned for Arabic drafting? | The best scorer on the §6 golden sets among licence-compatible models at the time of the Ai phase; recorded by ADR | Ai service owner | A model chosen without the Arabic set drafts weaker Arabic than English |
-| 3. Does the help assistant run at rung 3 for plans without rung 3 hardware, served from a shared platform model? | No; plans without rung 3 get the searchable help centre | Product owner | A shared model processes tenant questions outside the tenant's deployment |
-| 4. Is the 1.25 disparity ratio the right trigger? | 1.25 with a 30-student minimum group | Reporting owner, with the safeguarding lead | Too strict floods review; too loose misses a biased flag |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| 1. Move the autonomy column into Appendix W so the register carries both scales? | Keep it here until the next brief version, then amend Appendix W by ADR | Architect | The lint cannot check autonomy while it lives only in a plan document | 2 | 2 | 4 | RISK-38 |
+| 2. Which open-weight model is pinned for Arabic drafting? | The best scorer on the §6 golden sets among licence-compatible models at the time of the Ai phase; recorded by ADR | Ai service owner | A model chosen without the Arabic set drafts weaker Arabic than English | 3 | 2 | 6 | RISK-38 |
+| 3. Does the help assistant run at rung 3 for plans without rung 3 hardware, served from a shared platform model? | No; plans without rung 3 get the searchable help centre | Product owner | A shared model processes tenant questions outside the tenant's deployment | 2 | 2 | 4 | RISK-39 |
+| 4. Is the 1.25 disparity ratio the right trigger? | 1.25 with a 30-student minimum group | Reporting owner, with the safeguarding lead | Too strict floods review; too loose misses a biased flag | 3 | 3 | 9 | RISK-38 |
+| 5. Open question 5: is local AI hardware available, or does assist ship later? §9 names the machines rung 3 needs | The recorded default: rungs 1 and 2 ship with the product; rung 3 ships later and off by default, and every feature degrades to its rung 1 path (§8) | Product owner | The rung 3 features cannot be shown and the Phase 5 exit tests them only switched off; nothing else moves, because the product is complete at rung 1 | 3 | 2 | 6 | RISK-39 |
+
+> L and I are the likelihood that the default is wrong and the impact if it is, on the 1 to 5 scales of `18-risk-register.md` Section 1. Score is L x I. A point that scores 12 or more names its RISK identifier in document 18; below that, the identifier if one covers it, or `none`. Kit-lint rules R24 and R33 check all of it (ADR-0022).
 
 ## Review record
 

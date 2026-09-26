@@ -1282,12 +1282,12 @@ A service whose evidence is missing for any row is not done, whatever its functi
 
 ## Open points
 
-| Question | Default | Owner | Impact if the default is wrong |
-|---|---|---|---|
-| `08-web-structure.md` sets the `apps/school` initial bundle at 420 kB warning and 520 kB error in raw bytes; `16-test-strategy.md` part 10.6 sets 400 kB and 500 kB compressed. Which is enforced? | The `08-web-structure.md` raw-byte values, because they are what `angular.json` measures; part 10.6 is aligned in the next Group E revision | Tech lead | A compressed 500 kB budget is about three times looser than the raw one; the wrong one lets the initial bundle triple |
-| Should the five 20,000-student tenants get hash sub-partitions on attendance? | Owned by `10-data-architecture.md` open point 2; no sub-partitions until the N-01 scale run says otherwise | Architect | Query 3.8 #3 contends on one partition's indexes at 20,000 students |
-| Is protocol-level preparation worth switching on? | Off until `TC-PERF-024` shows a gain above 5 percent CPU on the Attendance and Identity hot paths | Tech lead | A few percent of database CPU at the peak |
-| Report builder cap: 500 rows or more for small tenants? | 500 for every tenant | Product owner | A principal waits for an export where a preview would have done |
+| Question | Default | Owner | Impact if the default is wrong | L | I | Score | In the register |
+|---|---|---|---|---|---|---|---|
+| `08-web-structure.md` sets the `apps/school` initial bundle at 420 kB warning and 520 kB error in raw bytes; `16-test-strategy.md` part 10.6 sets 400 kB and 500 kB compressed. Which is enforced? | The `08-web-structure.md` raw-byte values, because they are what `angular.json` measures; part 10.6 is aligned in the next Group E revision | Tech lead | A compressed 500 kB budget is about three times looser than the raw one; the wrong one lets the initial bundle triple | 2 | 2 | 4 | none |
+| Should the five 20,000-student tenants get hash sub-partitions on attendance? | Owned by `10-data-architecture.md` open point 2; no sub-partitions until the N-01 scale run says otherwise | Architect | Query 3.8 #3 contends on one partition's indexes at 20,000 students | 2 | 3 | 6 | none |
+| Is protocol-level preparation worth switching on? | Off until `TC-PERF-024` shows a gain above 5 percent CPU on the Attendance and Identity hot paths | Tech lead | A few percent of database CPU at the peak | 2 | 1 | 2 | RISK-14 |
+| Report builder cap: 500 rows or more for small tenants? | 500 for every tenant | Product owner | A principal waits for an export where a preview would have done | 3 | 1 | 3 | none |
 
 ## Review record
 

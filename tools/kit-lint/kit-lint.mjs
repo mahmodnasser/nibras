@@ -1108,6 +1108,54 @@ rule('R32-workflow-tests', 'The owning service sheet cites every transition test
   return out;
 });
 
+/* ---------------------------------------------------------------- R33 */
+
+/*
+ * Risk honesty (scorecard theme 7, ADR-0022). Every plan document says what is
+ * still open, how likely its default is to be wrong and how much that would
+ * cost, on the scales of document 18; anything that scores 12 or more is a
+ * register risk, not a footnote. Document 01 is itself the list of open
+ * questions, so its question tables carry the columns instead of a section.
+ * Document 12's threat tables say who owns each threat and whether it is in the
+ * register. R24 checks the arithmetic of every one of these rows.
+ */
+const OPEN_COLUMNS = ['L', 'I', 'Score', 'In the register'];
+rule('R33-open-points', 'Every plan document scores its open points and registers the serious ones', (ctx) => {
+  const out = [];
+  const docs = ctx.md.filter((f) => /^docs\/plan\/(\d\d-[^/]+|06-services\/[^/]+)\.md$/.test(f.rel) && !PLAN_SKIP.test(f.rel));
+  const checkTable = (f, t, why) => {
+    const idx = OPEN_COLUMNS.map((c) => col(t, new RegExp('^' + c + '$', 'i')));
+    const missing = OPEN_COLUMNS.filter((_, k) => idx[k] < 0);
+    if (missing.length) { out.push(finding('R33-open-points', 'error', f.rel, t.line, why + ' has no ' + missing.join(', ') + ' column')); return; }
+    for (const r of t.rows) {
+      if (/^none\b/i.test(r.cells[0] || '') || /^none\b/i.test(r.cells[1] || '')) continue;
+      const score = Number(r.cells[idx[2]]);
+      const reg = r.cells[idx[3]] || '';
+      if (!/^\d$/.test(r.cells[idx[0]] || '') || !/^\d$/.test(r.cells[idx[1]] || '')) out.push(finding('R33-open-points', 'error', f.rel, r.line, 'Open point without a likelihood and impact from 1 to 5'));
+      else if (score >= 12 && !/RISK-\d{2}\b/.test(reg)) out.push(finding('R33-open-points', 'error', f.rel, r.line, 'Open point scores ' + score + ' but names no RISK in document 18'));
+      else if (!reg.trim()) out.push(finding('R33-open-points', 'error', f.rel, r.line, 'Open point says nothing under In the register; write a RISK id or "none"'));
+    }
+  };
+  for (const f of docs) {
+    if (/^docs\/plan\/01-/.test(f.rel)) {
+      for (const t of linedTables(f)) if (/^#$/.test(t.header[0] || '') && col(t, /^Question$/i) >= 0) checkTable(f, t, 'Question table');
+      continue;
+    }
+    const sec = sectionLines(f, /open points/i);
+    if (!sec) { out.push(finding('R33-open-points', 'error', f.rel, 1, 'No "Open points" section')); continue; }
+    const view = { ...f, lines: [...new Array(sec.start).fill(''), ...sec.lines] };
+    const tabs = linedTables(view).filter((t) => t.rows.length);
+    if (!tabs.length && !/\bnone\b/i.test(sec.lines.join(' '))) out.push(finding('R33-open-points', 'error', f.rel, sec.start, 'Open points section has no table and does not say there are none'));
+    for (const t of tabs) checkTable(f, t, 'Open points table');
+  }
+  const d12 = planDoc(ctx, '12');
+  if (d12) for (const t of linedTables(d12)) {
+    if (col(t, /^Impact$/i) < 0 || col(t, /^Test$/i) < 0 || !/^ID$/i.test(t.header[0] || '')) continue;
+    for (const c of ['Owner role', 'In the register']) if (col(t, new RegExp('^' + c + '$', 'i')) < 0) out.push(finding('R33-open-points', 'error', d12.rel, t.line, 'Threat table has no ' + c + ' column'));
+  }
+  return out;
+});
+
 /* ---------------------------------------------------------------------- run */
 
 export function lint(root, only) {
