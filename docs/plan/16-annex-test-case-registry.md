@@ -519,7 +519,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-640 | document 10, line 604 | Master brief Section 19, DbContext and model / Pooled context with per-lease accessor; named filters / A context leased without a tenant throws on fi… | document 03, document 10, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-641 | document 10, line 605 | Master brief Section 19, PostgreSQL / Partition by month; tenant_id first; partial indexes / Every partitioned table has next-three-months partitions… | document 03, Attendance sheet, document 10, document 20, document 21 |
 | TC-DATA-642 | document 10, line 606 | Master brief Section 19, Data integrity and reconciliation / Nightly reference-copy reconciliation / A deliberately corrupted copy is repaired and re… | document 03, School sheet, document 10, document 20 |
-| TC-DATA-643 | document 10, line 149 | A pooled connection cannot read the previous tenant's rows | document 03, document 04, document 10, document 15, document 20, document 21 |
+| TC-DATA-643 | document 10, line 149 | A pooled connection cannot read the previous tenant's rows | document 03, document 04, document 10, document 15, document 20, document 21, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-644 | document 10, line 684 | Given a pool of one connection that served tenant A, when tenant B's command runs ExecuteUpdateAsync inside the pipeline transaction, then only tenan… | document 02, document 10 |
 | TC-DATA-645 | document 10, line 685 | Given a consumed message whose envelope carries tenant B and whose payload names tenant A's identifiers, when the handler runs, then nothing is writt… | document 03, document 10, document 20, document 21 |
 | TC-DATA-750 | document 10, line 688 | Given the Nibras PostgreSQL image on ubuntu-latest and every service model, when the persistence convention test reads every <field>_ar and <field>_e… | document 10 |
@@ -1068,7 +1068,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-PLAT-012 | document 33, line 234 | A device clock is wrong by hours / Offline attendance arrives with a wrong timestamp / An Attendance integration test that submits an offline record… | Attendance sheet, Operations sheet, Requests sheet, document 16, document 18 |
 | TC-PLAT-013 | document 33, line 235 | Podman names its network differently from Docker / Testcontainers cannot reach the database / dev-smoke.yml runs one Podman configuration and one Doc… | document 02, document 03, document 15, document 16, document 20, document 30, document 33 |
 | TC-PLAT-014 | document 33, line 236 | A white-label flavour builds on Linux but its iOS twin does not / Android ships and iOS silently lags a version / The white-label release gate in par… | document 03, Platform sheet, document 16, document 20 |
-| TC-PLAT-015 | document 33, line 242 | A pooled connection under transaction pooling sees another tenant's rows / SET instead of SET LOCAL leaks the tenant across pooled connections / The… | document 10, document 16, document 18, document 29, document 33 |
+| TC-PLAT-015 | document 33, line 242 | A pooled connection under transaction pooling sees another tenant's rows / SET instead of SET LOCAL leaks the tenant across pooled connections / The… | document 10, document 16, document 18, document 29, document 33, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PLAT-016 | document 33, line 243 | A Flutter golden regenerated on macOS or Windows / Font rendering differs by operating system, and the golden now fails on the authoritative runner /… | document 03, Bff.Mobile sheet, document 16, document 20 |
 | TC-PLAT-017 | document 33, line 244 | A kit archive built with Compress-Archive / Backslash separators break extraction on Linux / The packaging step uses tar -a -c -f, and a test extract… | document 03, document 16, document 20, document 29, document 33 |
 | TC-PLAT-101 | document 07, line 928 | REQ-PLAT-004 / "A school with a Windows host runs Nibras inside a Linux virtual machine appliance on Hyper-V or VMware" (03), the shape ADR-0016 deci… | document 03, document 07, document 20 |
@@ -1774,8 +1774,8 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-AUD-952 | REQ-AUD-002: Every sensitive action records who, what, when, where, and the before and after values | document 20 |
 | TC-AUD-955 | REQ-AUD-005: Login history is kept per user and viewable by administrators | document 20 |
 | TC-DATA-951 | REQ-DATA-001: Each data-owning service has its own database and schema, and no service ever reads another service's database | document 07, document 20, project/PROJECT_STATE.md |
-| TC-DATA-952 | REQ-DATA-002: Each service runs under an application role without BYPASSRLS that owns no tables, and a separate migration r… | document 20 |
-| TC-DATA-953 | REQ-DATA-003: Every service enforces tenancy itself with tenant_id on every row, EF Core filters, and PostgreSQL row-level… | document 20, project/TRACEABILITY.md |
+| TC-DATA-952 | REQ-DATA-002: Each service runs under an application role without BYPASSRLS that owns no tables, and a separate migration r… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-DATA-953 | REQ-DATA-003: Every service enforces tenancy itself with tenant_id on every row, EF Core filters, and PostgreSQL row-level… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-958 | REQ-DATA-008: Every multi-tenant index starts with tenant_id, and soft-deleted tables use partial indexes on live rows | document 20 |
 | TC-DATA-959 | REQ-DATA-009: Foreign keys exist only inside a service, and a reference to another service's entity is a plain uuid column | document 07, document 20 |
 | TC-DATA-960 | REQ-DATA-010: Migrations follow expand, migrate, contract so that they are safe under rolling deployment, and are never run… | document 20 |
@@ -1784,7 +1784,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-DATA-964 | REQ-DATA-014: Large text and jsonb live in side tables, not on hot tables | document 20 |
 | TC-DATA-965 | REQ-DATA-015: GIN indexes serve full-text, trigram and jsonb search, with pg_trgm and unaccent where Arabic search normaliz… | document 20 |
 | TC-DATA-966 | REQ-DATA-016: pg_stat_statements is enabled in every database and autovacuum is tuned for the high-churn tables | document 20 |
-| TC-DATA-967 | REQ-DATA-017: PgBouncer runs in transaction mode in front of every database, with pools sized from load tests rather than g… | document 20 |
+| TC-DATA-967 | REQ-DATA-017: PgBouncer runs in transaction mode in front of every database, with pools sized from load tests rather than g… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-970 | REQ-DATA-020: Every aggregate in Appendix F states its invariants, and they are enforced in the domain, not only by databas… | document 20 |
 | TC-DATA-971 | REQ-DATA-021: Multi-service workflows run as sagas with persisted state, timeouts and compensating actions, visible in an a… | document 20 |
 | TC-DATA-972 | REQ-DATA-022: There are no distributed transactions, and screens show an honest processing state while eventual consistency… | document 20 |
@@ -2000,7 +2000,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-SEC-957 | REQ-SEC-007: There is no wildcard permission, and the platform super administrator holds an explicit, reviewable set | document 20 |
 | TC-SEC-958 | REQ-SEC-008: Secrets live outside the repository with rotation, and encryption in transit covers every hop including Rabbi… | document 20 |
 | TC-SEC-959 | REQ-SEC-009: Sensitive columns are encrypted at rest and backups are encrypted | document 20 |
-| TC-SEC-960 | REQ-SEC-010: Least privilege applies in infrastructure: a database user per service, a RabbitMQ user and permissions per s… | document 20 |
+| TC-SEC-960 | REQ-SEC-010: Least privilege applies in infrastructure: a database user per service, a RabbitMQ user and permissions per s… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-SEC-961 | REQ-SEC-011: The supply chain is protected by pinned dependencies, a CycloneDX SBOM, cosign-signed images, vulnerability a… | document 20 |
 | TC-SEC-962 | REQ-SEC-012: The licence scan fails the build on any licence outside MIT, Apache-2.0, BSD, ISC, MPL-2.0 and PostgreSQL, ma… | document 20 |
 | TC-SEC-963 | REQ-SEC-013: Bypassing the Tenant query filter requires a platform permission and writes an audit entry, and an architectu… | document 20 |

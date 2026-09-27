@@ -22,6 +22,8 @@ public sealed class SchoolTestDbContext(DbContextOptions<SchoolTestDbContext> op
 {
     public DbSet<Student> Students => Set<Student>();
 
+    protected override string Schema => "school_test";
+
     protected override void ConfigureModel(ModelBuilder modelBuilder) =>
         modelBuilder.Entity<Student>(student =>
         {

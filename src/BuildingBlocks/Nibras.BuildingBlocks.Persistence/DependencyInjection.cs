@@ -24,7 +24,7 @@ public static class DependencyInjection
             options => options
                 .UseNpgsql(connectionString)
                 .UseSnakeCaseNamingConvention()
-                .AddInterceptors(new SoftDeleteInterceptor(), new AuditColumnsInterceptor()),
+                .AddInterceptors(new SoftDeleteInterceptor(), new AuditColumnsInterceptor(), new TenantTransactionInterceptor()),
             poolSize);
         services.AddScoped(sp =>
         {

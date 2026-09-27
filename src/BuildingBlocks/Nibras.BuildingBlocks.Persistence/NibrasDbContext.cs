@@ -45,12 +45,16 @@ public abstract class NibrasDbContext : DbContext
         Clock = clock;
     }
 
+    /// <summary>The service's schema in its own database, for example <c>attendance</c> (document 10, part 2.4).</summary>
+    protected abstract string Schema { get; }
+
     /// <summary>The service's own entity configuration. The conventions are applied after it.</summary>
     protected abstract void ConfigureModel(ModelBuilder modelBuilder);
 
     protected sealed override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
+        modelBuilder.HasDefaultSchema(Schema);
         ConfigureModel(modelBuilder);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().Where(e => !e.IsOwned()).ToList())
