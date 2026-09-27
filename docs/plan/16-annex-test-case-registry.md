@@ -181,7 +181,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-API-024 | document 22, line 828 | Given a request with an Idempotency-Key still running, when a second request with the same key arrives, then it is 409 _CONCURRENCY_CONFLICT with Ret… | none |
 | TC-API-025 | document 22, line 829 | Given redis-state stopped through Testcontainers, when a POST reaches an endpoint marked x-nibras-idempotency: required, then it is 503 _DEPENDENCY_U… | document 22 |
 | TC-API-030 | document 22, line 830 | Given the generated docs/api/error-codes.json, when the missing-translation report runs over the Angular and Flutter bundles, then every catalog code… | document 03, document 20, document 22, document 24 |
-| TC-API-031 | document 22, line 831 | Given every catalog code, when the per-code snapshot test runs, then each error body is Problem Details with type urn:nibras:problem:<code>, the exac… | document 03, document 20, document 22 |
+| TC-API-031 | document 22, line 831 | Given every catalog code, when the per-code snapshot test runs, then each error body is Problem Details with type urn:nibras:problem:<code>, the exac… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-API-032 | document 22, line 832 | Given a guardian surface, when each code with parentSafe: false is rendered, then the snapshot shows the generic message with the reference number an… | document 03, document 20, document 22 |
 | TC-API-033 | document 22, line 833 | Given an error whose detail names a session identifier, when the web and mobile clients render it, then the message comes from the bundle for the cod… | document 03, document 20, document 22 |
 | TC-API-040 | document 22, line 834 | Given a report-card batch of 800 cards, when it is started, then the reply is 202 with Location of the job resource, at most one jobProgress per seco… | document 03, document 20, document 22 |
@@ -1432,7 +1432,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-SEC-045 | document 12, line 52 | PLATFORM / Screenshot protection on sensitive screens; no sensitive data in lock-screen previews; deep links validated against the permission set / N… | document 03, document 09, document 20 |
 | TC-SEC-046 | document 12, line 53 | CODE / Obfuscation on release builds; no debug logging of personal data / Mobile pipeline ci-mobile.yml | document 03, document 09, document 20 |
 | TC-SEC-047 | document 09, line 772 | Permission version / Every request carries the permission version; IDENTITY_PERMISSION_VERSION_STALE refreshes the set and re-locks the router within… | Bff.Mobile sheet, Identity sheet, document 08, document 09, document 12, document 23 |
-| TC-SEC-050 | document 12, line 886 | Given the injection corpus (SQL, script, header and JSON type-discriminator payloads), when it is sent to every string parameter of every endpoint in… | document 12 |
+| TC-SEC-050 | document 12, line 886 | Given the injection corpus (SQL, script, header and JSON type-discriminator payloads), when it is sent to every string parameter of every endpoint in… | document 12, project/TRACEABILITY.md |
 | TC-SEC-051 | document 12, line 887 | Given a command that passes its schema but breaks an Appendix S rule, when it is sent straight to the service without the web client, then the servic… | document 12 |
 | TC-SEC-052 | document 12, line 28 | V3 Web frontend security / Cookies, CSP, clickjacking, CORS / Gateway security headers; SameSite=Strict session cookie for web; CSP with nonces; CORS… | document 12 |
 | TC-SEC-053 | document 12, line 29 | V4 API and web service / Content types, HTTP verbs, GraphQL not used, WebSocket auth / Gateway request size limits; SignalR token on connect and reva… | Communication sheet |
@@ -1740,10 +1740,10 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-AI-959 | REQ-AI-009: The assistant treats retrieved content as data, never as instructions, and can call only tools the current us… | document 20 |
 | TC-AI-967 | REQ-AI-017: Anomaly hints on marks and attendance are rung 2 suggestions with contributing factors | document 20 |
 | TC-AI-969 | REQ-AI-019: Every prediction shows its contributing factors, bias is monitored across student groups, and AI never profil… | document 20 |
-| TC-API-951 | REQ-API-001: REST paths use /api/v{n}/, the service segment, and kebab-case plural nouns, with at most one sub-resource le… | document 20 |
-| TC-API-952 | REQ-API-002: JSON properties and query parameters are camelCase and enums are camelCase strings, never integers | document 20 |
-| TC-API-953 | REQ-API-003: Timestamps are ISO 8601 in UTC with the Z suffix, and dates without time are YYYY-MM-DD | document 20 |
-| TC-API-954 | REQ-API-004: Unknown properties on input are rejected with _VALIDATION_FAILED naming the property | document 20 |
+| TC-API-951 | REQ-API-001: REST paths use /api/v{n}/, the service segment, and kebab-case plural nouns, with at most one sub-resource le… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-952 | REQ-API-002: JSON properties and query parameters are camelCase and enums are camelCase strings, never integers | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-953 | REQ-API-003: Timestamps are ISO 8601 in UTC with the Z suffix, and dates without time are YYYY-MM-DD | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-954 | REQ-API-004: Unknown properties on input are rejected with _VALIDATION_FAILED naming the property | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-API-955 | REQ-API-005: Money travels as an object of a decimal string amount and an ISO 4217 currency, never as a binary floating-po… | document 20 |
 | TC-API-963 | REQ-API-013: Error codes are never removed and never reused; a retired code stays deprecated with the code that replaced it | document 20 |
 | TC-API-971 | REQ-API-021: Generated web and mobile clients back off by Retry-After plus 0 to 25 percent jitter and never retry faster | document 20 |
@@ -1936,7 +1936,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-PERF-978 | REQ-PERF-028: A Redis lock is a performance optimization and never a correctness guarantee; exactly-once relies on database… | document 20 |
 | TC-PERF-979 | REQ-PERF-029: The top queries of each service are listed with their indexes and each has committed EXPLAIN (ANALYZE, BUFFER… | document 20 |
 | TC-PERF-980 | REQ-PERF-030: BenchmarkDotNet micro-benchmarks cover grade calculation, fee allocation, and permission evaluation | document 20 |
-| TC-PERF-981 | REQ-PERF-031: APIs use Minimal APIs, System.Text.Json source generation, Brotli compression, HTTP/2 and HTTP/3 at the edge,… | document 20 |
+| TC-PERF-981 | REQ-PERF-031: APIs use Minimal APIs, System.Text.Json source generation, Brotli compression, HTTP/2 and HTTP/3 at the edge,… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PLAT-951 | REQ-PLAT-001: Development is supported on Windows 11 with PowerShell 7 or Git Bash, Ubuntu 22.04 and later, and macOS 14 an… | document 04, document 07, document 20 |
 | TC-PLAT-953 | REQ-PLAT-003: Servers run Linux on Debian, Ubuntu or the Red Hat family, on x86-64 and arm64, and Windows Server is not sup… | document 20 |
 | TC-PLAT-955 | REQ-PLAT-005: The web supports the last two major versions of Chrome, Edge, Firefox and Safari, and current Samsung Internet | document 20 |
@@ -2005,7 +2005,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-SEC-962 | REQ-SEC-012: The licence scan fails the build on any licence outside MIT, Apache-2.0, BSD, ISC, MPL-2.0 and PostgreSQL, ma… | document 20 |
 | TC-SEC-963 | REQ-SEC-013: Bypassing the Tenant query filter requires a platform permission and writes an audit entry, and an architectu… | document 20 |
 | TC-SEC-966 | REQ-SEC-016: Each service rate-limits per user and per endpoint through Nibras.BuildingBlocks.Web, as the second of the th… | document 20 |
-| TC-SEC-967 | REQ-SEC-017: Input is validated and output encoded on every endpoint, with FluentValidation and Problem Details for valida… | document 20 |
+| TC-SEC-967 | REQ-SEC-017: Input is validated and output encoded on every endpoint, with FluentValidation and Problem Details for valida… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-SEC-968 | REQ-SEC-018: An independent penetration test runs before general availability and annually after, a security.txt is publis… | document 04, document 20 |
 | TC-SEC-969 | REQ-SEC-019: The repository secret scan permits the documented default password only under docs/ and fails on it anywhere… | document 20 |
 | TC-SEC-970 | REQ-SEC-020: A cross-tenant exposure is always Severity 1 and always triggers an incident review, even when caught by a te… | document 20 |

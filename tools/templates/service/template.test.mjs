@@ -23,6 +23,8 @@ function scratchRoot() {
   for (const dir of [
     join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Domain'),
     join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Observability'),
+    join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Tenancy'),
+    join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Web'),
     join('src', 'ServiceDefaults', 'Nibras.ServiceDefaults'),
     join('src', 'Contracts', 'Nibras.Contracts.Shared'),
   ]) {

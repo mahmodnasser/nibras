@@ -3,5 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="../Nibras.ServiceName.Infrastructure/Nibras.ServiceName.Infrastructure.csproj" />
     <ProjectReference Include="../../../ServiceDefaults/Nibras.ServiceDefaults/Nibras.ServiceDefaults.csproj" />
+    <ProjectReference Include="../../../BuildingBlocks/Nibras.BuildingBlocks.Web/Nibras.BuildingBlocks.Web.csproj" />
   </ItemGroup>
 </Project>

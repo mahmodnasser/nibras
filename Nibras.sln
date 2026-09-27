@@ -33,6 +33,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nibras.BuildingBlocks.Tenan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nibras.BuildingBlocks.Persistence.Tests", "src\BuildingBlocks\tests\Nibras.BuildingBlocks.Persistence.Tests\Nibras.BuildingBlocks.Persistence.Tests.csproj", "{926D7FF2-D341-439A-99BB-2D03FED5875B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildingBlocks", "BuildingBlocks", "{7266C4A9-E384-DC00-0EB6-47F6002CFBA7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nibras.BuildingBlocks.Web", "src\BuildingBlocks\Nibras.BuildingBlocks.Web\Nibras.BuildingBlocks.Web.csproj", "{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DF492923-6BD2-71A9-08BA-03416E99267B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nibras.BuildingBlocks.Web.Tests", "src\BuildingBlocks\tests\Nibras.BuildingBlocks.Web.Tests\Nibras.BuildingBlocks.Web.Tests.csproj", "{02FC5588-1BEA-4303-8FC1-AFC2B1132900}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -163,6 +171,30 @@ Global
 		{926D7FF2-D341-439A-99BB-2D03FED5875B}.Release|x64.Build.0 = Release|Any CPU
 		{926D7FF2-D341-439A-99BB-2D03FED5875B}.Release|x86.ActiveCfg = Release|Any CPU
 		{926D7FF2-D341-439A-99BB-2D03FED5875B}.Release|x86.Build.0 = Release|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Debug|x64.Build.0 = Debug|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Debug|x86.Build.0 = Debug|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Release|x64.ActiveCfg = Release|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Release|x64.Build.0 = Release|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Release|x86.ActiveCfg = Release|Any CPU
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7}.Release|x86.Build.0 = Release|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Debug|x64.Build.0 = Debug|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Debug|x86.Build.0 = Debug|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Release|Any CPU.Build.0 = Release|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Release|x64.ActiveCfg = Release|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Release|x64.Build.0 = Release|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Release|x86.ActiveCfg = Release|Any CPU
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -182,5 +214,8 @@ Global
 		{4BF77560-6146-42E0-9E06-F9B983C84F27} = {90298CBA-BD6F-3A0A-69D5-97CAD7B05E7E}
 		{337850E0-65A6-4B2D-80FE-2BAAB6E8D507} = {3D3BCFA8-5E58-A2DD-2DC8-9AEB7C2AFCB0}
 		{926D7FF2-D341-439A-99BB-2D03FED5875B} = {3D3BCFA8-5E58-A2DD-2DC8-9AEB7C2AFCB0}
+		{D4F36D24-E2F7-46CF-9701-7C8C6025D4E7} = {7266C4A9-E384-DC00-0EB6-47F6002CFBA7}
+		{DF492923-6BD2-71A9-08BA-03416E99267B} = {7266C4A9-E384-DC00-0EB6-47F6002CFBA7}
+		{02FC5588-1BEA-4303-8FC1-AFC2B1132900} = {DF492923-6BD2-71A9-08BA-03416E99267B}
 	EndGlobalSection
 EndGlobal

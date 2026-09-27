@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Problem Details, the error catalog, URL versioning, JSON conventions, validation, ETag, compression and
+    output caching for every service's API (document 07, part 7; document 22).
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.BuildingBlocks.Domain/Nibras.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="../Nibras.BuildingBlocks.Observability/Nibras.BuildingBlocks.Observability.csproj" />
+    <ProjectReference Include="../Nibras.BuildingBlocks.Tenancy/Nibras.BuildingBlocks.Tenancy.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nibras.BuildingBlocks.Web.Tests" />
+  </ItemGroup>
+</Project>
