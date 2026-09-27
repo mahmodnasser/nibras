@@ -16,3 +16,8 @@ end_of_line = crlf
 
 [*.md]
 trim_trailing_whitespace = false
+
+[*.cs]
+# The codebase is C# only; the type names Error and Result are the public surface fixed by
+# docs/plan/07-solution-structure.md part 7, and the Visual Basic keyword clash does not apply.
+dotnet_diagnostic.CA1716.severity = none

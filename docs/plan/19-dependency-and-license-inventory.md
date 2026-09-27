@@ -87,6 +87,11 @@ Master brief Section 6.1 says "verify, do not assume", and rule 5 of `PLAN_SPEC.
 | Serilog.AspNetCore | Logging host integration | 10.0.0 | Apache-2.0 | https://www.nuget.org/packages/Serilog.AspNetCore/10.0.0 | 2026-09-22 | Linked | allowed |
 | OpenTelemetry | Observability SDK | 1.19.1 | Apache-2.0 | https://www.nuget.org/packages/OpenTelemetry/1.19.1 | 2026-09-22 | Linked | allowed |
 | OpenTelemetry.Extensions.Hosting | Observability host integration | 1.19.1 | Apache-2.0 | https://www.nuget.org/packages/OpenTelemetry.Extensions.Hosting/1.19.1 | 2026-09-22 | Linked | allowed |
+| OpenTelemetry.Exporter.OpenTelemetryProtocol | Observability export (OTLP) | 1.19.1 | Apache-2.0 | https://www.nuget.org/packages/OpenTelemetry.Exporter.OpenTelemetryProtocol/1.19.1 | 2026-09-27 | Linked | allowed |
+| OpenTelemetry.Instrumentation.AspNetCore | Observability, inbound HTTP traces and metrics | 1.19.0 | Apache-2.0 | https://www.nuget.org/packages/OpenTelemetry.Instrumentation.AspNetCore/1.19.0 | 2026-09-27 | Linked | allowed |
+| OpenTelemetry.Instrumentation.Http | Observability, outbound HTTP traces and metrics | 1.19.0 | Apache-2.0 | https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Http/1.19.0 | 2026-09-27 | Linked | allowed |
+| OpenTelemetry.Instrumentation.Runtime | Observability, runtime metrics | 1.19.0 | Apache-2.0 | https://www.nuget.org/packages/OpenTelemetry.Instrumentation.Runtime/1.19.0 | 2026-09-27 | Linked | allowed |
+| Microsoft.Extensions.Http.Resilience | Resilience handlers for HttpClient (ServiceDefaults) | 10.10.0 | MIT | https://www.nuget.org/packages/Microsoft.Extensions.Http.Resilience/10.10.0 | 2026-09-27 | Linked | allowed |
 
 ASP.NET Core Identity and SignalR ship in the .NET 10 shared framework (MIT, `https://github.com/dotnet/dotnet`) and are versioned with it; they carry no separate package row. Magick.NET bundles native ImageMagick under the ImageMagick licence and SkiaSharp bundles native Skia under BSD-3-Clause; the SBOM records both native components, and their licences were not separately re-read on 2026-09-22 (status `unverified` for the native parts only).
 
@@ -95,6 +100,7 @@ ASP.NET Core Identity and SignalR ship in the .NET 10 shared framework (MIT, `ht
 | Package | Concern | Version | Licence of that version | Source | Checked | Linked | Verdict |
 |---|---|---|---|---|---|---|---|
 | xunit.v3 | Unit tests | 4.0.1 | Apache-2.0 | https://www.nuget.org/packages/xunit.v3/4.0.1 | 2026-09-22 | Tool (test projects) | allowed |
+| Microsoft.AspNetCore.Mvc.Testing | In-process host for integration tests (`WebApplicationFactory`) | 10.0.12 | MIT | https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Testing/10.0.12 | 2026-09-27 | Tool (test projects) | allowed |
 | NSubstitute | Test doubles | 6.2.0 | BSD-3-Clause | https://www.nuget.org/packages/NSubstitute/6.2.0 | 2026-09-22 | Tool | allowed |
 | Shouldly | Assertions | 4.3.0 | BSD-3-Clause | https://www.nuget.org/packages/Shouldly/4.3.0 | 2026-09-22 | Tool | allowed |
 | AwesomeAssertions | Assertions (alternative) | 9.6.0 | Apache-2.0 | https://www.nuget.org/packages/AwesomeAssertions/9.6.0 | 2026-09-22 | Tool | allowed |
@@ -230,7 +236,7 @@ Section 6.2 names the SIL Open Font License for fonts, so OFL-1.1 fonts are `all
 | Woodpecker CI | Self-hosted CI (alternative) | 3.18.1 | Apache-2.0 | https://github.com/woodpecker-ci/woodpecker/blob/main/LICENSE | 2026-09-22 | Standalone | allowed |
 | GitHub Actions | CI (free tier) | Hosted service | Free tier of a hosted service, not a licence | n/a | 2026-09-22 | Service | named by Section 6.2; see open point 5 |
 
-**Count.** 149 rows across §2 to §8. 144 are verified for both version and licence from the source for that version. 5 rows carry `unverified` in part: the IBM Plex Sans Arabic upstream family version, Tesseract trained data, Meilisearch (edition split), PostHog (edition and server version), and the Podman version. The native Skia and ImageMagick components bundled by SkiaSharp and Magick.NET are also unverified (§2 note). Nothing is guessed.
+**Count.** 155 rows across §2 to §8. 150 are verified for both version and licence from the source for that version. 5 rows carry `unverified` in part: the IBM Plex Sans Arabic upstream family version, Tesseract trained data, Meilisearch (edition split), PostHog (edition and server version), and the Podman version. The native Skia and ImageMagick components bundled by SkiaSharp and Magick.NET are also unverified (§2 note). Nothing is guessed.
 
 ---
 
@@ -403,6 +409,7 @@ No verified item forces a replacement today. Every banned item in §9.2 already 
 | 2026-09-22 | Group E review pending | Draft | none recorded yet |
 | 2026-09-22 | Scorecard remediation, theme 4 | Amended: FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 added to §3 from each nuspec (row count 147 to 149); k6 re-verdicted `allowed-standalone` on the Section 6.4 row brief v9.1 added under ADR-0019; the §11.3 scanner test count corrected from 11 to 12 | The k6 `allow.json` entry, open point 1 (closed since) |
 | 2026-09-26 | Round-2 scorecard, Group E, remediation round 3 | Amended: every k6 statement (§8, §9.1, §11.1, §11.3, Decisions in force) now agrees with the file, which has eight entries including k6 under ADR `0019-brief-v9-1-corrections`; §11.1 re-quoted with the k6 row | none |
+| 2026-09-27 | Phase 1, SL-INF-001, approved by the product owner | Amended: six packages the first slice needs added from each nuspec, all MIT or Apache-2.0 from publishers already in the inventory: the OTLP exporter and the AspNetCore, Http and Runtime instrumentations of OpenTelemetry, `Microsoft.Extensions.Http.Resilience` (§2) and `Microsoft.AspNetCore.Mvc.Testing` (§3); row count 149 to 155. `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio`, approved at the same time, are not used: xunit.v3 runs on Microsoft.Testing.Platform (`global.json` `test.runner`), which needs neither | none |
 
 ## How this document is verified
 

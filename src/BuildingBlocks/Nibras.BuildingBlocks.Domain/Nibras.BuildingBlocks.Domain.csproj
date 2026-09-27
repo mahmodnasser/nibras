@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The bottom of the building-block graph: base types only, no framework reference (document 07, part 7). -->
+</Project>

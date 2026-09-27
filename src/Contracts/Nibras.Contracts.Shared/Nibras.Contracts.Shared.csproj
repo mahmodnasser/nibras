@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The envelope and the common identifier types, and nothing else (document 07, part 8). References no other project. -->
+</Project>

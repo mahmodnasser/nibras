@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Nibras",
+  "classifications": [ "Nibras", "Service" ],
+  "identity": "Nibras.Service",
+  "name": "Nibras data-owning service",
+  "shortName": "nibrassvc",
+  "sourceName": "ServiceName",
+  "preferNameDirectory": false,
+  "tags": { "language": "C#", "type": "project" },
+  "symbols": {
+    "area": {
+      "type": "parameter",
+      "datatype": "text",
+      "isRequired": true,
+      "description": "The AREA code of the service from Appendix L, for example ATT.",
+      "replaces": "AREACODE"
+    },
+    "serviceLower": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": { "source": "name", "toLower": true },
+      "replaces": "servicename"
+    },
+    "serviceUpper": {
+      "type": "generated",
+      "generator": "casing",
+      "parameters": { "source": "name", "toLower": false },
+      "replaces": "SERVICENAME"
+    }
+  }
+}

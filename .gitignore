@@ -8,3 +8,7 @@ node_modules/
 dist/
 .dart_tool/
 build/
+TestResults/
+*.user
+.vs/
+.idea/

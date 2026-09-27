@@ -1,0 +1,119 @@
+#!/usr/bin/env node
+// Generates a data-owning service from the template (document 07, part 9).
+//
+//   node tools/templates/service/new-service.mjs --name Attendance --area ATT
+//
+// The name and area must be a row of the Appendix L service registry. The template is run through
+// `dotnet new nibrassvc` with a private template hive, so nothing is installed on the machine.
+// `--scratch` allows a name outside the registry and is meant for the template's own test only.
+
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const kitRoot = resolve(here, '..', '..', '..');
+const contentDir = join(here, 'content');
+
+export function parseArgs(argv) {
+  const args = { name: null, area: null, root: kitRoot, scratch: false, sln: true };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === '--name') args.name = argv[++i];
+    else if (a === '--area') args.area = argv[++i];
+    else if (a === '--root') args.root = resolve(argv[++i]);
+    else if (a === '--scratch') args.scratch = true;
+    else if (a === '--no-sln') args.sln = false;
+    else throw new Error(`Unknown argument ${a}. Usage: new-service --name <Service> --area <AREA> [--root <dir>] [--no-sln]`);
+  }
+  if (!args.name || !/^[A-Z][A-Za-z]+$/.test(args.name)) {
+    throw new Error('--name must be the PascalCase service name from Appendix L, for example Attendance.');
+  }
+  if (!args.area || !/^[A-Z]{2,3}$/.test(args.area)) {
+    throw new Error('--area must be the AREA code from Appendix L, for example ATT.');
+  }
+  return args;
+}
+
+/** Reads the data-owning services of the Appendix L registry: name to area. */
+export function readRegistry(root = kitRoot) {
+  const file = join(root, 'docs', 'brief', '02-appendices', 'appendix-l-registry-and-id-codes.md');
+  const text = readFileSync(file, 'utf8');
+  const services = new Map();
+  for (const line of text.split(/\r?\n/)) {
+    const m = /^\| \*\*([A-Za-z.]+)\*\* \| ([A-Z]+) \| [^|]+\| [^|]+\| `nibras_[a-z]+` \|/.exec(line);
+    if (m) services.set(m[1], m[2]);
+  }
+  return services;
+}
+
+function run(command, commandArgs, cwd) {
+  const result = spawnSync(command, commandArgs, { cwd, encoding: 'utf8', shell: false });
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(`${command} ${commandArgs.join(' ')} failed (exit ${result.status}):\n${result.stdout}\n${result.stderr}`);
+  }
+  return result.stdout;
+}
+
+function projectsUnder(dir) {
+  const found = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      if (entry !== 'bin' && entry !== 'obj') found.push(...projectsUnder(full));
+    } else if (entry.endsWith('.csproj')) {
+      found.push(full);
+    }
+  }
+  return found;
+}
+
+export function newService(args) {
+  if (!args.scratch) {
+    const registry = readRegistry();
+    if (!registry.has(args.name)) {
+      throw new Error(`${args.name} is not a data-owning service in Appendix L. Add it there under an ADR first; never invent a name.`);
+    }
+    if (registry.get(args.name) !== args.area) {
+      throw new Error(`Appendix L gives ${args.name} the area ${registry.get(args.name)}, not ${args.area}.`);
+    }
+  }
+
+  const serviceDir = join(args.root, 'src', 'Services', args.name);
+  const contractDir = join(args.root, 'src', 'Contracts', `Nibras.Contracts.${args.name}`);
+  for (const dir of [serviceDir, contractDir]) {
+    if (existsSync(dir)) throw new Error(`${relative(args.root, dir)} already exists; the template never overwrites a service.`);
+  }
+
+  const hive = mkdtempSync(join(tmpdir(), 'nibras-template-hive-'));
+  try {
+    run('dotnet', ['new', 'install', contentDir, '--debug:custom-hive', hive], args.root);
+    run('dotnet', ['new', 'nibrassvc', '--name', args.name, '--area', args.area, '--output', args.root, '--debug:custom-hive', hive], args.root);
+  } finally {
+    rmSync(hive, { recursive: true, force: true });
+  }
+
+  const projects = [...projectsUnder(contractDir), ...projectsUnder(serviceDir)];
+  const solution = join(args.root, 'Nibras.sln');
+  if (args.sln && existsSync(solution)) {
+    run('dotnet', ['sln', solution, 'add', ...projects], args.root);
+  }
+  return { serviceDir, contractDir, projects };
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    const args = parseArgs(process.argv.slice(2));
+    const result = newService(args);
+    console.log(`Generated ${args.name} (${args.area}): ${result.projects.length} projects.`);
+    for (const p of result.projects) console.log(`  ${relative(args.root, p)}`);
+    console.log('Not generated by this version: the AppHost registration (SL-PLAT-003), the Compose entry (SL-PLAT-004),');
+    console.log('the Helm chart and the dashboard and alert files (their deployment slices).');
+  } catch (e) {
+    console.error(`new-service: ${e.message}`);
+    process.exit(1);
+  }
+}

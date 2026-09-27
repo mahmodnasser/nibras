@@ -839,14 +839,14 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-INF-101 | document 15, line 924 | Given an image built on merge, when the release is promoted through test and staging to production, then the digest in gitops/prod/ equals the digest… | document 03, document 15, document 20 |
 | TC-INF-102 | document 15, line 925 | Given every image in the registry, when its OCI referrers are listed, then each has a CycloneDX SBOM referrer and the security scan reads it / REQ-SE… | document 15 |
 | TC-INF-103 | document 15, line 926 | Given the test environment's admission controller, when an unsigned image and an image signed by an unknown key are deployed, then both are rejected… | document 03, document 15, document 20, document 34 |
-| TC-INF-104 | document 15, line 927 | Given every service dashboard, when the dashboard definitions are read, then each has the SLO panel and the runbook link panel / REQ-INF-017 | document 03, document 15, document 20 |
+| TC-INF-104 | document 15, line 927 | Given every service dashboard, when the dashboard definitions are read, then each has the SLO panel and the runbook link panel / REQ-INF-017 | document 03, document 15, document 20, project/TRACEABILITY.md |
 | TC-INF-105 | document 15, line 928 | Given the appliance built by release.yml, when it completes first boot, then the signed release manifest lists every image digest and each digest equ… | document 15, document 34 |
 | TC-INF-106 | document 15, line 929 | Given an appliance with no network access, when a versioned offline upgrade bundle is applied, then the upgrade completes from the bundle alone after… | document 15, document 34 |
 | TC-INF-107 | document 15, line 826 | Master brief Section 23; .claude/rules/deploy.md / Runbook per alert / Every alert annotation resolves to a file with the nine headings | document 03, document 15, document 20, document 34 |
 | TC-INF-108 | document 15, line 930 | Given the single-server Docker Compose profile, when CI starts it on one machine with the documented command, then every service reports ready and he… | document 02, document 03, document 15, document 20 |
 | TC-INF-109 | document 15, line 821 | Reference architecture Section 15; master brief Section 34 / Environments and the approval gate / A production sync without the gate evidence is refu… | document 03, document 15, document 20 |
 | TC-INF-110 | document 15, line 823 | Master brief Section 7.6 / OpenTelemetry, correlation id end to end / One correlation id from the Gateway to the last consumer in a trace of the abse… | Gateway sheet, document 15 |
-| TC-INF-111 | document 15, line 824 | Appendix L / nibras_ prefix, nibras.tenant_id / Metric and log conventions asserted by a test over the emitted names | document 03, document 15, document 20 |
+| TC-INF-111 | document 15, line 824 | Appendix L / nibras_ prefix, nibras.tenant_id / Metric and log conventions asserted by a test over the emitted names | document 03, document 15, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-INF-112 | document 15, line 825 | Master brief Section 31 / Service levels, error budget, severities / SLO definitions match the quoted table; burn-rate alerts generated from them | document 03, document 04, document 15, document 20 |
 | TC-INF-113 | document 15, line 828 | Reference architecture Section 12 / Secrets and rotation / Every rotation runbook run once on staging before launch | document 03, document 15, document 20 |
 | TC-INF-114 | document 15, line 931 | Given a throwaway branch in the test environment, when one deliberate violation per ci-service.yml stage is committed (a warning, an unformatted file… | document 03, document 15, document 20 |
@@ -1596,7 +1596,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-TST-109 | document 07, line 835 | BuildingBlocks_NeverReference_ServicesOrServiceContracts / No Nibras.BuildingBlocks.* assembly references a Nibras.<S>.* assembly or a Nibras.Contrac… | none |
 | TC-TST-110 | document 07, line 836 | BuildingBlocks_HaveNoCycles / The reference graph among the thirteen blocks is acyclic with Domain as the sink and Testing as the only block nothing… | none |
 | TC-TST-111 | document 07, line 837 | Contracts_ReferenceOnly_ContractsShared / Every Nibras.Contracts.<S> assembly references no Nibras. assembly other than Nibras.Contracts.Shared. | none |
-| TC-TST-112 | document 07, line 838 | Contracts_ContainOnlyData / Every public type in a contract assembly is a record, an enum, a static class of string constants, or a generated proto t… | none |
+| TC-TST-112 | document 07, line 838 | Contracts_ContainOnlyData / Every public type in a contract assembly is a record, an enum, a static class of string constants, or a generated proto t… | project/PROJECT_STATE.md |
 | TC-TST-113 | document 07, line 839 | Services_NeverReference_AnotherService / No Nibras.<S>.* assembly references a Nibras.<Other>.* assembly for any other service in Appendix L. | document 07 |
 | TC-TST-114 | Bff.Web sheet, line 495 | Architecture / Nibras.Bff.Web references no Nibras.<S>.* assembly | Bff.Mobile sheet, Bff.Web sheet, document 07 |
 | TC-TST-115 | document 07, line 841 | TestingBlock_ReferencedOnlyBy_TestProjects / Every assembly that references Nibras.BuildingBlocks.Testing has a name ending in Tests. | none |
@@ -1773,7 +1773,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-AUD-951 | REQ-AUD-001: Audit is an append-only, hash-chained store fed by audit events from every service | document 04, document 20 |
 | TC-AUD-952 | REQ-AUD-002: Every sensitive action records who, what, when, where, and the before and after values | document 20 |
 | TC-AUD-955 | REQ-AUD-005: Login history is kept per user and viewable by administrators | document 20 |
-| TC-DATA-951 | REQ-DATA-001: Each data-owning service has its own database and schema, and no service ever reads another service's database | document 07, document 20 |
+| TC-DATA-951 | REQ-DATA-001: Each data-owning service has its own database and schema, and no service ever reads another service's database | document 07, document 20, project/PROJECT_STATE.md |
 | TC-DATA-952 | REQ-DATA-002: Each service runs under an application role without BYPASSRLS that owns no tables, and a separate migration r… | document 20 |
 | TC-DATA-953 | REQ-DATA-003: Every service enforces tenancy itself with tenant_id on every row, EF Core filters, and PostgreSQL row-level… | document 20 |
 | TC-DATA-958 | REQ-DATA-008: Every multi-tenant index starts with tenant_id, and soft-deleted tables use partial indexes on live rows | document 20 |
@@ -1834,7 +1834,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-INF-955 | REQ-INF-005: In single-server mode backups go to a second disk and an off-site target, and the school is told in writing t… | document 20 |
 | TC-INF-956 | REQ-INF-006: Environments are development, a preview per pull request, test, staging with anonymized production-like data,… | document 20 |
 | TC-INF-961 | REQ-INF-011: Releases use semantic versions per service, feature flags for incomplete work, and release notes generated fr… | document 20 |
-| TC-INF-964 | REQ-INF-014: Every service has liveness, readiness and startup probes, timeouts, retries with backoff and jitter, circuit… | document 20 |
+| TC-INF-964 | REQ-INF-014: Every service has liveness, readiness and startup probes, timeouts, retries with backoff and jitter, circuit… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-INF-965 | REQ-INF-015: APIs scale horizontally on CPU and latency through HPA | document 20 |
 | TC-INF-966 | REQ-INF-016: Scaling follows each tenant's school calendar and time zone, scaling up before first period and down after di… | document 20 |
 | TC-INF-970 | REQ-INF-020: Spending half of a 99.9 percent monthly error budget freezes non-essential change for that service until the… | document 04, document 20 |
@@ -2080,7 +2080,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | Date | Reviewer | Result |
 |---|---|---|
 | 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a derived acceptance test counts when a current plan document cites it, not one quoted only by the scorecard or the project history, which is the set document 20 assigns |
-| 2026-09-26 | Generated | 1681 test cases and 328 derived acceptance tests |
+| 2026-09-27 | Generated | 1681 test cases and 328 derived acceptance tests |
 
 ## How this document is verified
 

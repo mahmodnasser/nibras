@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Adapters that implement the Application ports: persistence, messaging, gRPC clients (document 07, part 10.2). -->
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.ServiceName.Application/Nibras.ServiceName.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Dependency injection and configuration abstractions ship in the shared framework; no extra package. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

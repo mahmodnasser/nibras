@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Provider/ and Messages/: the schema harness of each published contract joins with the slice that publishes it. -->
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../Contracts/Nibras.Contracts.ServiceName/Nibras.Contracts.ServiceName.csproj" />
+  </ItemGroup>
+</Project>

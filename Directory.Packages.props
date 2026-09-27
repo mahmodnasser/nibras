@@ -1,0 +1,22 @@
+<Project>
+  <!--
+    Central package management: every NuGet version is pinned once, here, and each
+    version is the one recorded in docs/plan/19-dependency-and-license-inventory.md.
+    A project names a package and never a version.
+  -->
+  <ItemGroup Label="Linked into the product (document 19, section 2)">
+    <PackageVersion Include="OpenTelemetry" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.10.0" />
+  </ItemGroup>
+  <ItemGroup Label="Test tools (document 19, section 3)">
+    <PackageVersion Include="xunit.v3" Version="4.0.1" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+  </ItemGroup>
+</Project>

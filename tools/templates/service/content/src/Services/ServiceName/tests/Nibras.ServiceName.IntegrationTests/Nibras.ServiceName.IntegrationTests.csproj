@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The startup and readiness test; the row-level security and pooled-connection tests join with the persistence slice. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Nibras.ServiceName.Api/Nibras.ServiceName.Api.csproj" />
+  </ItemGroup>
+</Project>

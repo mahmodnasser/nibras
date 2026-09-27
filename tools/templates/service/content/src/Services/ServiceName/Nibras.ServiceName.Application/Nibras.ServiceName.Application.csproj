@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Use cases, consumers, read models and ports. Depends on Domain and building-block abstractions (document 07, part 10.2). -->
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.ServiceName.Domain/Nibras.ServiceName.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Dependency injection and configuration abstractions ship in the shared framework; no extra package. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,7 @@
+docs/
+tests/
+tools/
+**/bin/
+**/obj/
+**/TestResults/
+.git/

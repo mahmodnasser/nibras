@@ -1,8 +1,20 @@
 # Nibras: Project State
 
-**Phase:** Planning complete. **The plan is approved by the product owner on 2026-09-26; phase 1 (Foundation) is next.** All 36 plan documents (00 to 34, with the 16 annex) are written. Scorecard round 7 (document 30): all six groups approved at 4 or better on every axis. The same day the product owner decided Open Question 30 with the recommended answer (ADR-0027, Accepted: a tenant is billed on students enrolled on the billing date, prorated by day, computed by Platform), which closed RISK-52. Document 00 lists the decisions still open; each has a default in force.
+**Phase:** **Phase 1, Foundation, in progress.** The plan was approved by the product owner on 2026-09-26 (scorecard round 7: all six groups approved at 4 or better on every axis). Slice SL-INF-001 is built and green; the next slices follow the critical path of document 34.
 **Kit version:** v9, brief v9.7 (ADR-0019, ADR-0020, ADR-0021, ADR-0023, ADR-0025, ADR-0026, ADR-0027; ADR-0022 and ADR-0024 change only the plan). Accepted records: ADR-0019 and ADR-0027. On `github.com/mahmodnasser/nibras`, branch `main`.
-**Last updated:** 2026-09-26, Open Question 30 decided (ADR-0027) and the plan approved by the product owner
+**Last updated:** 2026-09-27, SL-INF-001 built
+
+## Phase 1 build log
+
+**Standing instruction from the product owner (2026-09-27):** commit and push to `main` after each green slice, without asking each time. A slice is green only when its build has no warnings, its tests pass, `kit-lint` is clean and the kit tests pass.
+
+| Slice | Requirements | State | Evidence |
+|---|---|---|---|
+| SL-INF-001 | REQ-INF-014, REQ-INF-017, REQ-INF-018 (REQ-DATA-001 is proven by TC-DATA-951 in SL-TST-003) | **Built, green** | Repository root (`global.json` SDK 10.0.401 with Microsoft.Testing.Platform, `Directory.Build.props` with warnings as errors, central package management, `nuget.config`, `Nibras.sln`); `Nibras.BuildingBlocks.Domain` (13 tests), `Nibras.BuildingBlocks.Observability` (20 tests, TC-INF-111), `Nibras.ServiceDefaults` (probes, graceful shutdown, resilience, service discovery), `Nibras.Contracts.Shared`; the service template `tools/templates/service/` (`new-service.mjs` with `.ps1` and `.sh`) whose test generates a service and passes its unit, integration (TC-INF-964) and contract (TC-TST-112) tests: `node --test tools/templates/service/template.test.mjs` 5 of 5. Demonstrated on Linux: a generated service started as a process answered `/health/live`, `/health/ready` and `/health/startup` with 200, echoed `X-Nibras-Correlation-Id`, exported traces and metrics to an OpenTelemetry Collector 0.161.0 as `nibras-probe`, and shut down gracefully on SIGTERM. Windows unverified in this environment |
+
+**Build environment notes.** The .NET 10.0.401 SDK is taken from the `mcr.microsoft.com/dotnet/sdk:10.0` image because the SDK download host is not reachable from the cloud environment; NuGet restores normally. `xunit.v3` 4.x runs on Microsoft.Testing.Platform (`global.json` `test.runner`), so `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` are not used; `dotnet test --solution Nibras.sln` runs every suite. Six packages the slice needed were added to document 19 with the product owner's approval (2026-09-27).
+
+**Deferred from SL-INF-001, each to the slice that owns it.** The template's AppHost registration (SL-PLAT-003), Compose entry (SL-PLAT-004), Helm chart and dashboard and alert files (their deployment slices), the `--worker`, `--grpc` and `--sagas` flags (the first slice that needs each), and the DbContext with its row-level security test (SL-DATA-001, SL-DATA-002). Document 34 names the block `Nibras.BuildingBlocks.Hosting` for SL-INF-001; document 07 has no such block and puts the host defaults in `Nibras.ServiceDefaults`, which is what was built (document 07 owns the structure).
 
 ## Done: complete and lint-clean
 

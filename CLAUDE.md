@@ -19,7 +19,7 @@ At the start of every session read `docs/project/PROJECT_STATE.md` and `docs/pro
 
 ## Current phase
 
-Planning. **No implementation code until the plan in `docs/plan/` is approved by the product owner.** Start with `/plan-platform`.
+Phase 1, Foundation. The plan in `docs/plan/` was approved by the product owner on 2026-09-26. Build slice by slice in the order of `docs/plan/34-work-breakdown.md`; `docs/project/PROJECT_STATE.md` says which slice is next.
 
 ## Non-negotiable rules
 
@@ -60,7 +60,7 @@ On Windows PowerShell, `tools/kit-lint/kit-lint.ps1`. On bash, `tools/kit-lint/k
 ## Commands once code exists
 
 - Run everything locally: `aspire run` from `src/AppHost`, or `docker compose -f deploy/compose/docker-compose.yml --profile dev up`
-- Backend tests `dotnet test`; web `npm run lint && npm test` in `src/Web`; mobile `flutter analyze && flutter test` in `src/Mobile`
+- Backend tests `dotnet test --solution Nibras.sln` (Microsoft.Testing.Platform); service template `node --test tools/templates/service/template.test.mjs`; web `npm run lint && npm test` in `src/Web`; mobile `flutter analyze && flutter test` in `src/Mobile`
 - Licence scan: `node tools/license-scan/run.mjs` (must pass before any dependency change is accepted)
 - Developer setup per operating system: `docs/dev-setup/`
 

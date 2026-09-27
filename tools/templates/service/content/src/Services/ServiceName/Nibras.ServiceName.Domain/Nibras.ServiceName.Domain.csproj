@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Depends on the Domain building block and its own contract project only (document 07, part 10.2). -->
+  <ItemGroup>
+    <ProjectReference Include="../../../BuildingBlocks/Nibras.BuildingBlocks.Domain/Nibras.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="../../../Contracts/Nibras.Contracts.ServiceName/Nibras.Contracts.ServiceName.csproj" />
+  </ItemGroup>
+</Project>

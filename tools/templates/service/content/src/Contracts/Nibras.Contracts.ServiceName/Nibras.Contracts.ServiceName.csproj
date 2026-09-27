@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Data only: records, enums and string constants. References Nibras.Contracts.Shared and nothing else (document 07, part 8). -->
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.Contracts.Shared/Nibras.Contracts.Shared.csproj" />
+  </ItemGroup>
+</Project>
