@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pooled base DbContext with the named Tenant and SoftDelete filters, audit columns, xmin, snake_case (document 07, part 7). -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.BuildingBlocks.Domain/Nibras.BuildingBlocks.Domain.csproj" />
+    <ProjectReference Include="../Nibras.BuildingBlocks.Tenancy/Nibras.BuildingBlocks.Tenancy.csproj" />
+  </ItemGroup>
+</Project>

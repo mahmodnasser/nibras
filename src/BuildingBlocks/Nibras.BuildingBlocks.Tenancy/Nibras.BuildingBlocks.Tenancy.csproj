@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Tenant context, the named Tenant filter's source, the RLS session variable, cache key prefixing (document 07, part 7). -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.BuildingBlocks.Observability/Nibras.BuildingBlocks.Observability.csproj" />
+  </ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
 
 **Phase:** **Phase 1, Foundation, in progress.** The plan was approved by the product owner on 2026-09-26 (scorecard round 7: all six groups approved at 4 or better on every axis). Slice SL-INF-001 is built and green; the next slices follow the critical path of document 34.
 **Kit version:** v9, brief v9.7 (ADR-0019, ADR-0020, ADR-0021, ADR-0023, ADR-0025, ADR-0026, ADR-0027; ADR-0022 and ADR-0024 change only the plan). Accepted records: ADR-0019 and ADR-0027. On `github.com/mahmodnasser/nibras`, branch `main`.
-**Last updated:** 2026-09-27, SL-INF-001 built
+**Last updated:** 2026-09-27, SL-DATA-001 built
 
 ## Phase 1 build log
 
@@ -11,6 +11,7 @@
 | Slice | Requirements | State | Evidence |
 |---|---|---|---|
 | SL-INF-001 | REQ-INF-014, REQ-INF-017, REQ-INF-018 (REQ-DATA-001 is proven by TC-DATA-951 in SL-TST-003) | **Built, green** | Repository root (`global.json` SDK 10.0.401 with Microsoft.Testing.Platform, `Directory.Build.props` with warnings as errors, central package management, `nuget.config`, `Nibras.sln`); `Nibras.BuildingBlocks.Domain` (13 tests), `Nibras.BuildingBlocks.Observability` (20 tests, TC-INF-111), `Nibras.ServiceDefaults` (probes, graceful shutdown, resilience, service discovery), `Nibras.Contracts.Shared`; the service template `tools/templates/service/` (`new-service.mjs` with `.ps1` and `.sh`) whose test generates a service and passes its unit, integration (TC-INF-964) and contract (TC-TST-112) tests: `node --test tools/templates/service/template.test.mjs` 5 of 5. Demonstrated on Linux: a generated service started as a process answered `/health/live`, `/health/ready` and `/health/startup` with 200, echoed `X-Nibras-Correlation-Id`, exported traces and metrics to an OpenTelemetry Collector 0.161.0 as `nibras-probe`, and shut down gracefully on SIGTERM. Windows unverified in this environment |
+| SL-DATA-001 | REQ-DATA-006, REQ-DATA-007, REQ-PERF-011, REQ-PERF-012, REQ-PERF-018 (partly: 409 in SL-API-004), REQ-DATA-003 (partly: row-level security in SL-DATA-002) | **Built, green** | `Nibras.BuildingBlocks.Tenancy` (`TenantId`, `ITenantContext`, `[PlatformScoped]`, telemetry tenant label; 4 tests) and `Nibras.BuildingBlocks.Persistence` (`NibrasDbContext` pooled base with named `Tenant` and `SoftDelete` filters, key `(tenant_id, id)`, audit and soft-delete columns, `xmin`, snake_case; `AuditColumnsInterceptor`, `SoftDeleteInterceptor`, `AddNibrasDbContext`; 9 tests on PostgreSQL 18.6 through Testcontainers: TC-DATA-640, TC-PERF-961, TC-PERF-962, TC-DATA-008, TC-PERF-968). `dotnet test --solution Nibras.sln` 46 of 46. `EFCore.NamingConventions` 10.0.1 added to document 19. The template generates its DbContext and row-level security policy from SL-DATA-002, when the migration can be proven with row-level security enabled |
 
 **Build environment notes.** The .NET 10.0.401 SDK is taken from the `mcr.microsoft.com/dotnet/sdk:10.0` image because the SDK download host is not reachable from the cloud environment; NuGet restores normally. `xunit.v3` 4.x runs on Microsoft.Testing.Platform (`global.json` `test.runner`), so `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio` are not used; `dotnet test --solution Nibras.sln` runs every suite. Six packages the slice needed were added to document 19 with the product owner's approval (2026-09-27).
 

@@ -49,6 +49,7 @@ Master brief Section 6.1 says "verify, do not assume", and rule 5 of `PLAN_SPEC.
 | Microsoft.EntityFrameworkCore | ORM | 10.0.12 | MIT | https://www.nuget.org/packages/Microsoft.EntityFrameworkCore/10.0.12 | 2026-09-22 | Linked | allowed |
 | Npgsql | ORM, binary COPY | 10.0.3 | PostgreSQL | https://www.nuget.org/packages/Npgsql/10.0.3 | 2026-09-22 | Linked | allowed |
 | Npgsql.EntityFrameworkCore.PostgreSQL | ORM provider | 10.0.3 | PostgreSQL | https://www.nuget.org/packages/Npgsql.EntityFrameworkCore.PostgreSQL/10.0.3 | 2026-09-22 | Linked | allowed |
+| EFCore.NamingConventions | ORM naming: snake_case tables, columns, keys and indexes (document 10 part 4 names it) | 10.0.1 | Apache-2.0 | https://www.nuget.org/packages/EFCore.NamingConventions/10.0.1 | 2026-09-27 | Linked | allowed |
 | Dapper | Reporting read models | 2.1.86 | Apache-2.0 | https://www.nuget.org/packages/Dapper/2.1.86 | 2026-09-22 | Linked | allowed |
 | WolverineFx | Mediator, bus, outbox, sagas | 6.39.1 | MIT | https://www.nuget.org/packages/WolverineFx/6.39.1 | 2026-09-22 | Linked | allowed |
 | Rebus | Fallback bus | 8.9.4 | MIT | https://www.nuget.org/packages/Rebus/8.9.4 | 2026-09-22 | Linked (fallback only) | allowed |
@@ -236,7 +237,7 @@ Section 6.2 names the SIL Open Font License for fonts, so OFL-1.1 fonts are `all
 | Woodpecker CI | Self-hosted CI (alternative) | 3.18.1 | Apache-2.0 | https://github.com/woodpecker-ci/woodpecker/blob/main/LICENSE | 2026-09-22 | Standalone | allowed |
 | GitHub Actions | CI (free tier) | Hosted service | Free tier of a hosted service, not a licence | n/a | 2026-09-22 | Service | named by Section 6.2; see open point 5 |
 
-**Count.** 155 rows across §2 to §8. 150 are verified for both version and licence from the source for that version. 5 rows carry `unverified` in part: the IBM Plex Sans Arabic upstream family version, Tesseract trained data, Meilisearch (edition split), PostHog (edition and server version), and the Podman version. The native Skia and ImageMagick components bundled by SkiaSharp and Magick.NET are also unverified (§2 note). Nothing is guessed.
+**Count.** 156 rows across §2 to §8. 151 are verified for both version and licence from the source for that version. 5 rows carry `unverified` in part: the IBM Plex Sans Arabic upstream family version, Tesseract trained data, Meilisearch (edition split), PostHog (edition and server version), and the Podman version. The native Skia and ImageMagick components bundled by SkiaSharp and Magick.NET are also unverified (§2 note). Nothing is guessed.
 
 ---
 
@@ -410,6 +411,7 @@ No verified item forces a replacement today. Every banned item in §9.2 already 
 | 2026-09-22 | Scorecard remediation, theme 4 | Amended: FsCheck 3.4.0 and `FsCheck.Xunit` 3.4.0 added to §3 from each nuspec (row count 147 to 149); k6 re-verdicted `allowed-standalone` on the Section 6.4 row brief v9.1 added under ADR-0019; the §11.3 scanner test count corrected from 11 to 12 | The k6 `allow.json` entry, open point 1 (closed since) |
 | 2026-09-26 | Round-2 scorecard, Group E, remediation round 3 | Amended: every k6 statement (§8, §9.1, §11.1, §11.3, Decisions in force) now agrees with the file, which has eight entries including k6 under ADR `0019-brief-v9-1-corrections`; §11.1 re-quoted with the k6 row | none |
 | 2026-09-27 | Phase 1, SL-INF-001, approved by the product owner | Amended: six packages the first slice needs added from each nuspec, all MIT or Apache-2.0 from publishers already in the inventory: the OTLP exporter and the AspNetCore, Http and Runtime instrumentations of OpenTelemetry, `Microsoft.Extensions.Http.Resilience` (§2) and `Microsoft.AspNetCore.Mvc.Testing` (§3); row count 149 to 155. `Microsoft.NET.Test.Sdk` and `xunit.runner.visualstudio`, approved at the same time, are not used: xunit.v3 runs on Microsoft.Testing.Platform (`global.json` `test.runner`), which needs neither | none |
+| 2026-09-27 | Phase 1, SL-DATA-001, under the product owner's standing approval for allowed licences | Amended: `EFCore.NamingConventions` 10.0.1 (Apache-2.0, by the author of the Npgsql provider) added from its nuspec; document 10 part 4 already named it for the snake_case convention; row count 155 to 156 | none |
 
 ## How this document is verified
 

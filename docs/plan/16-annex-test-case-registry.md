@@ -504,7 +504,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-005 | Appendix R, line 1947 | Committing to CommitFailed / A batch fails mid-import / Import reversed as a unit, no partial data remains | Documents sheet, document 13, document 26 |
 | TC-DATA-006 | Appendix R, line 1948 | Committed to RolledBack / Rollback requested inside the window / Created rows removed, updated rows restored, conflicts reported | Documents sheet, document 10, document 12, document 13, document 18, document 26, document 31 |
 | TC-DATA-007 | document 10, line 607 | Master brief Section 7.3; reference architecture Section 8, table 8.0 / Slim read-only copies from events only / No copy holds a Sensitive or level S… | document 03, document 10, document 15, document 20 |
-| TC-DATA-008 | document 10, line 614 | Master brief Section 19, Conventions / UUID v7, xmin, snake_case, audit columns, soft delete / Persistence convention tests pass for every service mo… | document 03, document 20 |
+| TC-DATA-008 | document 10, line 614 | Master brief Section 19, Conventions / UUID v7, xmin, snake_case, audit columns, soft delete / Persistence convention tests pass for every service mo… | document 03, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-010 | document 10, line 608 | Reference architecture Section 14, tier migration / Shared to dedicated and back without data loss / Zero lost writes, zero cross-tenant rows, read-o… | document 03, document 04, Platform sheet, document 10, document 13, document 20 |
 | TC-DATA-011 | Reporting sheet, line 876 | Integration, load / Projection lag under 60 s under N-01 load | document 03, document 04, Reporting sheet, document 10, document 20 |
 | TC-DATA-012 | Reporting sheet, line 877 | Integration / Rebuild reproduces row counts and checksums | document 03, Reporting sheet, document 10, document 20 |
@@ -516,7 +516,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-301 | document 08, line 630 | School admin / Imports / /admin/imports / stepper, file-upload, data-table (error report), progress-ring, dialog (rollback) / 7 / documents.imports.v… | Appendix Q, Documents sheet |
 | TC-DATA-302 | document 10, line 686 | Given a 10,000-row import from the Excel template whose dry run reported 12 row errors, when the 12 rows are fixed and the import is committed, then… | Appendix Q, document 03, document 20 |
 | TC-DATA-303 | document 10, line 687 | Given a committed import, when its dry run is re-read and the import is rolled back inside the window, then the dry run wrote nothing, a checksum of… | Appendix Q, document 03, Documents sheet, document 20, document 26 |
-| TC-DATA-640 | document 10, line 604 | Master brief Section 19, DbContext and model / Pooled context with per-lease accessor; named filters / A context leased without a tenant throws on fi… | document 03, document 10, document 20 |
+| TC-DATA-640 | document 10, line 604 | Master brief Section 19, DbContext and model / Pooled context with per-lease accessor; named filters / A context leased without a tenant throws on fi… | document 03, document 10, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-641 | document 10, line 605 | Master brief Section 19, PostgreSQL / Partition by month; tenant_id first; partial indexes / Every partitioned table has next-three-months partitions… | document 03, Attendance sheet, document 10, document 20, document 21 |
 | TC-DATA-642 | document 10, line 606 | Master brief Section 19, Data integrity and reconciliation / Nightly reference-copy reconciliation / A deliberately corrupted copy is repaired and re… | document 03, School sheet, document 10, document 20 |
 | TC-DATA-643 | document 10, line 149 | A pooled connection cannot read the previous tenant's rows | document 03, document 04, document 10, document 15, document 20, document 21 |
@@ -1775,7 +1775,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-AUD-955 | REQ-AUD-005: Login history is kept per user and viewable by administrators | document 20 |
 | TC-DATA-951 | REQ-DATA-001: Each data-owning service has its own database and schema, and no service ever reads another service's database | document 07, document 20, project/PROJECT_STATE.md |
 | TC-DATA-952 | REQ-DATA-002: Each service runs under an application role without BYPASSRLS that owns no tables, and a separate migration r… | document 20 |
-| TC-DATA-953 | REQ-DATA-003: Every service enforces tenancy itself with tenant_id on every row, EF Core filters, and PostgreSQL row-level… | document 20 |
+| TC-DATA-953 | REQ-DATA-003: Every service enforces tenancy itself with tenant_id on every row, EF Core filters, and PostgreSQL row-level… | document 20, project/TRACEABILITY.md |
 | TC-DATA-958 | REQ-DATA-008: Every multi-tenant index starts with tenant_id, and soft-deleted tables use partial indexes on live rows | document 20 |
 | TC-DATA-959 | REQ-DATA-009: Foreign keys exist only inside a service, and a reference to another service's entity is a plain uuid column | document 07, document 20 |
 | TC-DATA-960 | REQ-DATA-010: Migrations follow expand, migrate, contract so that they are safe under rolling deployment, and are never run… | document 20 |
@@ -1919,14 +1919,14 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-PERF-958 | REQ-PERF-008: The initial web bundle per application has a budget set in Phase 0 and enforced by the Angular build | document 20 |
 | TC-PERF-959 | REQ-PERF-009: Mobile cold start is under 3 seconds and rendering holds 60 frames per second on a mid-range Android device | document 04, document 20 |
 | TC-PERF-960 | REQ-PERF-010: The platform scales to 500 schools, 500,000 students and 20,000 concurrent users, including the 08:00 attenda… | document 04, document 20 |
-| TC-PERF-961 | REQ-PERF-011: DbContexts are pooled, and the tenant is resolved per lease through a scoped accessor and reset when the cont… | document 20 |
-| TC-PERF-962 | REQ-PERF-012: Every entity has a named Tenant filter and a named SoftDelete filter | document 07, document 20 |
+| TC-PERF-961 | REQ-PERF-011: DbContexts are pooled, and the tenant is resolved per lease through a scoped accessor and reset when the cont… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-PERF-962 | REQ-PERF-012: Every entity has a named Tenant filter and a named SoftDelete filter | document 07, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PERF-963 | REQ-PERF-013: No entity uses lazy loading and no entity is ever returned from an API | document 07, document 20 |
 | TC-PERF-964 | REQ-PERF-014: Read handlers use AsNoTracking() and project to DTOs with Select, and lists that can grow large use keyset pa… | document 20 |
 | TC-PERF-965 | REQ-PERF-015: Compiled queries serve the attendance register, the timetable of the day, permission lookup, and dashboard ca… | document 20 |
 | TC-PERF-966 | REQ-PERF-016: Large exports stream through IAsyncEnumerable and are never materialized in memory | document 20 |
 | TC-PERF-967 | REQ-PERF-017: Set-based changes use ExecuteUpdateAsync and ExecuteDeleteAsync, and inserts above a few hundred rows use Npg… | document 20 |
-| TC-PERF-968 | REQ-PERF-018: Optimistic concurrency uses the PostgreSQL xmin column on every aggregate | document 20 |
+| TC-PERF-968 | REQ-PERF-018: Optimistic concurrency uses the PostgreSQL xmin column on every aggregate | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PERF-969 | REQ-PERF-019: All caching goes through Nibras.BuildingBlocks.Caching over HybridCache, which adds the tenant to every key a… | document 07, document 20 |
 | TC-PERF-970 | REQ-PERF-020: Cache keys follow nibras:{tenant}:{service}:{entity}:{id}:v{n} with the full tenant UUID, tags name tenant, s… | document 20 |
 | TC-PERF-971 | REQ-PERF-021: Caching is cache-aside only with event-driven invalidation by tag, jittered TTL as the safety net, and short… | document 20 |
