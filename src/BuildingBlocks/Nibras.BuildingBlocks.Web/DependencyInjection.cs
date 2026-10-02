@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using FluentValidation;
 using Nibras.BuildingBlocks.Tenancy;
+using Nibras.BuildingBlocks.Web.Lists;
 
 namespace Nibras.BuildingBlocks.Web;
 
@@ -73,6 +74,7 @@ public static class DependencyInjection
         services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
         services.AddOutputCache(o => o.AddPolicy(NibrasOutputCache.Public, policy => policy.Expire(TimeSpan.FromSeconds(60)).SetVaryByHost(true)));
+        services.TryAddSingleton<ListCursors>();
         services.AddHostedService<ApiRouteCheck>();
         return services;
     }

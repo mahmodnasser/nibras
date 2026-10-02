@@ -54,4 +54,20 @@ public sealed class ApiConventionTests
 
         failure.Message.ShouldContain("/api/v1/probe/GradeLevels");
     }
+
+    [Fact]
+    [Trait("TestCase", "TC-API-002")]
+    public async Task A_production_host_without_a_cursor_key_refuses_to_start()
+    {
+        var failure = await Should.ThrowAsync<InvalidOperationException>(() => ProbeApi.StartAsync("Production", withCursorKey: false));
+
+        failure.Message.ShouldContain("Nibras:Pagination:CursorKey");
+    }
+
+    [Fact]
+    [Trait("TestCase", "TC-API-002")]
+    public async Task A_development_host_without_a_cursor_key_starts_with_a_process_key()
+    {
+        await using var api = await ProbeApi.StartAsync("Development", withCursorKey: false);
+    }
 }

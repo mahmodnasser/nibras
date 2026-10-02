@@ -166,10 +166,10 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-AI-800 | document 25, line 556 | Given the stored harness results of the previous release, in which report-comment-draft passed its rubric at 96 percent in Arabic, when a release can… | document 25 |
 | TC-AI-801 | document 25, line 557 | Given a tenant whose drafting features use the released model tag, when a new model tag or a new template version is registered and the harness has n… | document 25 |
 | TC-AI-802 | document 25, line 558 | Given a release candidate whose 20-item Arabic drafting sample for report-comment-draft was scored by two raters who disagree on 5 items (25 percent)… | document 25 |
-| TC-API-001 | document 22, line 816 | Given a list endpoint whose declared maximum is 200, when a client requests pageSize=1000, then the response is 200 rather than 400 with pageSize 200… | document 03, document 20, document 22 |
-| TC-API-002 | document 22, line 817 | Given 1,001 seeded rows, when a client walks a keyset list forwards and backwards at pageSize 50 in every declared sort, then each row appears exactl… | document 03, document 20, document 22 |
+| TC-API-001 | document 22, line 816 | Given a list endpoint whose declared maximum is 200, when a client requests pageSize=1000, then the response is 200 rather than 400 with pageSize 200… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-002 | document 22, line 817 | Given 1,001 seeded rows, when a client walks a keyset list forwards and backwards at pageSize 50 in every declared sort, then each row appears exactl… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-API-003 | document 22, line 818 | Given a nextCursor issued for sort=+lastName,+id on the students list, when it is sent with another sort, another filter or to another endpoint, then… | document 22 |
-| TC-API-010 | document 22, line 819 | Given a list endpoint that declares its filterable and sortable fields, when each of the 12 operators of §3.1 is sent and sort=lastName is requested,… | document 03, document 20, document 22 |
+| TC-API-010 | document 22, line 819 | Given a list endpoint that declares its filterable and sortable fields, when each of the 12 operators of §3.1 is sent and sort=lastName is requested,… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-API-011 | document 22, line 820 | Given a string value holding a literal comma sent as %2C in filter[name][in], when the grammar parses it, then it is one list member, not two, and a… | none |
 | TC-API-012 | document 22, line 821 | Given the §3.1 limits, when a request carries 10 predicates, a 100-member list and a 200-character value, then it is accepted, and when any one carri… | none |
 | TC-API-013 | document 22, line 822 | Given a field classified Sensitive in Appendix J, when a client sends filter[medicalNotes][contains]=asthma, then it is 403 SCHOOL_PERMISSION_DENIED… | none |
@@ -1922,7 +1922,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-PERF-961 | REQ-PERF-011: DbContexts are pooled, and the tenant is resolved per lease through a scoped accessor and reset when the cont… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PERF-962 | REQ-PERF-012: Every entity has a named Tenant filter and a named SoftDelete filter | document 07, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PERF-963 | REQ-PERF-013: No entity uses lazy loading and no entity is ever returned from an API | document 07, document 20 |
-| TC-PERF-964 | REQ-PERF-014: Read handlers use AsNoTracking() and project to DTOs with Select, and lists that can grow large use keyset pa… | document 20 |
+| TC-PERF-964 | REQ-PERF-014: Read handlers use AsNoTracking() and project to DTOs with Select, and lists that can grow large use keyset pa… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-PERF-965 | REQ-PERF-015: Compiled queries serve the attendance register, the timetable of the day, permission lookup, and dashboard ca… | document 20 |
 | TC-PERF-966 | REQ-PERF-016: Large exports stream through IAsyncEnumerable and are never materialized in memory | document 20 |
 | TC-PERF-967 | REQ-PERF-017: Set-based changes use ExecuteUpdateAsync and ExecuteDeleteAsync, and inserts above a few hundred rows use Npg… | document 20 |

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Application abstractions shared by every service (document 07, part 7). This slice adds the list query
+    contract (KeysetRequest, KeysetPage<T>, the declared field map); the command and query pipeline joins it
+    with the slice that introduces Wolverine.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.BuildingBlocks.Domain/Nibras.BuildingBlocks.Domain.csproj" />
+  </ItemGroup>
+</Project>

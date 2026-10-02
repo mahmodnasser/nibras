@@ -288,6 +288,12 @@
           "xunit.v3.runner.common": "[4.0.1]"
         }
       },
+      "nibras.buildingblocks.application": {
+        "type": "Project",
+        "dependencies": {
+          "Nibras.BuildingBlocks.Domain": "[1.0.0, )"
+        }
+      },
       "nibras.buildingblocks.domain": {
         "type": "Project"
       },
@@ -306,6 +312,7 @@
         "dependencies": {
           "EFCore.NamingConventions": "[10.0.1, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.12, )",
+          "Nibras.BuildingBlocks.Application": "[1.0.0, )",
           "Nibras.BuildingBlocks.Domain": "[1.0.0, )",
           "Nibras.BuildingBlocks.Tenancy": "[1.0.0, )",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"

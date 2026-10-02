@@ -64,11 +64,22 @@ public sealed class ProbeApi : IAsyncDisposable
 
     public HttpClient Client() => App.GetTestClient();
 
+    /// <summary>A fixed test-only cursor key; production reads it from the secret store.</summary>
+    public static readonly string CursorKey = Convert.ToBase64String(Enumerable.Range(1, 32).Select(i => (byte)i).ToArray());
+
     public static async Task<ProbeApi> StartAsync(
-        string environment = "Production", Action<WebApplication>? extraRoutes = null, Action<WebApplicationBuilder>? configure = null)
+        string environment = "Production",
+        Action<WebApplication>? extraRoutes = null,
+        Action<WebApplicationBuilder>? configure = null,
+        bool withCursorKey = true)
     {
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
+        if (withCursorKey)
+        {
+            builder.Configuration[Lists.ListCursors.KeySetting] = CursorKey;
+        }
+
         builder.Logging.ClearProviders();
         builder.AddNibrasTelemetry("Probe");
         builder.Services.AddNibrasWeb("Probe", c => c.Add("PROBE_SESSION_LOCKED", StatusCodes.Status409Conflict, parentSafe: false), ProbeJsonContext.Default);

@@ -19,12 +19,13 @@ function scratchRoot() {
   for (const file of ['global.json', 'nuget.config', 'Directory.Build.props', 'Directory.Packages.props', '.editorconfig', join('tools', 'ci', 'BannedSymbols.txt')]) {
     cpSync(join(kitRoot, file), join(root, file));
   }
+  // Every building block, so a block that starts depending on another never breaks this test; their tests stay behind.
   const skipBuildOutput = (src) => !['bin', 'obj'].includes(basename(src));
+  cpSync(join(kitRoot, 'src', 'BuildingBlocks'), join(root, 'src', 'BuildingBlocks'), {
+    recursive: true,
+    filter: (src) => skipBuildOutput(src) && src !== join(kitRoot, 'src', 'BuildingBlocks', 'tests'),
+  });
   for (const dir of [
-    join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Domain'),
-    join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Observability'),
-    join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Tenancy'),
-    join('src', 'BuildingBlocks', 'Nibras.BuildingBlocks.Web'),
     join('src', 'ServiceDefaults', 'Nibras.ServiceDefaults'),
     join('src', 'Contracts', 'Nibras.Contracts.Shared'),
   ]) {

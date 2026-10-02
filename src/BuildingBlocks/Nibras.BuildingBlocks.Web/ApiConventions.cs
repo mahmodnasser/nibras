@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Nibras.BuildingBlocks.Web.Lists;
 
 namespace Nibras.BuildingBlocks.Web;
 
@@ -121,7 +122,10 @@ public static partial class ApiConventions
 /// Fails the start of a host whose API routes break the URL shape (REQ-API-001): the host exits before its
 /// readiness probe ever passes, so the mistake never reaches a client.
 /// </summary>
-internal sealed class ApiRouteCheck(EndpointDataSource endpoints, IOptions<NibrasWebOptions> options) : IHostedLifecycleService
+/// <remarks>Taking <see cref="ListCursors"/> also fails a production start that has no cursor key.</remarks>
+#pragma warning disable CS9113 // resolved for its constructor check only
+internal sealed class ApiRouteCheck(EndpointDataSource endpoints, IOptions<NibrasWebOptions> options, ListCursors cursors) : IHostedLifecycleService
+#pragma warning restore CS9113
 {
     /// <summary>The endpoint data source is wired when the server builds its pipeline, so the check runs once that is done.</summary>
     public Task StartedAsync(CancellationToken cancellationToken)
