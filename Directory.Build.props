@@ -28,4 +28,15 @@
     <!-- Test method names describe behaviour with underscores; the naming rule does not apply to them. -->
     <NoWarn>$(NoWarn);CA1707;CA1515;CA2007</NoWarn>
   </PropertyGroup>
+
+  <!--
+    Every test project: line and branch coverage through coverlet on Microsoft.Testing.Platform, read by the
+    coverage gate of tools/ci (document 16 part 15), and the banned-API analyzer so that a test which sleeps
+    fails the build (REQ-TST-003: the clock is injected, a test never waits on wall time).
+  -->
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
+    <PackageReference Include="coverlet.MTP" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)tools/ci/BannedSymbols.txt" />
+  </ItemGroup>
 </Project>

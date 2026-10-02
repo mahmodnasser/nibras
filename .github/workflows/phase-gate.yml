@@ -1,0 +1,39 @@
+# The phase gate of document 16 part 12 (REQ-TST-023), run by hand at a phase exit. It reads the results that
+# ci-service.yml uploaded, so the gate and the pipeline judge the same evidence. An item no run has evidence
+# for is missing, and missing is never a pass.
+name: phase-gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Phase 1 to 6"
+        required: true
+        type: choice
+        options: ["1", "2", "3", "4", "5", "6"]
+      run-id:
+        description: "The ci-service run whose results to read"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ci-results-*
+          path: gate-evidence
+          run-id: ${{ inputs.run-id }}
+          github-token: ${{ github.token }}
+      - name: Evaluate the gate
+        run: node tools/ci/ci.mjs gate --phase "${{ inputs.phase }}" $(find gate-evidence -name results.json)

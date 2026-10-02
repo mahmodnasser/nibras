@@ -1,0 +1,103 @@
+# The service pipeline of document 15 part 4.1 (SL-TST-001). The stages live in tools/ci/ci.mjs, so this file
+# and an engineer's machine run the same thing: `tools/ci/ci.sh run` or `tools/ci/ci.ps1 run`.
+#
+# Path filters: a change inside src/Services/<Service>/ builds that service; a change to a building block, a
+# contract, the service defaults, a root build file or the pipeline itself builds every scope. Another
+# workflow can call this one with a scope.
+name: ci-service
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "nuget.config"
+      - "*.sln"
+      - ".editorconfig"
+      - "tools/ci/**"
+      - "tools/license-scan/**"
+      - ".github/workflows/ci-service.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "nuget.config"
+      - "*.sln"
+      - ".editorconfig"
+      - "tools/ci/**"
+      - "tools/license-scan/**"
+      - ".github/workflows/ci-service.yml"
+  workflow_call:
+    inputs:
+      scope:
+        description: "all, or one service name such as Attendance"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-service-${{ github.ref }}-${{ inputs.scope }}
+  cancel-in-progress: true
+
+jobs:
+  affected:
+    name: Which scopes this change builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      scopes: ${{ steps.affected.outputs.scopes }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: affected
+        env:
+          SCOPE: ${{ inputs.scope }}
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$SCOPE" ]; then
+            printf 'scopes=["%s"]\n' "$SCOPE" >> "$GITHUB_OUTPUT"
+          else
+            node tools/ci/ci.mjs affected --base "$BASE" --github-output
+          fi
+
+  pipeline:
+    name: Pipeline (${{ matrix.scope }})
+    needs: affected
+    if: needs.affected.outputs.scopes != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        scope: ${{ fromJSON(needs.affected.outputs.scopes) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Stages in their fixed order
+        run: node tools/ci/ci.mjs run --scope "${{ matrix.scope }}" --out artifacts/ci
+      - name: The pipeline's own tests, including one deliberate violation per stage (TC-INF-114)
+        if: matrix.scope == 'all'
+        run: node --test tools/ci/ci.test.mjs tools/ci/ci.violations.e2e.mjs
+      - name: Keep the results for the phase gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-results-${{ matrix.scope }}
+          path: artifacts/ci/results.json
+          if-no-files-found: warn

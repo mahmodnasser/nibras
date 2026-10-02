@@ -849,7 +849,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-INF-111 | document 15, line 824 | Appendix L / nibras_ prefix, nibras.tenant_id / Metric and log conventions asserted by a test over the emitted names | document 03, document 15, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-INF-112 | document 15, line 825 | Master brief Section 31 / Service levels, error budget, severities / SLO definitions match the quoted table; burn-rate alerts generated from them | document 03, document 04, document 15, document 20 |
 | TC-INF-113 | document 15, line 828 | Reference architecture Section 12 / Secrets and rotation / Every rotation runbook run once on staging before launch | document 03, document 15, document 20 |
-| TC-INF-114 | document 15, line 931 | Given a throwaway branch in the test environment, when one deliberate violation per ci-service.yml stage is committed (a warning, an unformatted file… | document 03, document 15, document 20 |
+| TC-INF-114 | document 15, line 931 | Given a throwaway branch in the test environment, when one deliberate violation per ci-service.yml stage is committed (a warning, an unformatted file… | document 03, document 15, document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-INF-801 | Appendix W, line 58 | 40 / Self-healing operations / "It fixed itself and told us what it did" / 1 / 4 acts / 1 / Platform | Appendix O, Appendix W, document 32, project/DECISIONS/0019-brief-v9-1-corrections.md, project/KIT_V9_1_CHANGES.md |
 | TC-INT-001 | Appendix W, line 42 | 24 / Open by default: API, webhooks, iCal, standards / "It talks to what we already use" / 1 / 1 surfaces / 2 / Platform | Appendix O, Appendix P, document 02, document 03, document 08, document 20, document 23, document 32, project/KIT_V9_1_CHANGES.md |
 | TC-INT-002 | Appendix W, line 56 | 38 / Plug-in kit for regional integrations / "Our partner built the ministry export" / 1 / 1 surfaces / 2 / Platform | Appendix O, document 03, Platform sheet, document 20, document 23, document 27, document 32 |
@@ -2010,8 +2010,8 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-SEC-969 | REQ-SEC-019: The repository secret scan permits the documented default password only under docs/ and fails on it anywhere… | document 20 |
 | TC-SEC-970 | REQ-SEC-020: A cross-tenant exposure is always Severity 1 and always triggers an incident review, even when caught by a te… | document 20 |
 | TC-TST-951 | REQ-TST-001: Every requirement has at least one acceptance test case written as Given, When, Then | document 07, document 20 |
-| TC-TST-952 | REQ-TST-002: Unit tests cover domain and application logic at 90 percent line coverage on domain and 80 percent on applica… | document 20 |
-| TC-TST-953 | REQ-TST-003: Unit tests follow arrange, act, assert with one behaviour per test, names in Method_State_Expected, data from… | document 20 |
+| TC-TST-952 | REQ-TST-002: Unit tests cover domain and application logic at 90 percent line coverage on domain and 80 percent on applica… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-TST-953 | REQ-TST-003: Unit tests follow arrange, act, assert with one behaviour per test, names in Method_State_Expected, data from… | document 20, project/TRACEABILITY.md |
 | TC-TST-955 | REQ-TST-005: Integration tests run per service against real PostgreSQL, RabbitMQ and Redis through Testcontainers | document 20 |
 | TC-TST-957 | REQ-TST-007: Every business rule has a table-driven test from its worked examples, a property-based test for arithmetic ru… | document 20 |
 | TC-TST-959 | REQ-TST-009: Every workflow has one test per transition and one per failure and compensation path, and sagas add a timeout… | document 20 |
@@ -2021,7 +2021,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-TST-969 | REQ-TST-019: Test data comes from builders and Bogus generators, with a deterministic demo seed | document 20 |
 | TC-TST-971 | REQ-TST-021: A UAT script per role is written in plain language and signed by one named person per role before release | document 20 |
 | TC-TST-972 | REQ-TST-022: The golden-path demo script passes before any release | document 15, document 20 |
-| TC-TST-973 | REQ-TST-023: Each phase gate requires all tests green, coverage thresholds met, zero high or critical vulnerabilities, a c… | document 20 |
+| TC-TST-973 | REQ-TST-023: Each phase gate requires all tests green, coverage thresholds met, zero high or critical vulnerabilities, a c… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-TST-974 | REQ-TST-024: Every runbook is executed in a game day within ninety days of being written | document 20 |
 | TC-TST-975 | REQ-TST-025: Every plan document scores 4 or better on every scorecard axis and passes a clean kit-lint run | document 20 |
 | TC-UX-951 | REQ-UX-001: The design system is delivered before feature screens, with tokens for color, type, spacing, radius, elevatio… | document 20 |

@@ -1,0 +1,6 @@
+M:System.Threading.Thread.Sleep(System.Int32);A test never sleeps: move an injected clock or await a signal (REQ-TST-003)
+M:System.Threading.Thread.Sleep(System.TimeSpan);A test never sleeps: move an injected clock or await a signal (REQ-TST-003)
+M:System.Threading.Tasks.Task.Delay(System.Int32);A test never waits on wall time: await a signal or move an injected clock (REQ-TST-003)
+M:System.Threading.Tasks.Task.Delay(System.TimeSpan);A test never waits on wall time: await a signal or move an injected clock (REQ-TST-003)
+M:System.Threading.Tasks.Task.Delay(System.Int32,System.Threading.CancellationToken);A test never waits on wall time: await a signal or move an injected clock (REQ-TST-003)
+M:System.Threading.Tasks.Task.Delay(System.TimeSpan,System.Threading.CancellationToken);A test never waits on wall time: await a signal or move an injected clock (REQ-TST-003)

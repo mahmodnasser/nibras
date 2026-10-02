@@ -16,7 +16,7 @@ const kitRoot = resolve(here, '..', '..', '..');
 
 function scratchRoot() {
   const root = mkdtempSync(join(tmpdir(), 'nibras-template-test-'));
-  for (const file of ['global.json', 'nuget.config', 'Directory.Build.props', 'Directory.Packages.props', '.editorconfig']) {
+  for (const file of ['global.json', 'nuget.config', 'Directory.Build.props', 'Directory.Packages.props', '.editorconfig', join('tools', 'ci', 'BannedSymbols.txt')]) {
     cpSync(join(kitRoot, file), join(root, file));
   }
   const skipBuildOutput = (src) => !['bin', 'obj'].includes(basename(src));
