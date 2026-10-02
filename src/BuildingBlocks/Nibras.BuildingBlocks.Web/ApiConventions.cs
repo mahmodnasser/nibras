@@ -13,8 +13,9 @@ namespace Nibras.BuildingBlocks.Web;
 public static partial class ApiConventions
 {
     /// <summary>
-    /// The route group <c>/api/v{version}/{service}</c> of document 22 §1.1, with the validation filter and the
-    /// <see cref="ETagFilter"/> on every endpoint it holds.
+    /// The route group <c>/api/v{version}/{service}</c> of document 22 §1.1. Every endpoint it holds carries, from the
+    /// outside in: the <c>Idempotency-Key</c> filter on a <c>POST</c> (§5), the <c>If-Match</c> requirement on a
+    /// <c>PUT</c>, <c>PATCH</c> or <c>DELETE</c> (§4), the validation filter and the <see cref="ETagFilter"/>.
     /// </summary>
     public static RouteGroupBuilder MapNibrasApi(this IEndpointRouteBuilder endpoints, int version)
     {
@@ -22,6 +23,10 @@ public static partial class ApiConventions
         ArgumentOutOfRangeException.ThrowIfLessThan(version, 1);
         var options = endpoints.ServiceProvider.GetRequiredService<IOptions<NibrasWebOptions>>().Value;
         var group = endpoints.MapGroup(string.Create(CultureInfo.InvariantCulture, $"/api/v{version}/{options.ApiSegment}"));
+        // These two read the endpoint's own metadata (RequireIdempotencyKey, WithoutIfMatch), which is complete only
+        // when the filters are built, after every convention has run.
+        ((IEndpointConventionBuilder)group).Add(e => e.FilterFactories.Add((factory, next) => IdempotencyKeyFilter.Create(e, factory, next)));
+        ((IEndpointConventionBuilder)group).Add(e => e.FilterFactories.Add((factory, next) => IfMatchFilter.Create(e, factory, next)));
         group.AddEndpointFilterFactory(ValidationFilter.Create);
         group.AddEndpointFilter<ETagFilter>();
         return group;

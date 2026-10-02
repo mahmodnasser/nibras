@@ -174,12 +174,12 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-API-012 | document 22, line 821 | Given the §3.1 limits, when a request carries 10 predicates, a 100-member list and a 200-character value, then it is accepted, and when any one carri… | none |
 | TC-API-013 | document 22, line 822 | Given a field classified Sensitive in Appendix J, when a client sends filter[medicalNotes][contains]=asthma, then it is 403 SCHOOL_PERMISSION_DENIED… | none |
 | TC-API-014 | document 22, line 823 | Given a teacher whose data scope is section 4B, when the teacher filters the students list by the section id of 5A, then the response holds 0 rows, b… | document 22 |
-| TC-API-020 | document 22, line 824 | Given two clients that read the same student at the same ETag, when both send PATCH with that If-Match, then the first is 200 and the second is 409 _… | document 03, document 20, document 22 |
-| TC-API-021 | document 22, line 825 | Given an aggregate root, when PUT, PATCH or DELETE arrives without If-Match, then each is 400 _VALIDATION_FAILED with field If-Match and the stored r… | document 03, document 20, document 22 |
-| TC-API-022 | document 22, line 826 | Given an attendance mark POST with an Idempotency-Key that succeeded, when the same key and body are sent 23 hours later, then the reply is 200 with… | document 03, document 20, document 22 |
-| TC-API-023 | document 22, line 827 | Given a stored Idempotency-Key, when the same key arrives with a different body, then it is 400 _VALIDATION_FAILED with field Idempotency-Key and par… | none |
-| TC-API-024 | document 22, line 828 | Given a request with an Idempotency-Key still running, when a second request with the same key arrives, then it is 409 _CONCURRENCY_CONFLICT with Ret… | none |
-| TC-API-025 | document 22, line 829 | Given redis-state stopped through Testcontainers, when a POST reaches an endpoint marked x-nibras-idempotency: required, then it is 503 _DEPENDENCY_U… | document 22 |
+| TC-API-020 | document 22, line 824 | Given two clients that read the same student at the same ETag, when both send PATCH with that If-Match, then the first is 200 and the second is 409 _… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-021 | document 22, line 825 | Given an aggregate root, when PUT, PATCH or DELETE arrives without If-Match, then each is 400 _VALIDATION_FAILED with field If-Match and the stored r… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-022 | document 22, line 826 | Given an attendance mark POST with an Idempotency-Key that succeeded, when the same key and body are sent 23 hours later, then the reply is 200 with… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-API-023 | document 22, line 827 | Given a stored Idempotency-Key, when the same key arrives with a different body, then it is 400 _VALIDATION_FAILED with field Idempotency-Key and par… | project/TRACEABILITY.md |
+| TC-API-024 | document 22, line 828 | Given a request with an Idempotency-Key still running, when a second request with the same key arrives, then it is 409 _CONCURRENCY_CONFLICT with Ret… | project/TRACEABILITY.md |
+| TC-API-025 | document 22, line 829 | Given redis-state stopped through Testcontainers, when a POST reaches an endpoint marked x-nibras-idempotency: required, then it is 503 _DEPENDENCY_U… | document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-API-030 | document 22, line 830 | Given the generated docs/api/error-codes.json, when the missing-translation report runs over the Angular and Flutter bundles, then every catalog code… | document 03, document 20, document 22, document 24 |
 | TC-API-031 | document 22, line 831 | Given every catalog code, when the per-code snapshot test runs, then each error body is Problem Details with type urn:nibras:problem:<code>, the exac… | document 03, document 20, document 22, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-API-032 | document 22, line 832 | Given a guardian surface, when each code with parentSafe: false is rendered, then the snapshot shows the generic message with the reference number an… | document 03, document 20, document 22 |
@@ -2080,7 +2080,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | Date | Reviewer | Result |
 |---|---|---|
 | 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a derived acceptance test counts when a current plan document cites it, not one quoted only by the scorecard or the project history, which is the set document 20 assigns |
-| 2026-09-27 | Generated | 1681 test cases and 328 derived acceptance tests |
+| 2026-10-02 | Generated | 1681 test cases and 328 derived acceptance tests |
 
 ## How this document is verified
 

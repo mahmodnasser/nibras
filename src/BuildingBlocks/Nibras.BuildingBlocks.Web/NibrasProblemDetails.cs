@@ -115,6 +115,29 @@ public sealed class NibrasProblemResult(string code, string detail, JsonObject? 
         NibrasProblemDetails.For(httpContext, Code, detail, parameters, errors).WriteAsync(httpContext);
 }
 
+/// <summary>
+/// A cross-cutting code of Appendix K.1 such as <see cref="ErrorCatalog.ConcurrencyConflict"/>, given by its suffix:
+/// the service prefix is read from the catalog when the response is written, so the block needs no request to build it.
+/// </summary>
+internal sealed class CrossCuttingProblemResult(
+    string suffix,
+    string detail,
+    JsonObject? parameters = null,
+    IReadOnlyList<FieldError>? errors = null,
+    int? retryAfterSeconds = null) : IResult, IContentTypeHttpResult
+{
+    public string Suffix { get; } = suffix;
+
+    public string ContentType => NibrasProblemDetails.ContentType;
+
+    public Task ExecuteAsync(HttpContext httpContext)
+    {
+        ArgumentNullException.ThrowIfNull(httpContext);
+        var prefix = httpContext.RequestServices.GetRequiredService<ErrorCatalog>().Prefix;
+        return NibrasProblemDetails.For(httpContext, prefix + Suffix, detail, parameters, errors, retryAfterSeconds).WriteAsync(httpContext);
+    }
+}
+
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.Never)]
 [JsonSerializable(typeof(NibrasProblemDetails))]
 internal sealed partial class ProblemJsonContext : JsonSerializerContext;

@@ -58,7 +58,7 @@ public sealed class VersionedResult<T>(T value, string etag) : IVersionedResult,
     }
 }
 
-public static class NibrasResults
+public static partial class NibrasResults
 {
     /// <summary>A single-resource read, tagged from the aggregate's <c>xmin</c> and id.</summary>
     public static VersionedResult<T> Versioned<T>(T value, Guid id, uint rowVersion) => new(value, ETags.For(rowVersion, id));

@@ -64,7 +64,8 @@ public sealed class ProbeApi : IAsyncDisposable
 
     public HttpClient Client() => App.GetTestClient();
 
-    public static async Task<ProbeApi> StartAsync(string environment = "Production", Action<WebApplication>? extraRoutes = null)
+    public static async Task<ProbeApi> StartAsync(
+        string environment = "Production", Action<WebApplication>? extraRoutes = null, Action<WebApplicationBuilder>? configure = null)
     {
         var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.WebHost.UseTestServer();
@@ -72,6 +73,7 @@ public sealed class ProbeApi : IAsyncDisposable
         builder.AddNibrasTelemetry("Probe");
         builder.Services.AddNibrasWeb("Probe", c => c.Add("PROBE_SESSION_LOCKED", StatusCodes.Status409Conflict, parentSafe: false), ProbeJsonContext.Default);
         builder.Services.AddNibrasValidators(typeof(ProbeApi).Assembly);
+        configure?.Invoke(builder);
 
         var app = builder.Build();
         var probe = new ProbeApi(app);

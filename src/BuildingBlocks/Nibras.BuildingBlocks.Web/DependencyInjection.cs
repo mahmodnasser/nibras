@@ -78,8 +78,8 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Compression, Problem Details for exceptions and body-less error statuses, output caching and the default
-    /// <c>Cache-Control: no-store</c>. Call after <c>UseNibrasTelemetry</c>, so every body carries the correlation id.
+    /// Compression, Problem Details for exceptions and body-less error statuses, output caching, the default
+    /// <c>Cache-Control: no-store</c> and a re-readable body for a <c>POST</c> with an <c>Idempotency-Key</c>. Call after <c>UseNibrasTelemetry</c>, so every body carries the correlation id.
     /// </summary>
     public static IApplicationBuilder UseNibrasWeb(this IApplicationBuilder app)
     {
@@ -102,6 +102,16 @@ public static class DependencyInjection
             return next(context);
         });
         app.UseOutputCache();
+        app.Use(static (context, next) =>
+        {
+            // The Idempotency-Key filter fingerprints the body after the endpoint has bound it, so keep it readable.
+            if (HttpMethods.IsPost(context.Request.Method) && context.Request.Headers.ContainsKey(IdempotencyKeyFilter.HeaderName))
+            {
+                context.Request.EnableBuffering();
+            }
+
+            return next(context);
+        });
         return app;
     }
 

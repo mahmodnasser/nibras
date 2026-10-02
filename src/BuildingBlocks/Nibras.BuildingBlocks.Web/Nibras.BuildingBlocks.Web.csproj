@@ -1,13 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
     Problem Details, the error catalog, URL versioning, JSON conventions, validation, ETag, compression and
-    output caching for every service's API (document 07, part 7; document 22).
+    output caching, If-Match and Idempotency-Key for every service's API (document 07, part 7; document 22).
   -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation" />
+    <PackageReference Include="StackExchange.Redis" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Nibras.BuildingBlocks.Domain/Nibras.BuildingBlocks.Domain.csproj" />
