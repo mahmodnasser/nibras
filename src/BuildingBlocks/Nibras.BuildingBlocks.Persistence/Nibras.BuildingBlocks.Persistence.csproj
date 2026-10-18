@@ -13,4 +13,7 @@
     <ProjectReference Include="../Nibras.BuildingBlocks.Domain/Nibras.BuildingBlocks.Domain.csproj" />
     <ProjectReference Include="../Nibras.BuildingBlocks.Tenancy/Nibras.BuildingBlocks.Tenancy.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nibras.BuildingBlocks.Messaging" />
+  </ItemGroup>
 </Project>

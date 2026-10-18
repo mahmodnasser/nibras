@@ -60,10 +60,20 @@ public abstract class NibrasDbContext : DbContext
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().Where(e => !e.IsOwned()).ToList())
         {
             var entity = modelBuilder.Entity(entityType.ClrType);
-            ApplyColumns(entity);
+            var infrastructure = typeof(IInfrastructureRow).IsAssignableFrom(entityType.ClrType);
+            if (!infrastructure)
+            {
+                ApplyColumns(entity);
+            }
+
             if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
             {
                 ApplyTenant(entity, entityType);
+            }
+
+            if (infrastructure)
+            {
+                continue; // dropped whole by partition, never soft-deleted (document 11 part 8.1)
             }
 
             var parameter = Expression.Parameter(entityType.ClrType, "e");

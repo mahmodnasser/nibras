@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The outbox, its dispatcher and the publishing topology of document 11 parts 1.1, 2.1 and 8 (document 07, part 7).
+    The inbox and consumer host, retries and parking, and the lanes join with SL-MSG-002, SL-MSG-003 and SL-MSG-005.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.BuildingBlocks.Observability/Nibras.BuildingBlocks.Observability.csproj" />
+    <ProjectReference Include="../Nibras.BuildingBlocks.Persistence/Nibras.BuildingBlocks.Persistence.csproj" />
+    <ProjectReference Include="../Nibras.BuildingBlocks.Web/Nibras.BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="../../Contracts/Nibras.Contracts.Shared/Nibras.Contracts.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nibras.BuildingBlocks.Messaging.Tests" />
+  </ItemGroup>
+</Project>

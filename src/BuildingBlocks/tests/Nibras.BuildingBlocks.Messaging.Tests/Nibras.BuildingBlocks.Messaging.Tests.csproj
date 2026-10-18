@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Nibras.BuildingBlocks.Messaging/Nibras.BuildingBlocks.Messaging.csproj" />
+    <ProjectReference Include="../../Nibras.BuildingBlocks.Testing/Nibras.BuildingBlocks.Testing.csproj" />
+  </ItemGroup>
+</Project>

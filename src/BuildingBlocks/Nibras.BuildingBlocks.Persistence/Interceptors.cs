@@ -39,6 +39,11 @@ public sealed class AuditColumnsInterceptor : SaveChangesInterceptor
                 GuardTenant(db, entry);
             }
 
+            if (entry.Entity is IInfrastructureRow)
+            {
+                continue; // no audit columns
+            }
+
             switch (entry.State)
             {
                 case EntityState.Added:
@@ -107,7 +112,7 @@ public sealed class SoftDeleteInterceptor : SaveChangesInterceptor
         }
 
         var now = (db.Clock ?? TimeProvider.System).GetUtcNow();
-        foreach (var entry in db.ChangeTracker.Entries().Where(e => e.State == EntityState.Deleted))
+        foreach (var entry in db.ChangeTracker.Entries().Where(e => e.State == EntityState.Deleted && e.Entity is not IInfrastructureRow))
         {
             entry.State = EntityState.Modified;
             entry.Property(AuditColumns.DeletedAt).CurrentValue = now;

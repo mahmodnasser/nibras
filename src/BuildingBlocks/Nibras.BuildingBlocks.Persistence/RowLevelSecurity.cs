@@ -30,13 +30,16 @@ public static class RowLevelSecurity
             """);
     }
 
-    /// <summary>The statements for every tenant-owned table of a model, in a stable order.</summary>
+    /// <summary>
+    /// The statements for every tenant-owned table of a model, in a stable order. An <see cref="IInfrastructureRow"/>
+    /// table is created, policy included, by its own script (the outbox), so it is skipped here.
+    /// </summary>
     public static string PolicySqlFor(DbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         var sql = new StringBuilder();
         foreach (var entity in context.Model.GetEntityTypes()
-                     .Where(e => typeof(ITenantEntity).IsAssignableFrom(e.ClrType) && e.GetTableName() is not null)
+                     .Where(e => typeof(ITenantEntity).IsAssignableFrom(e.ClrType) && !typeof(IInfrastructureRow).IsAssignableFrom(e.ClrType) && e.GetTableName() is not null)
                      .OrderBy(e => e.GetTableName(), StringComparer.Ordinal))
         {
             sql.AppendLine(PolicySql(entity.GetSchema() ?? "public", entity.GetTableName()!));

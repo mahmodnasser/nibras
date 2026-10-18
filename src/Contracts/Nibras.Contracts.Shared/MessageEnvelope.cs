@@ -11,6 +11,8 @@ namespace Nibras.Contracts.Shared;
 /// <param name="OccurredAt">When the fact happened, in UTC.</param>
 /// <param name="SchemaVersion">The contract version, for example 1 for <c>V1</c>.</param>
 /// <param name="PartitionKey">The ordering key; messages with the same key are processed in order.</param>
+/// <param name="UserId">The user whose action caused the message; null when a job or a consumer did.</param>
+/// <param name="Traceparent">The W3C trace context, so one trace spans the Gateway, gRPC and the queues.</param>
 public sealed record MessageEnvelope(
     Guid MessageId,
     Guid CorrelationId,
@@ -18,4 +20,6 @@ public sealed record MessageEnvelope(
     Guid? TenantId,
     DateTimeOffset OccurredAt,
     int SchemaVersion,
-    string PartitionKey);
+    string PartitionKey,
+    Guid? UserId = null,
+    string? Traceparent = null);

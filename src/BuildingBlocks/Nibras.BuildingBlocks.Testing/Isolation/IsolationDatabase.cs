@@ -36,6 +36,12 @@ public sealed class IsolationDatabase : IAsyncDisposable
             Username = DatabaseBootstrap.MigrationRole(service),
             Password = MigrationPassword(service),
         }.ConnectionString;
+        DirectApplicationConnectionString = new NpgsqlConnectionStringBuilder(superuser)
+        {
+            Database = database,
+            Username = DatabaseBootstrap.ApplicationRole(service),
+            Password = ApplicationPassword(service),
+        }.ConnectionString;
         ApplicationConnectionString = new NpgsqlConnectionStringBuilder
         {
             Host = pgbouncer.Hostname,
@@ -57,8 +63,20 @@ public sealed class IsolationDatabase : IAsyncDisposable
     /// <summary>The superuser, directly: the suite's own reads of both tenants, which row-level security does not bind.</summary>
     public string SuperuserConnectionString { get; }
 
+    /// <summary>
+    /// The application role straight to PostgreSQL, bypassing PgBouncer: the session connection a component needs to
+    /// hold an advisory lock or a <c>LISTEN</c>, which transaction pooling cannot (document 11 part 8.3).
+    /// </summary>
+    public string DirectApplicationConnectionString { get; }
+
     /// <summary>Starts the database of <paramref name="service"/>, the snake_case name its schema, database and roles share.</summary>
-    public static async Task<IsolationDatabase> StartAsync(string service, CancellationToken cancellationToken)
+    public static Task<IsolationDatabase> StartAsync(string service, CancellationToken cancellationToken) => StartAsync(service, 1, cancellationToken);
+
+    /// <summary>
+    /// As <see cref="StartAsync(string, CancellationToken)"/>. The pool of one server connection is what proves
+    /// isolation; a suite that holds two transactions at once asks for more.
+    /// </summary>
+    public static async Task<IsolationDatabase> StartAsync(string service, int serverConnections, CancellationToken cancellationToken)
     {
         var network = new NetworkBuilder().Build();
         await network.CreateAsync(cancellationToken).ConfigureAwait(false);
@@ -82,7 +100,7 @@ public sealed class IsolationDatabase : IAsyncDisposable
                 .WithEnvironment("DB_PASSWORD", ApplicationPassword(service))
                 .WithEnvironment("AUTH_TYPE", "scram-sha-256")
                 .WithEnvironment("POOL_MODE", "transaction")
-                .WithEnvironment("DEFAULT_POOL_SIZE", "1")
+                .WithEnvironment("DEFAULT_POOL_SIZE", serverConnections.ToString(System.Globalization.CultureInfo.InvariantCulture))
                 .WithEnvironment("MAX_CLIENT_CONN", "50")
                 .WithPortBinding(5432, true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(5432))

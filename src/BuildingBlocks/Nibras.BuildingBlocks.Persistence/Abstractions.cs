@@ -59,3 +59,10 @@ public sealed class TenantNotSetException : InvalidOperationException
     {
     }
 }
+
+/// <summary>
+/// A tenant-owned row the platform writes for itself, never edited by a person: the outbox and the inbox
+/// (document 11 part 8.1). It keeps <c>tenant_id</c>, the <c>Tenant</c> filter and row-level security, and gets no
+/// audit columns, no soft delete and no <c>xmin</c> token.
+/// </summary>
+public interface IInfrastructureRow : ITenantEntity;

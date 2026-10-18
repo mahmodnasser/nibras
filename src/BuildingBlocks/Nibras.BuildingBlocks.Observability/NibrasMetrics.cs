@@ -21,6 +21,10 @@ public sealed class NibrasMetrics : IDisposable
     public Histogram<double> Histogram(string name, string? unit = null, string? description = null) =>
         _meter.CreateHistogram<double>(Checked(name), unit, description);
 
+    /// <summary>A gauge read when the exporter collects, for a value such as the age of the oldest undispatched message.</summary>
+    public ObservableGauge<double> Gauge(string name, Func<IEnumerable<Measurement<double>>> observe, string? unit = null, string? description = null) =>
+        _meter.CreateObservableGauge(Checked(name), observe, unit, description);
+
     public void Dispose() => _meter.Dispose();
 
     /// <summary>True when the name is lower snake case and starts with <c>nibras_</c>.</summary>

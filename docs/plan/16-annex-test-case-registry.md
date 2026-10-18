@@ -928,9 +928,9 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-MOB-721 | document 09, line 1030 | Given the resolved pubspec.lock of every flavor, when the dependency check runs, then it contains 0 flutter_bloc entries and the providers come from… | document 09, document 29 |
 | TC-MOB-780 | document 09, line 1021 | Given a student on the Open Question 29 default who answers the daily check-in in airplane mode, when the outbox is inspected, then it holds exactly… | document 09, document 12 |
 | TC-MSG-750 | document 11, line 1059 | **Worker-kill chaos** / A batch of 800 items is published; after 300 are acknowledged one worker replica is killed with SIGKILL (the container, not a… | document 11 |
-| TC-MSG-751 | document 11, line 1060 | Dispatcher leader killed / The leader is killed between publish and confirm; the standby takes the lock within 10 s; every row is published, some twi… | document 11 |
+| TC-MSG-751 | document 11, line 1060 | Dispatcher leader killed / The leader is killed between publish and confirm; the standby takes the lock within 10 s; every row is published, some twi… | document 11, project/PROJECT_STATE.md |
 | TC-MSG-752 | document 11, line 1062 | **Deliver twice** / Every handler receives the same message twice with one messageId (inbox path) and twice with two messageId values (natural-key pa… | document 11 |
-| TC-MSG-753 | document 11, line 1063 | **Ordering** / 10,000 events over 200 keys through the 8 projection shards, with a replica killed and another added mid-run, arrive in commit order p… | document 11 |
+| TC-MSG-753 | document 11, line 1063 | **Ordering** / 10,000 events over 200 keys through the 8 projection shards, with a replica killed and another added mid-run, arrive in commit order p… | document 11, project/PROJECT_STATE.md |
 | TC-MSG-754 | document 11, line 1066 | Unordered queues / Messages delivered in a shuffled order leave the same final state / ReferenceCopyTests.ShuffledDelivery_SameFinalState per consumi… | document 11 |
 | TC-MSG-755 | document 11, line 1067 | Retry and parking / Transient failures follow the queue's profile and park; permanent failures park at once; three crashes land in .dlq / RetryPolicy… | document 11 |
 | TC-MSG-756 | document 11, line 1069 | Lanes / With 100,000 digest messages queued on the bulk lane, an absence alert is dispatched within 30 s of being enqueued. The 30 s is the lane's ow… | document 11 |
@@ -1613,7 +1613,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-TST-202 | document 16, line 280 | Cache entry, plan addition / The caching table of each service sheet, the event catalog / Three tests per entry: invalidation by the real event, tena… | document 03, Ai sheet, Communication sheet, Finance sheet, Hr sheet, Notification sheet, Operations sheet, Requests sheet, document 18, document 20 |
 | TC-TST-203 | document 16, line 281 | Consumer idempotency and ordering, plan addition / Inbox registrations and the partition keys in Appendix E / Deliver-twice for every consumer regist… | document 03, Ai sheet, Audit sheet, Communication sheet, Finance sheet, Hr sheet, Identity sheet, Notification sheet, Operations sheet, Platform sheet, Requests sheet, document 16, document 18, document 20 |
 | TC-TST-204 | document 16, line 282 | Migration compatibility, plan addition / The previous released image tag per service and the new migration bundle / One test per service: the previou… | document 03, document 16, document 20 |
-| TC-TST-205 | document 16, line 313 | Generated schema equals the committed baseline for every record / The record did not change shape silently | document 03, document 16, document 20 |
+| TC-TST-205 | document 16, line 313 | Generated schema equals the committed baseline for every record / The record did not change shape silently | document 03, document 16, document 20, project/TRACEABILITY.md |
 | TC-TST-206 | document 16, line 730 | Retired message versions have zero consumers and zero bindings / 5.3 | document 03, document 16, document 20 |
 | TC-TST-207 | document 16, line 731 | Every screen component has a story per state / 8.1 | document 03, document 16, document 20 |
 | TC-TST-208 | document 16, line 732 | Bilingual PDF baselines with the shaping canaries / 9 | document 03, Admissions sheet, Assessment sheet, Behavior sheet, Communication sheet, Documents sheet, Finance sheet, document 10, document 16, document 18, document 20 |
@@ -1889,23 +1889,23 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-MOB-990 | REQ-MOB-040: The app is distributed through Google Play, the App Store, AppGallery where it matters, and a signed APK chan… | document 20 |
 | TC-MOB-991 | REQ-MOB-041: A white-label app is published under the school's own developer accounts, and the school owns the listing, ce… | document 20 |
 | TC-MOB-992 | REQ-MOB-042: Anything that must reach phones by a date is submitted to the stores a week early | document 20 |
-| TC-MSG-951 | REQ-MSG-001: RabbitMQ carries integration events, notification fan-out, heavy and bulk work, outgoing webhooks, audit and… | document 20 |
+| TC-MSG-951 | REQ-MSG-001: RabbitMQ carries integration events, notification fan-out, heavy and bulk work, outgoing webhooks, audit and… | document 20, project/TRACEABILITY.md |
 | TC-MSG-952 | REQ-MSG-002: Queries and commands where the user waits for an immediate result never go through RabbitMQ | document 07, document 20 |
-| TC-MSG-953 | REQ-MSG-003: Every publish goes through a transactional outbox | document 20 |
-| TC-MSG-955 | REQ-MSG-005: Each service publishes to one topic exchange named nibras.<service>, with routing keys <module>.<entity>.<eve… | document 20 |
+| TC-MSG-953 | REQ-MSG-003: Every publish goes through a transactional outbox | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
+| TC-MSG-955 | REQ-MSG-005: Each service publishes to one topic exchange named nibras.<service>, with routing keys <module>.<entity>.<eve… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-MSG-956 | REQ-MSG-006: Each consumer has one queue per purpose, and every consumer queue is a quorum queue | document 20 |
 | TC-MSG-957 | REQ-MSG-007: Failed messages retry a bounded number of times with exponential backoff, then move to a dead-letter exchange… | document 20 |
 | TC-MSG-958 | REQ-MSG-008: A message redelivered three times because the consumer crashed is treated as poison and dead-lettered | document 20 |
-| TC-MSG-959 | REQ-MSG-009: An overflowing queue refuses the publish so that the outbox keeps the message, and nothing is dropped | document 20 |
+| TC-MSG-959 | REQ-MSG-009: An overflowing queue refuses the publish so that the outbox keeps the message, and nothing is dropped | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-MSG-960 | REQ-MSG-010: Urgent and bulk traffic run on separate queues and worker replicas in every worker host, and an urgent replic… | document 20 |
 | TC-MSG-962 | REQ-MSG-012: Events for the same subject are consumed in order through a consistent-hash exchange or a single active consu… | document 20 |
 | TC-MSG-964 | REQ-MSG-014: Contracts live in a shared versioned project, and a breaking change publishes a new version alongside the old… | document 20 |
-| TC-MSG-966 | REQ-MSG-016: Publishers use confirms, consumers use manual acknowledgements and tuned prefetch, and shutdown finishes in-f… | document 20 |
+| TC-MSG-966 | REQ-MSG-016: Publishers use confirms, consumers use manual acknowledgements and tuned prefetch, and shutdown finishes in-f… | document 20, project/TRACEABILITY.md |
 | TC-MSG-967 | REQ-MSG-017: Heavy work runs in separate worker hosts inside the owning service: Notification.Worker, Documents.Worker, Sc… | document 20 |
 | TC-MSG-968 | REQ-MSG-018: Worker hosts scale independently on queue depth through KEDA | document 20 |
 | TC-MSG-969 | REQ-MSG-019: Long jobs report progress over SignalR, can be cancelled, and leave a result record with downloadable output… | document 20 |
 | TC-MSG-970 | REQ-MSG-020: Trace context propagates through message headers, and alerts fire on queue depth, consumer count and dead-let… | document 20 |
-| TC-MSG-971 | REQ-MSG-021: A message that matches no binding is caught by an alternate exchange rather than silently dropped | document 20 |
+| TC-MSG-971 | REQ-MSG-021: A message that matches no binding is caught by an alternate exchange rather than silently dropped | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-MSG-972 | REQ-MSG-022: Consumers are tested against a real broker with Testcontainers | document 20 |
 | TC-NOT-952 | REQ-NOT-002: A WhatsApp delivery adapter is available as a channel | document 20 |
 | TC-OPS-964 | REQ-OPS-014: The cafeteria runs a prepaid wallet with an allergy check at sale and parent spending limits | document 20 |
