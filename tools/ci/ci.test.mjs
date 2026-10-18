@@ -7,7 +7,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { affected, classify, evaluateGate, GATE_ITEMS, STAGES } from './ci.mjs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { addWorkingDays, affected, classify, evaluateGate, GATE_ITEMS, generatedArgs, isolationEvidence, STAGES, writeIncident } from './ci.mjs';
 import { evaluate, merge, parseCobertura } from './coverage.mjs';
 
 test('TC-INF-114: a change inside one service builds that service only', () => {
@@ -29,6 +32,7 @@ test('TC-INF-114: a change to a building block, a contract or a root build file 
     'Nibras.sln',
     'tools/ci/ci.mjs',
     '.github/workflows/ci-service.yml',
+    'tests/TenantIsolation.Tests/Targets/Canary.cs',
   ]) {
     assert.deepEqual(affected(['src/Services/Attendance/x.cs', file]), ['all'], file);
   }
@@ -46,7 +50,73 @@ test('test projects are classified by the names the service template generates',
   assert.equal(classify('x/Nibras.Attendance.IntegrationTests.csproj'), 'integration');
   assert.equal(classify('x/Nibras.Attendance.ContractTests.csproj'), 'contract');
   assert.equal(classify('tests/Architecture.Tests/Architecture.Tests.csproj'), 'architecture');
+  assert.equal(classify('tests/TenantIsolation.Tests/Nibras.TenantIsolation.Tests.csproj'), 'generated');
   assert.equal(classify('src/Services/Attendance/Nibras.Attendance.Domain/Nibras.Attendance.Domain.csproj'), null);
+});
+
+test('the generated suite runs prebuilt in scope all, and a service scope builds it and keeps the generator gate', () => {
+  assert.deepEqual(generatedArgs('all'), ['--no-build']);
+  assert.deepEqual(generatedArgs('Attendance'), ['-p:RestoreLockedMode=true', '--filter-trait', 'Service=Attendance', '--filter-trait', 'Service=all']);
+});
+
+const isolationReport = (failures = []) => ({
+  endpointsAttacked: 6,
+  consumersAttacked: 1,
+  poolSwaps: 1,
+  services: [{ service: 'Canary', endpoints: 6, consumers: 1, failed: failures.length }],
+  failures,
+});
+
+const leak = { service: 'Canary', surface: 'GET /api/v1/canary/pupils', attack: 'foreign rows', detail: "answered 200 carrying tenant B's identifier 018f" };
+
+test('TC-SEC-955: the isolation evidence counts what was attacked, a failure names the surface, and missing is not a pass', () => {
+  const passed = isolationEvidence('passed', isolationReport());
+  assert.equal(passed.status, 'passed');
+  assert.equal(passed.endpoints, 6);
+  assert.match(passed.detail, /^6 endpoints and 1 consumers attacked across 1 services \(Canary\), 1 pooled connections swapped$/);
+
+  const failed = isolationEvidence('failed', isolationReport([leak]));
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.detail, "Canary GET /api/v1/canary/pupils: answered 200 carrying tenant B's identifier 018f");
+  assert.equal(evaluateGate(1, [{ passed: false, evidence: { isolation: failed } }]).items.find((i) => i.id === 'isolation').status, 'failed');
+
+  assert.equal(isolationEvidence('failed', null).detail, 'the tenant-isolation suite failed before it reported a verdict');
+  assert.equal(isolationEvidence('passed', null).status, 'missing');
+  assert.equal(isolationEvidence('not-applicable', null).status, 'missing');
+});
+
+test('TC-SEC-970: the incident review is due five working days later, in a Sunday-to-Thursday week', () => {
+  assert.equal(addWorkingDays(new Date('2026-10-15T09:00:00Z'), 5), '2026-10-22'); // a Thursday: Friday and Saturday are skipped
+  assert.equal(addWorkingDays(new Date('2026-10-19T23:30:00Z'), 5), '2026-10-26'); // a Monday
+  assert.equal(addWorkingDays(new Date('2026-10-16T09:00:00Z'), 1), '2026-10-18'); // a Friday: the next working day is Sunday
+});
+
+test('TC-SEC-970: a run that caught an exposure writes an open Sev1 record and a job summary naming every failure', () => {
+  const out = mkdtempSync(path.join(tmpdir(), 'nibras-incident-'));
+  const summary = path.join(out, 'summary.md');
+  const previous = process.env.GITHUB_STEP_SUMMARY;
+  process.env.GITHUB_STEP_SUMMARY = summary;
+  try {
+    const { path: file, record } = writeIncident(out, { commit: '0123456789abcdef', scope: 'all' }, isolationReport([leak]), new Date('2026-10-19T08:00:00Z'));
+
+    assert.equal(path.dirname(file), path.join(out, 'incidents'));
+    const saved = JSON.parse(readFileSync(file, 'utf8'));
+    assert.deepEqual(saved, record);
+    assert.equal(saved.id, 'INC-20261019T080000-0123456');
+    assert.equal(saved.severity, 'Sev1');
+    assert.equal(saved.status, 'open');
+    assert.equal(saved.reviewDue, '2026-10-26');
+    assert.equal(saved.reviewWindow, '5 working days, Sunday to Thursday, on UTC dates');
+    assert.deepEqual(saved.failures, [leak]);
+    const text = readFileSync(summary, 'utf8');
+    assert.match(text, /^## Sev1 INC-20261019T080000-0123456: Cross-tenant exposure caught by the tenant-isolation suite/);
+    assert.match(text, /Incident review due 2026-10-26/);
+    assert.match(text, /\| Canary \| `GET \/api\/v1\/canary\/pupils` \| foreign rows \|/);
+  } finally {
+    if (previous === undefined) delete process.env.GITHUB_STEP_SUMMARY;
+    else process.env.GITHUB_STEP_SUMMARY = previous;
+    rmSync(out, { recursive: true, force: true });
+  }
 });
 
 test('TC-INF-114: the stages keep the fixed order of document 15 part 4.1', () => {

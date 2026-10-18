@@ -521,7 +521,7 @@ Every test-case identifier in the kit, the **one** document that defines it, wha
 | TC-DATA-642 | document 10, line 606 | Master brief Section 19, Data integrity and reconciliation / Nightly reference-copy reconciliation / A deliberately corrupted copy is repaired and re… | document 03, School sheet, document 10, document 20 |
 | TC-DATA-643 | document 10, line 149 | A pooled connection cannot read the previous tenant's rows | document 03, document 04, document 10, document 15, document 20, document 21, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-644 | document 10, line 684 | Given a pool of one connection that served tenant A, when tenant B's command runs ExecuteUpdateAsync inside the pipeline transaction, then only tenan… | document 02, document 10 |
-| TC-DATA-645 | document 10, line 685 | Given a consumed message whose envelope carries tenant B and whose payload names tenant A's identifiers, when the handler runs, then nothing is writt… | document 03, document 10, document 20, document 21 |
+| TC-DATA-645 | document 10, line 685 | Given a consumed message whose envelope carries tenant B and whose payload names tenant A's identifiers, when the handler runs, then nothing is writt… | document 03, document 10, document 20, document 21, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-DATA-750 | document 10, line 688 | Given the Nibras PostgreSQL image on ubuntu-latest and every service model, when the persistence convention test reads every <field>_ar and <field>_e… | document 10 |
 | TC-DATA-751 | document 10, line 689 | Given the persistence building block's suite run once with the host time zone UTC and once with Asia/Amman, and with the process culture ar-SA, on ub… | document 10 |
 | TC-DATA-780 | document 13, line 729 | Shared to dedicated, 20 services, no writes during the window / Reconciliation matches, switch inside 5 minutes, tenant unfrozen, source retained | Platform sheet, document 13 |
@@ -1995,7 +1995,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-SCH-986 | REQ-SCH-036: Alumni is a student status with an AlumniProfile, and an alumni directory and events are available | document 20 |
 | TC-SEC-951 | REQ-SEC-001: Web and APIs meet OWASP ASVS 5.0 Level 2, with the OWASP Top 10 and API Security Top 10 as minimum checklists | document 04, document 20 |
 | TC-SEC-952 | REQ-SEC-002: A STRIDE threat model per service and a list of abuse cases with their controls are produced in Phase 0, cove… | document 20 |
-| TC-SEC-955 | REQ-SEC-005: A tenant isolation suite attacks every endpoint and every consumer with another tenant's identifiers on every… | document 20 |
+| TC-SEC-955 | REQ-SEC-005: A tenant isolation suite attacks every endpoint and every consumer with another tenant's identifiers on every… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-SEC-956 | REQ-SEC-006: Every endpoint declares its permission, and a permission not in Appendix B cannot be granted or declared | document 20 |
 | TC-SEC-957 | REQ-SEC-007: There is no wildcard permission, and the platform super administrator holds an explicit, reviewable set | document 20 |
 | TC-SEC-958 | REQ-SEC-008: Secrets live outside the repository with rotation, and encryption in transit covers every hop including Rabbi… | document 20 |
@@ -2008,7 +2008,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | TC-SEC-967 | REQ-SEC-017: Input is validated and output encoded on every endpoint, with FluentValidation and Problem Details for valida… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-SEC-968 | REQ-SEC-018: An independent penetration test runs before general availability and annually after, a security.txt is publis… | document 04, document 20 |
 | TC-SEC-969 | REQ-SEC-019: The repository secret scan permits the documented default password only under docs/ and fails on it anywhere… | document 20 |
-| TC-SEC-970 | REQ-SEC-020: A cross-tenant exposure is always Severity 1 and always triggers an incident review, even when caught by a te… | document 20 |
+| TC-SEC-970 | REQ-SEC-020: A cross-tenant exposure is always Severity 1 and always triggers an incident review, even when caught by a te… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-TST-951 | REQ-TST-001: Every requirement has at least one acceptance test case written as Given, When, Then | document 07, document 20 |
 | TC-TST-952 | REQ-TST-002: Unit tests cover domain and application logic at 90 percent line coverage on domain and 80 percent on applica… | document 20, project/PROJECT_STATE.md, project/TRACEABILITY.md |
 | TC-TST-953 | REQ-TST-003: Unit tests follow arrange, act, assert with one behaviour per test, names in Method_State_Expected, data from… | document 20, project/TRACEABILITY.md |
@@ -2080,7 +2080,7 @@ Each is specified by its requirement's Given, When, Then line in document 03, an
 | Date | Reviewer | Result |
 |---|---|---|
 | 2026-09-26 | Round-6 scorecard, remediation round 7 | Amended at the generator: a derived acceptance test counts when a current plan document cites it, not one quoted only by the scorecard or the project history, which is the set document 20 assigns |
-| 2026-10-02 | Generated | 1681 test cases and 328 derived acceptance tests |
+| 2026-10-18 | Generated | 1681 test cases and 328 derived acceptance tests |
 
 ## How this document is verified
 

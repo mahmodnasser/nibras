@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The generated tenant-isolation attack suite (document 12 part 4.4, document 16 part 3.1). Targets/ says how each
+    service starts and how a tenant is seeded; Generated/ holds one class per service, regenerated and diffed on every
+    build; Generator/ fails the build when a service has no target or a surface has no generated test. Every Api
+    project is referenced by wildcard, so a new service is found without editing this file.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/BuildingBlocks/Nibras.BuildingBlocks.Testing/Nibras.BuildingBlocks.Testing.csproj" />
+    <ProjectReference Include="../../src/Services/*/Nibras.*.Api/Nibras.*.Api.csproj" />
+  </ItemGroup>
+</Project>

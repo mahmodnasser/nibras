@@ -28,7 +28,11 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 /** A change under one of these builds every scope: they are shared by every service (master brief Section 29). */
 const SHARED = [/^src\/BuildingBlocks\//, /^src\/Contracts\//, /^src\/ServiceDefaults\//, /^Directory\.(Build|Packages)\.props$/,
-  /^global\.json$/, /^nuget\.config$/, /^[^/]+\.sln$/, /^\.editorconfig$/, /^tools\/ci\//, /^\.github\/workflows\/ci-service\.yml$/];
+  /^global\.json$/, /^nuget\.config$/, /^[^/]+\.sln$/, /^\.editorconfig$/, /^tools\/ci\//, /^\.github\/workflows\/ci-service\.yml$/,
+  /^tests\//];
+
+/** The file the generated tenant-isolation suite writes its verdicts to (IsolationReport.PathVariable). */
+export const ISOLATION_REPORT = 'NIBRAS_ISOLATION_REPORT';
 
 const SERVICE = /^src\/Services\/([A-Z][A-Za-z0-9]*)\//;
 
@@ -54,7 +58,7 @@ export const STAGES = [
   { id: 'format', title: 'Format check' },
   { id: 'integration', title: 'Integration tests' },
   { id: 'contract', title: 'Contract tests' },
-  { id: 'generated', title: 'Generated permission and tenant-isolation suites', owner: 'SL-DATA-003' },
+  { id: 'generated', title: 'Generated permission and tenant-isolation suites' },
   { id: 'query-budget', title: 'Query-budget assertions', owner: 'SL-PERF-001' },
   { id: 'licence', title: 'Licence scan' },
   { id: 'vulnerability', title: 'Dependency and container vulnerability scan', owner: 'SL-SEC-001' },
@@ -78,24 +82,111 @@ function findFiles(dir, test, found = []) {
 
 /**
  * Test projects by kind, from the names the service template generates: `*.IntegrationTests`, `*.ContractTests`,
- * `Architecture.Tests` or `*.ArchitectureTests`; `*.UnitTests` and a building block's `*.Tests` are unit tests.
+ * `Architecture.Tests` or `*.ArchitectureTests`; the generated cross-service suites of `tests/` by their names;
+ * `*.UnitTests` and a building block's `*.Tests` are unit tests.
  */
 export function classify(projectPath) {
   const name = path.basename(projectPath, '.csproj');
   if (name.endsWith('.IntegrationTests')) return 'integration';
   if (name.endsWith('.ContractTests')) return 'contract';
   if (name === 'Architecture.Tests' || name.endsWith('.ArchitectureTests')) return 'architecture';
+  if (name === 'Nibras.TenantIsolation.Tests') return 'generated';
   return name.endsWith('Tests') ? 'unit' : null;
+}
+
+/**
+ * The arguments of the generated suite for a scope. Scope `all` built it with the solution. A service scope built
+ * only that service, so the suite builds itself here in locked mode and runs that service's classes and the
+ * generator's gate, whose tests carry `Service=all`.
+ */
+export function generatedArgs(scope) {
+  return scope === 'all'
+    ? ['--no-build']
+    : ['-p:RestoreLockedMode=true', '--filter-trait', `Service=${scope}`, '--filter-trait', 'Service=all'];
+}
+
+/** The phase-gate evidence of the isolation item (document 16 part 12.1) from the stage's status and the suite's report. */
+export function isolationEvidence(stageStatus, report) {
+  if (stageStatus === 'failed') {
+    const detail = report?.failures?.length
+      ? report.failures.map((f) => `${f.service} ${f.surface}: ${f.detail}`).join('; ')
+      : 'the tenant-isolation suite failed before it reported a verdict';
+    return { status: 'failed', detail };
+  }
+
+  if (stageStatus !== 'passed' || !report) return { status: 'missing' };
+  return {
+    status: 'passed',
+    detail: `${report.endpointsAttacked} endpoints and ${report.consumersAttacked} consumers attacked across ${report.services.length} services `
+      + `(${report.services.map((s) => s.service).join(', ')}), ${report.poolSwaps} pooled connections swapped`,
+    endpoints: report.endpointsAttacked,
+    consumers: report.consumersAttacked,
+  };
+}
+
+/**
+ * The date `days` working days after `date`, in a Sunday-to-Thursday week (Friday and Saturday are the weekend),
+ * counted on UTC dates so that every runner gives the same answer.
+ */
+export function addWorkingDays(date, days) {
+  const day = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  for (let added = 0; added < days;) {
+    day.setUTCDate(day.getUTCDate() + 1);
+    if (day.getUTCDay() !== 5 && day.getUTCDay() !== 6) added++;
+  }
+
+  return day.toISOString().slice(0, 10);
+}
+
+/** Working days between detection and the incident review: the product owner's decision of 2026-10-19. */
+export const REVIEW_WORKING_DAYS = 5;
+
+/**
+ * The Severity 1 record of REQ-SEC-020 for a run whose isolation suite caught a cross-tenant exposure: always Sev1,
+ * always reviewed, even though a test and not a person found it (master brief Section 31).
+ */
+export function incidentRecord(results, report, detectedAt) {
+  const stamp = detectedAt.toISOString().replace(/[-:]/g, '').slice(0, 15);
+  return {
+    id: `INC-${stamp}-${(results.commit ?? 'local').slice(0, 7)}`,
+    severity: 'Sev1',
+    status: 'open',
+    title: 'Cross-tenant exposure caught by the tenant-isolation suite',
+    rule: 'Master brief Section 31 and REQ-SEC-020: a cross-tenant exposure is always Sev1 and always triggers an incident review, even when a test caught it.',
+    detectedAt: detectedAt.toISOString(),
+    reviewDue: addWorkingDays(detectedAt, REVIEW_WORKING_DAYS),
+    reviewWindow: `${REVIEW_WORKING_DAYS} working days, Sunday to Thursday, on UTC dates`,
+    commit: results.commit,
+    scope: results.scope,
+    failures: report.failures,
+  };
+}
+
+/** Writes the record under `<out>/incidents/` and, on GitHub Actions, a summary the reader of the red job sees first. */
+export function writeIncident(out, results, report, detectedAt = new Date()) {
+  const record = incidentRecord(results, report, detectedAt);
+  const dir = path.join(out, 'incidents');
+  mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `${record.id}.json`);
+  writeFileSync(file, JSON.stringify(record, null, 2) + '\n');
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const rows = record.failures.map((f) => `| ${f.service} | \`${f.surface}\` | ${f.attack} | ${f.detail} |`).join('\n');
+    writeFileSync(process.env.GITHUB_STEP_SUMMARY, `## Sev1 ${record.id}: ${record.title}\n\n`
+      + `Release blocked. Incident review due ${record.reviewDue} (${record.reviewWindow}). Record: \`incidents/${record.id}.json\` in the ci-results artifact.\n\n`
+      + `| Service | Surface | Attack | What happened |\n|---|---|---|---|\n${rows}\n`, { flag: 'a' });
+  }
+
+  return { path: file, record };
 }
 
 function scopeRoot(root, scope) {
   return scope === 'all' ? path.join(root, 'src') : path.join(root, 'src', 'Services', scope);
 }
 
-function run(command, args, cwd, log) {
+function run(command, args, cwd, log, env = {}) {
   log(`$ ${command} ${args.join(' ')}`);
   const started = Date.now();
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, env: { ...process.env, DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_NOLOGO: '1' } });
+  const result = spawnSync(command, args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, env: { ...process.env, DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_NOLOGO: '1', ...env } });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   return { ok: result.status === 0, status: result.status, output, ms: Date.now() - started, error: result.error };
 }
@@ -112,7 +203,10 @@ export function runPipeline({ root, scope = 'all', out, log = console.log }) {
   const projects = scope === 'all' ? [] : findFiles(base, (f) => f.endsWith('.csproj'));
   if (scope !== 'all' && projects.length === 0) throw new Error(`No projects under ${path.relative(root, base)} for scope ${scope}.`);
   const targets = target ? [target] : projects;
-  const tests = findFiles(base, (f) => f.endsWith('.csproj')).filter((p) => classify(p) !== null).sort();
+  // The cross-service suites of tests/ run in every scope all; a service scope runs the generated ones for its service.
+  const crossService = findFiles(path.join(root, 'tests'), (f) => f.endsWith('.csproj'))
+    .filter((p) => (scope === 'all' ? classify(p) !== null : classify(p) === 'generated'));
+  const tests = [...findFiles(base, (f) => f.endsWith('.csproj')).filter((p) => classify(p) !== null), ...crossService].sort();
   const byKind = (kind) => tests.filter((p) => classify(p) === kind);
 
   const coverageDir = path.join(out, 'coverage');
@@ -167,6 +261,32 @@ export function runPipeline({ root, scope = 'all', out, log = console.log }) {
     integration: () => (byKind('integration').length ? testProjects(byKind('integration'), false) : { na: 'no *.IntegrationTests project in this scope' }),
     // The generated OpenAPI and Problem Details contract tests join these projects with SL-API-005.
     contract: () => (byKind('contract').length ? testProjects(byKind('contract'), false) : { na: 'no *.ContractTests project in this scope' }),
+    // The permission-matrix suite joins this stage with SL-IDN-014.
+    generated: () => {
+      if (byKind('generated').length === 0) return { na: 'no generated suite in this scope' };
+      const report = path.join(out, 'isolation.json');
+      let output = '';
+      let ms = 0;
+      let ok = true;
+      for (const project of byKind('generated')) {
+        const r = run('dotnet', ['test', '--project', project, ...generatedArgs(scope)], root, log, { [ISOLATION_REPORT]: report });
+        output += r.output;
+        ms += r.ms;
+        if (!r.ok) {
+          ok = false;
+          break;
+        }
+      }
+
+      results.isolation = existsSync(report) ? JSON.parse(readFileSync(report, 'utf8')) : null;
+      if (results.isolation?.failures?.length) {
+        const incident = writeIncident(out, results, results.isolation);
+        results.incidents = [path.relative(out, incident.path).replaceAll('\\', '/')];
+        output += `\nSev1 ${incident.record.id}: review due ${incident.record.reviewDue}; record ${incident.path}`;
+      }
+
+      return { ok, output, ms };
+    },
     licence: () => run(process.execPath, [path.join(here, '..', 'license-scan', 'run.mjs')], root, log),
   };
 
@@ -205,12 +325,13 @@ export function runPipeline({ root, scope = 'all', out, log = console.log }) {
   results.finishedAt = new Date().toISOString();
   results.passed = !failed;
   const status = (id) => results.stages.find((s) => s.id === id).status;
-  const testsGreen = ['unit', 'architecture', 'integration', 'contract'].every((id) => ['passed', 'not-applicable'].includes(status(id)))
+  const testsGreen = ['unit', 'architecture', 'integration', 'contract', 'generated'].every((id) => ['passed', 'not-applicable'].includes(status(id)))
     && ['restore', 'build'].every((id) => status(id) === 'passed');
   results.evidence = {
     tests: { status: testsGreen ? 'passed' : 'failed', detail: `scope ${scope}` },
     coverage: { status: status('coverage') === 'passed' ? 'passed' : status('coverage') === 'failed' ? 'failed' : 'missing' },
     licence: { status: status('licence') === 'passed' ? 'passed' : status('licence') === 'failed' ? 'failed' : 'missing' },
+    isolation: isolationEvidence(status('generated'), results.isolation),
   };
   writeFileSync(path.join(out, 'results.json'), JSON.stringify(results, null, 2) + '\n');
   return results;

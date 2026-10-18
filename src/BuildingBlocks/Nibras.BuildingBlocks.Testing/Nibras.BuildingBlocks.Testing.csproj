@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Test infrastructure referenced by test projects only (document 07, part 7; rule TestingBlock_ReferencedOnlyBy_TestProjects).
+    SL-DATA-003 adds the tenant-isolation attack suite of document 12 part 4.4 and its canary service; SL-TST-002 adds
+    the general fixtures, builders and the fake clock of document 16 part 3.3.
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Nibras.BuildingBlocks.Persistence/Nibras.BuildingBlocks.Persistence.csproj" />
+    <ProjectReference Include="../Nibras.BuildingBlocks.Web/Nibras.BuildingBlocks.Web.csproj" />
+    <ProjectReference Include="../../Contracts/Nibras.Contracts.Shared/Nibras.Contracts.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nibras.BuildingBlocks.Testing.Tests" />
+  </ItemGroup>
+</Project>
